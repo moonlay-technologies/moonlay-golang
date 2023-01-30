@@ -8,29 +8,30 @@ image: atlassian/default-image:3
 pipelines:
   pull-requests:
     '**':
-      - step:
-          name: 'Build and Test'
-          script:
-            - if [ "${BITBUCKET_PR_DESTINATION_BRANCH}" != "development" ]; then printf 'ignoring'; exit; fi
-            - echo "Your build and test goes here..."
-      - step:
-          name: 'Lint'
-          script:
-            - if [ "${BITBUCKET_PR_DESTINATION_BRANCH}" != "development" ]; then printf 'ignoring'; exit; fi
-            - echo "Your linting goes here..."
-      - step:
-          name: 'Security scan'
-          script:
-            - if [ "${BITBUCKET_PR_DESTINATION_BRANCH}" != "development" ]; then printf 'ignoring'; exit; fi
-            - echo "Your security scan goes here..."
-      - step:
-          name: 'Sonarqube Analysis'
-          script:
-            - if [ "${BITBUCKET_PR_DESTINATION_BRANCH}" != "development" ]; then printf 'ignoring'; exit; fi
-            - pipe: sonarsource/sonarqube-scan:1.0.0
-              variables:
-                SONAR_HOST_URL: ${SONAR_HOST_URL}
-                SONAR_TOKEN: ${SONAR_TOKEN} 
+      - parallel:
+        - step:
+            name: 'Build and Test'
+            script:
+              - if [ "${BITBUCKET_PR_DESTINATION_BRANCH}" != "development" ]; then printf 'ignoring'; exit; fi
+              - echo "Your build and test goes here..."
+        - step:
+            name: 'Lint'
+            script:
+              - if [ "${BITBUCKET_PR_DESTINATION_BRANCH}" != "development" ]; then printf 'ignoring'; exit; fi
+              - echo "Your linting goes here..."
+        - step:
+            name: 'Security scan'
+            script:
+              - if [ "${BITBUCKET_PR_DESTINATION_BRANCH}" != "development" ]; then printf 'ignoring'; exit; fi
+              - echo "Your security scan goes here..."
+        - step:
+            name: 'Sonarqube Analysis'
+            script:
+              - if [ "${BITBUCKET_PR_DESTINATION_BRANCH}" != "development" ]; then printf 'ignoring'; exit; fi
+              - pipe: sonarsource/sonarqube-scan:1.0.0
+                variables:
+                  SONAR_HOST_URL: ${SONAR_HOST_URL}
+                  SONAR_TOKEN: ${SONAR_TOKEN} 
 
     # The following deployment steps will be executed for each pipeline run. To configure your steps and conditionally deploy see https://support.atlassian.com/bitbucket-cloud/docs/configure-bitbucket-pipelinesyml/
   branches:
