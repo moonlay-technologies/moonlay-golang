@@ -41,6 +41,13 @@ pipelines:
           deployment: test
           script:
             - echo "Deploying to test environment"
+      - step:
+          name: 'Sonarqube Analysis'
+          script:
+            - pipe: sonarsource/sonarqube-scan:1.0.0
+              variables:
+                SONAR_HOST_URL: ${SONAR_HOST_URL}
+                SONAR_TOKEN: ${SONAR_TOKEN} 
     uat:
       - step:
           name: 'Deployment to Staging'
