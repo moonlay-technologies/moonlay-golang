@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/bxcodec/dbresolver"
 	"net/http"
 	"poc-order-service/app/models"
 	"poc-order-service/app/repositories"
@@ -15,6 +14,8 @@ import (
 	kafkadbo "poc-order-service/global/utils/kafka"
 	"poc-order-service/global/utils/model"
 	"time"
+
+	"github.com/bxcodec/dbresolver"
 )
 
 type DeliveryOrderUseCaseInterface interface {
