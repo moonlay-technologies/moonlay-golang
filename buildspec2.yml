@@ -1,0 +1,33 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 14
+    commands:
+      - echo "Build Monitoring System"
+  pre_build:
+    commands:
+      - echo "Loggin to AWS ECR"
+  build:
+    commands:
+      - echo "Remove Existing Asset Files"
+      - aws s3 rm --recursive s3://$BUCKET_NAME
+      - rm package-lock.json
+      - npm cache clean --force
+      - echo "NPM Install"
+      - npm install
+      - echo "NPM Run Build"
+      - npm run build:$REPOSITORY_SLUG
+      - echo "Copy New Asset Files"
+      - aws s3 cp build/ s3://$BUCKET_NAME --recursive
+      - echo "Create Invalidation CloudFront"
+      - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_ID --paths '/*'
+  post_build:
+    commands:
+      - echo "Done ..."
+artifacts:
+  files:
+    - "**/*"
+  discard-paths: no
+  base-directory: dist

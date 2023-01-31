@@ -48,3 +48,17 @@ Thumbs.db
 *.mov
 *.wmv
 
+*.env*
+
+*coverage*
+# Html Output of the go coverage too
+/test/**/*.html
+
+# Log file
+*log_file
+
+temp/*
+
+*.out
+
+vendor/
