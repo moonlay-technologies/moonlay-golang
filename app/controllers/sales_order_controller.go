@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"poc-order-service/app/middlewares"
 	"poc-order-service/app/models"
@@ -214,6 +215,45 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 		}
 	}
 
+	mustActiveField := []*models.MustActiveRequest{
+		{
+			Table:    "agents",
+			ReqField: "agent_id",
+			Clause:   fmt.Sprintf("id = %d AND status = '%s'", insertRequest.AgentID, "active"),
+		},
+		{
+			Table:    "stores",
+			ReqField: "store_id",
+			Clause:   fmt.Sprintf("id = %d AND status = '%s'", insertRequest.StoreID, "active"),
+		},
+		{
+			Table:    "brands",
+			ReqField: "brand_id",
+			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", insertRequest.BrandID),
+		},
+		{
+			Table:    "users",
+			ReqField: "user_id",
+			Clause:   fmt.Sprintf("id = %d AND status = '%s'", insertRequest.UserID, "ACTIVE"),
+		},
+	}
+	for i, v := range insertRequest.SalesOrderDetails {
+		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+			Table:    "products",
+			ReqField: fmt.Sprintf("sales_order_details[%d].product_id", i),
+			Clause:   fmt.Sprintf("id = %d AND isActive = %d", v.ProductID, 1),
+		})
+		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+			Table:    "uoms",
+			ReqField: fmt.Sprintf("sales_order_details[%d].uom_id", i),
+			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", v.UomID),
+		})
+	}
+	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
+	if err != nil {
+		return
+	}
+
 	uniqueField := []*models.UniqueRequest{{
 		Table: "sales_orders",
 		Field: "so_ref_code",
@@ -223,7 +263,6 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 		Field: "device_id",
 		Value: insertRequest.DeviceId,
 	}}
-
 	err = c.requestValidationMiddleware.UniqueValidation(ctx, uniqueField)
 	if err != nil {
 		return

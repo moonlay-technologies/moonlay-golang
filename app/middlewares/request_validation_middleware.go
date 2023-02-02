@@ -18,15 +18,16 @@ type RequestValidationMiddlewareInterface interface {
 	DataTypeValidation(ctx *gin.Context, err error, unmarshalTypeError *json.UnmarshalTypeError)
 	MandatoryValidation(ctx *gin.Context, err error)
 	UniqueValidation(ctx *gin.Context, value []*models.UniqueRequest) error
+	MustActiveValidation(ctx *gin.Context, value []*models.MustActiveRequest) error
 }
 
 type requestValidationMiddleware struct {
-	uniqueRequestValidationRepository repositories.RequestValidationRepositoryInterface
+	requestValidationRepository repositories.RequestValidationRepositoryInterface
 }
 
-func InitRequestValidationMiddlewareInterface(uniqueRequestValidationRepository repositories.RequestValidationRepositoryInterface) RequestValidationMiddlewareInterface {
+func InitRequestValidationMiddlewareInterface(requestValidationRepository repositories.RequestValidationRepositoryInterface) RequestValidationMiddlewareInterface {
 	return &requestValidationMiddleware{
-		uniqueRequestValidationRepository: uniqueRequestValidationRepository,
+		requestValidationRepository: requestValidationRepository,
 	}
 }
 
@@ -75,13 +76,13 @@ func (u *requestValidationMiddleware) UniqueValidation(ctx *gin.Context, value [
 
 	for _, v := range value {
 		checkUnique := make(chan *models.UniqueRequestChan)
-		go u.uniqueRequestValidationRepository.UniqueValidation(v, checkUnique)
+		go u.requestValidationRepository.UniqueValidation(v, checkUnique)
 		checkUniqueResult := <-checkUnique
 
 		if checkUniqueResult.Total > 0 {
-			message := fmt.Sprintf("Data %s sudah terdaftar", v.Field)
+			message := fmt.Sprintf("Data %s duplikat", v.Field)
 			messages = append(messages, message)
-			systemMessage := fmt.Sprintf("%s has been registered", v.Field)
+			systemMessage := fmt.Sprintf("%s Duplicate id for %s", v.Field, v.Field)
 			systemMessages = append(systemMessages, systemMessage)
 		}
 	}
@@ -92,10 +93,44 @@ func (u *requestValidationMiddleware) UniqueValidation(ctx *gin.Context, value [
 			SystemMessage: systemMessages,
 			StatusCode:    http.StatusBadRequest,
 		})
-		result.StatusCode = http.StatusBadRequest
+		result.StatusCode = http.StatusConflict
 		result.Error = errorLog
 		ctx.JSON(result.StatusCode, result)
 		error = fmt.Errorf("Duplicate value!")
+	}
+
+	return error
+}
+
+func (u *requestValidationMiddleware) MustActiveValidation(ctx *gin.Context, value []*models.MustActiveRequest) error {
+	var result baseModel.Response
+	messages := []string{}
+	systemMessages := []string{}
+	var error error
+
+	for _, v := range value {
+		mustActive := make(chan *models.MustActiveRequestChan)
+		go u.requestValidationRepository.MustActiveValidation(v, mustActive)
+		mustActiveResult := <-mustActive
+
+		if mustActiveResult.Total < 1 {
+			message := fmt.Sprintf("Data %s tidak ditemukan", v.ReqField)
+			messages = append(messages, message)
+			systemMessage := fmt.Sprintf("%s Not Found", v.ReqField)
+			systemMessages = append(systemMessages, systemMessage)
+		}
+	}
+
+	if len(messages) > 0 {
+		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       messages,
+			SystemMessage: systemMessages,
+			StatusCode:    http.StatusBadRequest,
+		})
+		result.StatusCode = http.StatusExpectationFailed
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+		error = fmt.Errorf("Inactive value!")
 	}
 
 	return error
