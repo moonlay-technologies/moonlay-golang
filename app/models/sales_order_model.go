@@ -113,7 +113,7 @@ type SalesOrderTemplate struct {
 
 type SalesOrderStoreRequest struct {
 	SalesOrderTemplate
-	SalesOrderDetails []*SalesOrderDetailStoreRequest `json:"sales_order_details" bson:"sales_order_details,omitempty"`
+	SalesOrderDetails []*SalesOrderDetailStoreRequest `json:"sales_order_details" bson:"sales_order_details" binding:"required,dive,required"`
 }
 
 type SalesOrderResponse struct {
