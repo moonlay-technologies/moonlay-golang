@@ -279,26 +279,6 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 		return
 	}
 
-	// _, errorLog := c.cartUseCase.Create(insertRequest, dbTransaction, ctx)
-
-	// if errorLog != nil {
-	// 	err = dbTransaction.Rollback()
-
-	// 	if err != nil {
-	// 		errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
-	// 		resultErrorLog = errorLog
-	// 		result.StatusCode = http.StatusInternalServerError
-	// 		result.Error = resultErrorLog
-	// 		ctx.JSON(result.StatusCode, result)
-	// 		return
-	// 	}
-
-	// 	result.StatusCode = errorLog.StatusCode
-	// 	result.Error = errorLog
-	// 	ctx.JSON(result.StatusCode, result)
-	// 	return
-	// }
-
 	salesOrders, errorLog := c.salesOrderUseCase.Create(insertRequest, dbTransaction, ctx)
 
 	if errorLog != nil {
