@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/bxcodec/dbresolver"
-	"github.com/go-redis/redis/v8"
 	"order-service/app/models"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/redisdb"
 	"time"
+
+	"github.com/bxcodec/dbresolver"
+	"github.com/go-redis/redis/v8"
 )
 
 type SalesmanRepositoryInterface interface {
@@ -41,7 +42,7 @@ func (r *salesman) GetByID(ID int, countOnly bool, ctx context.Context, resultCh
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM salesmans WHERE deleted_at IS NULL AND id = ?", ID).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+			errorLogData := helper.WriteLog(err, 500, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -65,7 +66,7 @@ func (r *salesman) GetByID(ID int, countOnly bool, ctx context.Context, resultCh
 				Scan(&salesman.ID, &salesman.Name, &salesman.Email, &salesman.PhoneNumber)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(err, 500, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -90,7 +91,7 @@ func (r *salesman) GetByID(ID int, countOnly bool, ctx context.Context, resultCh
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -117,7 +118,7 @@ func (r *salesman) GetByEmail(email string, countOnly bool, ctx context.Context,
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM salesmans WHERE deleted_at IS NULL AND email = ?", email).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+			errorLogData := helper.WriteLog(err, 500, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -141,7 +142,7 @@ func (r *salesman) GetByEmail(email string, countOnly bool, ctx context.Context,
 				Scan(&salesman.ID, &salesman.Name, &salesman.Email, &salesman.PhoneNumber)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(err, 500, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -166,7 +167,7 @@ func (r *salesman) GetByEmail(email string, countOnly bool, ctx context.Context,
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response

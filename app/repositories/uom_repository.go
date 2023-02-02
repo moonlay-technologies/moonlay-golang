@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/bxcodec/dbresolver"
-	"github.com/go-redis/redis/v8"
 	"order-service/app/models"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/redisdb"
 	"time"
+
+	"github.com/bxcodec/dbresolver"
+	"github.com/go-redis/redis/v8"
 )
 
 type UomRepositoryInterface interface {
@@ -40,7 +41,7 @@ func (r *uom) GetByID(ID int, countOnly bool, ctx context.Context, resultChan ch
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM uoms WHERE deleted_at IS NULL AND id = ?", ID).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+			errorLogData := helper.WriteLog(err, 500, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -64,7 +65,7 @@ func (r *uom) GetByID(ID int, countOnly bool, ctx context.Context, resultChan ch
 				Scan(&uom.ID, &uom.Code, &uom.Name)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(err, 500, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -89,7 +90,7 @@ func (r *uom) GetByID(ID int, countOnly bool, ctx context.Context, resultChan ch
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response

@@ -49,7 +49,7 @@ func (r *salesOrder) GetByID(id int, countOnly bool, ctx context.Context, result
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM sales_orders WHERE deleted_at IS NULL AND id = ?", id).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+			errorLogData := helper.WriteLog(err, 500, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -89,7 +89,7 @@ func (r *salesOrder) GetByID(id int, countOnly bool, ctx context.Context, result
 				Scan(&salesOrder.ID, &salesOrder.AgentID, &salesOrder.AgentName, &salesOrder.AgentEmail, &salesOrder.AgentProvinceID, &salesOrder.AgentProvinceName, &salesOrder.AgentCityID, &salesOrder.AgentCityName, &salesOrder.AgentDistrictID, &salesOrder.AgentDistrictName, &salesOrder.AgentVillageID, &salesOrder.AgentVillageName, &salesOrder.AgentAddress, &salesOrder.AgentPhone, &salesOrder.AgentMainMobilePhone, &salesOrder.StoreID, &salesOrder.StoreName, &salesOrder.StoreCode, &salesOrder.StoreEmail, &salesOrder.StoreProvinceID, &salesOrder.StoreProvinceName, &salesOrder.StoreCityID, &salesOrder.StoreCityName, &salesOrder.StoreDistrictID, &salesOrder.StoreDistrictName, &salesOrder.StoreVillageID, &salesOrder.StoreVillageName, &salesOrder.StoreAddress, &salesOrder.StorePhone, &salesOrder.StoreMainMobilePhone, &salesOrder.BrandID, &salesOrder.BrandName, &salesOrder.UserID, &salesOrder.UserEmail, &salesOrder.UserFirstName, &salesOrder.UserLastName, &salesOrder.UserRoleID, &salesOrder.OrderSourceID, &salesOrder.OrderSourceName, &salesOrder.OrderStatusID, &salesOrder.OrderStatusName, &salesOrder.SalesmanID, &salesOrder.SalesmanName, &salesOrder.SoCode, &salesOrder.SoDate, &salesOrder.SoRefCode, &salesOrder.SoRefDate, &salesOrder.GLong, &salesOrder.GLat, &salesOrder.Note, &salesOrder.InternalComment, &salesOrder.TotalAmount, &salesOrder.TotalTonase, &salesOrder.CreatedAt, &salesOrder.UpdatedAt)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(err, 500, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -114,7 +114,7 @@ func (r *salesOrder) GetByID(id int, countOnly bool, ctx context.Context, result
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -141,7 +141,7 @@ func (r *salesOrder) GetByCode(soCode string, countOnly bool, ctx context.Contex
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM sales_orders WHERE deleted_at IS NULL AND so_code = ?", soCode).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+			errorLogData := helper.WriteLog(err, 500, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -181,7 +181,7 @@ func (r *salesOrder) GetByCode(soCode string, countOnly bool, ctx context.Contex
 				Scan(&salesOrder.ID, &salesOrder.AgentID, &salesOrder.AgentName, &salesOrder.AgentEmail, &salesOrder.AgentProvinceID, &salesOrder.AgentProvinceName, &salesOrder.AgentCityID, &salesOrder.AgentCityName, &salesOrder.AgentDistrictID, &salesOrder.AgentDistrictName, &salesOrder.AgentVillageID, &salesOrder.AgentVillageName, &salesOrder.AgentAddress, &salesOrder.AgentPhone, &salesOrder.AgentMainMobilePhone, &salesOrder.StoreID, &salesOrder.StoreName, &salesOrder.StoreCode, &salesOrder.StoreEmail, &salesOrder.StoreProvinceID, &salesOrder.StoreProvinceName, &salesOrder.StoreCityID, &salesOrder.StoreCityName, &salesOrder.StoreDistrictID, &salesOrder.StoreDistrictName, &salesOrder.StoreVillageID, &salesOrder.StoreVillageName, &salesOrder.StoreAddress, &salesOrder.StorePhone, &salesOrder.StoreMainMobilePhone, &salesOrder.BrandID, &salesOrder.BrandName, &salesOrder.UserID, &salesOrder.UserEmail, &salesOrder.UserFirstName, &salesOrder.UserLastName, &salesOrder.UserRoleID, &salesOrder.OrderSourceID, &salesOrder.OrderSourceName, &salesOrder.OrderStatusID, &salesOrder.OrderStatusName, &salesOrder.SalesmanID, &salesOrder.SalesmanName, &salesOrder.SoCode, &salesOrder.SoDate, &salesOrder.SoRefCode, &salesOrder.SoRefDate, &salesOrder.GLong, &salesOrder.GLat, &salesOrder.Note, &salesOrder.InternalComment, &salesOrder.TotalAmount, &salesOrder.TotalTonase, &salesOrder.CreatedAt, &salesOrder.UpdatedAt)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(err, 500, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -206,7 +206,7 @@ func (r *salesOrder) GetByCode(soCode string, countOnly bool, ctx context.Contex
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -233,7 +233,7 @@ func (r *salesOrder) GetByAgentRefCode(soRefCode string, agentID int, countOnly 
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM sales_orders WHERE deleted_at IS NULL AND so_ref_code = ? AND agent_id= ?", soRefCode, agentID).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+			errorLogData := helper.WriteLog(err, 500, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -273,7 +273,7 @@ func (r *salesOrder) GetByAgentRefCode(soRefCode string, agentID int, countOnly 
 				Scan(&salesOrder.ID, &salesOrder.AgentID, &salesOrder.AgentName, &salesOrder.AgentEmail, &salesOrder.AgentProvinceID, &salesOrder.AgentProvinceName, &salesOrder.AgentCityID, &salesOrder.AgentCityName, &salesOrder.AgentDistrictID, &salesOrder.AgentDistrictName, &salesOrder.AgentVillageID, &salesOrder.AgentVillageName, &salesOrder.AgentAddress, &salesOrder.AgentPhone, &salesOrder.AgentMainMobilePhone, &salesOrder.StoreID, &salesOrder.StoreName, &salesOrder.StoreCode, &salesOrder.StoreEmail, &salesOrder.StoreProvinceID, &salesOrder.StoreProvinceName, &salesOrder.StoreCityID, &salesOrder.StoreCityName, &salesOrder.StoreDistrictID, &salesOrder.StoreDistrictName, &salesOrder.StoreVillageID, &salesOrder.StoreVillageName, &salesOrder.StoreAddress, &salesOrder.StorePhone, &salesOrder.StoreMainMobilePhone, &salesOrder.BrandID, &salesOrder.BrandName, &salesOrder.UserID, &salesOrder.UserEmail, &salesOrder.UserFirstName, &salesOrder.UserLastName, &salesOrder.UserRoleID, &salesOrder.OrderSourceID, &salesOrder.OrderSourceName, &salesOrder.OrderStatusID, &salesOrder.OrderStatusName, &salesOrder.SalesmanID, &salesOrder.SalesmanName, &salesOrder.SoCode, &salesOrder.SoDate, &salesOrder.SoRefCode, &salesOrder.SoRefDate, &salesOrder.GLong, &salesOrder.GLat, &salesOrder.Note, &salesOrder.InternalComment, &salesOrder.TotalAmount, &salesOrder.TotalTonase, &salesOrder.CreatedAt, &salesOrder.UpdatedAt)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(err, 500, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -298,7 +298,7 @@ func (r *salesOrder) GetByAgentRefCode(soRefCode string, agentID int, countOnly 
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -456,7 +456,7 @@ func (r *salesOrder) Insert(request *models.SalesOrder, sqlTransaction *sql.Tx, 
 	result, err := sqlTransaction.ExecContext(ctx, query, rawSqlValues...)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -466,7 +466,7 @@ func (r *salesOrder) Insert(request *models.SalesOrder, sqlTransaction *sql.Tx, 
 	salesOrderID, err := result.LastInsertId()
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -602,7 +602,7 @@ func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, sqlTransacti
 	result, err := sqlTransaction.ExecContext(ctx, updateQuery, id)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -612,7 +612,7 @@ func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, sqlTransacti
 	salesOrderID, err := result.LastInsertId()
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -632,7 +632,7 @@ func (r *salesOrder) RemoveCacheByID(id int, ctx context.Context, resultChan cha
 	result, err := r.redisdb.Client().Del(ctx, salesOrderRedisKey).Result()
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -645,7 +645,7 @@ func (r *salesOrder) RemoveCacheByID(id int, ctx context.Context, resultChan cha
 	result, err = r.redisdb.Client().Del(ctx, salesOrderDetailRedisKey).Result()
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response

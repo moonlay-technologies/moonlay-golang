@@ -3,13 +3,15 @@ package repositories
 import (
 	"context"
 	"fmt"
-	log "github.com/sirupsen/logrus"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"order-service/app/models"
+	"order-service/app/models/constants"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/mongodb"
 	"os"
+
+	log "github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type SalesOrderLogRepositoryInterface interface {
@@ -39,7 +41,7 @@ func (r *salesOrderLogRepository) GetByID(ID string, countOnly bool, ctx context
 	total, err := collection.CountDocuments(ctx, filter)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -85,7 +87,7 @@ func (r *salesOrderLogRepository) Insert(request *models.SalesOrderLog, ctx cont
 	result, err := collection.InsertOne(ctx, request)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -107,7 +109,7 @@ func (r *salesOrderLogRepository) UpdateByID(ID string, request *models.SalesOrd
 	total, err := collection.CountDocuments(ctx, filter)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -127,7 +129,7 @@ func (r *salesOrderLogRepository) UpdateByID(ID string, request *models.SalesOrd
 	_, err = collection.UpdateOne(r.mongod.GetCtx(), filter, updateData)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response

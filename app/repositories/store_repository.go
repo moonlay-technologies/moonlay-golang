@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/bxcodec/dbresolver"
-	"github.com/go-redis/redis/v8"
 	"order-service/app/models"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/redisdb"
 	"time"
+
+	"github.com/bxcodec/dbresolver"
+	"github.com/go-redis/redis/v8"
 )
 
 type StoreRepositoryInterface interface {
@@ -40,7 +41,7 @@ func (r *store) GetByID(ID int, countOnly bool, ctx context.Context, resultChan 
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM stores WHERE deleted_at IS NULL AND id = ?", ID).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+			errorLogData := helper.WriteLog(err, 500, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -68,7 +69,7 @@ func (r *store) GetByID(ID int, countOnly bool, ctx context.Context, resultChan 
 				Scan(&store.ID, &store.StoreCode, &store.StoreCategory, &store.Name, &store.Email, &store.EmailVerified, &store.Description, &store.Address, &store.ProvinceID, &store.CityID, &store.DistrictID, &store.VillageID, &store.DataType, &store.PostalCode, &store.GLat, &store.GLng, &store.ContactName, &store.Website, &store.Phone, &store.MainMobilePhone, &store.Status, &store.AliasName, &store.DBOApprovalStatus, &store.VerifiedDBO, &store.VerifiedDate, &store.ValidationStore, &store.Channel, &store.ProvinceName, &store.CityName, &store.DistrictName, &store.VillageName)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(err, 500, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -93,7 +94,7 @@ func (r *store) GetByID(ID int, countOnly bool, ctx context.Context, resultChan 
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response

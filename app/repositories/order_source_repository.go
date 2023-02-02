@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/bxcodec/dbresolver"
-	"github.com/go-redis/redis/v8"
 	"order-service/app/models"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/redisdb"
 	"time"
+
+	"github.com/bxcodec/dbresolver"
+	"github.com/go-redis/redis/v8"
 )
 
 type OrderSourceRepositoryInterface interface {
@@ -41,7 +42,7 @@ func (r *orderSource) GetBySourceName(sourceName string, countOnly bool, ctx con
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM order_sources WHERE deleted_at IS NULL AND source_name = ?", sourceName).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+			errorLogData := helper.WriteLog(err, 500, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -65,7 +66,7 @@ func (r *orderSource) GetBySourceName(sourceName string, countOnly bool, ctx con
 				Scan(&orderSource.ID, &orderSource.Code, &orderSource.SourceName)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(err, 500, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -90,7 +91,7 @@ func (r *orderSource) GetBySourceName(sourceName string, countOnly bool, ctx con
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -117,7 +118,7 @@ func (r *orderSource) GetByID(ID int, countOnly bool, ctx context.Context, resul
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM order_sources WHERE deleted_at IS NULL AND id = ?", ID).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+			errorLogData := helper.WriteLog(err, 500, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -141,7 +142,7 @@ func (r *orderSource) GetByID(ID int, countOnly bool, ctx context.Context, resul
 				Scan(&orderSource.ID, &orderSource.Code, &orderSource.SourceName)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(err, 500, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -166,7 +167,7 @@ func (r *orderSource) GetByID(ID int, countOnly bool, ctx context.Context, resul
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response

@@ -5,13 +5,14 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/bxcodec/dbresolver"
-	"github.com/go-redis/redis/v8"
 	"order-service/app/models"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/redisdb"
 	"strings"
 	"time"
+
+	"github.com/bxcodec/dbresolver"
+	"github.com/go-redis/redis/v8"
 )
 
 type CartDetailRepositoryInterface interface {
@@ -43,7 +44,7 @@ func (r *cartDetail) GetByCartID(cartID, countOnly bool, ctx context.Context, re
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM cart_details WHERE deleted_at IS NULL AND cart_id = ? ", cartID).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+			errorLogData := helper.WriteLog(err, 500, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -66,7 +67,7 @@ func (r *cartDetail) GetByCartID(cartID, countOnly bool, ctx context.Context, re
 				"WHERE cd.deleted_at IS NULL AND cd.cart_id = ?", cartID)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(err, 500, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -78,7 +79,7 @@ func (r *cartDetail) GetByCartID(cartID, countOnly bool, ctx context.Context, re
 				err = query.Scan(&cartDetail.ID, &cartDetail.CartID, &cartDetail.BrandID, &cartDetail.ProductID, &cartDetail.UomID, &cartDetail.OrderStatusID, &cartDetail.Qty, &cartDetail.Price)
 
 				if err != nil {
-					errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+					errorLogData := helper.WriteLog(err, 500, nil)
 					response.Error = err
 					response.ErrorLog = errorLogData
 					resultChan <- response
@@ -106,7 +107,7 @@ func (r *cartDetail) GetByCartID(cartID, countOnly bool, ctx context.Context, re
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -180,7 +181,7 @@ func (r *cartDetail) Insert(request *models.CartDetail, sqlTransaction *sql.Tx, 
 	result, err := sqlTransaction.ExecContext(ctx, query, rawSqlValues...)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -190,7 +191,7 @@ func (r *cartDetail) Insert(request *models.CartDetail, sqlTransaction *sql.Tx, 
 	cartDetailID, err := result.LastInsertId()
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response

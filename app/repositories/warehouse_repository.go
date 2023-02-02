@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/bxcodec/dbresolver"
-	"github.com/go-redis/redis/v8"
 	"order-service/app/models"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/redisdb"
 	"time"
+
+	"github.com/bxcodec/dbresolver"
+	"github.com/go-redis/redis/v8"
 )
 
 type WarehouseRepositoryInterface interface {
@@ -40,7 +41,7 @@ func (r *warehouse) GetByID(ID int, countOnly bool, ctx context.Context, resultC
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM warehouses WHERE id = ?", ID).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+			errorLogData := helper.WriteLog(err, 500, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -68,7 +69,7 @@ func (r *warehouse) GetByID(ID int, countOnly bool, ctx context.Context, resultC
 				Scan(&warehouse.ID, &warehouse.Code, &warehouse.Name, &warehouse.OwnerID, &warehouse.ProvinceID, &warehouse.ProvinceName, &warehouse.CityID, &warehouse.CityName, &warehouse.DistrictID, &warehouse.DistrictName, &warehouse.VillageID, &warehouse.VillageName, &warehouse.Address, &warehouse.Phone, &warehouse.MainMobilePhone, &warehouse.Email, &warehouse.PicName, &warehouse.Status, &warehouse.WarehouseTypeID, &warehouse.IsMain)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(err, 500, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -93,7 +94,7 @@ func (r *warehouse) GetByID(ID int, countOnly bool, ctx context.Context, resultC
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response

@@ -5,13 +5,14 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/bxcodec/dbresolver"
-	"github.com/go-redis/redis/v8"
 	"order-service/app/models"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/redisdb"
 	"strings"
 	"time"
+
+	"github.com/bxcodec/dbresolver"
+	"github.com/go-redis/redis/v8"
 )
 
 type CartRepositoryInterface interface {
@@ -43,7 +44,7 @@ func (r *cart) GetByUserID(userID int, cartStatusID int, countOnly bool, ctx con
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM carts WHERE deleted_at IS NULL AND user_id = ? AND order_status_id= ?", userID, cartStatusID).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+			errorLogData := helper.WriteLog(err, 500, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -68,7 +69,7 @@ func (r *cart) GetByUserID(userID int, cartStatusID int, countOnly bool, ctx con
 				Scan(&cart.ID, &cart.AgentID, &cart.BrandID, &cart.VisitationID, &cart.UserID, &cart.StoreID)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(err, 500, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -93,7 +94,7 @@ func (r *cart) GetByUserID(userID int, cartStatusID int, countOnly bool, ctx con
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -185,7 +186,7 @@ func (r *cart) Insert(request *models.Cart, sqlTransaction *sql.Tx, ctx context.
 	result, err := sqlTransaction.ExecContext(ctx, query, rawSqlValues...)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -195,7 +196,7 @@ func (r *cart) Insert(request *models.Cart, sqlTransaction *sql.Tx, ctx context.
 	salesOrderID, err := result.LastInsertId()
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, 500, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
