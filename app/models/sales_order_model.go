@@ -89,24 +89,24 @@ type SalesOrderStoreRequest struct {
 	RequestID         string                          `json:"request_id,omitempty" bson:"request_id,omitempty"`
 	CartID            int                             `json:"cart_id,omitempty" bson:"cart_id,omitempty" binding:"required"`
 	AgentID           int                             `json:"agent_id,omitempty" bson:"agent_id,omitempty" binding:"required"`
-	StoreID           int                             `json:"store_id,omitempty" bson:"store_id,omitempty"`
-	BrandID           int                             `json:"brand_id,omitempty" bson:"brand_id,omitempty"`
-	UserID            int                             `json:"user_id,omitempty" bson:"user_id,omitempty"`
+	StoreID           int                             `json:"store_id,omitempty" bson:"store_id,omitempty" binding:"required"`
+	BrandID           int                             `json:"brand_id,omitempty" bson:"brand_id,omitempty" binding:"required"`
+	UserID            int                             `json:"user_id,omitempty" bson:"user_id,omitempty" binding:"required"`
 	SalesmanID        int                             `json:"salesman_id,omitempty" bson:"salesman_id,omitempty"`
-	VisitationID      int                             `json:"visitation_id,omitempty" bson:"visitation_id,omitempty"`
-	OrderSourceID     int                             `json:"order_source_id,omitempty" bson:"order_source_id,omitempty"`
-	OrderStatusID     int                             `json:"order_status_id,omitempty" bson:"order_status_id,omitempty"`
-	SoCode            string                          `json:"so_code,omitempty" bson:"so_code,omitempty"`
-	SoDate            string                          `json:"so_date,omitempty" bson:"so_date,omitempty"`
+	VisitationID      int                             `json:"visitation_id,omitempty" bson:"visitation_id,omitempty" binding:"required"`
+	OrderSourceID     int                             `json:"order_source_id,omitempty" bson:"order_source_id,omitempty" binding:"required"`
+	OrderStatusID     int                             `json:"order_status_id,omitempty" bson:"order_status_id,omitempty" binding:"required"`
+	SoCode            string                          `json:"so_code,omitempty" bson:"so_code,omitempty" binding:"required"`
+	SoDate            string                          `json:"so_date,omitempty" bson:"so_date,omitempty" binding:"required"`
 	SoRefCode         string                          `json:"so_ref_code,omitempty" bson:"so_ref_code,omitempty"`
-	SoRefDate         string                          `json:"so_ref_date,omitempty" bson:"so_ref_date,omitempty"`
+	SoRefDate         string                          `json:"so_ref_date,omitempty" bson:"so_ref_date,omitempty" binding:"required"`
 	GLong             float64                         `json:"g_long,omitempty" bson:"g_long,omitempty"`
 	GLat              float64                         `json:"g_lat,omitempty" bson:"g_lat,omitempty"`
 	Note              string                          `json:"note,omitempty" bson:"note,omitempty"`
 	InternalComment   string                          `json:"internal_comment,omitempty" bson:"internal_comment,omitempty"`
-	TotalAmount       float64                         `json:"total_amount,omitempty" bson:"total_amount,omitempty"`
-	TotalTonase       float64                         `json:"total_tonase,omitempty" bson:"total_tonase,omitempty"`
-	DeviceId          string                          `json:"device_id,omitempty" bson:"device_id,omitempty"`
+	TotalAmount       float64                         `json:"total_amount,omitempty" bson:"total_amount,omitempty" binding:"required"`
+	TotalTonase       float64                         `json:"total_tonase,omitempty" bson:"total_tonase,omitempty" binding:"required"`
+	DeviceId          string                          `json:"device_id,omitempty" bson:"device_id,omitempty" binding:"required"`
 	ReferralCode      string                          `json:"referral_code,omitempty" bson:"referral_code,omitempty"`
 	SalesOrderDetails []*SalesOrderDetailStoreRequest `json:"sales_order_details" bson:"sales_order_details,omitempty"`
 }
