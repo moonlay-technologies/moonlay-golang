@@ -54,7 +54,7 @@ func (r *cartDetail) GetByCartID(cartID, countOnly bool, ctx context.Context, re
 
 		if total == 0 {
 			err = helper.NewError("cart_detail data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response

@@ -51,7 +51,7 @@ func (r *uom) GetByID(ID int, countOnly bool, ctx context.Context, resultChan ch
 
 		if total == 0 {
 			err = helper.NewError("uom data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response

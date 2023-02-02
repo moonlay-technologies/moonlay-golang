@@ -229,13 +229,13 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchResult(ope
 	openSearchQueryResult, err := r.db.Query("delivery_orders", openSearchQueryJson)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		return &models.DeliveryOrders{}, errorLogData
 	}
 
 	if openSearchQueryResult.Hits.Total.Value == 0 {
 		err = helper.NewError("delivery_orders_opensearch data not found")
-		errorLogData := helper.WriteLog(err, http.StatusNotFound, "Data tidak ditemukan")
+		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 		return &models.DeliveryOrders{}, errorLogData
 	}
 

@@ -52,7 +52,7 @@ func (r *orderStatus) GetByNameAndType(name string, statusType string, countOnly
 
 		if total == 0 {
 			err = helper.NewError("order_status data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -138,7 +138,7 @@ func (r *orderStatus) GetByID(ID int, countOnly bool, ctx context.Context, resul
 
 		if total == 0 {
 			err = helper.NewError("order_status data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response

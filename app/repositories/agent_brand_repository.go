@@ -51,7 +51,7 @@ func (r *agentBrand) GetByAgentIDAndBrandID(agentID int, brandID int, countOnly 
 
 		if total == 0 {
 			err = helper.NewError("agent_brands data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response

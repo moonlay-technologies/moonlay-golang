@@ -2,12 +2,18 @@ package helper
 
 import (
 	"fmt"
+	"net/http"
 	"order-service/global/utils/model"
 	"runtime"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 )
+
+var DefaultStatusText = map[int]string{
+	http.StatusInternalServerError: "Something went wrong, please try again later",
+	http.StatusNotFound:            "data not found",
+}
 
 func WriteLog(err error, errorCode int, message interface{}) *model.ErrorLog {
 	if pc, file, line, ok := runtime.Caller(1); ok {
@@ -17,23 +23,24 @@ func WriteLog(err error, errorCode int, message interface{}) *model.ErrorLog {
 		output.StatusCode = errorCode
 		output.Err = err
 
-		if errorCode == 500 {
-			output.Line = fmt.Sprintf("%d", line)
-			output.Filename = fmt.Sprintf("%s", file)
-			output.Function = fmt.Sprintf("%s", funcName)
+		if errorCode == 422 {
+			output.Message = "Field Validation"
+			output.Fields = message
+		} else {
+			output.SystemMessage = err.Error()
 			if message == nil {
-				output.Message = "Something went wrong, please try again later"
+				output.Message = DefaultStatusText[errorCode]
+				if message == "" {
+					output.Message = http.StatusText(errorCode)
+				}
 			} else {
 				output.Message = message
 			}
-			output.SystemMessage = err.Error()
-		} else if errorCode == 401 || errorCode == 403 || errorCode == 404 || errorCode == 409 || errorCode == 400 {
-			output.Message = message
-			output.SystemMessage = err.Error()
-
-		} else if errorCode == 422 {
-			output.Message = "Field Validation"
-			output.Fields = message
+			if errorCode == http.StatusInternalServerError {
+				output.Line = fmt.Sprintf("%d", line)
+				output.Filename = fmt.Sprintf("%s", file)
+				output.Function = fmt.Sprintf("%s", funcName)
+			}
 		}
 
 		log := map[string]interface{}{}

@@ -55,7 +55,7 @@ func (c *createDeliveryOrderConsumerHandler) ProcessMessage() {
 		err = json.Unmarshal(m.Value, &deliveryOrder)
 
 		if err != nil {
-			errorLogData := helper.WriteLogConsumer(constants.CREATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLogConsumer(constants.CREATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
 			fmt.Println(errorLogData)
 			continue
 		}
@@ -65,14 +65,14 @@ func (c *createDeliveryOrderConsumerHandler) ProcessMessage() {
 
 		if errorLog.Err != nil {
 			dbTransaction.Rollback()
-			errorLogData := helper.WriteLogConsumer(constants.CREATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLogConsumer(constants.CREATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, nil)
 			fmt.Println(errorLogData)
 			continue
 		}
 
 		err = dbTransaction.Commit()
 		if err != nil {
-			errorLogData := helper.WriteLogConsumer(constants.CREATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLogConsumer(constants.CREATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
 			fmt.Println(errorLogData)
 			continue
 		}
@@ -112,7 +112,7 @@ func (c *createDeliveryOrderConsumerHandler) ProcessMessage() {
 		errorLog = c.deliveryOrderUseCase.SyncToOpenSearchFromUpdateEvent(deliveryOrderWithDetail, c.ctx)
 
 		if errorLog.Err != nil {
-			errorLogData := helper.WriteLogConsumer(constants.CREATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLogConsumer(constants.CREATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, nil)
 			fmt.Println(errorLogData)
 			continue
 		}

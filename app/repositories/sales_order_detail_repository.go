@@ -58,7 +58,7 @@ func (r *salesOrderDetail) GetBySalesOrderID(salesOrderID int, countOnly bool, c
 
 		if total == 0 {
 			err = helper.NewError("sales_order_detail data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -260,7 +260,7 @@ func (r *salesOrderDetail) GetByID(id int, countOnly bool, ctx context.Context, 
 
 		if total == 0 {
 			err = helper.NewError("sales_order_detail data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response

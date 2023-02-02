@@ -59,7 +59,7 @@ func (r *salesOrder) GetByID(id int, countOnly bool, ctx context.Context, result
 
 		if total == 0 {
 			err = helper.NewError("sales_order data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -151,7 +151,7 @@ func (r *salesOrder) GetByCode(soCode string, countOnly bool, ctx context.Contex
 
 		if total == 0 {
 			err = helper.NewError("sales_order data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -243,7 +243,7 @@ func (r *salesOrder) GetByAgentRefCode(soRefCode string, agentID int, countOnly 
 
 		if total == 0 {
 			err = helper.NewError("sales_order data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response

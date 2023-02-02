@@ -52,7 +52,7 @@ func (r *product) GetByID(ID int, countOnly bool, ctx context.Context, resultCha
 		if total == 0 {
 			errStr := fmt.Sprintf("product id %d data not found", ID)
 			err = helper.NewError(errStr)
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response

@@ -51,7 +51,7 @@ func (r *warehouse) GetByID(ID int, countOnly bool, ctx context.Context, resultC
 
 		if total == 0 {
 			err = helper.NewError("warehouse data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response

@@ -31,7 +31,7 @@ func (c *createKafkaTopicCommandHandler) CreateTopic(topic string, partition int
 	err := c.kafkaClient.CreateTopic(topic, partition, replicationFactor)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		fmt.Println(errorLogData)
 		return err
 	}

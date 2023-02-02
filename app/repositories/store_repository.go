@@ -51,7 +51,7 @@ func (r *store) GetByID(ID int, countOnly bool, ctx context.Context, resultChan 
 
 		if total == 0 {
 			err = helper.NewError("store data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response

@@ -50,8 +50,8 @@ func (r *salesOrderLogRepository) GetByID(ID string, countOnly bool, ctx context
 	}
 
 	if total == 0 {
-		err = helper.NewError("data not found")
-		errorLogData := helper.WriteLog(err, 404, "data not found")
+		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -118,8 +118,8 @@ func (r *salesOrderLogRepository) UpdateByID(ID string, request *models.SalesOrd
 	}
 
 	if total == 0 {
-		err = helper.NewError("data not found")
-		errorLogData := helper.WriteLog(err, 404, "data not found")
+		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response

@@ -51,7 +51,7 @@ func (r *salesmanAssignment) GetBySalesmanIDAndAgentID(agentID int, salesmanID i
 
 		if total == 0 {
 			err = helper.NewError("salesmanAssignments data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response

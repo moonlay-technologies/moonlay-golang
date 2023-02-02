@@ -52,7 +52,7 @@ func (r *orderSource) GetBySourceName(sourceName string, countOnly bool, ctx con
 
 		if total == 0 {
 			err = helper.NewError("order_source data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -128,7 +128,7 @@ func (r *orderSource) GetByID(ID int, countOnly bool, ctx context.Context, resul
 
 		if total == 0 {
 			err = helper.NewError("order_source data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response

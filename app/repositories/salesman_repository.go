@@ -52,7 +52,7 @@ func (r *salesman) GetByID(ID int, countOnly bool, ctx context.Context, resultCh
 
 		if total == 0 {
 			err = helper.NewError("salesman data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -128,7 +128,7 @@ func (r *salesman) GetByEmail(email string, countOnly bool, ctx context.Context,
 
 		if total == 0 {
 			err = helper.NewError("salesman data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
