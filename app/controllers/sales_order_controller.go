@@ -3,14 +3,15 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/bxcodec/dbresolver"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"poc-order-service/app/models"
 	"poc-order-service/app/usecases"
 	"poc-order-service/global/utils/helper"
 	baseModel "poc-order-service/global/utils/model"
 	"strconv"
+
+	"github.com/bxcodec/dbresolver"
+	"github.com/gin-gonic/gin"
 )
 
 type SalesOrderControllerInterface interface {

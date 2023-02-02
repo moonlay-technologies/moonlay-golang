@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/bxcodec/dbresolver"
 	"net/http"
 	"poc-order-service/app/models"
+	"poc-order-service/app/models/constants"
 	"poc-order-service/app/repositories"
 	mongoRepositories "poc-order-service/app/repositories/mongod"
 	openSearchRepositories "poc-order-service/app/repositories/open_search"
@@ -16,6 +16,8 @@ import (
 	"poc-order-service/global/utils/model"
 	"strings"
 	"time"
+
+	"github.com/bxcodec/dbresolver"
 )
 
 type SalesOrderUseCaseInterface interface {
@@ -310,7 +312,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 
 		keyKafka := []byte(v.SoCode)
 		messageKafka, _ := json.Marshal(v)
-		err := u.kafkaClient.WriteToTopic("create-sales-order", keyKafka, messageKafka)
+		err := u.kafkaClient.WriteToTopic(constants.CREATE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
 
 		if err != nil {
 			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")

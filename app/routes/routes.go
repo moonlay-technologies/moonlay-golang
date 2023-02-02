@@ -2,14 +2,16 @@ package routes
 
 import (
 	"context"
-	"github.com/bxcodec/dbresolver"
-	"github.com/gin-gonic/gin"
 	"os"
 	"poc-order-service/app/controllers"
+	"poc-order-service/app/models/constants"
 	kafkadbo "poc-order-service/global/utils/kafka"
 	"poc-order-service/global/utils/mongodb"
 	"poc-order-service/global/utils/opensearch_dbo"
 	"poc-order-service/global/utils/redisdb"
+
+	"github.com/bxcodec/dbresolver"
+	"github.com/gin-gonic/gin"
 )
 
 func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisInterface, mongodbClient mongodb.MongoDBInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, kafkaClient kafkadbo.KafkaClientInterface, ctx context.Context) {
@@ -24,7 +26,7 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 	salesOrderController := controllers.InitHTTPSalesOrderController(database, redisdb, mongodbClient, kafkaClient, opensearchClient, ctx)
 	basicAuthRootGroup.Use()
 	{
-		salesOrderControllerGroup := basicAuthRootGroup.Group("sales-orders")
+		salesOrderControllerGroup := basicAuthRootGroup.Group(constants.SALES_ORDERS_PATH)
 		salesOrderControllerGroup.Use()
 		{
 			salesOrderControllerGroup.GET("", salesOrderController.Get)
@@ -36,7 +38,7 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 	deliveryOrderController := controllers.InitHTTPDeliveryOrderController(database, redisdb, mongodbClient, kafkaClient, opensearchClient, ctx)
 	basicAuthRootGroup.Use()
 	{
-		deliveryOrderControllerGroup := basicAuthRootGroup.Group("delivery-orders")
+		deliveryOrderControllerGroup := basicAuthRootGroup.Group(constants.DELIVERY_ORDERS_PATH)
 		deliveryOrderControllerGroup.Use()
 		{
 			deliveryOrderControllerGroup.POST("", deliveryOrderController.Create)
@@ -51,8 +53,8 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 		agentControllerGroup := basicAuthRootGroup.Group("agents")
 		agentControllerGroup.Use()
 		{
-			agentControllerGroup.GET(":id/sales-orders", agentController.GetSalesOrders)
-			agentControllerGroup.GET(":id/delivery-orders", agentController.GetDeliveryOrders)
+			agentControllerGroup.GET(":id/"+constants.SALES_ORDERS_PATH, agentController.GetSalesOrders)
+			agentControllerGroup.GET(":id/"+constants.DELIVERY_ORDERS_PATH, agentController.GetDeliveryOrders)
 		}
 	}
 
@@ -62,8 +64,8 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 		storeControllerGroup := basicAuthRootGroup.Group("stores")
 		storeControllerGroup.Use()
 		{
-			storeControllerGroup.GET(":id/sales-orders", storeController.GetSalesOrders)
-			storeControllerGroup.GET(":id/delivery-orders", storeController.GetDeliveryOrders)
+			storeControllerGroup.GET(":id/"+constants.SALES_ORDERS_PATH, storeController.GetSalesOrders)
+			storeControllerGroup.GET(":id/"+constants.DELIVERY_ORDERS_PATH, storeController.GetDeliveryOrders)
 		}
 	}
 
@@ -73,8 +75,8 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 		salesmanControllerGroup := basicAuthRootGroup.Group("salesmans")
 		salesmanControllerGroup.Use()
 		{
-			salesmanControllerGroup.GET(":id/sales-orders", salesmanController.GetSalesOrders)
-			salesmanControllerGroup.GET(":id/delivery-orders", salesmanController.GetDeliveryOrders)
+			salesmanControllerGroup.GET(":id/"+constants.SALES_ORDERS_PATH, salesmanController.GetSalesOrders)
+			salesmanControllerGroup.GET(":id/"+constants.DELIVERY_ORDERS_PATH, salesmanController.GetDeliveryOrders)
 		}
 	}
 

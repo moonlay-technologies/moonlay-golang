@@ -5,13 +5,15 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/bxcodec/dbresolver"
-	"github.com/go-redis/redis/v8"
 	"poc-order-service/app/models"
+	"poc-order-service/app/models/constants"
 	"poc-order-service/global/utils/helper"
 	"poc-order-service/global/utils/redisdb"
 	"strings"
 	"time"
+
+	"github.com/bxcodec/dbresolver"
+	"github.com/go-redis/redis/v8"
 )
 
 type DeliveryOrderRepositoryInterface interface {
@@ -39,7 +41,7 @@ func (r *deliveryOrder) GetByID(id int, countOnly bool, ctx context.Context, res
 	var deliveryOrder models.DeliveryOrder
 	var total int64
 
-	deliveryOrderRedisKey := fmt.Sprintf("%s:%d", "delivery-order", id)
+	deliveryOrderRedisKey := fmt.Sprintf("%s:%d", constants.DELIVERY_ORDER, id)
 	deliveryOrderOnRedis, err := r.redisdb.Client().Get(ctx, deliveryOrderRedisKey).Result()
 
 	if err == redis.Nil {
@@ -124,7 +126,7 @@ func (r *deliveryOrder) GetBySalesOrderID(salesOrderID int, countOnly bool, ctx 
 	var deliveryOrdersResult *models.DeliveryOrders
 	var total int64
 
-	deliveryOrderRedisKey := fmt.Sprintf("%s:%d", "delivery-order-by-sales-order", salesOrderID)
+	deliveryOrderRedisKey := fmt.Sprintf("%s:%d", constants.DELIVERY_ORDER_BY_SALES_ORDER, salesOrderID)
 	deliveryOrderOnRedis, err := r.redisdb.Client().Get(ctx, deliveryOrderRedisKey).Result()
 
 	if err == redis.Nil {
@@ -459,7 +461,7 @@ func (r *deliveryOrder) UpdateByID(id int, request *models.DeliveryOrder, sqlTra
 		return
 	}
 
-	deliveryOrderRedisKey := fmt.Sprintf("%s", "delivery-order*")
+	deliveryOrderRedisKey := fmt.Sprintf("%s", constants.DELIVERY_ORDER+"*")
 	_, err = r.redisdb.Client().Del(ctx, deliveryOrderRedisKey).Result()
 
 	response.ID = salesOrderID

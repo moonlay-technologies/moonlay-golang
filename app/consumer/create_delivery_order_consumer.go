@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/bxcodec/dbresolver"
 	"net/http"
 	"poc-order-service/app/models"
+	"poc-order-service/app/models/constants"
 	"poc-order-service/app/usecases"
 	"poc-order-service/global/utils/helper"
 	kafkadbo "poc-order-service/global/utils/kafka"
+
+	"github.com/bxcodec/dbresolver"
 )
 
 type CreateDeliveryOrderConsumerHandlerInterface interface {
@@ -53,7 +55,7 @@ func (c *createDeliveryOrderConsumerHandler) ProcessMessage() {
 		err = json.Unmarshal(m.Value, &deliveryOrder)
 
 		if err != nil {
-			errorLogData := helper.WriteLogConsumer("create-delivery-order-consumer", m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLogConsumer(constants.CREATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
 			fmt.Println(errorLogData)
 			continue
 		}
@@ -63,14 +65,14 @@ func (c *createDeliveryOrderConsumerHandler) ProcessMessage() {
 
 		if errorLog.Err != nil {
 			dbTransaction.Rollback()
-			errorLogData := helper.WriteLogConsumer("create-delivery-order-consumer", m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLogConsumer(constants.CREATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
 			fmt.Println(errorLogData)
 			continue
 		}
 
 		err = dbTransaction.Commit()
 		if err != nil {
-			errorLogData := helper.WriteLogConsumer("create-delivery-order-consumer", m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLogConsumer(constants.CREATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
 			fmt.Println(errorLogData)
 			continue
 		}
@@ -110,7 +112,7 @@ func (c *createDeliveryOrderConsumerHandler) ProcessMessage() {
 		errorLog = c.deliveryOrderUseCase.SyncToOpenSearchFromUpdateEvent(deliveryOrderWithDetail, c.ctx)
 
 		if errorLog.Err != nil {
-			errorLogData := helper.WriteLogConsumer("create-delivery-order-consumer", m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLogConsumer(constants.CREATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
 			fmt.Println(errorLogData)
 			continue
 		}

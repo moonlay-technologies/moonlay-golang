@@ -5,13 +5,15 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/bxcodec/dbresolver"
-	"github.com/go-redis/redis/v8"
 	"poc-order-service/app/models"
+	"poc-order-service/app/models/constants"
 	"poc-order-service/global/utils/helper"
 	"poc-order-service/global/utils/redisdb"
 	"strings"
 	"time"
+
+	"github.com/bxcodec/dbresolver"
+	"github.com/go-redis/redis/v8"
 )
 
 type DeliveryOrderDetailRepositoryInterface interface {
@@ -37,7 +39,7 @@ func (r *deliveryOrderDetail) GetBySalesOrderID(salesOrderID int, countOnly bool
 	var salesOrderDetails []*models.SalesOrderDetail
 	var total int64
 
-	salesOrderDetailRedisKey := fmt.Sprintf("%s:%d", "sales-order-detail-by-sales-order-id", salesOrderID)
+	salesOrderDetailRedisKey := fmt.Sprintf("%s:%d", constants.SALES_ORDER_DETAIL_BY_SALES_ORDER_ID, salesOrderID)
 	salesOrderDetailsRedis, err := r.redisdb.Client().Get(ctx, salesOrderDetailRedisKey).Result()
 
 	if err == redis.Nil {

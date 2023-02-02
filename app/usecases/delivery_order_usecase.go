@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"poc-order-service/app/models"
+	"poc-order-service/app/models/constants"
 	"poc-order-service/app/repositories"
 	mongoRepositories "poc-order-service/app/repositories/mongod"
 	openSearchRepositories "poc-order-service/app/repositories/open_search"
@@ -212,7 +213,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 
 	keyKafka := []byte(deliveryOrder.DoCode)
 	messageKafka, _ := json.Marshal(deliveryOrder)
-	err := u.kafkaClient.WriteToTopic("create-delivery-order", keyKafka, messageKafka)
+	err := u.kafkaClient.WriteToTopic(constants.CREATE_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")

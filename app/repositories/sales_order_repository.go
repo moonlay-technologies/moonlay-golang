@@ -5,13 +5,15 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/bxcodec/dbresolver"
-	"github.com/go-redis/redis/v8"
 	"poc-order-service/app/models"
+	"poc-order-service/app/models/constants"
 	"poc-order-service/global/utils/helper"
 	"poc-order-service/global/utils/redisdb"
 	"strings"
 	"time"
+
+	"github.com/bxcodec/dbresolver"
+	"github.com/go-redis/redis/v8"
 )
 
 type SalesOrderRepositoryInterface interface {
@@ -40,7 +42,7 @@ func (r *salesOrder) GetByID(id int, countOnly bool, ctx context.Context, result
 	var salesOrder models.SalesOrder
 	var total int64
 
-	salesOrderRedisKey := fmt.Sprintf("%s:%d", "sales-order", id)
+	salesOrderRedisKey := fmt.Sprintf("%s:%d", constants.SALES_ORDER, id)
 	salesOrderOnRedis, err := r.redisdb.Client().Get(ctx, salesOrderRedisKey).Result()
 
 	if err == redis.Nil {
@@ -132,7 +134,7 @@ func (r *salesOrder) GetByCode(soCode string, countOnly bool, ctx context.Contex
 	var salesOrder models.SalesOrder
 	var total int64
 
-	salesOrderRedisKey := fmt.Sprintf("%s:%s", "sales-order-by-code", soCode)
+	salesOrderRedisKey := fmt.Sprintf("%s:%s", constants.SALES_ORDER_BY_CODE, soCode)
 	salesOrderOnRedis, err := r.redisdb.Client().Get(ctx, salesOrderRedisKey).Result()
 
 	if err == redis.Nil {
@@ -224,7 +226,7 @@ func (r *salesOrder) GetByAgentRefCode(soRefCode string, agentID int, countOnly 
 	var salesOrder models.SalesOrder
 	var total int64
 
-	salesOrderRedisKey := fmt.Sprintf("%s:%s:%d", "sales-order-by-agent-ref-code", soRefCode, agentID)
+	salesOrderRedisKey := fmt.Sprintf("%s:%s:%d", constants.SALES_ORDER_BY_AGENT_REF_CODE, soRefCode, agentID)
 	salesOrderOnRedis, err := r.redisdb.Client().Get(ctx, salesOrderRedisKey).Result()
 
 	if err == redis.Nil {
@@ -626,7 +628,7 @@ func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, sqlTransacti
 
 func (r *salesOrder) RemoveCacheByID(id int, ctx context.Context, resultChan chan *models.SalesOrderChan) {
 	response := &models.SalesOrderChan{}
-	salesOrderRedisKey := fmt.Sprintf("%s:%d", "sales-order", id)
+	salesOrderRedisKey := fmt.Sprintf("%s:%d", constants.SALES_ORDER, id)
 	result, err := r.redisdb.Client().Del(ctx, salesOrderRedisKey).Result()
 
 	if err != nil {
@@ -639,7 +641,7 @@ func (r *salesOrder) RemoveCacheByID(id int, ctx context.Context, resultChan cha
 
 	fmt.Println(result)
 
-	salesOrderDetailRedisKey := fmt.Sprintf("%s:%d", "sales-order-detail-by-sales-order-id", id)
+	salesOrderDetailRedisKey := fmt.Sprintf("%s:%d", constants.SALES_ORDER_DETAIL_BY_SALES_ORDER_ID, id)
 	result, err = r.redisdb.Client().Del(ctx, salesOrderDetailRedisKey).Result()
 
 	if err != nil {
