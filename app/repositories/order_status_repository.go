@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"order-service/app/models"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/redisdb"
@@ -42,7 +43,7 @@ func (r *orderStatus) GetByNameAndType(name string, statusType string, countOnly
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM order_statuses WHERE deleted_at IS NULL AND name = ? AND order_type = ?", name, statusType).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, nil)
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -67,7 +68,7 @@ func (r *orderStatus) GetByNameAndType(name string, statusType string, countOnly
 				Scan(&orderStatus.ID, &orderStatus.Name, &orderStatus.OrderType)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, nil)
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -77,7 +78,7 @@ func (r *orderStatus) GetByNameAndType(name string, statusType string, countOnly
 			orderStatusJson, err := json.Marshal(orderStatus)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, nil)
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -87,7 +88,7 @@ func (r *orderStatus) GetByNameAndType(name string, statusType string, countOnly
 			_, err = r.redisdb.Client().Set(ctx, orderStatusRedisKey, orderStatusJson, 1*time.Hour).Result()
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, nil)
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -101,7 +102,7 @@ func (r *orderStatus) GetByNameAndType(name string, statusType string, countOnly
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, nil)
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -128,7 +129,7 @@ func (r *orderStatus) GetByID(ID int, countOnly bool, ctx context.Context, resul
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM order_statuses WHERE deleted_at IS NULL AND id = ?", ID).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, nil)
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -152,7 +153,7 @@ func (r *orderStatus) GetByID(ID int, countOnly bool, ctx context.Context, resul
 				Scan(&orderStatus.ID, &orderStatus.Name, &orderStatus.Sequence, &orderStatus.OrderType)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, nil)
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -163,7 +164,7 @@ func (r *orderStatus) GetByID(ID int, countOnly bool, ctx context.Context, resul
 			setOrderStatusOnRedis := r.redisdb.Client().Set(ctx, orderStatusRedisKey, orderStatusJson, 1*time.Hour)
 
 			if setOrderStatusOnRedis.Err() != nil {
-				errorLogData := helper.WriteLog(setOrderStatusOnRedis.Err(), 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(setOrderStatusOnRedis.Err(), http.StatusInternalServerError, nil)
 				response.Error = setOrderStatusOnRedis.Err()
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -177,7 +178,7 @@ func (r *orderStatus) GetByID(ID int, countOnly bool, ctx context.Context, resul
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, nil)
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response

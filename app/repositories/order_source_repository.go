@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"order-service/app/models"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/redisdb"
@@ -42,7 +43,7 @@ func (r *orderSource) GetBySourceName(sourceName string, countOnly bool, ctx con
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM order_sources WHERE deleted_at IS NULL AND source_name = ?", sourceName).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, nil)
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -66,7 +67,7 @@ func (r *orderSource) GetBySourceName(sourceName string, countOnly bool, ctx con
 				Scan(&orderSource.ID, &orderSource.Code, &orderSource.SourceName)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, nil)
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -77,7 +78,7 @@ func (r *orderSource) GetBySourceName(sourceName string, countOnly bool, ctx con
 			setOrderSourceOnRedis := r.redisdb.Client().Set(ctx, orderSourceRedisKey, orderSourceJson, 1*time.Hour)
 
 			if setOrderSourceOnRedis.Err() != nil {
-				errorLogData := helper.WriteLog(setOrderSourceOnRedis.Err(), 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(setOrderSourceOnRedis.Err(), http.StatusInternalServerError, nil)
 				response.Error = setOrderSourceOnRedis.Err()
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -91,7 +92,7 @@ func (r *orderSource) GetBySourceName(sourceName string, countOnly bool, ctx con
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, nil)
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -118,7 +119,7 @@ func (r *orderSource) GetByID(ID int, countOnly bool, ctx context.Context, resul
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM order_sources WHERE deleted_at IS NULL AND id = ?", ID).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, nil)
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -142,7 +143,7 @@ func (r *orderSource) GetByID(ID int, countOnly bool, ctx context.Context, resul
 				Scan(&orderSource.ID, &orderSource.Code, &orderSource.SourceName)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, nil)
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -153,7 +154,7 @@ func (r *orderSource) GetByID(ID int, countOnly bool, ctx context.Context, resul
 			setOrderSourceOnRedis := r.redisdb.Client().Set(ctx, orderSourceRedisKey, orderSourceJson, 1*time.Hour)
 
 			if setOrderSourceOnRedis.Err() != nil {
-				errorLogData := helper.WriteLog(setOrderSourceOnRedis.Err(), 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(setOrderSourceOnRedis.Err(), http.StatusInternalServerError, nil)
 				response.Error = setOrderSourceOnRedis.Err()
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -167,7 +168,7 @@ func (r *orderSource) GetByID(ID int, countOnly bool, ctx context.Context, resul
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, nil)
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response

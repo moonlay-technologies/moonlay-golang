@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"order-service/app/models"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/redisdb"
@@ -44,7 +45,7 @@ func (r *cartDetail) GetByCartID(cartID, countOnly bool, ctx context.Context, re
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM cart_details WHERE deleted_at IS NULL AND cart_id = ? ", cartID).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, nil)
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -67,7 +68,7 @@ func (r *cartDetail) GetByCartID(cartID, countOnly bool, ctx context.Context, re
 				"WHERE cd.deleted_at IS NULL AND cd.cart_id = ?", cartID)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, nil)
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -79,7 +80,7 @@ func (r *cartDetail) GetByCartID(cartID, countOnly bool, ctx context.Context, re
 				err = query.Scan(&cartDetail.ID, &cartDetail.CartID, &cartDetail.BrandID, &cartDetail.ProductID, &cartDetail.UomID, &cartDetail.OrderStatusID, &cartDetail.Qty, &cartDetail.Price)
 
 				if err != nil {
-					errorLogData := helper.WriteLog(err, 500, nil)
+					errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 					response.Error = err
 					response.ErrorLog = errorLogData
 					resultChan <- response
@@ -93,7 +94,7 @@ func (r *cartDetail) GetByCartID(cartID, countOnly bool, ctx context.Context, re
 			setCartDetailsOnRedis := r.redisdb.Client().Set(ctx, cartDetailsRedisKey, cartDetailsJson, 1*time.Hour)
 
 			if setCartDetailsOnRedis.Err() != nil {
-				errorLogData := helper.WriteLog(setCartDetailsOnRedis.Err(), 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(setCartDetailsOnRedis.Err(), http.StatusInternalServerError, nil)
 				response.Error = setCartDetailsOnRedis.Err()
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -107,7 +108,7 @@ func (r *cartDetail) GetByCartID(cartID, countOnly bool, ctx context.Context, re
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, nil)
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -181,7 +182,7 @@ func (r *cartDetail) Insert(request *models.CartDetail, sqlTransaction *sql.Tx, 
 	result, err := sqlTransaction.ExecContext(ctx, query, rawSqlValues...)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, nil)
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -191,7 +192,7 @@ func (r *cartDetail) Insert(request *models.CartDetail, sqlTransaction *sql.Tx, 
 	cartDetailID, err := result.LastInsertId()
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, nil)
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response

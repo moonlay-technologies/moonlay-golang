@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"order-service/app/models"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/redisdb"
@@ -41,7 +42,7 @@ func (r *salesmanAssignment) GetBySalesmanIDAndAgentID(agentID int, salesmanID i
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM salesman_assignment as sa inner join salesmans as s ON s.id = sa.salesman_id WHERE sa.deleted_at IS NULL AND s.deleted_at IS NULL AND sa.salesman_id = ? AND s.agent_id = ?", salesmanID, agentID).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, nil)
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -66,7 +67,7 @@ func (r *salesmanAssignment) GetBySalesmanIDAndAgentID(agentID int, salesmanID i
 				Scan(&salesmanAssignment.ID, &salesmanAssignment.SalesmanID, &salesmanAssignment.BrandID, &salesmanAssignment.AgentID)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, nil)
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -77,7 +78,7 @@ func (r *salesmanAssignment) GetBySalesmanIDAndAgentID(agentID int, salesmanID i
 			setSalesmanAssignmentOnRedis := r.redisdb.Client().Set(ctx, salesmanAssignmentRedisKey, salesmanAssignmentJson, 1*time.Hour)
 
 			if setSalesmanAssignmentOnRedis.Err() != nil {
-				errorLogData := helper.WriteLog(setSalesmanAssignmentOnRedis.Err(), 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(setSalesmanAssignmentOnRedis.Err(), http.StatusInternalServerError, nil)
 				response.Error = setSalesmanAssignmentOnRedis.Err()
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -91,7 +92,7 @@ func (r *salesmanAssignment) GetBySalesmanIDAndAgentID(agentID int, salesmanID i
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, nil)
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response

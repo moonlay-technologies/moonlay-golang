@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
 	"order-service/global/utils/helper"
@@ -41,7 +42,7 @@ func (r *deliveryOrderLogRepository) GetByID(ID string, countOnly bool, ctx cont
 	total, err := collection.CountDocuments(ctx, filter)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, nil)
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -87,7 +88,7 @@ func (r *deliveryOrderLogRepository) Insert(request *models.DeliveryOrderLog, ct
 	result, err := collection.InsertOne(ctx, request)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, nil)
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -109,7 +110,7 @@ func (r *deliveryOrderLogRepository) UpdateByID(ID string, request *models.Deliv
 	total, err := collection.CountDocuments(ctx, filter)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, nil)
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -129,7 +130,7 @@ func (r *deliveryOrderLogRepository) UpdateByID(ID string, request *models.Deliv
 	_, err = collection.UpdateOne(r.mongod.GetCtx(), filter, updateData)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, nil)
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response

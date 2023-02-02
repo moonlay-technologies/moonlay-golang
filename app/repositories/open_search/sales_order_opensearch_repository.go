@@ -41,7 +41,7 @@ func (r *salesOrderOpenSearch) Create(request *models.SalesOrder, resultChan cha
 	st, err := r.db.CreateDocument("sales_orders", request.SoCode, salesOrderJson)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, nil)
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response

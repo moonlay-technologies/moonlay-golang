@@ -37,7 +37,7 @@ func (r *deliveryOrderOpenSearch) Create(request *models.DeliveryOrder, resultCh
 	_, err := r.db.CreateDocument("delivery_orders", request.DoCode, deliveryOrderJson)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, nil)
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response

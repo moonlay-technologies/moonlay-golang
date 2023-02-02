@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"order-service/app/models"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/redisdb"
@@ -41,7 +42,7 @@ func (r *uom) GetByID(ID int, countOnly bool, ctx context.Context, resultChan ch
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM uoms WHERE deleted_at IS NULL AND id = ?", ID).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, nil)
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -65,7 +66,7 @@ func (r *uom) GetByID(ID int, countOnly bool, ctx context.Context, resultChan ch
 				Scan(&uom.ID, &uom.Code, &uom.Name)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, nil)
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -76,7 +77,7 @@ func (r *uom) GetByID(ID int, countOnly bool, ctx context.Context, resultChan ch
 			setUomOnRedis := r.redisdb.Client().Set(ctx, uomRedisKey, uomJson, 1*time.Hour)
 
 			if setUomOnRedis.Err() != nil {
-				errorLogData := helper.WriteLog(setUomOnRedis.Err(), 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(setUomOnRedis.Err(), http.StatusInternalServerError, nil)
 				response.Error = setUomOnRedis.Err()
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -90,7 +91,7 @@ func (r *uom) GetByID(ID int, countOnly bool, ctx context.Context, resultChan ch
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, nil)
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
