@@ -3,9 +3,6 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"github.com/bxcodec/dbresolver"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"net/http"
 	"os"
 	"poc-order-service/app/middlewares"
@@ -15,6 +12,10 @@ import (
 	"poc-order-service/global/utils/opensearch_dbo"
 	"poc-order-service/global/utils/redisdb"
 	"strconv"
+
+	"github.com/bxcodec/dbresolver"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func MainHttpHandler(database dbresolver.DB, redisdb redisdb.RedisInterface, mongodbClient mongodb.MongoDBInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, kafkaClient kafkadbo.KafkaClientInterface, ctx context.Context) {

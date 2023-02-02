@@ -3,14 +3,15 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/bxcodec/dbresolver"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"poc-order-service/app/models"
 	"poc-order-service/app/usecases"
 	"poc-order-service/global/utils/helper"
 	baseModel "poc-order-service/global/utils/model"
 	"strconv"
+
+	"github.com/bxcodec/dbresolver"
+	"github.com/gin-gonic/gin"
 )
 
 type SalesOrderControllerInterface interface {
@@ -217,25 +218,25 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 		return
 	}
 
-	_, errorLog := c.cartUseCase.Create(insertRequest, dbTransaction, ctx)
+	// _, errorLog := c.cartUseCase.Create(insertRequest, dbTransaction, ctx)
 
-	if errorLog != nil {
-		err = dbTransaction.Rollback()
+	// if errorLog != nil {
+	// 	err = dbTransaction.Rollback()
 
-		if err != nil {
-			errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
-			resultErrorLog = errorLog
-			result.StatusCode = http.StatusInternalServerError
-			result.Error = resultErrorLog
-			ctx.JSON(result.StatusCode, result)
-			return
-		}
+	// 	if err != nil {
+	// 		errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+	// 		resultErrorLog = errorLog
+	// 		result.StatusCode = http.StatusInternalServerError
+	// 		result.Error = resultErrorLog
+	// 		ctx.JSON(result.StatusCode, result)
+	// 		return
+	// 	}
 
-		result.StatusCode = errorLog.StatusCode
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
-		return
-	}
+	// 	result.StatusCode = errorLog.StatusCode
+	// 	result.Error = errorLog
+	// 	ctx.JSON(result.StatusCode, result)
+	// 	return
+	// }
 
 	salesOrders, errorLog := c.salesOrderUseCase.Create(insertRequest, dbTransaction, ctx)
 

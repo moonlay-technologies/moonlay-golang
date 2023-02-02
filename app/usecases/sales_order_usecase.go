@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/bxcodec/dbresolver"
 	"net/http"
 	"poc-order-service/app/models"
 	"poc-order-service/app/repositories"
@@ -16,6 +15,8 @@ import (
 	"poc-order-service/global/utils/model"
 	"strings"
 	"time"
+
+	"github.com/bxcodec/dbresolver"
 )
 
 type SalesOrderUseCaseInterface interface {
@@ -108,7 +109,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 	salesOrderBrands = map[int]*models.SalesOrder{}
 
 	for _, v := range request.SalesOrderDetails {
-		checkIfBrandExist := helper.InSliceInt(brandIds, v.BrandID)
+		checkIfBrandExist := helper.InSliceInt(brandIds, request.BrandID)
 
 		if checkIfBrandExist {
 			salesOrderDetail := &models.SalesOrderDetail{
@@ -125,15 +126,15 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 				CreatedAt:         &now,
 			}
 
-			salesOrder := salesOrderBrands[v.BrandID]
+			salesOrder := salesOrderBrands[request.BrandID]
 			salesOrderDetails := salesOrder.SalesOrderDetails
 			salesOrderDetails = append(salesOrderDetails, salesOrderDetail)
 			salesOrder.SalesOrderDetails = salesOrderDetails
-			salesOrderBrands[v.BrandID] = salesOrder
+			salesOrderBrands[request.BrandID] = salesOrder
 
 		} else {
 			soCode = helper.GenerateSOCode(request.AgentID, getOrderSourceResult.OrderSource.Code)
-			brandIds = append(brandIds, v.BrandID)
+			brandIds = append(brandIds, request.BrandID)
 
 			salesOrderDetails := []*models.SalesOrderDetail{}
 			salesOrderDetail := &models.SalesOrderDetail{
@@ -156,7 +157,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 				CartID:            request.CartID,
 				AgentID:           request.AgentID,
 				StoreID:           request.StoreID,
-				BrandID:           v.BrandID,
+				BrandID:           request.BrandID,
 				UserID:            request.UserID,
 				VisitationID:      request.VisitationID,
 				OrderStatusID:     getOrderStatusResult.OrderStatus.ID,
@@ -178,7 +179,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 				SalesOrderDetails: salesOrderDetails,
 			}
 
-			salesOrderBrands[v.BrandID] = salesOrder
+			salesOrderBrands[request.BrandID] = salesOrder
 		}
 	}
 

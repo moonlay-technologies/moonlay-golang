@@ -36,12 +36,16 @@ type SalesOrderDetail struct {
 }
 
 type SalesOrderDetailStoreRequest struct {
-	BrandID   int     `json:"brand_id,omitempty"`
-	ProductID int     `json:"product_id,omitempty"`
-	UomID     int     `json:"uom_id,omitempty"`
-	Note      string  `json:"note,omitempty"`
-	Price     float64 `json:"price,omitempty"`
-	Qty       int     `json:"qty,omitempty"`
+	SalesOrderId  int     `json:"sales_order_id,omitempty"`
+	ProductID     int     `json:"product_id,omitempty"`
+	UomID         int     `json:"uom_id,omitempty"`
+	OrderStatusId int     `json:"order_status_id,omitempty"`
+	SoDetailCode  string  `json:"so_detail_code,omitempty"`
+	Qty           int     `json:"qty,omitempty"`
+	SentQty       int     `json:"sent_qty,omitempty"`
+	ResidualQty   int     `json:"residual_qty,omitempty"`
+	Price         float64 `json:"price,omitempty"`
+	Note          string  `json:"note,omitempty"`
 }
 
 type SalesOrderDetailChan struct {
