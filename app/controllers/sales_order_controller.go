@@ -23,18 +23,20 @@ type SalesOrderControllerInterface interface {
 }
 
 type salesOrderController struct {
-	cartUseCase       usecases.CartUseCaseInterface
-	salesOrderUseCase usecases.SalesOrderUseCaseInterface
-	db                dbresolver.DB
-	ctx               context.Context
+	cartUseCase                 usecases.CartUseCaseInterface
+	salesOrderUseCase           usecases.SalesOrderUseCaseInterface
+	requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface
+	db                          dbresolver.DB
+	ctx                         context.Context
 }
 
-func InitSalesOrderController(cartUseCase usecases.CartUseCaseInterface, salesOrderUseCase usecases.SalesOrderUseCaseInterface, db dbresolver.DB, ctx context.Context) SalesOrderControllerInterface {
+func InitSalesOrderController(cartUseCase usecases.CartUseCaseInterface, salesOrderUseCase usecases.SalesOrderUseCaseInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, db dbresolver.DB, ctx context.Context) SalesOrderControllerInterface {
 	return &salesOrderController{
-		cartUseCase:       cartUseCase,
-		salesOrderUseCase: salesOrderUseCase,
-		db:                db,
-		ctx:               ctx,
+		cartUseCase:                 cartUseCase,
+		salesOrderUseCase:           salesOrderUseCase,
+		requestValidationMiddleware: requestValidationMiddleware,
+		db:                          db,
+		ctx:                         ctx,
 	}
 }
 
@@ -204,12 +206,27 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 		var unmarshalTypeError *json.UnmarshalTypeError
 
 		if errors.As(err, &unmarshalTypeError) {
-			middlewares.DataTypeValidation(ctx, err, unmarshalTypeError)
+			c.requestValidationMiddleware.DataTypeValidation(ctx, err, unmarshalTypeError)
 			return
 		} else {
-			middlewares.MandatoryValidation(ctx, err)
+			c.requestValidationMiddleware.MandatoryValidation(ctx, err)
 			return
 		}
+	}
+
+	uniqueField := []*models.UniqueRequest{{
+		Table: "sales_orders",
+		Field: "so_ref_code",
+		Value: insertRequest.SoRefCode,
+	}, {
+		Table: "sales_orders",
+		Field: "device_id",
+		Value: insertRequest.DeviceId,
+	}}
+
+	err = c.requestValidationMiddleware.UniqueValidation(ctx, uniqueField)
+	if err != nil {
+		return
 	}
 
 	dbTransaction, err := c.db.BeginTx(ctx, nil)

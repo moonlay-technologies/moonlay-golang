@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"poc-order-service/app/middlewares"
 	"poc-order-service/app/repositories"
 	mongoRepo "poc-order-service/app/repositories/mongod"
 	openSearchRepo "poc-order-service/app/repositories/open_search"
@@ -35,7 +36,9 @@ func InitHTTPSalesOrderController(database dbresolver.DB, redisdb redisdb.RedisI
 	deliveryOrderOpenSearchRepository := openSearchRepo.InitDeliveryOrderOpenSearchRepository(opensearchClient)
 	cartUseCase := usecases.InitCartUseCaseInterface(cartRepository, cartDetailRepository, orderStatusRepository, database, ctx)
 	salesOrderUseCase := usecases.InitSalesOrderUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, agentRepository, brandRepository, storeRepository, productRepository, uomRepository, deliveryOrderRepository, salesOrderLogRepository, userRepository, salesmanRepository, categoryRepository, salesOrderOpenSearchRepository, deliveryOrderOpenSearchRepository, kafkaClient, database, ctx)
-	handler := InitSalesOrderController(cartUseCase, salesOrderUseCase, database, ctx)
+	requestValidationRepository := repositories.InitUniqueRequestValidationRepository(database)
+	requestValidationMiddleware := middlewares.InitRequestValidationMiddlewareInterface(requestValidationRepository)
+	handler := InitSalesOrderController(cartUseCase, salesOrderUseCase, requestValidationMiddleware, database, ctx)
 	return handler
 }
 
