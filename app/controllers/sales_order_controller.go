@@ -9,6 +9,9 @@ import (
 	"poc-order-service/global/utils/helper"
 	baseModel "poc-order-service/global/utils/model"
 	"strconv"
+	"strings"
+
+	"github.com/go-playground/validator/v10"
 
 	"github.com/bxcodec/dbresolver"
 	"github.com/gin-gonic/gin"
@@ -200,7 +203,16 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 
 	if err != nil {
 		fmt.Println("error")
-		errorLog := helper.WriteLog(err, http.StatusBadRequest, "Ada kesalahan, silahkan coba lagi nanti")
+		messages := []string{}
+		for _, value := range err.(validator.ValidationErrors) {
+			message := fmt.Sprintf("Data %s tidak boleh kosong", value.Field())
+			messages = append(messages, message)
+		}
+		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       messages,
+			SystemMessage: strings.Split(err.Error(), "\n"),
+			StatusCode:    http.StatusBadRequest,
+		})
 		result.StatusCode = http.StatusBadRequest
 		result.Error = errorLog
 		ctx.JSON(result.StatusCode, result)

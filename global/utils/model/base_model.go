@@ -21,7 +21,7 @@ type ErrorLog struct {
 	Filename          string      `json:"filename,omitempty"`
 	Function          string      `json:"function,omitempty"`
 	Message           interface{} `json:"message,omitempty"`
-	SystemMessage     string      `json:"system_message,omitempty"`
+	SystemMessage     interface{} `json:"system_message,omitempty"`
 	Url               string      `json:"url,omitempty"`
 	Method            string      `json:"method,omitempty"`
 	Fields            interface{} `json:"fields,omitempty"`
