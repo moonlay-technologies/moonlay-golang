@@ -122,7 +122,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 				ResidualQty:       0,
 				SentQty:           0,
 				IsDoneSyncToEs:    "0",
-				Note:              models.NullString{sql.NullString{String: v.Note, Valid: true}},
+				Note:              models.NullString{NullString: sql.NullString{String: v.Note, Valid: true}},
 				StartDateSyncToEs: &now,
 				CreatedAt:         &now,
 			}
@@ -147,7 +147,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 				ResidualQty:       0,
 				SentQty:           0,
 				IsDoneSyncToEs:    "0",
-				Note:              models.NullString{sql.NullString{String: v.Note, Valid: true}},
+				Note:              models.NullString{NullString: sql.NullString{String: v.Note, Valid: true}},
 				StartDateSyncToEs: &now,
 				CreatedAt:         &now,
 			}
@@ -163,14 +163,14 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 				VisitationID:      request.VisitationID,
 				OrderStatusID:     getOrderStatusResult.OrderStatus.ID,
 				OrderSourceID:     request.OrderSourceID,
-				GLat:              models.NullFloat64{sql.NullFloat64{Float64: request.GLat, Valid: true}},
-				GLong:             models.NullFloat64{sql.NullFloat64{Float64: request.GLong, Valid: true}},
+				GLat:              models.NullFloat64{NullFloat64: sql.NullFloat64{Float64: request.GLat, Valid: true}},
+				GLong:             models.NullFloat64{NullFloat64: sql.NullFloat64{Float64: request.GLong, Valid: true}},
 				SoCode:            soCode,
-				SoRefCode:         models.NullString{sql.NullString{String: request.SoRefCode, Valid: true}},
+				SoRefCode:         models.NullString{NullString: sql.NullString{String: request.SoRefCode, Valid: true}},
 				SoDate:            now.Format("2006-01-02"),
-				SoRefDate:         models.NullString{sql.NullString{String: request.SoRefDate, Valid: true}},
-				Note:              models.NullString{sql.NullString{String: request.Note, Valid: true}},
-				InternalComment:   models.NullString{sql.NullString{String: request.InternalComment, Valid: true}},
+				SoRefDate:         models.NullString{NullString: sql.NullString{String: request.SoRefDate, Valid: true}},
+				Note:              models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}},
+				InternalComment:   models.NullString{NullString: sql.NullString{String: request.InternalComment, Valid: true}},
 				TotalAmount:       request.TotalAmount,
 				TotalTonase:       request.TotalTonase,
 				IsDoneSyncToEs:    "0",
@@ -234,7 +234,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		}
 
 		v.Agent = getAgentResult.Agent
-		v.AgentName = models.NullString{sql.NullString{String: getAgentResult.Agent.Name, Valid: true}}
+		v.AgentName = models.NullString{NullString: sql.NullString{String: getAgentResult.Agent.Name, Valid: true}}
 		v.AgentEmail = getAgentResult.Agent.Email
 		v.AgentProvinceName = getAgentResult.Agent.ProvinceName
 		v.AgentCityName = getAgentResult.Agent.CityName
@@ -293,7 +293,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		v.User = getUserResult.User
 		v.UserFirstName = getUserResult.User.FirstName
 		v.UserLastName = getUserResult.User.LastName
-		v.UserEmail = models.NullString{sql.NullString{String: getUserResult.User.Email, Valid: true}}
+		v.UserEmail = models.NullString{NullString: sql.NullString{String: getUserResult.User.Email, Valid: true}}
 
 		if getUserResult.User.RoleID.String == "3" {
 			getSalesmanResultChan := make(chan *models.SalesmanChan)
@@ -306,7 +306,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 			}
 
 			v.Salesman = getSalesmanResult.Salesman
-			v.SalesmanName = models.NullString{sql.NullString{String: getSalesmanResult.Salesman.Name, Valid: true}}
+			v.SalesmanName = models.NullString{NullString: sql.NullString{String: getSalesmanResult.Salesman.Name, Valid: true}}
 			v.SalesmanEmail = getSalesmanResult.Salesman.Email
 		}
 
@@ -429,7 +429,7 @@ func (u *salesOrderUseCase) GetByID(request *models.SalesOrderRequest, withDetai
 		}
 
 		getSalesOrderResult.SalesOrder.Agent = getAgentResult.Agent
-		getSalesOrderResult.SalesOrder.AgentName = models.NullString{sql.NullString{String: getAgentResult.Agent.Name, Valid: true}}
+		getSalesOrderResult.SalesOrder.AgentName = models.NullString{NullString: sql.NullString{String: getAgentResult.Agent.Name, Valid: true}}
 		getSalesOrderResult.SalesOrder.AgentEmail = getAgentResult.Agent.Email
 		getSalesOrderResult.SalesOrder.AgentProvinceName = getAgentResult.Agent.ProvinceName
 		getSalesOrderResult.SalesOrder.AgentCityName = getAgentResult.Agent.CityName
@@ -485,7 +485,7 @@ func (u *salesOrderUseCase) GetByID(request *models.SalesOrderRequest, withDetai
 		getSalesOrderResult.SalesOrder.User = getUserResult.User
 		getSalesOrderResult.SalesOrder.UserFirstName = getUserResult.User.FirstName
 		getSalesOrderResult.SalesOrder.UserLastName = getUserResult.User.LastName
-		getSalesOrderResult.SalesOrder.UserEmail = models.NullString{sql.NullString{String: getUserResult.User.Email, Valid: true}}
+		getSalesOrderResult.SalesOrder.UserEmail = models.NullString{NullString: sql.NullString{String: getUserResult.User.Email, Valid: true}}
 
 		if getUserResult.User.RoleID.String == "3" {
 			getSalesmanResultChan := make(chan *models.SalesmanChan)
@@ -497,7 +497,7 @@ func (u *salesOrderUseCase) GetByID(request *models.SalesOrderRequest, withDetai
 			}
 
 			getSalesOrderResult.SalesOrder.Salesman = getSalesmanResult.Salesman
-			getSalesOrderResult.SalesOrder.SalesmanName = models.NullString{sql.NullString{String: getSalesmanResult.Salesman.Name, Valid: true}}
+			getSalesOrderResult.SalesOrder.SalesmanName = models.NullString{NullString: sql.NullString{String: getSalesmanResult.Salesman.Name, Valid: true}}
 			getSalesOrderResult.SalesOrder.SalesmanEmail = getSalesmanResult.Salesman.Email
 		}
 
@@ -730,7 +730,7 @@ func (u *salesOrderUseCase) SyncToOpenSearchFromUpdateEvent(salesOrder *models.S
 
 	if deliveryOrdersFound == true {
 		fmt.Println("sj ktm")
-		for x, _ := range getDeliveryOrdersResult.DeliveryOrders {
+		for x := range getDeliveryOrdersResult.DeliveryOrders {
 			getDeliveryOrdersResult.DeliveryOrders[x].SalesOrder = nil
 		}
 
