@@ -48,6 +48,14 @@ type SalesOrderDetailStoreRequest struct {
 	Note          string  `json:"note,omitempty"`
 }
 
+type SalesOrderDetailStoreResponse struct {
+	SalesOrderDetailStoreRequest
+	ProductSKU   string `json:"product_sku,omitempty"`
+	ProductName  string `json:"product_name,omitempty"`
+	CategoryName string `json:"category_name,omitempty"`
+	UomCode      string `json:"uom_code,omitempty"`
+}
+
 type SalesOrderDetailChan struct {
 	SalesOrderDetail *SalesOrderDetail
 	Total            int64
