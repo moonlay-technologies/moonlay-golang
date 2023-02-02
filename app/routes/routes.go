@@ -2,13 +2,13 @@ package routes
 
 import (
 	"context"
+	"order-service/app/controllers"
+	"order-service/app/models/constants"
+	kafkadbo "order-service/global/utils/kafka"
+	"order-service/global/utils/mongodb"
+	"order-service/global/utils/opensearch_dbo"
+	"order-service/global/utils/redisdb"
 	"os"
-	"poc-order-service/app/controllers"
-	"poc-order-service/app/models/constants"
-	kafkadbo "poc-order-service/global/utils/kafka"
-	"poc-order-service/global/utils/mongodb"
-	"poc-order-service/global/utils/opensearch_dbo"
-	"poc-order-service/global/utils/redisdb"
 
 	"github.com/bxcodec/dbresolver"
 	"github.com/gin-gonic/gin"

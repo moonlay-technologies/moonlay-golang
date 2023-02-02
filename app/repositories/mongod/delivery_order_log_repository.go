@@ -6,10 +6,10 @@ import (
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"order-service/app/models"
+	"order-service/global/utils/helper"
+	"order-service/global/utils/mongodb"
 	"os"
-	"poc-order-service/app/models"
-	"poc-order-service/global/utils/helper"
-	"poc-order-service/global/utils/mongodb"
 )
 
 type DeliveryOrderLogRepositoryInterface interface {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"poc-order-service/global/utils/helper"
-	kafkadbo "poc-order-service/global/utils/kafka"
+	"order-service/global/utils/helper"
+	kafkadbo "order-service/global/utils/kafka"
 )
 
 type CreateKafkaTopicCommandHandlerInterface interface {

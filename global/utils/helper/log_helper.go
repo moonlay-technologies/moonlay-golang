@@ -3,7 +3,7 @@ package helper
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"poc-order-service/global/utils/model"
+	"order-service/global/utils/model"
 	"runtime"
 	"strings"
 )

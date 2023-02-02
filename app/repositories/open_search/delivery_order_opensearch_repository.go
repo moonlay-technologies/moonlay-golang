@@ -3,10 +3,10 @@ package repositories
 import (
 	"encoding/json"
 	"net/http"
-	"poc-order-service/app/models"
-	"poc-order-service/global/utils/helper"
-	"poc-order-service/global/utils/model"
-	"poc-order-service/global/utils/opensearch_dbo"
+	"order-service/app/models"
+	"order-service/global/utils/helper"
+	"order-service/global/utils/model"
+	"order-service/global/utils/opensearch_dbo"
 )
 
 type DeliveryOrderOpenSearchRepositoryInterface interface {

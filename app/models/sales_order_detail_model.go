@@ -1,7 +1,7 @@
 package models
 
 import (
-	"poc-order-service/global/utils/model"
+	"order-service/global/utils/model"
 	"time"
 )
 

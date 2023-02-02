@@ -4,9 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"github.com/bxcodec/dbresolver"
-	"poc-order-service/app/models"
-	"poc-order-service/app/repositories"
-	"poc-order-service/global/utils/model"
+	"order-service/app/models"
+	"order-service/app/repositories"
+	"order-service/global/utils/model"
 	"time"
 )
 

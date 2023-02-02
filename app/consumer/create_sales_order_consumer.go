@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"poc-order-service/app/models"
-	"poc-order-service/app/models/constants"
-	"poc-order-service/app/usecases"
-	"poc-order-service/global/utils/helper"
-	kafkadbo "poc-order-service/global/utils/kafka"
+	"order-service/app/models"
+	"order-service/app/models/constants"
+	"order-service/app/usecases"
+	"order-service/global/utils/helper"
+	kafkadbo "order-service/global/utils/kafka"
 
 	"github.com/bxcodec/dbresolver"
 )
