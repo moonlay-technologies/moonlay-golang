@@ -87,8 +87,8 @@ type SalesOrder struct {
 
 type SalesOrderStoreRequest struct {
 	RequestID         string                          `json:"request_id,omitempty" bson:"request_id,omitempty"`
-	CartID            int                             `json:"cart_id,omitempty" bson:"cart_id,omitempty"`
-	AgentID           int                             `json:"agent_id,omitempty" bson:"agent_id,omitempty"`
+	CartID            int                             `json:"cart_id,omitempty" bson:"cart_id,omitempty" binding:"required"`
+	AgentID           int                             `json:"agent_id,omitempty" bson:"agent_id,omitempty" binding:"required"`
 	StoreID           int                             `json:"store_id,omitempty" bson:"store_id,omitempty"`
 	BrandID           int                             `json:"brand_id,omitempty" bson:"brand_id,omitempty"`
 	UserID            int                             `json:"user_id,omitempty" bson:"user_id,omitempty"`
