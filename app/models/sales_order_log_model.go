@@ -2,7 +2,7 @@ package models
 
 import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"poc-order-service/global/utils/model"
+	"order-service/global/utils/model"
 	"time"
 )
 

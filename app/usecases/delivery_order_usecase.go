@@ -6,13 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"poc-order-service/app/models"
-	"poc-order-service/app/repositories"
-	mongoRepositories "poc-order-service/app/repositories/mongod"
-	openSearchRepositories "poc-order-service/app/repositories/open_search"
-	"poc-order-service/global/utils/helper"
-	kafkadbo "poc-order-service/global/utils/kafka"
-	"poc-order-service/global/utils/model"
+	"order-service/app/models"
+	"order-service/app/models/constants"
+	"order-service/app/repositories"
+	mongoRepositories "order-service/app/repositories/mongod"
+	openSearchRepositories "order-service/app/repositories/open_search"
+	"order-service/global/utils/helper"
+	kafkadbo "order-service/global/utils/kafka"
+	"order-service/global/utils/model"
 	"time"
 
 	"github.com/bxcodec/dbresolver"
@@ -129,10 +130,10 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		OrderSourceID:         getOrderSourceResult.OrderSource.ID,
 		DoCode:                doCode,
 		DoDate:                now.Format("2006-01-02"),
-		DoRefCode:             models.NullString{sql.NullString{String: request.DoRefCode, Valid: true}},
-		DoRefDate:             models.NullString{sql.NullString{String: request.DoRefDate, Valid: true}},
-		DriverName:            models.NullString{sql.NullString{String: request.DriverName, Valid: true}},
-		PlatNumber:            models.NullString{sql.NullString{String: request.PlatNumber, Valid: true}},
+		DoRefCode:             models.NullString{NullString: sql.NullString{String: request.DoRefCode, Valid: true}},
+		DoRefDate:             models.NullString{NullString: sql.NullString{String: request.DoRefDate, Valid: true}},
+		DriverName:            models.NullString{NullString: sql.NullString{String: request.DriverName, Valid: true}},
+		PlatNumber:            models.NullString{NullString: sql.NullString{String: request.PlatNumber, Valid: true}},
 		WarehouseName:         getWarehouseResult.Warehouse.Name,
 		WarehouseCode:         getWarehouseResult.Warehouse.Code,
 		WarehouseProvinceName: getWarehouseResult.Warehouse.ProvinceName,
@@ -140,7 +141,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		WarehouseDistrictName: getWarehouseResult.Warehouse.DistrictName,
 		WarehouseVillageName:  getWarehouseResult.Warehouse.VillageName,
 		IsDoneSyncToEs:        "0",
-		Note:                  models.NullString{sql.NullString{String: request.Note, Valid: true}},
+		Note:                  models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}},
 		StartDateSyncToEs:     &now,
 		CreatedAt:             &now,
 	}
@@ -174,7 +175,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 			UomID:             getSalesOrderDetailResult.SalesOrderDetail.UomID,
 			DoDetailCode:      DoDetailCode,
 			Qty:               v.Qty,
-			Note:              models.NullString{sql.NullString{String: v.Note, Valid: true}},
+			Note:              models.NullString{NullString: sql.NullString{String: v.Note, Valid: true}},
 			IsDoneSyncToEs:    "0",
 			StartDateSyncToEs: &now,
 			CreatedAt:         &now,
@@ -212,10 +213,10 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 
 	keyKafka := []byte(deliveryOrder.DoCode)
 	messageKafka, _ := json.Marshal(deliveryOrder)
-	err := u.kafkaClient.WriteToTopic("create-delivery-order", keyKafka, messageKafka)
+	err := u.kafkaClient.WriteToTopic(constants.CREATE_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		return &models.DeliveryOrder{}, errorLogData
 	}
 
@@ -344,7 +345,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *mo
 	getAgentResult := <-getAgentResultChan
 
 	if getAgentResult.Error != nil {
-		errorLogData := helper.WriteLog(getAgentResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLogData := helper.WriteLog(getAgentResult.Error, http.StatusInternalServerError, nil)
 		return errorLogData
 	}
 
@@ -355,7 +356,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *mo
 	getStoreResult := <-getStoreResultChan
 
 	if getStoreResult.Error != nil {
-		errorLogData := helper.WriteLog(getStoreResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLogData := helper.WriteLog(getStoreResult.Error, http.StatusInternalServerError, nil)
 		return errorLogData
 	}
 
@@ -367,7 +368,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *mo
 		getSalesOrderDetailResult := <-getSalesOrderDetailResultChan
 
 		if getSalesOrderDetailResult.Error != nil {
-			errorLogData := helper.WriteLog(getSalesOrderDetailResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLog(getSalesOrderDetailResult.Error, http.StatusInternalServerError, nil)
 			return errorLogData
 		}
 
@@ -376,7 +377,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *mo
 		getProductResult := <-getProductResultChan
 
 		if getProductResult.Error != nil {
-			errorLogData := helper.WriteLog(getProductResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLog(getProductResult.Error, http.StatusInternalServerError, nil)
 			return errorLogData
 		}
 
@@ -387,7 +388,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *mo
 		getUomResult := <-getUomResultChan
 
 		if getUomResult.Error != nil {
-			errorLogData := helper.WriteLog(getUomResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLog(getUomResult.Error, http.StatusInternalServerError, nil)
 			return errorLogData
 		}
 
@@ -398,7 +399,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *mo
 		getBrandResult := <-getBrandResultChan
 
 		if getBrandResult.Error != nil {
-			errorLogData := helper.WriteLog(getBrandResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLog(getBrandResult.Error, http.StatusInternalServerError, nil)
 			return errorLogData
 		}
 
@@ -419,7 +420,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *mo
 		getStatusSalesOrderDetailResult := <-getStatusSalesOrderDetailResultChan
 
 		if getStatusSalesOrderDetailResult.Error != nil {
-			errorLogData := helper.WriteLog(getStatusSalesOrderDetailResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLog(getStatusSalesOrderDetailResult.Error, http.StatusInternalServerError, nil)
 			return errorLogData
 		}
 
@@ -436,7 +437,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *mo
 		updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
 
 		if updateSalesOrderDetailResult.Error != nil {
-			errorLogData := helper.WriteLog(updateSalesOrderDetailResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLog(updateSalesOrderDetailResult.Error, http.StatusInternalServerError, nil)
 			return errorLogData
 		}
 
@@ -445,7 +446,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *mo
 		removeCacheSalesOrderDetailResult := <-removeCacheSalesOrderDetailResultChan
 
 		if removeCacheSalesOrderDetailResult.Error != nil {
-			errorLogData := helper.WriteLog(removeCacheSalesOrderDetailResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLog(removeCacheSalesOrderDetailResult.Error, http.StatusInternalServerError, nil)
 			return errorLogData
 		}
 
@@ -458,7 +459,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *mo
 	getSalesOrderDetailsResult := <-getSalesOrderDetailsResultChan
 
 	if getSalesOrderDetailsResult.Error != nil {
-		errorLogData := helper.WriteLog(getSalesOrderDetailsResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLogData := helper.WriteLog(getSalesOrderDetailsResult.Error, http.StatusInternalServerError, nil)
 		return errorLogData
 	}
 
@@ -472,7 +473,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *mo
 		getStatusSalesOrderDetailResult := <-getStatusSalesOrderDetailResultChan
 
 		if getStatusSalesOrderDetailResult.Error != nil {
-			errorLogData := helper.WriteLog(getStatusSalesOrderDetailResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLog(getStatusSalesOrderDetailResult.Error, http.StatusInternalServerError, nil)
 			return errorLogData
 		}
 
@@ -493,7 +494,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *mo
 	getStatusSalesOrderResult := <-getStatusSalesOrderResultChan
 
 	if getStatusSalesOrderResult.Error != nil {
-		errorLogData := helper.WriteLog(getStatusSalesOrderResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLogData := helper.WriteLog(getStatusSalesOrderResult.Error, http.StatusInternalServerError, nil)
 		return errorLogData
 	}
 
@@ -507,7 +508,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *mo
 	updateSalesOrderResult := <-updateSalesOrderResultChan
 
 	if updateSalesOrderResult.Error != nil {
-		errorLogData := helper.WriteLog(updateSalesOrderResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLogData := helper.WriteLog(updateSalesOrderResult.Error, http.StatusInternalServerError, nil)
 		return errorLogData
 	}
 
@@ -516,7 +517,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *mo
 	removeCacheSalesOrderResult := <-removeCacheSalesOrderResultChan
 
 	if removeCacheSalesOrderResult.Error != nil {
-		errorLogData := helper.WriteLog(removeCacheSalesOrderResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLogData := helper.WriteLog(removeCacheSalesOrderResult.Error, http.StatusInternalServerError, nil)
 		return errorLogData
 	}
 
@@ -536,7 +537,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *mo
 	updateDeliveryOrderResult := <-updateDeliveryOrderResultChan
 
 	if updateDeliveryOrderResult.Error != nil {
-		errorLogData := helper.WriteLog(updateDeliveryOrderResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLogData := helper.WriteLog(updateDeliveryOrderResult.Error, http.StatusInternalServerError, nil)
 		return errorLogData
 	}
 
@@ -559,7 +560,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromUpdateEvent(deliveryOrder *mo
 	getAgentResult := <-getAgentResultChan
 
 	if getAgentResult.Error != nil {
-		errorLogData := helper.WriteLog(getAgentResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLogData := helper.WriteLog(getAgentResult.Error, http.StatusInternalServerError, nil)
 		return errorLogData
 	}
 
@@ -570,7 +571,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromUpdateEvent(deliveryOrder *mo
 	getStoreResult := <-getStoreResultChan
 
 	if getStoreResult.Error != nil {
-		errorLogData := helper.WriteLog(getStoreResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLogData := helper.WriteLog(getStoreResult.Error, http.StatusInternalServerError, nil)
 		return errorLogData
 	}
 
@@ -582,7 +583,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromUpdateEvent(deliveryOrder *mo
 		getSalesOrderDetailResult := <-getSalesOrderDetailResultChan
 
 		if getSalesOrderDetailResult.Error != nil {
-			errorLogData := helper.WriteLog(getSalesOrderDetailResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLog(getSalesOrderDetailResult.Error, http.StatusInternalServerError, nil)
 			return errorLogData
 		}
 
@@ -591,7 +592,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromUpdateEvent(deliveryOrder *mo
 		getProductResult := <-getProductResultChan
 
 		if getProductResult.Error != nil {
-			errorLogData := helper.WriteLog(getProductResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLog(getProductResult.Error, http.StatusInternalServerError, nil)
 			return errorLogData
 		}
 
@@ -602,7 +603,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromUpdateEvent(deliveryOrder *mo
 		getUomResult := <-getUomResultChan
 
 		if getUomResult.Error != nil {
-			errorLogData := helper.WriteLog(getUomResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLog(getUomResult.Error, http.StatusInternalServerError, nil)
 			return errorLogData
 		}
 
@@ -613,7 +614,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromUpdateEvent(deliveryOrder *mo
 		getBrandResult := <-getBrandResultChan
 
 		if getBrandResult.Error != nil {
-			errorLogData := helper.WriteLog(getBrandResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLog(getBrandResult.Error, http.StatusInternalServerError, nil)
 			return errorLogData
 		}
 

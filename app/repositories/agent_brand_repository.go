@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"order-service/app/models"
+	"order-service/global/utils/helper"
+	"order-service/global/utils/redisdb"
+	"time"
+
 	"github.com/bxcodec/dbresolver"
 	"github.com/go-redis/redis/v8"
-	"poc-order-service/app/models"
-	"poc-order-service/global/utils/helper"
-	"poc-order-service/global/utils/redisdb"
-	"time"
 )
 
 type AgentBrandRepositoryInterface interface {
@@ -40,7 +42,7 @@ func (r *agentBrand) GetByAgentIDAndBrandID(agentID int, brandID int, countOnly 
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM agent_brand WHERE agent_id = ? AND brand_id = ?", agentID, brandID).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -49,7 +51,7 @@ func (r *agentBrand) GetByAgentIDAndBrandID(agentID int, brandID int, countOnly 
 
 		if total == 0 {
 			err = helper.NewError("agent_brands data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -64,7 +66,7 @@ func (r *agentBrand) GetByAgentIDAndBrandID(agentID int, brandID int, countOnly 
 				Scan(&agentBrand.AgentID, &agentBrand.BrandID)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -75,7 +77,7 @@ func (r *agentBrand) GetByAgentIDAndBrandID(agentID int, brandID int, countOnly 
 			setAgentBrandOnRedis := r.redisdb.Client().Set(ctx, agentBrandRedisKey, agentBrandJson, 1*time.Hour)
 
 			if setAgentBrandOnRedis.Err() != nil {
-				errorLogData := helper.WriteLog(setAgentBrandOnRedis.Err(), 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(setAgentBrandOnRedis.Err(), http.StatusInternalServerError, nil)
 				response.Error = setAgentBrandOnRedis.Err()
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -89,7 +91,7 @@ func (r *agentBrand) GetByAgentIDAndBrandID(agentID int, brandID int, countOnly 
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response

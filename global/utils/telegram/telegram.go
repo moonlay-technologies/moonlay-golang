@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/getsentry/sentry-go"
+	"order-service/global/utils/helper"
 	"os"
-	"poc-order-service/global/utils/helper"
 )
 
 type TelegramBotInterface interface {

@@ -4,11 +4,11 @@ package mocks
 
 import (
 	context "context"
-	model "poc-order-service/global/utils/model"
+	model "order-service/global/utils/model"
 
 	mock "github.com/stretchr/testify/mock"
 
-	models "poc-order-service/app/models"
+	models "order-service/app/models"
 
 	sql "database/sql"
 )

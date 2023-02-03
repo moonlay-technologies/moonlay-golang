@@ -3,10 +3,10 @@ package repositories
 import (
 	"encoding/json"
 	"net/http"
-	"poc-order-service/app/models"
-	"poc-order-service/global/utils/helper"
-	"poc-order-service/global/utils/model"
-	"poc-order-service/global/utils/opensearch_dbo"
+	"order-service/app/models"
+	"order-service/global/utils/helper"
+	"order-service/global/utils/model"
+	"order-service/global/utils/opensearch_dbo"
 )
 
 type DeliveryOrderOpenSearchRepositoryInterface interface {
@@ -37,7 +37,7 @@ func (r *deliveryOrderOpenSearch) Create(request *models.DeliveryOrder, resultCh
 	_, err := r.db.CreateDocument("delivery_orders", request.DoCode, deliveryOrderJson)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -229,13 +229,13 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchResult(ope
 	openSearchQueryResult, err := r.db.Query("delivery_orders", openSearchQueryJson)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		return &models.DeliveryOrders{}, errorLogData
 	}
 
 	if openSearchQueryResult.Hits.Total.Value == 0 {
 		err = helper.NewError("delivery_orders_opensearch data not found")
-		errorLogData := helper.WriteLog(err, http.StatusNotFound, "Data tidak ditemukan")
+		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 		return &models.DeliveryOrders{}, errorLogData
 	}
 

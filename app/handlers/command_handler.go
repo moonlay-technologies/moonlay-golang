@@ -3,9 +3,9 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"order-service/app/commands"
+	kafkadbo "order-service/global/utils/kafka"
 	"os"
-	"poc-order-service/app/commands"
-	kafkadbo "poc-order-service/global/utils/kafka"
 	"strconv"
 )
 

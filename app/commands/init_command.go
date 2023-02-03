@@ -2,7 +2,7 @@ package commands
 
 import (
 	"context"
-	kafkadbo "poc-order-service/global/utils/kafka"
+	kafkadbo "order-service/global/utils/kafka"
 )
 
 func InitCreateKafkaTopicCommand(kafkaClient kafkadbo.KafkaClientInterface, ctx context.Context) CreateKafkaTopicCommandHandlerInterface {

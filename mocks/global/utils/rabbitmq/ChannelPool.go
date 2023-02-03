@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	rabbitmq "poc-order-service/global/utils/rabbitmq"
+	rabbitmq "order-service/global/utils/rabbitmq"
 
 	mock "github.com/stretchr/testify/mock"
 

@@ -7,9 +7,9 @@ package usecases
 //	"github.com/getsentry/sentry-go"
 //	"net/http"
 //	"os"
-//	"poc-order-service/app/models"
-//	"poc-order-service/global/utils/helper"
-//	baseModel "poc-order-service/global/utils/model"
+//	"order-service/app/models"
+//	"order-service/global/utils/helper"
+//	baseModel "order-service/global/utils/model"
 //	"time"
 //)
 //
