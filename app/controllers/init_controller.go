@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"github.com/bxcodec/dbresolver"
 	"poc-order-service/app/repositories"
 	mongoRepo "poc-order-service/app/repositories/mongod"
 	openSearchRepo "poc-order-service/app/repositories/open_search"
@@ -11,6 +10,8 @@ import (
 	"poc-order-service/global/utils/mongodb"
 	"poc-order-service/global/utils/opensearch_dbo"
 	"poc-order-service/global/utils/redisdb"
+
+	"github.com/bxcodec/dbresolver"
 )
 
 func InitHTTPSalesOrderController(database dbresolver.DB, redisdb redisdb.RedisInterface, mongodbClient mongodb.MongoDBInterface, kafkaClient kafkadbo.KafkaClientInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, ctx context.Context) SalesOrderControllerInterface {
@@ -53,9 +54,9 @@ func InitHTTPDeliveryOrderController(database dbresolver.DB, redisdb redisdb.Red
 	salesOrderLogRepository := mongoRepo.InitSalesOrderLogRepository(mongodbClient)
 	userRepository := repositories.InitUserRepository(database, redisdb)
 	salesmanRepository := repositories.InitSalesmanRepository(database, redisdb)
+	deliveryOrderOpenSearchRepository := openSearchRepo.InitDeliveryOrderOpenSearchRepository(opensearchClient)
 	salesOrderOpenSearchRepository := openSearchRepo.InitSalesOrderOpenSearchRepository(opensearchClient)
 	deliveryOrderLogRepository := mongoRepo.InitDeliveryOrderLogRepository(mongodbClient)
-	deliveryOrderOpenSearchRepository := openSearchRepo.InitDeliveryOrderOpenSearchRepository(opensearchClient)
 	salesOrderUseCase := usecases.InitSalesOrderUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, agentRepository, brandRepository, storeRepository, productRepository, uomRepository, deliveryOrderRepository, salesOrderLogRepository, userRepository, salesmanRepository, salesOrderOpenSearchRepository, deliveryOrderOpenSearchRepository, kafkaClient, database, ctx)
 	deliveryOrderUseCase := usecases.InitDeliveryOrderUseCaseInterface(deliveryOrderRepository, deliveryOrderDetailRepository, salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, warehouseRepository, brandRepository, uomRepository, agentRepository, storeRepository, productRepository, deliveryOrderLogRepository, deliveryOrderOpenSearchRepository, salesOrderOpenSearchRepository, salesOrderUseCase, kafkaClient, database, ctx)
 	handler := InitDeliveryOrderController(deliveryOrderUseCase, database, ctx)

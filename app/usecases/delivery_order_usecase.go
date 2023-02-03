@@ -79,6 +79,8 @@ func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.Deli
 
 func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.DeliveryOrder, *model.ErrorLog) {
 	now := time.Now()
+	unixTimestamp := now.Unix()
+	unixTimestampInt := int(unixTimestamp)
 	getOrderStatusResultChan := make(chan *models.OrderStatusChan)
 	go u.orderStatusRepository.GetByNameAndType("open", "delivery_order", false, ctx, getOrderStatusResultChan)
 	getOrderStatusResult := <-getOrderStatusResultChan
@@ -124,11 +126,11 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		AgentID:               request.AgentID,
 		WarehouseID:           request.WarehouseID,
 		OrderStatus:           getOrderStatusResult.OrderStatus,
-		OrderStatusID:         getOrderStatusResult.OrderStatus.ID,
+		OrderStatusID:         request.OrderStatusID,
 		OrderSource:           getOrderSourceResult.OrderSource,
 		OrderSourceID:         getOrderSourceResult.OrderSource.ID,
-		DoCode:                doCode,
-		DoDate:                now.Format("2006-01-02"),
+		DoCode:                request.DoCode,
+		DoDate:                request.DoDate,
 		DoRefCode:             models.NullString{sql.NullString{String: request.DoRefCode, Valid: true}},
 		DoRefDate:             models.NullString{sql.NullString{String: request.DoRefDate, Valid: true}},
 		DriverName:            models.NullString{sql.NullString{String: request.DriverName, Valid: true}},
@@ -139,10 +141,17 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		WarehouseCityName:     getWarehouseResult.Warehouse.CityName,
 		WarehouseDistrictName: getWarehouseResult.Warehouse.DistrictName,
 		WarehouseVillageName:  getWarehouseResult.Warehouse.VillageName,
-		IsDoneSyncToEs:        "0",
 		Note:                  models.NullString{sql.NullString{String: request.Note, Valid: true}},
+		IsDoneSyncToEs:        "0",
 		StartDateSyncToEs:     &now,
+		EndDateSyncToEs:       &now,
+		StartCreatedDate:      &now,
+		EndCreatedDate:        &now,
+		CreatedBy:             request.SalesOrderID,
+		LatestUpdatedBy:       unixTimestampInt,
 		CreatedAt:             &now,
+		UpdatedAt:             &now,
+		DeletedAt:             &now,
 	}
 
 	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
@@ -172,12 +181,16 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 			BrandID:           getSalesOrderResult.SalesOrder.BrandID,
 			ProductID:         getSalesOrderDetailResult.SalesOrderDetail.ProductID,
 			UomID:             getSalesOrderDetailResult.SalesOrderDetail.UomID,
+			OrderStatusID:     getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID,
 			DoDetailCode:      DoDetailCode,
 			Qty:               v.Qty,
 			Note:              models.NullString{sql.NullString{String: v.Note, Valid: true}},
 			IsDoneSyncToEs:    "0",
 			StartDateSyncToEs: &now,
+			EndDateSyncToEs:   &now,
 			CreatedAt:         &now,
+			UpdatedAt:         &now,
+			DeletedAt:         &now,
 		}
 
 		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)

@@ -36,9 +36,26 @@ type DeliveryOrderDetail struct {
 }
 
 type DeliveryOrderDetailStoreRequest struct {
-	SoDetailID int    `json:"so_detail_id,omitempty"`
-	Qty        int    `json:"qty,omitempty"`
-	Note       string `json:"note,omitempty"`
+	DeliveryOrderID int    `json:"delivery_order_id,omitempty" binding:"required"`
+	SoDetailID      int    `json:"so_detail_id,omitempty" binding:"required"`
+	BrandID         int    `json:"brand_id,omitempty" binding:"required"`
+	ProductID       int    `json:"product_id,omitempty" binding:"required"`
+	UomID           int    `json:"uom_id,omitempty" binding:"required"`
+	OrderStatusID   int    `json:"order_status_id,omitempty" binding:"required"`
+	DoDetailCode    int    `json:"do_detail_code,omitempty" binding:"required"`
+	Qty             int    `json:"qty,omitempty" binding:"required"`
+	Note            string `json:"note,omitempty"`
+}
+
+type DeliveryOrderDetailStoreResponse struct {
+	DeliveryOrderID int    `json:"delivery_order_id,omitempty"`
+	SoDetailID      int    `json:"so_detail_id,omitempty"`
+	ProductSku      string `json:"product_sku,omitempty"`
+	ProductName     string `json:"product_name,omitempty"`
+	UomCode         string `json:"uom_code,omitempty"`
+	Qty             int    `json:"qty,omitempty"`
+	ResidualQty     int    `json:"residual_qty,omitempty"`
+	Note            string `json:"note,omitempty"`
 }
 
 type DeliveryOrderDetailChan struct {

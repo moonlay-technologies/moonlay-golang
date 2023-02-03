@@ -3,14 +3,17 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/bxcodec/dbresolver"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"poc-order-service/app/models"
 	"poc-order-service/app/usecases"
 	"poc-order-service/global/utils/helper"
 	baseModel "poc-order-service/global/utils/model"
 	"strconv"
+	"strings"
+
+	"github.com/bxcodec/dbresolver"
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 type DeliveryOrderControllerInterface interface {
@@ -41,11 +44,19 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 	ctx.Set("full_path", ctx.FullPath())
 	ctx.Set("method", ctx.Request.Method)
 
-	err := ctx.BindJSON(insertRequest)
-
+	err := ctx.ShouldBindJSON(insertRequest)
 	if err != nil {
 		fmt.Println("error")
-		errorLog := helper.WriteLog(err, http.StatusBadRequest, "Ada kesalahan, silahkan coba lagi nanti")
+		messages := []string{}
+		for _, value := range err.(validator.ValidationErrors) {
+			message := fmt.Sprintf("Data %s tidak boleh kosong", value.Field())
+			messages = append(messages, message)
+		}
+		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       messages,
+			SystemMessage: strings.Split(err.Error(), "\n"),
+			StatusCode:    http.StatusBadRequest,
+		})
 		result.StatusCode = http.StatusBadRequest
 		result.Error = errorLog
 		ctx.JSON(result.StatusCode, result)
@@ -64,7 +75,6 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 	}
 
 	deliveryOrder, errorLog := c.deliveryOrderUseCase.Create(insertRequest, dbTransaction, ctx)
-	fmt.Println(deliveryOrder)
 	if errorLog != nil {
 		err = dbTransaction.Rollback()
 
@@ -94,7 +104,44 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		return
 	}
 
-	result.Data = deliveryOrder
+	deliveryOrderDetailResults := []*models.DeliveryOrderDetailStoreResponse{}
+	for _, v := range deliveryOrder.DeliveryOrderDetails {
+		deliveryOrderDetailResult := models.DeliveryOrderDetailStoreResponse{
+			DeliveryOrderID: v.DeliveryOrderID,
+			SoDetailID:      v.SoDetailID,
+			ProductSku:      v.ProductSKU,
+			ProductName:     v.ProductName,
+			UomCode:         v.UomCode,
+			Qty:             v.Qty,
+			Note:            v.Note.String,
+		}
+		deliveryOrderDetailResults = append(deliveryOrderDetailResults, &deliveryOrderDetailResult)
+	}
+
+	deliveryOrderResult := &models.DeliveryOrderStoreResponse{
+		SalesOrderID:              deliveryOrder.SalesOrderID,
+		SalesOrderSoCode:          deliveryOrder.SalesOrder.SoCode,
+		SalesOrderSoDate:          deliveryOrder.SalesOrder.SoDate,
+		SalesOrderNote:            deliveryOrder.SalesOrder.Note.String,
+		SalesOrderInternalComment: deliveryOrder.SalesOrder.InternalComment.String,
+		TotalAmount:               int(deliveryOrder.SalesOrder.TotalAmount),
+		WarehouseID:               deliveryOrder.WarehouseID,
+		WarehouseAddress:          deliveryOrder.Warehouse.Address.String,
+		OrderSourceID:             deliveryOrder.OrderSourceID,
+		OrderStatusID:             deliveryOrder.OrderStatusID,
+		AgentID:                   deliveryOrder.AgentID,
+		StoreID:                   deliveryOrder.StoreID,
+		DoCode:                    deliveryOrder.DoCode,
+		DoDate:                    deliveryOrder.DoDate,
+		DoRefCode:                 deliveryOrder.DoRefCode.String,
+		DoRefDate:                 deliveryOrder.DoRefDate.String,
+		DriverName:                deliveryOrder.DriverName.String,
+		PlatNumber:                deliveryOrder.PlatNumber.String,
+		Note:                      deliveryOrder.Note.String,
+		DeliveryOrderDetails:      deliveryOrderDetailResults,
+	}
+
+	result.Data = deliveryOrderResult
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
 	return
