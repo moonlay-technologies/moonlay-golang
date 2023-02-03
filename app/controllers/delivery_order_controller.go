@@ -46,7 +46,7 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 
 	if err != nil {
 		fmt.Println("error")
-		errorLog := helper.WriteLog(err, http.StatusBadRequest, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLog := helper.WriteLog(err, http.StatusBadRequest, helper.DefaultStatusText[http.StatusInternalServerError])
 		result.StatusCode = http.StatusBadRequest
 		result.Error = errorLog
 		ctx.JSON(result.StatusCode, result)
