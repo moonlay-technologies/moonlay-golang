@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 	driver "database/sql/driver"
-	dbresolver "poc-order-service/global/utils/dbresolver"
+	dbresolver "order-service/global/utils/dbresolver"
 
 	mock "github.com/stretchr/testify/mock"
 

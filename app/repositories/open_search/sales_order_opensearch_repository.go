@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"poc-order-service/app/models"
-	"poc-order-service/global/utils/helper"
-	"poc-order-service/global/utils/model"
-	"poc-order-service/global/utils/opensearch_dbo"
+	"order-service/app/models"
+	"order-service/global/utils/helper"
+	"order-service/global/utils/model"
+	"order-service/global/utils/opensearch_dbo"
 	"time"
 )
 
@@ -41,7 +41,7 @@ func (r *salesOrderOpenSearch) Create(request *models.SalesOrder, resultChan cha
 	st, err := r.db.CreateDocument("sales_orders", request.SoCode, salesOrderJson)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -251,13 +251,13 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchResult(openSearc
 	openSearchQueryResult, err := r.db.Query("sales_orders", openSearchQueryJson)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		return &models.SalesOrders{}, errorLogData
 	}
 
 	if openSearchQueryResult.Hits.Total.Value == 0 {
-		err = helper.NewError("data not found")
-		errorLogData := helper.WriteLog(err, http.StatusNotFound, "Data tidak ditemukan")
+		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
+		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 		return &models.SalesOrders{}, errorLogData
 	}
 

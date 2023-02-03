@@ -4,11 +4,11 @@ package mocks
 
 import (
 	context "context"
-	model "poc-order-service/global/utils/model"
+	model "order-service/global/utils/model"
 
 	mock "github.com/stretchr/testify/mock"
 
-	models "poc-order-service/app/models"
+	models "order-service/app/models"
 
 	sql "database/sql"
 )
@@ -19,17 +19,17 @@ type SalesOrderUseCaseInterface struct {
 }
 
 // Create provides a mock function with given fields: request, sqlTransaction, ctx
-func (_m *SalesOrderUseCaseInterface) Create(request *models.SalesOrderStoreRequest, sqlTransaction *sql.Tx, ctx context.Context) ([]*models.SalesOrder, *model.ErrorLog) {
+func (_m *SalesOrderUseCaseInterface) Create(request *models.SalesOrderStoreRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog) {
 	ret := _m.Called(request, sqlTransaction, ctx)
 
-	var r0 []*models.SalesOrder
-	if rf, ok := ret.Get(0).(func(*models.SalesOrderStoreRequest, *sql.Tx, context.Context) []*models.SalesOrder); ok {
-		r0 = rf(request, sqlTransaction, ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*models.SalesOrder)
-		}
-	}
+	var r0 *models.SalesOrderResponse
+	// if rf, ok := ret.Get(0).(func(*models.SalesOrderStoreRequest, *sql.Tx, context.Context) []*models.SalesOrder); ok {
+	// 	r0 = rf(request, sqlTransaction, ctx)
+	// } else {
+	// 	if ret.Get(0) != nil {
+	// 		r0 = ret.Get(0).([]*models.SalesOrder)
+	// 	}
+	// }
 
 	var r1 *model.ErrorLog
 	if rf, ok := ret.Get(1).(func(*models.SalesOrderStoreRequest, *sql.Tx, context.Context) *model.ErrorLog); ok {

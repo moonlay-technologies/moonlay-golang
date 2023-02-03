@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"order-service/app/models"
+	"order-service/global/utils/helper"
+	"order-service/global/utils/redisdb"
+	"time"
+
 	"github.com/bxcodec/dbresolver"
 	"github.com/go-redis/redis/v8"
-	"poc-order-service/app/models"
-	"poc-order-service/global/utils/helper"
-	"poc-order-service/global/utils/redisdb"
-	"time"
 )
 
 type WarehouseRepositoryInterface interface {
@@ -40,7 +42,7 @@ func (r *warehouse) GetByID(ID int, countOnly bool, ctx context.Context, resultC
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM warehouses WHERE id = ?", ID).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -49,7 +51,7 @@ func (r *warehouse) GetByID(ID int, countOnly bool, ctx context.Context, resultC
 
 		if total == 0 {
 			err = helper.NewError("warehouse data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -68,7 +70,7 @@ func (r *warehouse) GetByID(ID int, countOnly bool, ctx context.Context, resultC
 				Scan(&warehouse.ID, &warehouse.Code, &warehouse.Name, &warehouse.OwnerID, &warehouse.ProvinceID, &warehouse.ProvinceName, &warehouse.CityID, &warehouse.CityName, &warehouse.DistrictID, &warehouse.DistrictName, &warehouse.VillageID, &warehouse.VillageName, &warehouse.Address, &warehouse.Phone, &warehouse.MainMobilePhone, &warehouse.Email, &warehouse.PicName, &warehouse.Status, &warehouse.WarehouseTypeID, &warehouse.IsMain)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -79,7 +81,7 @@ func (r *warehouse) GetByID(ID int, countOnly bool, ctx context.Context, resultC
 			setWarehouseOnRedis := r.redisdb.Client().Set(ctx, warehouseRedisKey, warehouseJson, 1*time.Hour)
 
 			if setWarehouseOnRedis.Err() != nil {
-				errorLogData := helper.WriteLog(setWarehouseOnRedis.Err(), 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(setWarehouseOnRedis.Err(), http.StatusInternalServerError, nil)
 				response.Error = setWarehouseOnRedis.Err()
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -93,7 +95,7 @@ func (r *warehouse) GetByID(ID int, countOnly bool, ctx context.Context, resultC
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response

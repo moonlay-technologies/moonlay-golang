@@ -2,19 +2,22 @@ package routes
 
 import (
 	"context"
+	"net/http"
+	"order-service/app/controllers"
+	"order-service/app/models/constants"
+	kafkadbo "order-service/global/utils/kafka"
+	"order-service/global/utils/mongodb"
+	"order-service/global/utils/opensearch_dbo"
+	"order-service/global/utils/redisdb"
+	"os"
+
 	"github.com/bxcodec/dbresolver"
 	"github.com/gin-gonic/gin"
-	"os"
-	"poc-order-service/app/controllers"
-	kafkadbo "poc-order-service/global/utils/kafka"
-	"poc-order-service/global/utils/mongodb"
-	"poc-order-service/global/utils/opensearch_dbo"
-	"poc-order-service/global/utils/redisdb"
 )
 
 func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisInterface, mongodbClient mongodb.MongoDBInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, kafkaClient kafkadbo.KafkaClientInterface, ctx context.Context) {
-	g.GET("health-check", func(context *gin.Context) {
-		context.JSON(200, map[string]interface{}{"status": "OK"})
+	g.GET(constants.HEALTH_CHECK, func(context *gin.Context) {
+		context.JSON(http.StatusOK, map[string]interface{}{"status": http.StatusText(http.StatusOK)})
 	})
 
 	basicAuthRootGroup := g.Group("", gin.BasicAuth(gin.Accounts{
@@ -24,7 +27,7 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 	salesOrderController := controllers.InitHTTPSalesOrderController(database, redisdb, mongodbClient, kafkaClient, opensearchClient, ctx)
 	basicAuthRootGroup.Use()
 	{
-		salesOrderControllerGroup := basicAuthRootGroup.Group("sales-orders")
+		salesOrderControllerGroup := basicAuthRootGroup.Group(constants.SALES_ORDERS_PATH)
 		salesOrderControllerGroup.Use()
 		{
 			salesOrderControllerGroup.GET("", salesOrderController.Get)
@@ -36,7 +39,7 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 	deliveryOrderController := controllers.InitHTTPDeliveryOrderController(database, redisdb, mongodbClient, kafkaClient, opensearchClient, ctx)
 	basicAuthRootGroup.Use()
 	{
-		deliveryOrderControllerGroup := basicAuthRootGroup.Group("delivery-orders")
+		deliveryOrderControllerGroup := basicAuthRootGroup.Group(constants.DELIVERY_ORDERS_PATH)
 		deliveryOrderControllerGroup.Use()
 		{
 			deliveryOrderControllerGroup.POST("", deliveryOrderController.Create)
@@ -48,33 +51,33 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 	agentController := controllers.InitHTTPAgentController(database, redisdb, mongodbClient, kafkaClient, opensearchClient, ctx)
 	basicAuthRootGroup.Use()
 	{
-		agentControllerGroup := basicAuthRootGroup.Group("agents")
+		agentControllerGroup := basicAuthRootGroup.Group(constants.AGENT)
 		agentControllerGroup.Use()
 		{
-			agentControllerGroup.GET(":id/sales-orders", agentController.GetSalesOrders)
-			agentControllerGroup.GET(":id/delivery-orders", agentController.GetDeliveryOrders)
+			agentControllerGroup.GET(":id/"+constants.SALES_ORDERS_PATH, agentController.GetSalesOrders)
+			agentControllerGroup.GET(":id/"+constants.DELIVERY_ORDERS_PATH, agentController.GetDeliveryOrders)
 		}
 	}
 
 	storeController := controllers.InitHTTPStoreController(database, redisdb, mongodbClient, kafkaClient, opensearchClient, ctx)
 	basicAuthRootGroup.Use()
 	{
-		storeControllerGroup := basicAuthRootGroup.Group("stores")
+		storeControllerGroup := basicAuthRootGroup.Group(constants.STORES)
 		storeControllerGroup.Use()
 		{
-			storeControllerGroup.GET(":id/sales-orders", storeController.GetSalesOrders)
-			storeControllerGroup.GET(":id/delivery-orders", storeController.GetDeliveryOrders)
+			storeControllerGroup.GET(":id/"+constants.SALES_ORDERS_PATH, storeController.GetSalesOrders)
+			storeControllerGroup.GET(":id/"+constants.DELIVERY_ORDERS_PATH, storeController.GetDeliveryOrders)
 		}
 	}
 
 	salesmanController := controllers.InitHTTPSalesmanController(database, redisdb, mongodbClient, kafkaClient, opensearchClient, ctx)
 	basicAuthRootGroup.Use()
 	{
-		salesmanControllerGroup := basicAuthRootGroup.Group("salesmans")
+		salesmanControllerGroup := basicAuthRootGroup.Group(constants.SALESMANS)
 		salesmanControllerGroup.Use()
 		{
-			salesmanControllerGroup.GET(":id/sales-orders", salesmanController.GetSalesOrders)
-			salesmanControllerGroup.GET(":id/delivery-orders", salesmanController.GetDeliveryOrders)
+			salesmanControllerGroup.GET(":id/"+constants.SALES_ORDERS_PATH, salesmanController.GetSalesOrders)
+			salesmanControllerGroup.GET(":id/"+constants.DELIVERY_ORDERS_PATH, salesmanController.GetDeliveryOrders)
 		}
 	}
 
