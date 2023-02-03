@@ -2,6 +2,7 @@ package routes
 
 import (
 	"context"
+	"net/http"
 	"order-service/app/controllers"
 	"order-service/app/models/constants"
 	kafkadbo "order-service/global/utils/kafka"
@@ -15,8 +16,8 @@ import (
 )
 
 func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisInterface, mongodbClient mongodb.MongoDBInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, kafkaClient kafkadbo.KafkaClientInterface, ctx context.Context) {
-	g.GET("health-check", func(context *gin.Context) {
-		context.JSON(200, map[string]interface{}{"status": "OK"})
+	g.GET(constants.HEALTH_CHECK, func(context *gin.Context) {
+		context.JSON(http.StatusOK, map[string]interface{}{"status": http.StatusText(http.StatusOK)})
 	})
 
 	basicAuthRootGroup := g.Group("", gin.BasicAuth(gin.Accounts{
@@ -50,7 +51,7 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 	agentController := controllers.InitHTTPAgentController(database, redisdb, mongodbClient, kafkaClient, opensearchClient, ctx)
 	basicAuthRootGroup.Use()
 	{
-		agentControllerGroup := basicAuthRootGroup.Group("agents")
+		agentControllerGroup := basicAuthRootGroup.Group(constants.AGENT)
 		agentControllerGroup.Use()
 		{
 			agentControllerGroup.GET(":id/"+constants.SALES_ORDERS_PATH, agentController.GetSalesOrders)
@@ -61,7 +62,7 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 	storeController := controllers.InitHTTPStoreController(database, redisdb, mongodbClient, kafkaClient, opensearchClient, ctx)
 	basicAuthRootGroup.Use()
 	{
-		storeControllerGroup := basicAuthRootGroup.Group("stores")
+		storeControllerGroup := basicAuthRootGroup.Group(constants.STORES)
 		storeControllerGroup.Use()
 		{
 			storeControllerGroup.GET(":id/"+constants.SALES_ORDERS_PATH, storeController.GetSalesOrders)
@@ -72,7 +73,7 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 	salesmanController := controllers.InitHTTPSalesmanController(database, redisdb, mongodbClient, kafkaClient, opensearchClient, ctx)
 	basicAuthRootGroup.Use()
 	{
-		salesmanControllerGroup := basicAuthRootGroup.Group("salesmans")
+		salesmanControllerGroup := basicAuthRootGroup.Group(constants.SALESMANS)
 		salesmanControllerGroup.Use()
 		{
 			salesmanControllerGroup.GET(":id/"+constants.SALES_ORDERS_PATH, salesmanController.GetSalesOrders)
