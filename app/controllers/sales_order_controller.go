@@ -229,7 +229,7 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 		{
 			Table:    "brands",
 			ReqField: "brand_id",
-			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", insertRequest.BrandID),
+			Clause:   fmt.Sprintf("id = %d AND status_active = %d", insertRequest.BrandID, 1),
 		},
 		{
 			Table:    "users",

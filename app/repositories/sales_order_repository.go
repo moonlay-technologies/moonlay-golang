@@ -501,13 +501,13 @@ func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, sqlTransacti
 	response := &models.SalesOrderChan{}
 	rawSqlQueries := []string{}
 
-	if request.CartID != 0 {
-		query := fmt.Sprintf("%s=%v", "cart_id", request.CartID)
+	if request.AgentID != 0 {
+		query := fmt.Sprintf("%s=%v", "agent_id", request.AgentID)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
-	if request.AgentID != 0 {
-		query := fmt.Sprintf("%s=%v", "agent_id", request.AgentID)
+	if request.UserID != 0 {
+		query := fmt.Sprintf("%s=%v", "user_id", request.UserID)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
@@ -516,28 +516,28 @@ func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, sqlTransacti
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
-	if request.BrandID != 0 {
-		query := fmt.Sprintf("%s=%v", "brand_id", request.BrandID)
-		rawSqlQueries = append(rawSqlQueries, query)
-	}
-
-	if request.VisitationID != 0 {
-		query := fmt.Sprintf("%s=%v", "visitation_id", request.VisitationID)
-		rawSqlQueries = append(rawSqlQueries, query)
-	}
-
 	if request.OrderSourceID != 0 {
 		query := fmt.Sprintf("%s=%v", "order_source_id", request.OrderSourceID)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
-	if request.OrderStatusID != 0 {
-		query := fmt.Sprintf("%s=%v", "order_status_id", request.OrderStatusID)
+	if request.GLong.Float64 != 0 {
+		query := fmt.Sprintf("%s=%v", "g_long", request.GLong)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
-	if request.SoCode != "" {
-		query := fmt.Sprintf("%s='%v'", "so_code", request.SoCode)
+	if request.GLat.Float64 != 0 {
+		query := fmt.Sprintf("%s=%v", "g_lat", request.GLat)
+		rawSqlQueries = append(rawSqlQueries, query)
+	}
+
+	if request.Note.String != "" {
+		query := fmt.Sprintf("%s='%v'", "note", request.Note)
+		rawSqlQueries = append(rawSqlQueries, query)
+	}
+
+	if request.InternalComment.String != "" {
+		query := fmt.Sprintf("%s='%v'", "internal_comment", request.InternalComment)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
@@ -556,33 +556,48 @@ func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, sqlTransacti
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
-	if request.GLat.Float64 != 0 {
-		query := fmt.Sprintf("%s=%v", "g_lat", request.GLat)
-		rawSqlQueries = append(rawSqlQueries, query)
-	}
-
-	if request.GLong.Float64 != 0 {
-		query := fmt.Sprintf("%s=%v", "g_long", request.GLong)
-		rawSqlQueries = append(rawSqlQueries, query)
-	}
-
-	if request.Note.String != "" {
-		query := fmt.Sprintf("%s='%v'", "note", request.Note)
-		rawSqlQueries = append(rawSqlQueries, query)
-	}
-
-	if request.InternalComment.String != "" {
-		query := fmt.Sprintf("%s='%v'", "internal_comment", request.InternalComment)
-		rawSqlQueries = append(rawSqlQueries, query)
-	}
-
 	if request.TotalAmount != 0 {
 		query := fmt.Sprintf("%s=%v", "total_amount", request.TotalAmount)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
 	if request.TotalTonase != 0 {
-		query := fmt.Sprintf("%s=%v", "total_tonase", request.AgentID)
+		query := fmt.Sprintf("%s=%v", "total_tonase", request.TotalTonase)
+		rawSqlQueries = append(rawSqlQueries, query)
+	}
+
+	if request.DeviceId.String != "" {
+		query := fmt.Sprintf("%s=%v", "device_id", request.DeviceId)
+		rawSqlQueries = append(rawSqlQueries, query)
+	}
+
+	if request.ReferralCode.String != "" {
+		query := fmt.Sprintf("%s=%v", "referral_code", request.ReferralCode)
+		rawSqlQueries = append(rawSqlQueries, query)
+	}
+
+	if request.CartID != 0 {
+		query := fmt.Sprintf("%s=%v", "cart_id", request.CartID)
+		rawSqlQueries = append(rawSqlQueries, query)
+	}
+
+	if request.BrandID != 0 {
+		query := fmt.Sprintf("%s=%v", "brand_id", request.BrandID)
+		rawSqlQueries = append(rawSqlQueries, query)
+	}
+
+	if request.VisitationID != 0 {
+		query := fmt.Sprintf("%s=%v", "visitation_id", request.VisitationID)
+		rawSqlQueries = append(rawSqlQueries, query)
+	}
+
+	if request.OrderStatusID != 0 {
+		query := fmt.Sprintf("%s=%v", "order_status_id", request.OrderStatusID)
+		rawSqlQueries = append(rawSqlQueries, query)
+	}
+
+	if request.SoCode != "" {
+		query := fmt.Sprintf("%s='%v'", "so_code", request.SoCode)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
@@ -603,11 +618,6 @@ func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, sqlTransacti
 
 	if request.EndCreatedDate != nil {
 		query := fmt.Sprintf("%s='%v'", "end_created_date", request.EndCreatedDate.Format("2006-01-02 15:04:05"))
-		rawSqlQueries = append(rawSqlQueries, query)
-	}
-
-	if request.UserID != 0 {
-		query := fmt.Sprintf("%s=%v", "user_id", request.UserID)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
