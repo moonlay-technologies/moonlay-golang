@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"order-service/app/models"
+	"order-service/global/utils/helper"
+	"order-service/global/utils/redisdb"
+	"time"
+
 	"github.com/bxcodec/dbresolver"
 	"github.com/go-redis/redis/v8"
-	"poc-order-service/app/models"
-	"poc-order-service/global/utils/helper"
-	"poc-order-service/global/utils/redisdb"
-	"time"
 )
 
 type ProductRepositoryInterface interface {
@@ -40,7 +42,7 @@ func (r *product) GetByID(ID int, countOnly bool, ctx context.Context, resultCha
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM products WHERE deleted_at IS NULL AND id = ?", ID).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -50,7 +52,7 @@ func (r *product) GetByID(ID int, countOnly bool, ctx context.Context, resultCha
 		if total == 0 {
 			errStr := fmt.Sprintf("product id %d data not found", ID)
 			err = helper.NewError(errStr)
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -60,12 +62,12 @@ func (r *product) GetByID(ID int, countOnly bool, ctx context.Context, resultCha
 		if countOnly == false {
 			product = models.Product{}
 			err = r.db.QueryRow(""+
-				"SELECT id, SKU, productName, unitMeasurementSmall, unitMeasurementMedium, isActive  from products as p "+
+				"SELECT id, SKU, productName, category_id, unitMeasurementSmall, unitMeasurementMedium, isActive  from products as p "+
 				"WHERE p.deleted_at IS NULL AND p.id = ?", ID).
-				Scan(&product.ID, &product.Sku, &product.ProductName, &product.UnitMeasurementSmall, &product.UnitMeasurementMedium, &product.IsActive)
+				Scan(&product.ID, &product.Sku, &product.ProductName, &product.CategoryID, &product.UnitMeasurementSmall, &product.UnitMeasurementMedium, &product.IsActive)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -76,7 +78,7 @@ func (r *product) GetByID(ID int, countOnly bool, ctx context.Context, resultCha
 			setProductOnRedis := r.redisdb.Client().Set(ctx, productRedisKey, productJson, 1*time.Hour)
 
 			if setProductOnRedis.Err() != nil {
-				errorLogData := helper.WriteLog(setProductOnRedis.Err(), 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(setProductOnRedis.Err(), http.StatusInternalServerError, nil)
 				response.Error = setProductOnRedis.Err()
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -90,7 +92,7 @@ func (r *product) GetByID(ID int, countOnly bool, ctx context.Context, resultCha
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response

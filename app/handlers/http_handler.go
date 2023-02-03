@@ -3,18 +3,19 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"order-service/app/middlewares"
+	"order-service/app/routes"
+	kafkadbo "order-service/global/utils/kafka"
+	"order-service/global/utils/mongodb"
+	"order-service/global/utils/opensearch_dbo"
+	"order-service/global/utils/redisdb"
+	"os"
+	"strconv"
+
 	"github.com/bxcodec/dbresolver"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"net/http"
-	"os"
-	"poc-order-service/app/middlewares"
-	"poc-order-service/app/routes"
-	kafkadbo "poc-order-service/global/utils/kafka"
-	"poc-order-service/global/utils/mongodb"
-	"poc-order-service/global/utils/opensearch_dbo"
-	"poc-order-service/global/utils/redisdb"
-	"strconv"
 )
 
 func MainHttpHandler(database dbresolver.DB, redisdb redisdb.RedisInterface, mongodbClient mongodb.MongoDBInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, kafkaClient kafkadbo.KafkaClientInterface, ctx context.Context) {

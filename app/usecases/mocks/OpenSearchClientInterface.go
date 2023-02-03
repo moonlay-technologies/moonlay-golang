@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	model "poc-order-service/global/utils/model"
+	model "order-service/global/utils/model"
 
 	mock "github.com/stretchr/testify/mock"
 

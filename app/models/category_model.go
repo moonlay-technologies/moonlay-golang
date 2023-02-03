@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"order-service/global/utils/model"
+	"time"
+)
 
 type Category struct {
 	ID          int        `json:"id,omitempty"`
@@ -17,4 +20,12 @@ type Category struct {
 	CreatedAt   *time.Time `json:"created_at,omitempty"`
 	UpdatedAt   *time.Time `json:"updated_at,omitempty"`
 	DeletedAt   *time.Time `json:"deleted_at,omitempty"`
+}
+
+type CategoryChan struct {
+	Category *Category
+	Error    error
+	ErrorLog *model.ErrorLog
+	Total    int64
+	ID       int64 `json:"id,omitempty" bson:"id,omitempty"`
 }

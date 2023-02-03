@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"order-service/app/models"
+	"order-service/global/utils/helper"
+	"order-service/global/utils/redisdb"
+	"time"
+
 	"github.com/bxcodec/dbresolver"
 	"github.com/go-redis/redis/v8"
-	"poc-order-service/app/models"
-	"poc-order-service/global/utils/helper"
-	"poc-order-service/global/utils/redisdb"
-	"time"
 )
 
 type AgentRepositoryInterface interface {
@@ -40,7 +42,7 @@ func (r *agent) GetByID(ID int, countOnly bool, ctx context.Context, resultChan 
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM agents WHERE deleted_at IS NULL AND id = ?", ID).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -49,7 +51,7 @@ func (r *agent) GetByID(ID int, countOnly bool, ctx context.Context, resultChan 
 
 		if total == 0 {
 			err = helper.NewError("agents data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -68,7 +70,7 @@ func (r *agent) GetByID(ID int, countOnly bool, ctx context.Context, resultChan 
 				Scan(&agent.ID, &agent.Name, &agent.Email, &agent.Address, &agent.Description, &agent.ProvinceID, &agent.CityID, &agent.DistrictID, &agent.VillageID, &agent.DistributorType, &agent.PostalCode, &agent.GLat, &agent.GLng, &agent.ContactName, &agent.Website, &agent.Phone, &agent.MainMobilePhone, &agent.Status, &agent.NoNpwp, &agent.ImageNpwp, &agent.NoSiup, &agent.ProvinceName, &agent.CityName, &agent.DistrictName, &agent.VillageName)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -79,7 +81,7 @@ func (r *agent) GetByID(ID int, countOnly bool, ctx context.Context, resultChan 
 			setAgentOnRedis := r.redisdb.Client().Set(ctx, agentRedisKey, agentJson, 1*time.Hour)
 
 			if setAgentOnRedis.Err() != nil {
-				errorLogData := helper.WriteLog(setAgentOnRedis.Err(), 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(setAgentOnRedis.Err(), http.StatusInternalServerError, nil)
 				response.Error = setAgentOnRedis.Err()
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -93,7 +95,7 @@ func (r *agent) GetByID(ID int, countOnly bool, ctx context.Context, resultChan 
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response

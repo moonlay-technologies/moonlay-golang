@@ -1,7 +1,7 @@
 package models
 
 import (
-	"poc-order-service/global/utils/model"
+	"order-service/global/utils/model"
 	"time"
 )
 
@@ -60,8 +60,10 @@ type SalesOrder struct {
 	SoDate               string              `json:"so_date,omitempty" bson:"so_date,omitempty"`
 	SoRefCode            NullString          `json:"so_ref_code,omitempty" bson:"so_ref_code,omitempty"`
 	SoRefDate            NullString          `json:"so_ref_date,omitempty" bson:"so_ref_date,omitempty"`
+	ReferralCode         NullString          `json:"referral_code,omitempty" bson:"referral_code,omitempty"`
 	GLat                 NullFloat64         `json:"g_lat,omitempty" bson:"g_lat,omitempty"`
 	GLong                NullFloat64         `json:"g_long,omitempty" bson:"g_long,omitempty"`
+	DeviceId             NullString          `json:"device_id,omitempty" bson:"device_id,omitempty"`
 	Note                 NullString          `json:"note,omitempty" bson:"note,omitempty"`
 	InternalComment      NullString          `json:"internal_comment,omitempty" bson:"internal_comment,omitempty"`
 	TotalAmount          float64             `json:"total_amount,omitempty" bson:"total_amount,omitempty"`
@@ -77,32 +79,55 @@ type SalesOrder struct {
 	SalesmanName         NullString          `json:"salesman_name,omitempty" bson:"salesman_name,omitempty"`
 	SalesmanEmail        NullString          `json:"salesman_email,omitempty" bson:"salesman_email,omitempty"`
 	SalesOrderLogID      string              `json:"sales_order_log_id,omitempty" bson:"sales_order_log_id,omitempty"`
+	CreatedBy            int                 `json:"created_by,omitempty" bson:"created_by,omitempty"`
+	LatestUpdatedBy      int                 `json:"latest_updated_by,omitempty" bson:"latest_updated_by,omitempty"`
 	CreatedAt            *time.Time          `json:"created_at,omitempty" bson:"created_at,omitempty"`
 	UpdatedAt            *time.Time          `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
 	DeletedAt            *time.Time          `json:"deleted_at,omitempty" bson:"deleted_at,omitempty"`
 }
 
-type SalesOrderStoreRequest struct {
-	RequestID         string                          `json:"request_id,omitempty" bson:"request_id,omitempty"`
-	AgentID           int                             `json:"agent_id,omitempty" bson:"agent_id,omitempty"`
-	UserID            int                             `json:"user_id,omitempty" bson:"user_id,omitempty"`
-	CartID            int                             `json:"cart_id,omitempty" bson:"cart_id,omitempty"`
-	StoreID           int                             `json:"store_id,omitempty" bson:"store_id,omitempty"`
-	VisitationID      int                             `json:"visitation_id,omitempty" bson:"visitation_id,omitempty"`
-	OrderSourceID     int                             `json:"order_source_id,omitempty" bson:"order_source_id,omitempty"`
-	GLat              float64                         `json:"g_lat,omitempty" bson:"g_lat,omitempty"`
-	GLong             float64                         `json:"g_long,omitempty" bson:"g_long,omitempty"`
-	Note              string                          `json:"note,omitempty" bson:"note,omitempty"`
-	InternalComment   string                          `json:"internal_comment,omitempty" bson:"internal_comment,omitempty"`
-	SoRefCode         string                          `json:"so_ref_code,omitempty" bson:"so_ref_code,omitempty"`
-	SoDate            string                          `json:"so_date,omitempty" bson:"so_date,omitempty"`
-	SoRefDate         string                          `json:"so_ref_date,omitempty" bson:"so_ref_date,omitempty"`
-	StartCreatedDate  *time.Time                      `json:"start_created_date,omitempty" bson:"start_created_date,omitempty"`
-	EndCreatedDate    *time.Time                      `json:"end_created_date,omitempty" bson:"end_created_date,omitempty"`
-	SalesOrderDetails []*SalesOrderDetailStoreRequest `json:"sales_order_details" bson:"sales_order_details,omitempty"`
-	TotalAmount       float64                         `json:"total_amount,omitempty" bson:"total_amount,omitempty"`
-	TotalTonase       float64                         `json:"total_tonase,omitempty" bson:"total_tonase,omitempty"`
+type SalesOrderTemplate struct {
+	RequestID       string  `json:"request_id,omitempty" bson:"request_id,omitempty"`
+	CartID          int     `json:"cart_id,omitempty" bson:"cart_id,omitempty" binding:"required"`
+	AgentID         int     `json:"agent_id,omitempty" bson:"agent_id,omitempty" binding:"required"`
+	StoreID         int     `json:"store_id,omitempty" bson:"store_id,omitempty" binding:"required"`
+	BrandID         int     `json:"brand_id,omitempty" bson:"brand_id,omitempty" binding:"required"`
+	UserID          int     `json:"user_id,omitempty" bson:"user_id,omitempty" binding:"required"`
+	SalesmanID      int     `json:"salesman_id,omitempty" bson:"salesman_id,omitempty"`
+	VisitationID    int     `json:"visitation_id,omitempty" bson:"visitation_id,omitempty" binding:"required"`
+	OrderSourceID   int     `json:"order_source_id,omitempty" bson:"order_source_id,omitempty" binding:"required"`
+	OrderStatusID   int     `json:"order_status_id,omitempty" bson:"order_status_id,omitempty" binding:"required"`
+	SoCode          string  `json:"so_code,omitempty" bson:"so_code,omitempty" binding:"required"`
+	SoDate          string  `json:"so_date,omitempty" bson:"so_date,omitempty" binding:"required"`
+	SoRefCode       string  `json:"so_ref_code,omitempty" bson:"so_ref_code,omitempty"`
+	SoRefDate       string  `json:"so_ref_date,omitempty" bson:"so_ref_date,omitempty" binding:"required"`
+	GLong           float64 `json:"g_long,omitempty" bson:"g_long,omitempty"`
+	GLat            float64 `json:"g_lat,omitempty" bson:"g_lat,omitempty"`
+	Note            string  `json:"note,omitempty" bson:"note,omitempty"`
+	InternalComment string  `json:"internal_comment,omitempty" bson:"internal_comment,omitempty"`
+	TotalAmount     float64 `json:"total_amount,omitempty" bson:"total_amount,omitempty" binding:"required"`
+	TotalTonase     float64 `json:"total_tonase,omitempty" bson:"total_tonase,omitempty" binding:"required"`
+	DeviceId        string  `json:"device_id,omitempty" bson:"device_id,omitempty" binding:"required"`
+	ReferralCode    string  `json:"referral_code,omitempty" bson:"referral_code,omitempty"`
 }
+
+type SalesOrderStoreRequest struct {
+	SalesOrderTemplate
+	SalesOrderDetails []*SalesOrderDetailStoreRequest `json:"sales_order_details" bson:"sales_order_details" binding:"required,dive,required"`
+}
+
+type SalesOrderResponse struct {
+	SalesOrderStoreRequest
+	StoreCode         NullString                       `json:"store_code,omitempty" bson:"store_code,omitempty"`
+	StoreName         NullString                       `json:"store_name,omitempty" bson:"store_name,omitempty"`
+	StoreAddress      NullString                       `json:"store_address,omitempty" bson:"store_address,omitempty"`
+	StoreCityName     NullString                       `json:"store_city_name,omitempty" bson:"store_city_name,omitempty"`
+	StoreProvinceName NullString                       `json:"store_province_name,omitempty" bson:"store_province_name,omitempty"`
+	BrandName         string                           `json:"brand_name,omitempty" bson:"brand_name,omitempty"`
+	SalesmanName      NullString                       `json:"salesman_name,omitempty" bson:"salesman_name,omitempty"`
+	SalesOrderDetails []*SalesOrderDetailStoreResponse `json:"sales_order_details" bson:"sales_order_details,omitempty"`
+}
+
 type SalesOrderChan struct {
 	SalesOrder *SalesOrder
 	Total      int64

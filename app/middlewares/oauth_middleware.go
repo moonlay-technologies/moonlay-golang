@@ -5,12 +5,12 @@ package middlewares
 //	"github.com/gin-gonic/gin"
 //	"github.com/sirupsen/logrus"
 //	"net/http"
-//	"poc-order-service/app/models"
-//	"poc-order-service/app/repositories"
-//	"poc-order-service/app/usecases"
-//	"poc-order-service/global/utils/helper"
-//	baseModel "poc-order-service/global/utils/model"
-//	"poc-order-service/global/utils/mongod"
+//	"order-service/app/models"
+//	"order-service/app/repositories"
+//	"order-service/app/usecases"
+//	"order-service/global/utils/helper"
+//	baseModel "order-service/global/utils/model"
+//	"order-service/global/utils/mongod"
 //	"strconv"
 //)
 //

@@ -1,7 +1,7 @@
 package models
 
 import (
-	"poc-order-service/global/utils/model"
+	"order-service/global/utils/model"
 	"time"
 )
 
@@ -14,6 +14,7 @@ type CartDetail struct {
 	OrderStatusID int        `json:"order_status_id,omitempty"`
 	Qty           int        `json:"qty,omitempty"`
 	Price         float64    `json:"price,omitempty"`
+	Note          string     `json:"note,omitempty"`
 	CreatedAt     *time.Time `json:"created_at,omitempty"`
 	UpdatedAt     *time.Time `json:"updated_at,omitempty"`
 	DeletedAt     *time.Time `json:"deleted_at,omitempty"`

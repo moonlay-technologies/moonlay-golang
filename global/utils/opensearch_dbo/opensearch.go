@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"poc-order-service/global/utils/helper"
-	"poc-order-service/global/utils/model"
+	"order-service/global/utils/helper"
+	"order-service/global/utils/model"
 
 	"github.com/opensearch-project/opensearch-go"
 	"github.com/opensearch-project/opensearch-go/opensearchapi"

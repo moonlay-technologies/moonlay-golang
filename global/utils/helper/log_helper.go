@@ -2,43 +2,49 @@ package helper
 
 import (
 	"fmt"
-	"poc-order-service/global/utils/model"
+	"net/http"
+	"order-service/global/utils/model"
 	"runtime"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 )
 
+// var DefaultStatusText = map[int]string{
+// 	http.StatusInternalServerError: "Something went wrong, please try again later",
+// 	http.StatusNotFound:            "data not found",
+// }
+
+var DefaultStatusText = map[int]string{
+	http.StatusInternalServerError: "Terjadi Kesalahan, Silahkan Coba lagi Nanti",
+	http.StatusNotFound:            "Data tidak Ditemukan",
+}
+
 func WriteLog(err error, errorCode int, message interface{}) *model.ErrorLog {
 	if pc, file, line, ok := runtime.Caller(1); ok {
 		file = file[strings.LastIndex(file, "/")+1:]
 		funcName := runtime.FuncForPC(pc).Name()
 		var output *model.ErrorLog
+		output.StatusCode = errorCode
+		output.Err = err
 
-		if errorCode == 500 {
-			output = &model.ErrorLog{
-				Line:          fmt.Sprintf("%d", line),
-				Filename:      fmt.Sprintf("%s", file),
-				Function:      fmt.Sprintf("%s", funcName),
-				Message:       message,
-				SystemMessage: err.Error(),
-				Err:           err,
-				StatusCode:    errorCode,
+		if errorCode == 422 {
+			output.Message = "Field Validation"
+			output.Fields = message
+		} else {
+			output.SystemMessage = err.Error()
+			if message == nil {
+				output.Message = DefaultStatusText[errorCode]
+				if message == "" {
+					output.Message = http.StatusText(errorCode)
+				}
+			} else {
+				output.Message = message
 			}
-		} else if errorCode == 401 || errorCode == 403 || errorCode == 404 || errorCode == 409 || errorCode == 400 {
-			output = &model.ErrorLog{
-				Message:       message,
-				SystemMessage: err.Error(),
-				Err:           err,
-				StatusCode:    errorCode,
-			}
-
-		} else if errorCode == 422 {
-			output = &model.ErrorLog{
-				Message:    "Field Validation",
-				Err:        err,
-				StatusCode: errorCode,
-				Fields:     message,
+			if errorCode == http.StatusInternalServerError {
+				output.Line = fmt.Sprintf("%d", line)
+				output.Filename = fmt.Sprintf("%s", file)
+				output.Function = fmt.Sprintf("%s", funcName)
 			}
 		}
 

@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"order-service/app/models"
+	"order-service/global/utils/helper"
+	"order-service/global/utils/redisdb"
+	"time"
+
 	"github.com/bxcodec/dbresolver"
 	"github.com/go-redis/redis/v8"
-	"poc-order-service/app/models"
-	"poc-order-service/global/utils/helper"
-	"poc-order-service/global/utils/redisdb"
-	"time"
 )
 
 type SalesmanRepositoryInterface interface {
@@ -41,7 +43,7 @@ func (r *salesman) GetByID(ID int, countOnly bool, ctx context.Context, resultCh
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM salesmans WHERE deleted_at IS NULL AND id = ?", ID).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -50,7 +52,7 @@ func (r *salesman) GetByID(ID int, countOnly bool, ctx context.Context, resultCh
 
 		if total == 0 {
 			err = helper.NewError("salesman data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -65,7 +67,7 @@ func (r *salesman) GetByID(ID int, countOnly bool, ctx context.Context, resultCh
 				Scan(&salesman.ID, &salesman.Name, &salesman.Email, &salesman.PhoneNumber)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -76,7 +78,7 @@ func (r *salesman) GetByID(ID int, countOnly bool, ctx context.Context, resultCh
 			setSalesmanOnRedis := r.redisdb.Client().Set(ctx, salesmanRedisKey, salesmanJson, 1*time.Hour)
 
 			if setSalesmanOnRedis.Err() != nil {
-				errorLogData := helper.WriteLog(setSalesmanOnRedis.Err(), 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(setSalesmanOnRedis.Err(), http.StatusInternalServerError, nil)
 				response.Error = setSalesmanOnRedis.Err()
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -90,7 +92,7 @@ func (r *salesman) GetByID(ID int, countOnly bool, ctx context.Context, resultCh
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -117,7 +119,7 @@ func (r *salesman) GetByEmail(email string, countOnly bool, ctx context.Context,
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM salesmans WHERE deleted_at IS NULL AND email = ?", email).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -126,7 +128,7 @@ func (r *salesman) GetByEmail(email string, countOnly bool, ctx context.Context,
 
 		if total == 0 {
 			err = helper.NewError("salesman data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -141,7 +143,7 @@ func (r *salesman) GetByEmail(email string, countOnly bool, ctx context.Context,
 				Scan(&salesman.ID, &salesman.Name, &salesman.Email, &salesman.PhoneNumber)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -152,7 +154,7 @@ func (r *salesman) GetByEmail(email string, countOnly bool, ctx context.Context,
 			setSalesmanOnRedis := r.redisdb.Client().Set(ctx, salesmanRedisKey, salesmanJson, 1*time.Hour)
 
 			if setSalesmanOnRedis.Err() != nil {
-				errorLogData := helper.WriteLog(setSalesmanOnRedis.Err(), 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(setSalesmanOnRedis.Err(), http.StatusInternalServerError, nil)
 				response.Error = setSalesmanOnRedis.Err()
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -166,7 +168,7 @@ func (r *salesman) GetByEmail(email string, countOnly bool, ctx context.Context,
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
