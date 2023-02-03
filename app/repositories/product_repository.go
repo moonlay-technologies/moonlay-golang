@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/bxcodec/dbresolver"
-	"github.com/go-redis/redis/v8"
 	"poc-order-service/app/models"
 	"poc-order-service/global/utils/helper"
 	"poc-order-service/global/utils/redisdb"
 	"time"
+
+	"github.com/bxcodec/dbresolver"
+	"github.com/go-redis/redis/v8"
 )
 
 type ProductRepositoryInterface interface {
@@ -60,9 +61,9 @@ func (r *product) GetByID(ID int, countOnly bool, ctx context.Context, resultCha
 		if countOnly == false {
 			product = models.Product{}
 			err = r.db.QueryRow(""+
-				"SELECT id, SKU, productName, unitMeasurementSmall, unitMeasurementMedium, isActive  from products as p "+
+				"SELECT id, SKU, productName, category_id, unitMeasurementSmall, unitMeasurementMedium, isActive  from products as p "+
 				"WHERE p.deleted_at IS NULL AND p.id = ?", ID).
-				Scan(&product.ID, &product.Sku, &product.ProductName, &product.UnitMeasurementSmall, &product.UnitMeasurementMedium, &product.IsActive)
+				Scan(&product.ID, &product.Sku, &product.ProductName, &product.CategoryID, &product.UnitMeasurementSmall, &product.UnitMeasurementMedium, &product.IsActive)
 
 			if err != nil {
 				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
