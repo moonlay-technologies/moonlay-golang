@@ -8,6 +8,8 @@ import (
 	"order-service/app/repositories"
 	"order-service/global/utils/model"
 	"time"
+
+	"github.com/bxcodec/dbresolver"
 )
 
 type CartUseCaseInterface interface {
@@ -43,16 +45,19 @@ func (u *cartUseCase) Create(request *models.SalesOrderStoreRequest, sqlTransact
 	}
 
 	cart := &models.Cart{
-		AgentID:       request.AgentID,
-		UserID:        request.UserID,
-		StoreID:       request.StoreID,
-		OrderStatusID: getOrderStatusResult.OrderStatus.ID,
-		OrderSourceID: request.OrderSourceID,
-		TotalAmount:   request.TotalAmount,
-		TotalTonase:   request.TotalTonase,
-		Note:          request.Note,
-		VisitationID:  request.VisitationID,
-		CreatedAt:     &now,
+		AgentID:         request.AgentID,
+		BrandID:         request.BrandID,
+		VisitationID:    request.VisitationID,
+		UserID:          request.UserID,
+		StoreID:         request.StoreID,
+		OrderStatusID:   getOrderStatusResult.OrderStatus.ID,
+		OrderSourceID:   request.OrderSourceID,
+		TotalAmount:     request.TotalAmount,
+		TotalTonase:     request.TotalTonase,
+		Note:            request.Note,
+		CreatedBy:       request.UserID,
+		LatestUpdatedBy: request.UserID,
+		CreatedAt:       &now,
 	}
 
 	insertCartResultChan := make(chan *models.CartChan)
@@ -74,7 +79,6 @@ func (u *cartUseCase) Create(request *models.SalesOrderStoreRequest, sqlTransact
 	for _, v := range request.SalesOrderDetails {
 		cartDetail := &models.CartDetail{
 			CartID:        int(insertCartResult.ID),
-			BrandID:       v.BrandID,
 			ProductID:     v.ProductID,
 			UomID:         v.UomID,
 			Qty:           v.Qty,

@@ -2,8 +2,11 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"order-service/app/middlewares"
 	"order-service/app/models"
 	"order-service/app/usecases"
 	"order-service/global/utils/helper"
@@ -21,18 +24,20 @@ type SalesOrderControllerInterface interface {
 }
 
 type salesOrderController struct {
-	cartUseCase       usecases.CartUseCaseInterface
-	salesOrderUseCase usecases.SalesOrderUseCaseInterface
-	db                dbresolver.DB
-	ctx               context.Context
+	cartUseCase                 usecases.CartUseCaseInterface
+	salesOrderUseCase           usecases.SalesOrderUseCaseInterface
+	requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface
+	db                          dbresolver.DB
+	ctx                         context.Context
 }
 
-func InitSalesOrderController(cartUseCase usecases.CartUseCaseInterface, salesOrderUseCase usecases.SalesOrderUseCaseInterface, db dbresolver.DB, ctx context.Context) SalesOrderControllerInterface {
+func InitSalesOrderController(cartUseCase usecases.CartUseCaseInterface, salesOrderUseCase usecases.SalesOrderUseCaseInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, db dbresolver.DB, ctx context.Context) SalesOrderControllerInterface {
 	return &salesOrderController{
-		cartUseCase:       cartUseCase,
-		salesOrderUseCase: salesOrderUseCase,
-		db:                db,
-		ctx:               ctx,
+		cartUseCase:                 cartUseCase,
+		salesOrderUseCase:           salesOrderUseCase,
+		requestValidationMiddleware: requestValidationMiddleware,
+		db:                          db,
+		ctx:                         ctx,
 	}
 }
 
@@ -199,11 +204,67 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 	err := ctx.BindJSON(insertRequest)
 
 	if err != nil {
-		fmt.Println("error")
-		errorLog := helper.WriteLog(err, http.StatusBadRequest, "Ada kesalahan, silahkan coba lagi nanti")
-		result.StatusCode = http.StatusBadRequest
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
+		var unmarshalTypeError *json.UnmarshalTypeError
+
+		if errors.As(err, &unmarshalTypeError) {
+			c.requestValidationMiddleware.DataTypeValidation(ctx, err, unmarshalTypeError)
+			return
+		} else {
+			c.requestValidationMiddleware.MandatoryValidation(ctx, err)
+			return
+		}
+	}
+
+	mustActiveField := []*models.MustActiveRequest{
+		{
+			Table:    "agents",
+			ReqField: "agent_id",
+			Clause:   fmt.Sprintf("id = %d AND status = '%s'", insertRequest.AgentID, "active"),
+		},
+		{
+			Table:    "stores",
+			ReqField: "store_id",
+			Clause:   fmt.Sprintf("id = %d AND status = '%s'", insertRequest.StoreID, "active"),
+		},
+		{
+			Table:    "brands",
+			ReqField: "brand_id",
+			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", insertRequest.BrandID),
+		},
+		{
+			Table:    "users",
+			ReqField: "user_id",
+			Clause:   fmt.Sprintf("id = %d AND status = '%s'", insertRequest.UserID, "ACTIVE"),
+		},
+	}
+	for i, v := range insertRequest.SalesOrderDetails {
+		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+			Table:    "products",
+			ReqField: fmt.Sprintf("sales_order_details[%d].product_id", i),
+			Clause:   fmt.Sprintf("id = %d AND isActive = %d", v.ProductID, 1),
+		})
+		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+			Table:    "uoms",
+			ReqField: fmt.Sprintf("sales_order_details[%d].uom_id", i),
+			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", v.UomID),
+		})
+	}
+	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
+	if err != nil {
+		return
+	}
+
+	uniqueField := []*models.UniqueRequest{{
+		Table: "sales_orders",
+		Field: "so_ref_code",
+		Value: insertRequest.SoRefCode,
+	}, {
+		Table: "sales_orders",
+		Field: "device_id",
+		Value: insertRequest.DeviceId,
+	}}
+	err = c.requestValidationMiddleware.UniqueValidation(ctx, uniqueField)
+	if err != nil {
 		return
 	}
 
@@ -214,26 +275,6 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 		resultErrorLog = errorLog
 		result.StatusCode = http.StatusInternalServerError
 		result.Error = resultErrorLog
-		ctx.JSON(result.StatusCode, result)
-		return
-	}
-
-	_, errorLog := c.cartUseCase.Create(insertRequest, dbTransaction, ctx)
-
-	if errorLog != nil {
-		err = dbTransaction.Rollback()
-
-		if err != nil {
-			errorLog = helper.WriteLog(err, http.StatusInternalServerError, nil)
-			resultErrorLog = errorLog
-			result.StatusCode = http.StatusInternalServerError
-			result.Error = resultErrorLog
-			ctx.JSON(result.StatusCode, result)
-			return
-		}
-
-		result.StatusCode = errorLog.StatusCode
-		result.Error = errorLog
 		ctx.JSON(result.StatusCode, result)
 		return
 	}

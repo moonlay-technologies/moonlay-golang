@@ -344,6 +344,12 @@ func (r *salesOrder) Insert(request *models.SalesOrder, sqlTransaction *sql.Tx, 
 		rawSqlValues = append(rawSqlValues, request.BrandID)
 	}
 
+	if request.UserID != 0 {
+		rawSqlFields = append(rawSqlFields, "user_id")
+		rawSqlDataTypes = append(rawSqlDataTypes, "?")
+		rawSqlValues = append(rawSqlValues, request.UserID)
+	}
+
 	if request.VisitationID != 0 {
 		rawSqlFields = append(rawSqlFields, "visitation_id")
 		rawSqlDataTypes = append(rawSqlDataTypes, "?")
@@ -386,6 +392,12 @@ func (r *salesOrder) Insert(request *models.SalesOrder, sqlTransaction *sql.Tx, 
 		rawSqlValues = append(rawSqlValues, request.SoRefDate.String)
 	}
 
+	if request.ReferralCode.String != "" {
+		rawSqlFields = append(rawSqlFields, "referral_code")
+		rawSqlDataTypes = append(rawSqlDataTypes, "?")
+		rawSqlValues = append(rawSqlValues, request.ReferralCode.String)
+	}
+
 	if request.GLat.Float64 != 0 {
 		rawSqlFields = append(rawSqlFields, "g_lat")
 		rawSqlDataTypes = append(rawSqlDataTypes, "?")
@@ -396,6 +408,12 @@ func (r *salesOrder) Insert(request *models.SalesOrder, sqlTransaction *sql.Tx, 
 		rawSqlFields = append(rawSqlFields, "g_long")
 		rawSqlDataTypes = append(rawSqlDataTypes, "?")
 		rawSqlValues = append(rawSqlValues, request.GLong)
+	}
+
+	if request.DeviceId.String != "" {
+		rawSqlFields = append(rawSqlFields, "device_id")
+		rawSqlDataTypes = append(rawSqlDataTypes, "?")
+		rawSqlValues = append(rawSqlValues, request.DeviceId.String)
 	}
 
 	if request.Note.String != "" {
@@ -440,10 +458,10 @@ func (r *salesOrder) Insert(request *models.SalesOrder, sqlTransaction *sql.Tx, 
 		rawSqlValues = append(rawSqlValues, request.StartCreatedDate.Format("2006-01-02 15:04:05"))
 	}
 
-	if request.UserID != 0 {
-		rawSqlFields = append(rawSqlFields, "user_id")
+	if request.CreatedBy != 0 {
+		rawSqlFields = append(rawSqlFields, "created_by")
 		rawSqlDataTypes = append(rawSqlDataTypes, "?")
-		rawSqlValues = append(rawSqlValues, request.UserID)
+		rawSqlValues = append(rawSqlValues, request.CreatedBy)
 	}
 
 	rawSqlFields = append(rawSqlFields, "created_at")
