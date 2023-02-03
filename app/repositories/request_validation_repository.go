@@ -2,8 +2,8 @@ package repositories
 
 import (
 	"fmt"
-	"poc-order-service/app/models"
-	"poc-order-service/global/utils/helper"
+	"order-service/app/models"
+	"order-service/global/utils/helper"
 
 	"github.com/bxcodec/dbresolver"
 )

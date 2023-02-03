@@ -1,6 +1,6 @@
 package models
 
-import "poc-order-service/global/utils/model"
+import "order-service/global/utils/model"
 
 type SalesmanStore struct {
 	SalesmanID    int    `json:"salesman_id,omitempty"`

@@ -6,11 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"poc-order-service/app/middlewares"
-	"poc-order-service/app/models"
-	"poc-order-service/app/usecases"
-	"poc-order-service/global/utils/helper"
-	baseModel "poc-order-service/global/utils/model"
+	"order-service/app/middlewares"
+	"order-service/app/models"
+	"order-service/app/usecases"
+	"order-service/global/utils/helper"
+	baseModel "order-service/global/utils/model"
 	"strconv"
 
 	"github.com/bxcodec/dbresolver"
@@ -167,7 +167,7 @@ func (c *salesOrderController) GetByID(ctx *gin.Context) {
 	if err != nil {
 		err = helper.NewError("Parameter 'id' harus bernilai integer")
 		resultErrorLog.Message = err.Error()
-		result.StatusCode = 400
+		result.StatusCode = http.StatusBadRequest
 		result.Error = resultErrorLog
 		ctx.JSON(result.StatusCode, result)
 		return
@@ -271,7 +271,7 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 	dbTransaction, err := c.db.BeginTx(ctx, nil)
 
 	if err != nil {
-		errorLog := helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLog := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		resultErrorLog = errorLog
 		result.StatusCode = http.StatusInternalServerError
 		result.Error = resultErrorLog
@@ -285,7 +285,7 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 		err = dbTransaction.Rollback()
 
 		if err != nil {
-			errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLog = helper.WriteLog(err, http.StatusInternalServerError, nil)
 			resultErrorLog = errorLog
 			result.StatusCode = http.StatusInternalServerError
 			result.Error = resultErrorLog
@@ -302,7 +302,7 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 	err = dbTransaction.Commit()
 
 	if err != nil {
-		errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLog = helper.WriteLog(err, http.StatusInternalServerError, nil)
 		resultErrorLog = errorLog
 		result.StatusCode = http.StatusInternalServerError
 		result.Error = resultErrorLog

@@ -2,16 +2,15 @@ package consumer
 
 import (
 	"context"
-	"poc-order-service/app/repositories"
-	mongoRepo "poc-order-service/app/repositories/mongod"
-	openSearchRepo "poc-order-service/app/repositories/open_search"
-	"poc-order-service/app/usecases"
-	kafkadbo "poc-order-service/global/utils/kafka"
-	"poc-order-service/global/utils/mongodb"
-	"poc-order-service/global/utils/opensearch_dbo"
-	"poc-order-service/global/utils/redisdb"
-
 	"github.com/bxcodec/dbresolver"
+	"order-service/app/repositories"
+	mongoRepo "order-service/app/repositories/mongod"
+	openSearchRepo "order-service/app/repositories/open_search"
+	"order-service/app/usecases"
+	kafkadbo "order-service/global/utils/kafka"
+	"order-service/global/utils/mongodb"
+	"order-service/global/utils/opensearch_dbo"
+	"order-service/global/utils/redisdb"
 )
 
 func InitCreateSalesOrderConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodbClient mongodb.MongoDBInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, database dbresolver.DB, redisdb redisdb.RedisInterface, ctx context.Context, args []interface{}) CreateSalesOrderConsumerHandlerInterface {

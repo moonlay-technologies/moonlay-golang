@@ -7,7 +7,7 @@ import (
 	"fmt"
 	elasticsearch8 "github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
-	"poc-order-service/global/utils/model"
+	"order-service/global/utils/model"
 )
 
 type elasticSearchClient struct {

@@ -13,7 +13,7 @@ ENV CONSUMER_TOPIC_NAME=$CONSUMER_TOPIC_NAME
 ENV CONSUMER_GROUP=$CONSUMER_GROUP
 
 # Copy all solution files
-WORKDIR /poc-order-service
+WORKDIR /order-service
 
 COPY go.mod ./
 COPY go.sum ./
@@ -35,10 +35,10 @@ COPY app/.env.$APP_ENV /src/app/.env
 COPY app/ssl/ /src/app/ssl
 
 #WORKDIR /src/app
-#RUN rm -r /poc-order-service
+#RUN rm -r /order-service
 
 RUN chmod +x ./app/pocordersrv
 
 EXPOSE 8000
-ENTRYPOINT ["/poc-order-service/app/pocordersrv"]
+ENTRYPOINT ["/order-service/app/pocordersrv"]
 CMD ["pocordersrv"]

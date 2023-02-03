@@ -4,7 +4,7 @@ package mocks
 
 import (
 	context "context"
-	models "poc-order-service/app/models"
+	models "order-service/app/models"
 
 	mock "github.com/stretchr/testify/mock"
 

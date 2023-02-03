@@ -2,15 +2,15 @@ package controllers
 
 import (
 	"context"
-	"poc-order-service/app/middlewares"
-	"poc-order-service/app/repositories"
-	mongoRepo "poc-order-service/app/repositories/mongod"
-	openSearchRepo "poc-order-service/app/repositories/open_search"
-	"poc-order-service/app/usecases"
-	kafkadbo "poc-order-service/global/utils/kafka"
-	"poc-order-service/global/utils/mongodb"
-	"poc-order-service/global/utils/opensearch_dbo"
-	"poc-order-service/global/utils/redisdb"
+	"order-service/app/middlewares"
+	"order-service/app/repositories"
+	mongoRepo "order-service/app/repositories/mongod"
+	openSearchRepo "order-service/app/repositories/open_search"
+	"order-service/app/usecases"
+	kafkadbo "order-service/global/utils/kafka"
+	"order-service/global/utils/mongodb"
+	"order-service/global/utils/opensearch_dbo"
+	"order-service/global/utils/redisdb"
 
 	"github.com/bxcodec/dbresolver"
 )

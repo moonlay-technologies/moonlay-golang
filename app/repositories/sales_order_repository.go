@@ -5,9 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"poc-order-service/app/models"
-	"poc-order-service/global/utils/helper"
-	"poc-order-service/global/utils/redisdb"
+	"net/http"
+	"order-service/app/models"
+	"order-service/app/models/constants"
+	"order-service/global/utils/helper"
+	"order-service/global/utils/redisdb"
 	"strings"
 	"time"
 
@@ -41,14 +43,14 @@ func (r *salesOrder) GetByID(id int, countOnly bool, ctx context.Context, result
 	var salesOrder models.SalesOrder
 	var total int64
 
-	salesOrderRedisKey := fmt.Sprintf("%s:%d", "sales-order", id)
+	salesOrderRedisKey := fmt.Sprintf("%s:%d", constants.SALES_ORDER, id)
 	salesOrderOnRedis, err := r.redisdb.Client().Get(ctx, salesOrderRedisKey).Result()
 
 	if err == redis.Nil {
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM sales_orders WHERE deleted_at IS NULL AND id = ?", id).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -57,7 +59,7 @@ func (r *salesOrder) GetByID(id int, countOnly bool, ctx context.Context, result
 
 		if total == 0 {
 			err = helper.NewError("sales_order data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -88,7 +90,7 @@ func (r *salesOrder) GetByID(id int, countOnly bool, ctx context.Context, result
 				Scan(&salesOrder.ID, &salesOrder.AgentID, &salesOrder.AgentName, &salesOrder.AgentEmail, &salesOrder.AgentProvinceID, &salesOrder.AgentProvinceName, &salesOrder.AgentCityID, &salesOrder.AgentCityName, &salesOrder.AgentDistrictID, &salesOrder.AgentDistrictName, &salesOrder.AgentVillageID, &salesOrder.AgentVillageName, &salesOrder.AgentAddress, &salesOrder.AgentPhone, &salesOrder.AgentMainMobilePhone, &salesOrder.StoreID, &salesOrder.StoreName, &salesOrder.StoreCode, &salesOrder.StoreEmail, &salesOrder.StoreProvinceID, &salesOrder.StoreProvinceName, &salesOrder.StoreCityID, &salesOrder.StoreCityName, &salesOrder.StoreDistrictID, &salesOrder.StoreDistrictName, &salesOrder.StoreVillageID, &salesOrder.StoreVillageName, &salesOrder.StoreAddress, &salesOrder.StorePhone, &salesOrder.StoreMainMobilePhone, &salesOrder.BrandID, &salesOrder.BrandName, &salesOrder.UserID, &salesOrder.UserEmail, &salesOrder.UserFirstName, &salesOrder.UserLastName, &salesOrder.UserRoleID, &salesOrder.OrderSourceID, &salesOrder.OrderSourceName, &salesOrder.OrderStatusID, &salesOrder.OrderStatusName, &salesOrder.SalesmanID, &salesOrder.SalesmanName, &salesOrder.SoCode, &salesOrder.SoDate, &salesOrder.SoRefCode, &salesOrder.SoRefDate, &salesOrder.GLong, &salesOrder.GLat, &salesOrder.Note, &salesOrder.InternalComment, &salesOrder.TotalAmount, &salesOrder.TotalTonase, &salesOrder.CreatedAt, &salesOrder.UpdatedAt)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -99,7 +101,7 @@ func (r *salesOrder) GetByID(id int, countOnly bool, ctx context.Context, result
 			setSalesOrderOnRedis := r.redisdb.Client().Set(ctx, salesOrderRedisKey, salesOrderJson, 1*time.Hour)
 
 			if setSalesOrderOnRedis.Err() != nil {
-				errorLogData := helper.WriteLog(setSalesOrderOnRedis.Err(), 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(setSalesOrderOnRedis.Err(), http.StatusInternalServerError, nil)
 				response.Error = setSalesOrderOnRedis.Err()
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -113,7 +115,7 @@ func (r *salesOrder) GetByID(id int, countOnly bool, ctx context.Context, result
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -133,14 +135,14 @@ func (r *salesOrder) GetByCode(soCode string, countOnly bool, ctx context.Contex
 	var salesOrder models.SalesOrder
 	var total int64
 
-	salesOrderRedisKey := fmt.Sprintf("%s:%s", "sales-order-by-code", soCode)
+	salesOrderRedisKey := fmt.Sprintf("%s:%s", constants.SALES_ORDER_BY_CODE, soCode)
 	salesOrderOnRedis, err := r.redisdb.Client().Get(ctx, salesOrderRedisKey).Result()
 
 	if err == redis.Nil {
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM sales_orders WHERE deleted_at IS NULL AND so_code = ?", soCode).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -149,7 +151,7 @@ func (r *salesOrder) GetByCode(soCode string, countOnly bool, ctx context.Contex
 
 		if total == 0 {
 			err = helper.NewError("sales_order data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -180,7 +182,7 @@ func (r *salesOrder) GetByCode(soCode string, countOnly bool, ctx context.Contex
 				Scan(&salesOrder.ID, &salesOrder.AgentID, &salesOrder.AgentName, &salesOrder.AgentEmail, &salesOrder.AgentProvinceID, &salesOrder.AgentProvinceName, &salesOrder.AgentCityID, &salesOrder.AgentCityName, &salesOrder.AgentDistrictID, &salesOrder.AgentDistrictName, &salesOrder.AgentVillageID, &salesOrder.AgentVillageName, &salesOrder.AgentAddress, &salesOrder.AgentPhone, &salesOrder.AgentMainMobilePhone, &salesOrder.StoreID, &salesOrder.StoreName, &salesOrder.StoreCode, &salesOrder.StoreEmail, &salesOrder.StoreProvinceID, &salesOrder.StoreProvinceName, &salesOrder.StoreCityID, &salesOrder.StoreCityName, &salesOrder.StoreDistrictID, &salesOrder.StoreDistrictName, &salesOrder.StoreVillageID, &salesOrder.StoreVillageName, &salesOrder.StoreAddress, &salesOrder.StorePhone, &salesOrder.StoreMainMobilePhone, &salesOrder.BrandID, &salesOrder.BrandName, &salesOrder.UserID, &salesOrder.UserEmail, &salesOrder.UserFirstName, &salesOrder.UserLastName, &salesOrder.UserRoleID, &salesOrder.OrderSourceID, &salesOrder.OrderSourceName, &salesOrder.OrderStatusID, &salesOrder.OrderStatusName, &salesOrder.SalesmanID, &salesOrder.SalesmanName, &salesOrder.SoCode, &salesOrder.SoDate, &salesOrder.SoRefCode, &salesOrder.SoRefDate, &salesOrder.GLong, &salesOrder.GLat, &salesOrder.Note, &salesOrder.InternalComment, &salesOrder.TotalAmount, &salesOrder.TotalTonase, &salesOrder.CreatedAt, &salesOrder.UpdatedAt)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -191,7 +193,7 @@ func (r *salesOrder) GetByCode(soCode string, countOnly bool, ctx context.Contex
 			setSalesOrderOnRedis := r.redisdb.Client().Set(ctx, salesOrderRedisKey, salesOrderJson, 1*time.Hour)
 
 			if setSalesOrderOnRedis.Err() != nil {
-				errorLogData := helper.WriteLog(setSalesOrderOnRedis.Err(), 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(setSalesOrderOnRedis.Err(), http.StatusInternalServerError, nil)
 				response.Error = setSalesOrderOnRedis.Err()
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -205,7 +207,7 @@ func (r *salesOrder) GetByCode(soCode string, countOnly bool, ctx context.Contex
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -225,14 +227,14 @@ func (r *salesOrder) GetByAgentRefCode(soRefCode string, agentID int, countOnly 
 	var salesOrder models.SalesOrder
 	var total int64
 
-	salesOrderRedisKey := fmt.Sprintf("%s:%s:%d", "sales-order-by-agent-ref-code", soRefCode, agentID)
+	salesOrderRedisKey := fmt.Sprintf("%s:%s:%d", constants.SALES_ORDER_BY_AGENT_REF_CODE, soRefCode, agentID)
 	salesOrderOnRedis, err := r.redisdb.Client().Get(ctx, salesOrderRedisKey).Result()
 
 	if err == redis.Nil {
 		err = r.db.QueryRow("SELECT COUNT(*) as total FROM sales_orders WHERE deleted_at IS NULL AND so_ref_code = ? AND agent_id= ?", soRefCode, agentID).Scan(&total)
 
 		if err != nil {
-			errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -241,7 +243,7 @@ func (r *salesOrder) GetByAgentRefCode(soRefCode string, agentID int, countOnly 
 
 		if total == 0 {
 			err = helper.NewError("sales_order data not found")
-			errorLogData := helper.WriteLog(err, 404, "data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -272,7 +274,7 @@ func (r *salesOrder) GetByAgentRefCode(soRefCode string, agentID int, countOnly 
 				Scan(&salesOrder.ID, &salesOrder.AgentID, &salesOrder.AgentName, &salesOrder.AgentEmail, &salesOrder.AgentProvinceID, &salesOrder.AgentProvinceName, &salesOrder.AgentCityID, &salesOrder.AgentCityName, &salesOrder.AgentDistrictID, &salesOrder.AgentDistrictName, &salesOrder.AgentVillageID, &salesOrder.AgentVillageName, &salesOrder.AgentAddress, &salesOrder.AgentPhone, &salesOrder.AgentMainMobilePhone, &salesOrder.StoreID, &salesOrder.StoreName, &salesOrder.StoreCode, &salesOrder.StoreEmail, &salesOrder.StoreProvinceID, &salesOrder.StoreProvinceName, &salesOrder.StoreCityID, &salesOrder.StoreCityName, &salesOrder.StoreDistrictID, &salesOrder.StoreDistrictName, &salesOrder.StoreVillageID, &salesOrder.StoreVillageName, &salesOrder.StoreAddress, &salesOrder.StorePhone, &salesOrder.StoreMainMobilePhone, &salesOrder.BrandID, &salesOrder.BrandName, &salesOrder.UserID, &salesOrder.UserEmail, &salesOrder.UserFirstName, &salesOrder.UserLastName, &salesOrder.UserRoleID, &salesOrder.OrderSourceID, &salesOrder.OrderSourceName, &salesOrder.OrderStatusID, &salesOrder.OrderStatusName, &salesOrder.SalesmanID, &salesOrder.SalesmanName, &salesOrder.SoCode, &salesOrder.SoDate, &salesOrder.SoRefCode, &salesOrder.SoRefDate, &salesOrder.GLong, &salesOrder.GLat, &salesOrder.Note, &salesOrder.InternalComment, &salesOrder.TotalAmount, &salesOrder.TotalTonase, &salesOrder.CreatedAt, &salesOrder.UpdatedAt)
 
 			if err != nil {
-				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 				response.Error = err
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -283,7 +285,7 @@ func (r *salesOrder) GetByAgentRefCode(soRefCode string, agentID int, countOnly 
 			setSalesOrderOnRedis := r.redisdb.Client().Set(ctx, salesOrderRedisKey, salesOrderJson, 1*time.Hour)
 
 			if setSalesOrderOnRedis.Err() != nil {
-				errorLogData := helper.WriteLog(setSalesOrderOnRedis.Err(), 500, "Something went wrong, please try again later")
+				errorLogData := helper.WriteLog(setSalesOrderOnRedis.Err(), http.StatusInternalServerError, nil)
 				response.Error = setSalesOrderOnRedis.Err()
 				response.ErrorLog = errorLogData
 				resultChan <- response
@@ -297,7 +299,7 @@ func (r *salesOrder) GetByAgentRefCode(soRefCode string, agentID int, countOnly 
 		}
 
 	} else if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -473,7 +475,7 @@ func (r *salesOrder) Insert(request *models.SalesOrder, sqlTransaction *sql.Tx, 
 	result, err := sqlTransaction.ExecContext(ctx, query, rawSqlValues...)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -483,7 +485,7 @@ func (r *salesOrder) Insert(request *models.SalesOrder, sqlTransaction *sql.Tx, 
 	salesOrderID, err := result.LastInsertId()
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -619,7 +621,7 @@ func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, sqlTransacti
 	result, err := sqlTransaction.ExecContext(ctx, updateQuery, id)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -629,7 +631,7 @@ func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, sqlTransacti
 	salesOrderID, err := result.LastInsertId()
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -645,11 +647,11 @@ func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, sqlTransacti
 
 func (r *salesOrder) RemoveCacheByID(id int, ctx context.Context, resultChan chan *models.SalesOrderChan) {
 	response := &models.SalesOrderChan{}
-	salesOrderRedisKey := fmt.Sprintf("%s:%d", "sales-order", id)
+	salesOrderRedisKey := fmt.Sprintf("%s:%d", constants.SALES_ORDER, id)
 	result, err := r.redisdb.Client().Del(ctx, salesOrderRedisKey).Result()
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -658,11 +660,11 @@ func (r *salesOrder) RemoveCacheByID(id int, ctx context.Context, resultChan cha
 
 	fmt.Println(result)
 
-	salesOrderDetailRedisKey := fmt.Sprintf("%s:%d", "sales-order-detail-by-sales-order-id", id)
+	salesOrderDetailRedisKey := fmt.Sprintf("%s:%d", constants.SALES_ORDER_DETAIL_BY_SALES_ORDER_ID, id)
 	result, err = r.redisdb.Client().Del(ctx, salesOrderDetailRedisKey).Result()
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response

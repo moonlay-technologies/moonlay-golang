@@ -3,9 +3,9 @@ package usecases
 import (
 	"context"
 	"database/sql"
-	"poc-order-service/app/models"
-	"poc-order-service/app/repositories"
-	"poc-order-service/global/utils/model"
+	"order-service/app/models"
+	"order-service/app/repositories"
+	"order-service/global/utils/model"
 	"time"
 
 	"github.com/bxcodec/dbresolver"

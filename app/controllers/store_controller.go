@@ -5,10 +5,10 @@ import (
 	"github.com/bxcodec/dbresolver"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"poc-order-service/app/models"
-	"poc-order-service/app/usecases"
-	"poc-order-service/global/utils/helper"
-	baseModel "poc-order-service/global/utils/model"
+	"order-service/app/models"
+	"order-service/app/usecases"
+	"order-service/global/utils/helper"
+	baseModel "order-service/global/utils/model"
 	"strconv"
 )
 
