@@ -11,6 +11,7 @@ type DeliveryOrder struct {
 	SalesOrder            *SalesOrder            `json:"sales_order,omitempty" bson:"sales_order"`
 	SalesOrderCode        NullString             `json:"sales_order_code,omitempty" bson:"sales_order_code"`
 	SalesOrderDate        NullString             `json:"sales_order_date,omitempty" bson:"sales_order_date"`
+	Salesman              *Salesman              `json:"salesman,omitempty" bson:"salesman"`
 	WarehouseID           int                    `json:"warehouse_id,omitempty" bson:"warehouse_id"`
 	Warehouse             *Warehouse             `json:"warehouse,omitempty" bson:"warehouse"`
 	WarehouseName         string                 `json:"warehouse_name,omitempty" bson:"warehouse_name"`

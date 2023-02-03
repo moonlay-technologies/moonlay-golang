@@ -111,8 +111,9 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 			SoDetailID:      v.SoDetailID,
 			ProductSku:      v.ProductSKU,
 			ProductName:     v.ProductName,
-			UomCode:         v.UomCode,
+			UomCode:         v.Uom.Code.String,
 			Qty:             v.Qty,
+			ResidualQty:     v.SoDetail.ResidualQty,
 			Note:            v.Note.String,
 		}
 		deliveryOrderDetailResults = append(deliveryOrderDetailResults, &deliveryOrderDetailResult)
@@ -124,6 +125,10 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		SalesOrderSoDate:          deliveryOrder.SalesOrder.SoDate,
 		SalesOrderNote:            deliveryOrder.SalesOrder.Note.String,
 		SalesOrderInternalComment: deliveryOrder.SalesOrder.InternalComment.String,
+		SalesmanName:              deliveryOrder.Salesman.Name,
+		StoreName:                 deliveryOrder.Store.Name.String,
+		StoreCityName:             deliveryOrder.Store.Name.String,
+		StoreProvinceName:         deliveryOrder.Store.ProvinceName.String,
 		TotalAmount:               int(deliveryOrder.SalesOrder.TotalAmount),
 		WarehouseID:               deliveryOrder.WarehouseID,
 		WarehouseAddress:          deliveryOrder.Warehouse.Address.String,
