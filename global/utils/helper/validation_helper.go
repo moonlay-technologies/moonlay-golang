@@ -1,7 +1,14 @@
 package helper
 
-import "fmt"
+import (
+	"fmt"
+	"order-service/app/models"
+)
 
-func GenerateClause(id int, status string) string {
-	return fmt.Sprintf("id = %d AND status = '%s'", id, status)
+func GenerateMustActive(table string, reqField string, id int, status string) *models.MustActiveRequest {
+	return &models.MustActiveRequest{
+		Table:    table,
+		ReqField: reqField,
+		Clause:   fmt.Sprintf("id = %d AND status = '%s'", id, status),
+	}
 }

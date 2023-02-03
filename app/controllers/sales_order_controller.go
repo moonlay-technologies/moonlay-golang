@@ -217,26 +217,14 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 	}
 
 	mustActiveField := []*models.MustActiveRequest{
-		{
-			Table:    "agents",
-			ReqField: "agent_id",
-			Clause:   fmt.Sprintf("id = %d AND status = '%s'", insertRequest.AgentID, "active"),
-		},
-		{
-			Table:    "stores",
-			ReqField: "store_id",
-			Clause:   helper.GenerateClause(insertRequest.StoreID, "active"),
-		},
+		helper.GenerateMustActive("agents", "agent_id", insertRequest.AgentID, "active"),
+		helper.GenerateMustActive("stores", "store_id", insertRequest.StoreID, "active"),
 		{
 			Table:    "brands",
 			ReqField: "brand_id",
-			Clause:   helper.GenerateClause(insertRequest.BrandID, "active"),
+			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", insertRequest.BrandID),
 		},
-		{
-			Table:    "users",
-			ReqField: "user_id",
-			Clause:   helper.GenerateClause(insertRequest.UserID, "active"),
-		},
+		helper.GenerateMustActive("users", "user_id", insertRequest.UserID, "ACTIVE"),
 	}
 	for i, v := range insertRequest.SalesOrderDetails {
 		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
