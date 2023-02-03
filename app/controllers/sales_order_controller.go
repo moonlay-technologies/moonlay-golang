@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"order-service/app/middlewares"
 	"order-service/app/models"
+	"order-service/app/models/constants"
 	"order-service/app/usecases"
 	"order-service/global/utils/helper"
 	baseModel "order-service/global/utils/model"
@@ -224,17 +225,17 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 		{
 			Table:    "stores",
 			ReqField: "store_id",
-			Clause:   fmt.Sprintf("id = %d AND status = '%s'", insertRequest.StoreID, "active"),
+			Clause:   helper.GenerateClause(insertRequest.StoreID, "active"),
 		},
 		{
 			Table:    "brands",
 			ReqField: "brand_id",
-			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", insertRequest.BrandID),
+			Clause:   helper.GenerateClause(insertRequest.BrandID, "active"),
 		},
 		{
 			Table:    "users",
 			ReqField: "user_id",
-			Clause:   fmt.Sprintf("id = %d AND status = '%s'", insertRequest.UserID, "ACTIVE"),
+			Clause:   helper.GenerateClause(insertRequest.UserID, "active"),
 		},
 	}
 	for i, v := range insertRequest.SalesOrderDetails {
@@ -255,11 +256,11 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 	}
 
 	uniqueField := []*models.UniqueRequest{{
-		Table: "sales_orders",
+		Table: constants.SALES_ORDERS_TABLE,
 		Field: "so_ref_code",
 		Value: insertRequest.SoRefCode,
 	}, {
-		Table: "sales_orders",
+		Table: constants.SALES_ORDERS_TABLE,
 		Field: "device_id",
 		Value: insertRequest.DeviceId,
 	}}
