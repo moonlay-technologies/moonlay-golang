@@ -128,7 +128,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 	getAgentResult := <-getAgentResultChan
 
 	if getAgentResult.Error != nil {
-		errorLogData := helper.WriteLog(getAgentResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLogData := helper.WriteLog(getAgentResult.Error, http.StatusInternalServerError, nil)
 		return &models.SalesOrderResponse{}, errorLogData
 	}
 
@@ -137,7 +137,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 	getStoreResult := <-getStoreResultChan
 
 	if getStoreResult.Error != nil {
-		errorLogData := helper.WriteLog(getStoreResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLogData := helper.WriteLog(getStoreResult.Error, http.StatusInternalServerError, nil)
 		return &models.SalesOrderResponse{}, errorLogData
 	}
 
@@ -152,7 +152,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 	getUserResult := <-getUserResultChan
 
 	if getUserResult.Error != nil {
-		errorLogData := helper.WriteLog(getUserResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLogData := helper.WriteLog(getUserResult.Error, http.StatusInternalServerError, nil)
 		return &models.SalesOrderResponse{}, errorLogData
 	}
 
@@ -161,7 +161,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 	getSalesmanResult := <-getSalesmanResultChan
 
 	if getSalesmanResult.Error != nil {
-		errorLogData := helper.WriteLog(getSalesmanResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLogData := helper.WriteLog(getSalesmanResult.Error, http.StatusInternalServerError, nil)
 		return &models.SalesOrderResponse{}, errorLogData
 	}
 
@@ -239,7 +239,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		getProductResult := <-getProductResultChan
 
 		if getProductResult.Error != nil {
-			errorLogData := helper.WriteLog(getProductResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLog(getProductResult.Error, http.StatusInternalServerError, nil)
 			return &models.SalesOrderResponse{}, errorLogData
 		}
 
@@ -251,7 +251,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		getCategoryResult := <-getCategoryResultChan
 
 		if getCategoryResult.Error != nil {
-			errorLogData := helper.WriteLog(getCategoryResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLog(getCategoryResult.Error, http.StatusInternalServerError, nil)
 			return &models.SalesOrderResponse{}, errorLogData
 		}
 
@@ -262,7 +262,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		getUomResult := <-getUomResultChan
 
 		if getUomResult.Error != nil {
-			errorLogData := helper.WriteLog(getUomResult.Error, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLogData := helper.WriteLog(getUomResult.Error, http.StatusInternalServerError, nil)
 			return &models.SalesOrderResponse{}, errorLogData
 		}
 
@@ -294,7 +294,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 	err := u.kafkaClient.WriteToTopic("create-sales-order", keyKafka, messageKafka)
 
 	if err != nil {
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		return &models.SalesOrderResponse{}, errorLogData
 	}
 
