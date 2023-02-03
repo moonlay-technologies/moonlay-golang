@@ -30,7 +30,7 @@ type deliveryOrderLogRepository struct {
 func InitDeliveryOrderLogRepository(mongod mongodb.MongoDBInterface) DeliveryOrderLogRepositoryInterface {
 	return &deliveryOrderLogRepository{
 		mongod:     mongod,
-		collection: "delivery_order_logs",
+		collection: constants.DELIVERY_ORDER_LOGS,
 	}
 }
 

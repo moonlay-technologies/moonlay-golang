@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"order-service/app/models"
-	"order-service/app/models/constants"
 	"order-service/app/repositories"
 	mongoRepositories "order-service/app/repositories/mongod"
 	openSearchRepositories "order-service/app/repositories/open_search"

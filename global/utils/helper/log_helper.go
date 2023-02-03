@@ -10,9 +10,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// var DefaultStatusText = map[int]string{
+// 	http.StatusInternalServerError: "Something went wrong, please try again later",
+// 	http.StatusNotFound:            "data not found",
+// }
+
 var DefaultStatusText = map[int]string{
-	http.StatusInternalServerError: "Something went wrong, please try again later",
-	http.StatusNotFound:            "data not found",
+	http.StatusInternalServerError: "Terjadi Kesalahan, Silahkan Coba lagi Nanti",
+	http.StatusNotFound:            "Data tidak Ditemukan",
 }
 
 func WriteLog(err error, errorCode int, message interface{}) *model.ErrorLog {
