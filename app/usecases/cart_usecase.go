@@ -3,7 +3,6 @@ package usecases
 import (
 	"context"
 	"database/sql"
-	"github.com/bxcodec/dbresolver"
 	"order-service/app/models"
 	"order-service/app/repositories"
 	"order-service/global/utils/model"
