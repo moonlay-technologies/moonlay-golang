@@ -125,6 +125,7 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		SalesOrderSoDate:          deliveryOrder.SalesOrder.SoDate,
 		SalesOrderNote:            deliveryOrder.SalesOrder.Note.String,
 		SalesOrderInternalComment: deliveryOrder.SalesOrder.InternalComment.String,
+		SalesOrderReferralCode:    deliveryOrder.SalesOrder.ReferralCode.String,
 		SalesmanName:              deliveryOrder.Salesman.Name,
 		StoreName:                 deliveryOrder.Store.Name.String,
 		StoreCityName:             deliveryOrder.Store.Name.String,
