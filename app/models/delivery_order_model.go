@@ -55,49 +55,49 @@ type DeliveryOrder struct {
 }
 
 type DeliveryOrderStoreRequest struct {
-	RequestID            string                             `json:"request_id,omitempty"`
-	AgentID              int                                `json:"agent_id,omitempty" binding:"required"`
-	StoreID              int                                `json:"store_id,omitempty" binding:"required"`
-	SalesOrderID         int                                `json:"sales_order_id,omitempty" binding:"required"`
-	WarehouseID          int                                `json:"warehouse_id,omitempty" binding:"required"`
-	OrderSourceID        int                                `json:"order_source_id,omitempty" binding:"required"`
-	OrderStatusID        int                                `json:"order_status_id,omitempty" binding:"required"`
-	DoCode               string                             `json:"do_code,omitempty" bson:"do_code" binding:"required"`
-	DoDate               string                             `json:"do_date,omitempty" bson:"do_date"`
-	DoRefCode            string                             `json:"do_ref_code,omitempty" binding:"required"`
-	DoRefDate            string                             `json:"do_ref_date,omitempty" binding:"required"`
-	DriverName           string                             `json:"driver_name,omitempty"`
-	PlatNumber           string                             `json:"plat_number,omitempty"`
-	Note                 string                             `json:"note,omitempty"`
-	DeliveryOrderDetails []*DeliveryOrderDetailStoreRequest `json:"delivery_order_details,omitempty" binding:"required"`
+	RequestID            string                             `json:"request_id,omitempty" bson:"request_id,omitempty"`
+	AgentID              int                                `json:"agent_id,omitempty" bson:"agent_id,omitempty" binding:"required"`
+	StoreID              int                                `json:"store_id,omitempty" bson:"store_id,omitempty" binding:"required"`
+	SalesOrderID         int                                `json:"sales_order_id,omitempty" bson:"sales_order_id,omitempty" binding:"required"`
+	WarehouseID          int                                `json:"warehouse_id,omitempty" bson:"warehouse_id,omitempty" binding:"required"`
+	OrderSourceID        int                                `json:"order_source_id,omitempty" bson:"order_source_id,omitempty" binding:"required"`
+	OrderStatusID        int                                `json:"order_status_id,omitempty" bson:"order_status_id,omitempty" binding:"required"`
+	DoCode               string                             `json:"do_code,omitempty" bson:"do_code,omitempty" binding:"required"`
+	DoDate               string                             `json:"do_date,omitempty" bson:"do_date,omitempty"`
+	DoRefCode            string                             `json:"do_ref_code,omitempty" bson:"do_ref_code,omitempty" binding:"required"`
+	DoRefDate            string                             `json:"do_ref_date,omitempty" bson:"do_ref_date,omitempty" binding:"required"`
+	DriverName           string                             `json:"driver_name,omitempty" bson:"driver_name,omitempty"`
+	PlatNumber           string                             `json:"plat_number,omitempty" bson:"plat_number,omitempty"`
+	Note                 string                             `json:"note,omitempty" bson:"note,omitempty"`
+	DeliveryOrderDetails []*DeliveryOrderDetailStoreRequest `json:"delivery_order_details,omitempty" bson:"delivery_order_details,omitempty" binding:"required,dive,required"`
 }
 
 type DeliveryOrderStoreResponse struct {
-	SalesOrderID              int                                 `json:"sales_order_id,omitempty"`
-	SalesOrderSoCode          string                              `json:"sales_order_so_code,omitempty"`
-	SalesOrderSoDate          string                              `json:"sales_order_so_date,omitempty"`
-	SalesOrderReferralCode    string                              `json:"sales_order_refferal_code,omitempty"`
-	SalesOrderNote            string                              `json:"sales_order_note,omitempty"`
-	SalesOrderInternalComment string                              `json:"sales_order_internal_comment,omitempty"`
-	SalesmanName              string                              `json:"salesman_name,omitempty"`
-	StoreName                 string                              `json:"store_name,omitempty"`
-	StoreCityName             string                              `json:"store_city_name,omitempty"`
-	StoreProvinceName         string                              `json:"store_province_name,omitempty"`
-	TotalAmount               int                                 `json:"total_amount,omitempty"`
-	WarehouseID               int                                 `json:"warehouse_id,omitempty"`
-	WarehouseAddress          string                              `json:"warehouse_address,omitempty"`
-	OrderSourceID             int                                 `json:"order_source_id,omitempty"`
-	OrderStatusID             int                                 `json:"order_status_id,omitempty"`
-	AgentID                   int                                 `json:"agent_id,omitempty"`
-	StoreID                   int                                 `json:"store_id,omitempty"`
-	DoCode                    string                              `json:"do_code,omitempty" bson:"do_code"`
-	DoDate                    string                              `json:"do_date,omitempty" bson:"do_date"`
-	DoRefCode                 string                              `json:"do_ref_code,omitempty"`
-	DoRefDate                 string                              `json:"do_ref_date,omitempty"`
-	DriverName                string                              `json:"driver_name,omitempty"`
-	PlatNumber                string                              `json:"plat_number,omitempty"`
-	Note                      string                              `json:"note,omitempty"`
-	DeliveryOrderDetails      []*DeliveryOrderDetailStoreResponse `json:"delivery_order_details,omitempty"`
+	SalesOrderID              int                                 `json:"sales_order_id,omitempty" bson:"sales_order_id,omitempty"`
+	SalesOrderSoCode          string                              `json:"sales_order_so_code,omitempty" bson:"sales_order_so_code,omitempty"`
+	SalesOrderSoDate          string                              `json:"sales_order_so_date,omitempty" bson:"sales_order_so_date,omitempty"`
+	SalesOrderReferralCode    string                              `json:"sales_order_refferal_code,omitempty" bson:"sales_order_refferral_code,omitempty"`
+	SalesOrderNote            string                              `json:"sales_order_note,omitempty" bson:"sales_order_note,omitempty"`
+	SalesOrderInternalComment string                              `json:"sales_order_internal_comment,omitempty" bson:"sales_order_internal_comment,omitempty"`
+	SalesmanName              string                              `json:"salesman_name,omitempty" bson:"salesman_name,omitempty"`
+	StoreName                 string                              `json:"store_name,omitempty" bson:"store_name,omitempty"`
+	StoreCityName             string                              `json:"store_city_name,omitempty" bson:"store_city_name,omitempty"`
+	StoreProvinceName         string                              `json:"store_province_name,omitempty" bson:"store_province_name,omitempty"`
+	TotalAmount               int                                 `json:"total_amount,omitempty" bson:"total_amount,omitempty"`
+	WarehouseID               int                                 `json:"warehouse_id,omitempty" bson:"warehouse_id,omitempty"`
+	WarehouseAddress          string                              `json:"warehouse_address,omitempty" bson:"warehouse_address,omitempty"`
+	OrderSourceID             int                                 `json:"order_source_id,omitempty" bson:"order_source_id,omitempty"`
+	OrderStatusID             int                                 `json:"order_status_id,omitempty" bson:"order_status_id,omitempty"`
+	AgentID                   int                                 `json:"agent_id,omitempty" bson:"agent_id,omitempty"`
+	StoreID                   int                                 `json:"store_id,omitempty" bson:"store_id,omitempty"`
+	DoCode                    string                              `json:"do_code,omitempty" bson:"do_code,omitempty"`
+	DoDate                    string                              `json:"do_date,omitempty" bson:"do_date,omitempty"`
+	DoRefCode                 string                              `json:"do_ref_code,omitempty" bson:"do_ref_code,omitempty"`
+	DoRefDate                 string                              `json:"do_ref_date,omitempty" bson:"do_ref_date,omitempty"`
+	DriverName                string                              `json:"driver_name,omitempty" bson:"driver_name,omitempty"`
+	PlatNumber                string                              `json:"plat_number,omitempty" bson:"plat_number,omitempty"`
+	Note                      string                              `json:"note,omitempty" bson:"note,omitempty"`
+	DeliveryOrderDetails      []*DeliveryOrderDetailStoreResponse `json:"delivery_order_details,omitempty" bson:"delivery_order_details,omitempty"`
 }
 
 type DeliveryOrderChan struct {

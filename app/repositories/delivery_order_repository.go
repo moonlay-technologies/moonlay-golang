@@ -250,6 +250,12 @@ func (r *deliveryOrder) Insert(request *models.DeliveryOrder, sqlTransaction *sq
 		rawSqlValues = append(rawSqlValues, request.OrderStatusID)
 	}
 
+	if request.OrderSourceID != 0 {
+		rawSqlFields = append(rawSqlFields, "order_source_id")
+		rawSqlDataTypes = append(rawSqlDataTypes, "?")
+		rawSqlValues = append(rawSqlValues, request.OrderSourceID)
+	}
+
 	if request.AgentID != 0 {
 		rawSqlFields = append(rawSqlFields, "agent_id")
 		rawSqlDataTypes = append(rawSqlDataTypes, "?")
@@ -260,12 +266,6 @@ func (r *deliveryOrder) Insert(request *models.DeliveryOrder, sqlTransaction *sq
 		rawSqlFields = append(rawSqlFields, "store_id")
 		rawSqlDataTypes = append(rawSqlDataTypes, "?")
 		rawSqlValues = append(rawSqlValues, request.StoreID)
-	}
-
-	if request.OrderSourceID != 0 {
-		rawSqlFields = append(rawSqlFields, "order_source_id")
-		rawSqlDataTypes = append(rawSqlDataTypes, "?")
-		rawSqlValues = append(rawSqlValues, request.OrderSourceID)
 	}
 
 	if request.DoCode != "" {
@@ -292,6 +292,12 @@ func (r *deliveryOrder) Insert(request *models.DeliveryOrder, sqlTransaction *sq
 		rawSqlValues = append(rawSqlValues, request.DoRefDate)
 	}
 
+	if request.DriverName.String != "" {
+		rawSqlFields = append(rawSqlFields, "driver_name")
+		rawSqlDataTypes = append(rawSqlDataTypes, "?")
+		rawSqlValues = append(rawSqlValues, request.DriverName.String)
+	}
+
 	if request.PlatNumber.String != "" {
 		rawSqlFields = append(rawSqlFields, "plat_number")
 		rawSqlDataTypes = append(rawSqlDataTypes, "?")
@@ -302,12 +308,6 @@ func (r *deliveryOrder) Insert(request *models.DeliveryOrder, sqlTransaction *sq
 		rawSqlFields = append(rawSqlFields, "note")
 		rawSqlDataTypes = append(rawSqlDataTypes, "?")
 		rawSqlValues = append(rawSqlValues, request.Note.String)
-	}
-
-	if request.DriverName.String != "" {
-		rawSqlFields = append(rawSqlFields, "driver_name")
-		rawSqlDataTypes = append(rawSqlDataTypes, "?")
-		rawSqlValues = append(rawSqlValues, request.DriverName.String)
 	}
 
 	if request.IsDoneSyncToEs != "" {
@@ -322,9 +322,19 @@ func (r *deliveryOrder) Insert(request *models.DeliveryOrder, sqlTransaction *sq
 		rawSqlValues = append(rawSqlValues, request.StartDateSyncToEs.Format("2006-01-02 15:04:05"))
 	}
 
+	if request.EndDateSyncToEs != nil {
+		rawSqlFields = append(rawSqlFields, "end_date_sync_to_es")
+		rawSqlDataTypes = append(rawSqlDataTypes, "?")
+		rawSqlValues = append(rawSqlValues, request.EndDateSyncToEs.Format("2006-01-02 15:04:05"))
+	}
+
 	rawSqlFields = append(rawSqlFields, "created_at")
 	rawSqlDataTypes = append(rawSqlDataTypes, "?")
 	rawSqlValues = append(rawSqlValues, request.CreatedAt.Format("2006-01-02 15:04:05"))
+
+	rawSqlFields = append(rawSqlFields, "updated_at")
+	rawSqlDataTypes = append(rawSqlDataTypes, "?")
+	rawSqlValues = append(rawSqlValues, request.UpdatedAt.Format("2006-01-02 15:04:05"))
 
 	rawSqlFieldsJoin := strings.Join(rawSqlFields, ",")
 	rawSqlDataTypesJoin := strings.Join(rawSqlDataTypes, ",")

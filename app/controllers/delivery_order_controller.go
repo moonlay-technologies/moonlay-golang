@@ -2,18 +2,19 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"order-service/app/middlewares"
 	"order-service/app/models"
 	"order-service/app/usecases"
 	"order-service/global/utils/helper"
 	baseModel "order-service/global/utils/model"
 	"strconv"
-	"strings"
 
 	"github.com/bxcodec/dbresolver"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 )
 
 type DeliveryOrderControllerInterface interface {
@@ -23,16 +24,18 @@ type DeliveryOrderControllerInterface interface {
 }
 
 type deliveryOrderController struct {
-	deliveryOrderUseCase usecases.DeliveryOrderUseCaseInterface
-	db                   dbresolver.DB
-	ctx                  context.Context
+	deliveryOrderUseCase        usecases.DeliveryOrderUseCaseInterface
+	requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface
+	db                          dbresolver.DB
+	ctx                         context.Context
 }
 
-func InitDeliveryOrderController(deliveryOrderUseCase usecases.DeliveryOrderUseCaseInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderControllerInterface {
+func InitDeliveryOrderController(deliveryOrderUseCase usecases.DeliveryOrderUseCaseInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderControllerInterface {
 	return &deliveryOrderController{
-		deliveryOrderUseCase: deliveryOrderUseCase,
-		db:                   db,
-		ctx:                  ctx,
+		deliveryOrderUseCase:        deliveryOrderUseCase,
+		requestValidationMiddleware: requestValidationMiddleware,
+		db:                          db,
+		ctx:                         ctx,
 	}
 }
 
@@ -46,20 +49,70 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 
 	err := ctx.ShouldBindJSON(insertRequest)
 	if err != nil {
-		fmt.Println("error")
-		messages := []string{}
-		for _, value := range err.(validator.ValidationErrors) {
-			message := fmt.Sprintf("Data %s tidak boleh kosong", value.Field())
-			messages = append(messages, message)
+		var unmarshalTypeError *json.UnmarshalTypeError
+
+		if errors.As(err, &unmarshalTypeError) {
+			c.requestValidationMiddleware.DataTypeValidation(ctx, err, unmarshalTypeError)
+			return
+		} else {
+			c.requestValidationMiddleware.MandatoryValidation(ctx, err)
+			return
 		}
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       messages,
-			SystemMessage: strings.Split(err.Error(), "\n"),
-			StatusCode:    http.StatusBadRequest,
+	}
+
+	mustActiveField := []*models.MustActiveRequest{
+		{
+			Table:    "agents",
+			ReqField: "agent_id",
+			Clause:   fmt.Sprintf("id = %d AND status = '%s'", insertRequest.AgentID, "active"),
+		},
+		{
+			Table:    "stores",
+			ReqField: "store_id",
+			Clause:   fmt.Sprintf("id = %d AND status = '%s'", insertRequest.StoreID, "active"),
+		},
+	}
+
+	for i, v := range insertRequest.DeliveryOrderDetails {
+		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+			Table:    "brands",
+			ReqField: fmt.Sprintf("delivery_order_details[%d].brand_id", i),
+			Clause:   fmt.Sprintf("id = %d AND status_active = %d", v.BrandID, 1),
 		})
-		result.StatusCode = http.StatusBadRequest
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
+		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+			Table:    "products",
+			ReqField: fmt.Sprintf("delivery_order_details[%d].product_id", i),
+			Clause:   fmt.Sprintf("id = %d AND isActive = %d", v.ProductID, 1),
+		})
+		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+			Table:    "uoms",
+			ReqField: fmt.Sprintf("delivery_order_details[%d].uom_id", i),
+			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", v.UomID),
+		})
+	}
+
+	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
+	if err != nil {
+		fmt.Println("Error active validation", err)
+		return
+	}
+
+	uniqueField := []*models.UniqueRequest{
+		{
+			Table: "delivery_orders",
+			Field: "do_code",
+			Value: insertRequest.DoCode,
+		},
+		{
+			Table: "delivery_orders",
+			Field: "do_ref_code",
+			Value: insertRequest.DoRefCode,
+		},
+	}
+
+	err = c.requestValidationMiddleware.UniqueValidation(ctx, uniqueField)
+	if err != nil {
+		fmt.Println("Error unique validation", err)
 		return
 	}
 
@@ -123,9 +176,9 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		SalesOrderID:              deliveryOrder.SalesOrderID,
 		SalesOrderSoCode:          deliveryOrder.SalesOrder.SoCode,
 		SalesOrderSoDate:          deliveryOrder.SalesOrder.SoDate,
+		SalesOrderReferralCode:    deliveryOrder.SalesOrder.SoRefCode.String,
 		SalesOrderNote:            deliveryOrder.SalesOrder.Note.String,
 		SalesOrderInternalComment: deliveryOrder.SalesOrder.InternalComment.String,
-		SalesOrderReferralCode:    deliveryOrder.SalesOrder.ReferralCode.String,
 		SalesmanName:              deliveryOrder.Salesman.Name,
 		StoreName:                 deliveryOrder.Store.Name.String,
 		StoreCityName:             deliveryOrder.Store.Name.String,

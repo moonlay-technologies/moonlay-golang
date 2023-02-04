@@ -110,10 +110,6 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		return &models.DeliveryOrder{}, getWarehouseResult.ErrorLog
 	}
 
-	// salesOrderRequest := &models.SalesOrderRequest{
-	// 	ID: request.SalesOrderID,
-	// }
-
 	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
 	go u.salesOrderRepository.GetByID(request.SalesOrderID, false, ctx, getSalesOrderResultChan)
 	getSalesOrderResult := <-getSalesOrderResultChan
@@ -146,7 +142,6 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		return &models.DeliveryOrder{}, getSalesmanResult.ErrorLog
 	}
 
-	doCode := helper.GenerateDOCode(getSalesOrderResult.SalesOrder.AgentID, getOrderSourceResult.OrderSource.Code)
 	deliveryOrder := &models.DeliveryOrder{
 		SalesOrder:            getSalesOrderResult.SalesOrder,
 		SalesOrderID:          request.SalesOrderID,
@@ -261,7 +256,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 
 	deliveryOrderLog := &models.DeliveryOrderLog{
 		RequestID: request.RequestID,
-		DoCode:    doCode,
+		DoCode:    request.DoCode,
 		Data:      deliveryOrder,
 		Status:    "0",
 		CreatedAt: &now,
