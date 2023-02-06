@@ -454,6 +454,11 @@ func (r *deliveryOrderDetail) UpdateByID(id int, request *models.DeliveryOrderDe
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
+	if request.StartDateSyncToEs != nil {
+		query := fmt.Sprintf("%s='%v'", "start_date_sync_to_es", request.StartDateSyncToEs.Format("2006-01-02 15:04:05"))
+		rawSqlQueries = append(rawSqlQueries, query)
+	}
+
 	if request.EndDateSyncToEs != nil {
 		query := fmt.Sprintf("%s='%v'", "end_date_sync_to_es", request.EndDateSyncToEs.Format("2006-01-02 15:04:05"))
 		rawSqlQueries = append(rawSqlQueries, query)
