@@ -45,6 +45,8 @@ type deliveryOrderUseCase struct {
 	agentRepository                   repositories.AgentRepositoryInterface
 	storeRepository                   repositories.StoreRepositoryInterface
 	productRepository                 repositories.ProductRepositoryInterface
+	userRepository                    repositories.UserRepositoryInterface
+	salesmanRepository                repositories.SalesmanRepositoryInterface
 	deliveryOrderLogRepository        mongoRepositories.DeliveryOrderLogRepositoryInterface
 	deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface
 	salesOrderOpenSearchRepository    openSearchRepositories.SalesOrderOpenSearchRepositoryInterface
@@ -54,7 +56,7 @@ type deliveryOrderUseCase struct {
 	ctx                               context.Context
 }
 
-func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, deliveryOrderDetailRepository repositories.DeliveryOrderDetailRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderUseCase SalesOrderUseCaseInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderUseCaseInterface {
+func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, deliveryOrderDetailRepository repositories.DeliveryOrderDetailRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderUseCase SalesOrderUseCaseInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderUseCaseInterface {
 	return &deliveryOrderUseCase{
 		deliveryOrderRepository:           deliveryOrderRepository,
 		deliveryOrderDetailRepository:     deliveryOrderDetailRepository,
@@ -66,6 +68,8 @@ func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.Deli
 		brandRepository:                   brandRepository,
 		uomRepository:                     uomRepository,
 		productRepository:                 productRepository,
+		userRepository:                    userRepository,
+		salesmanRepository:                salesmanRepository,
 		agentRepository:                   agentRepository,
 		storeRepository:                   storeRepository,
 		deliveryOrderLogRepository:        deliveryOrderLogRepository,
@@ -80,6 +84,8 @@ func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.Deli
 
 func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.DeliveryOrder, *model.ErrorLog) {
 	now := time.Now()
+	unixTimestamp := now.Unix()
+	unixTimestampInt := int(unixTimestamp)
 	getOrderStatusResultChan := make(chan *models.OrderStatusChan)
 	go u.orderStatusRepository.GetByNameAndType("open", "delivery_order", false, ctx, getOrderStatusResultChan)
 	getOrderStatusResult := <-getOrderStatusResultChan
@@ -104,32 +110,53 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		return &models.DeliveryOrder{}, getWarehouseResult.ErrorLog
 	}
 
-	salesOrderRequest := &models.SalesOrderRequest{
-		ID: request.SalesOrderID,
-	}
-
 	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderOpenSearchRepository.GetByID(salesOrderRequest, getSalesOrderResultChan)
+	go u.salesOrderRepository.GetByID(request.SalesOrderID, false, ctx, getSalesOrderResultChan)
 	getSalesOrderResult := <-getSalesOrderResultChan
 
 	if getSalesOrderResult.Error != nil {
 		return &models.DeliveryOrder{}, getSalesOrderResult.ErrorLog
 	}
 
-	doCode := helper.GenerateDOCode(getSalesOrderResult.SalesOrder.AgentID, getOrderSourceResult.OrderSource.Code)
+	getStoreResultChan := make(chan *models.StoreChan)
+	go u.storeRepository.GetByID(request.StoreID, false, ctx, getStoreResultChan)
+	getStoreResult := <-getStoreResultChan
+
+	if getStoreResult.Error != nil {
+		return &models.DeliveryOrder{}, getStoreResult.ErrorLog
+	}
+
+	getUserResultChan := make(chan *models.UserChan)
+	go u.userRepository.GetByID(getSalesOrderResult.SalesOrder.UserID, false, ctx, getUserResultChan)
+	getUserResult := <-getUserResultChan
+
+	if getUserResult.Error != nil {
+		return &models.DeliveryOrder{}, getUserResult.ErrorLog
+	}
+
+	getSalesmanResultChan := make(chan *models.SalesmanChan)
+	go u.salesmanRepository.GetByEmail(getUserResult.User.Email, false, ctx, getSalesmanResultChan)
+	getSalesmanResult := <-getSalesmanResultChan
+
+	if getSalesmanResult.Error != nil {
+		return &models.DeliveryOrder{}, getSalesmanResult.ErrorLog
+	}
+
 	deliveryOrder := &models.DeliveryOrder{
 		SalesOrder:            getSalesOrderResult.SalesOrder,
 		SalesOrderID:          request.SalesOrderID,
+		Salesman:              getSalesmanResult.Salesman,
 		Warehouse:             getWarehouseResult.Warehouse,
+		Store:                 getStoreResult.Store,
 		StoreID:               request.StoreID,
 		AgentID:               request.AgentID,
 		WarehouseID:           request.WarehouseID,
 		OrderStatus:           getOrderStatusResult.OrderStatus,
-		OrderStatusID:         getOrderStatusResult.OrderStatus.ID,
+		OrderStatusID:         request.OrderStatusID,
 		OrderSource:           getOrderSourceResult.OrderSource,
 		OrderSourceID:         getOrderSourceResult.OrderSource.ID,
-		DoCode:                doCode,
-		DoDate:                now.Format("2006-01-02"),
+		DoCode:                request.DoCode,
+		DoDate:                request.DoDate,
 		DoRefCode:             models.NullString{NullString: sql.NullString{String: request.DoRefCode, Valid: true}},
 		DoRefDate:             models.NullString{NullString: sql.NullString{String: request.DoRefDate, Valid: true}},
 		DriverName:            models.NullString{NullString: sql.NullString{String: request.DriverName, Valid: true}},
@@ -143,7 +170,14 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		IsDoneSyncToEs:        "0",
 		Note:                  models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}},
 		StartDateSyncToEs:     &now,
+		EndDateSyncToEs:       &now,
+		StartCreatedDate:      &now,
+		EndCreatedDate:        &now,
+		CreatedBy:             request.SalesOrderID,
+		LatestUpdatedBy:       unixTimestampInt,
 		CreatedAt:             &now,
+		UpdatedAt:             &now,
+		DeletedAt:             nil,
 	}
 
 	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
@@ -165,20 +199,45 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 			return &models.DeliveryOrder{}, getSalesOrderDetailResult.ErrorLog
 		}
 
+		getProductOrderResultChan := make(chan *models.ProductChan)
+		go u.productRepository.GetByID(v.ProductID, false, ctx, getProductOrderResultChan)
+		getProductResult := <-getProductOrderResultChan
+
+		if getProductResult.Error != nil {
+			return &models.DeliveryOrder{}, getProductResult.ErrorLog
+		}
+
+		getUomResultChan := make(chan *models.UomChan)
+		go u.uomRepository.GetByID(v.UomID, false, ctx, getUomResultChan)
+		getUomResult := <-getUomResultChan
+
+		if getUomResult.Error != nil {
+			return &models.DeliveryOrder{}, getUomResult.ErrorLog
+		}
+
 		DoDetailCode, _ := helper.GenerateDODetailCode(int(createDeliveryOrderResult.ID), getSalesOrderResult.SalesOrder.AgentID, getSalesOrderDetailResult.SalesOrderDetail.ProductID, getSalesOrderDetailResult.SalesOrderDetail.UomID)
 
 		deliveryOrderDetail := &models.DeliveryOrderDetail{
-			DeliveryOrderID:   int(createDeliveryOrderResult.ID),
+			DeliveryOrderID:   v.DeliveryOrderID,
 			SoDetailID:        v.SoDetailID,
 			BrandID:           getSalesOrderResult.SalesOrder.BrandID,
 			ProductID:         getSalesOrderDetailResult.SalesOrderDetail.ProductID,
 			UomID:             getSalesOrderDetailResult.SalesOrderDetail.UomID,
+			OrderStatusID:     getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID,
 			DoDetailCode:      DoDetailCode,
 			Qty:               v.Qty,
+			ProductSKU:        getProductResult.Product.Sku.String,
+			ProductName:       getProductResult.Product.ProductName.String,
 			Note:              models.NullString{NullString: sql.NullString{String: v.Note, Valid: true}},
+			Product:           getProductResult.Product,
+			SoDetail:          getSalesOrderDetailResult.SalesOrderDetail,
+			Uom:               getUomResult.Uom,
 			IsDoneSyncToEs:    "0",
 			StartDateSyncToEs: &now,
+			EndDateSyncToEs:   &now,
 			CreatedAt:         &now,
+			UpdatedAt:         &now,
+			DeletedAt:         nil,
 		}
 
 		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
@@ -197,7 +256,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 
 	deliveryOrderLog := &models.DeliveryOrderLog{
 		RequestID: request.RequestID,
-		DoCode:    doCode,
+		DoCode:    request.DoCode,
 		Data:      deliveryOrder,
 		Status:    "0",
 		CreatedAt: &now,

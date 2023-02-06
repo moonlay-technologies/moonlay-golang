@@ -2,8 +2,11 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"order-service/app/middlewares"
 	"order-service/app/models"
 	"order-service/app/usecases"
 	"order-service/global/utils/helper"
@@ -21,16 +24,18 @@ type DeliveryOrderControllerInterface interface {
 }
 
 type deliveryOrderController struct {
-	deliveryOrderUseCase usecases.DeliveryOrderUseCaseInterface
-	db                   dbresolver.DB
-	ctx                  context.Context
+	deliveryOrderUseCase        usecases.DeliveryOrderUseCaseInterface
+	requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface
+	db                          dbresolver.DB
+	ctx                         context.Context
 }
 
-func InitDeliveryOrderController(deliveryOrderUseCase usecases.DeliveryOrderUseCaseInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderControllerInterface {
+func InitDeliveryOrderController(deliveryOrderUseCase usecases.DeliveryOrderUseCaseInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderControllerInterface {
 	return &deliveryOrderController{
-		deliveryOrderUseCase: deliveryOrderUseCase,
-		db:                   db,
-		ctx:                  ctx,
+		deliveryOrderUseCase:        deliveryOrderUseCase,
+		requestValidationMiddleware: requestValidationMiddleware,
+		db:                          db,
+		ctx:                         ctx,
 	}
 }
 
@@ -42,14 +47,72 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 	ctx.Set("full_path", ctx.FullPath())
 	ctx.Set("method", ctx.Request.Method)
 
-	err := ctx.BindJSON(insertRequest)
-
+	err := ctx.ShouldBindJSON(insertRequest)
 	if err != nil {
-		fmt.Println("error")
-		errorLog := helper.WriteLog(err, http.StatusBadRequest, helper.DefaultStatusText[http.StatusInternalServerError])
-		result.StatusCode = http.StatusBadRequest
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
+		var unmarshalTypeError *json.UnmarshalTypeError
+
+		if errors.As(err, &unmarshalTypeError) {
+			c.requestValidationMiddleware.DataTypeValidation(ctx, err, unmarshalTypeError)
+			return
+		} else {
+			c.requestValidationMiddleware.MandatoryValidation(ctx, err)
+			return
+		}
+	}
+
+	mustActiveField := []*models.MustActiveRequest{
+		{
+			Table:    "agents",
+			ReqField: "agent_id",
+			Clause:   fmt.Sprintf("id = %d AND status = '%s'", insertRequest.AgentID, "active"),
+		},
+		{
+			Table:    "stores",
+			ReqField: "store_id",
+			Clause:   fmt.Sprintf("id = %d AND status = '%s'", insertRequest.StoreID, "active"),
+		},
+	}
+
+	for i, v := range insertRequest.DeliveryOrderDetails {
+		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+			Table:    "brands",
+			ReqField: fmt.Sprintf("delivery_order_details[%d].brand_id", i),
+			Clause:   fmt.Sprintf("id = %d AND status_active = %d", v.BrandID, 1),
+		})
+		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+			Table:    "products",
+			ReqField: fmt.Sprintf("delivery_order_details[%d].product_id", i),
+			Clause:   fmt.Sprintf("id = %d AND isActive = %d", v.ProductID, 1),
+		})
+		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+			Table:    "uoms",
+			ReqField: fmt.Sprintf("delivery_order_details[%d].uom_id", i),
+			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", v.UomID),
+		})
+	}
+
+	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
+	if err != nil {
+		fmt.Println("Error active validation", err)
+		return
+	}
+
+	uniqueField := []*models.UniqueRequest{
+		{
+			Table: "delivery_orders",
+			Field: "do_code",
+			Value: insertRequest.DoCode,
+		},
+		{
+			Table: "delivery_orders",
+			Field: "do_ref_code",
+			Value: insertRequest.DoRefCode,
+		},
+	}
+
+	err = c.requestValidationMiddleware.UniqueValidation(ctx, uniqueField)
+	if err != nil {
+		fmt.Println("Error unique validation", err)
 		return
 	}
 
@@ -65,7 +128,6 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 	}
 
 	deliveryOrder, errorLog := c.deliveryOrderUseCase.Create(insertRequest, dbTransaction, ctx)
-	fmt.Println(deliveryOrder)
 	if errorLog != nil {
 		err = dbTransaction.Rollback()
 
@@ -95,7 +157,50 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		return
 	}
 
-	result.Data = deliveryOrder
+	deliveryOrderDetailResults := []*models.DeliveryOrderDetailStoreResponse{}
+	for _, v := range deliveryOrder.DeliveryOrderDetails {
+		deliveryOrderDetailResult := models.DeliveryOrderDetailStoreResponse{
+			DeliveryOrderID: v.DeliveryOrderID,
+			SoDetailID:      v.SoDetailID,
+			ProductSku:      v.ProductSKU,
+			ProductName:     v.ProductName,
+			UomCode:         v.Uom.Code.String,
+			Qty:             v.Qty,
+			ResidualQty:     v.SoDetail.ResidualQty,
+			Note:            v.Note.String,
+		}
+		deliveryOrderDetailResults = append(deliveryOrderDetailResults, &deliveryOrderDetailResult)
+	}
+
+	deliveryOrderResult := &models.DeliveryOrderStoreResponse{
+		SalesOrderID:              deliveryOrder.SalesOrderID,
+		SalesOrderSoCode:          deliveryOrder.SalesOrder.SoCode,
+		SalesOrderSoDate:          deliveryOrder.SalesOrder.SoDate,
+		SalesOrderReferralCode:    deliveryOrder.SalesOrder.SoRefCode.String,
+		SalesOrderNote:            deliveryOrder.SalesOrder.Note.String,
+		SalesOrderInternalComment: deliveryOrder.SalesOrder.InternalComment.String,
+		SalesmanName:              deliveryOrder.Salesman.Name,
+		StoreName:                 deliveryOrder.Store.Name.String,
+		StoreCityName:             deliveryOrder.Store.Name.String,
+		StoreProvinceName:         deliveryOrder.Store.ProvinceName.String,
+		TotalAmount:               int(deliveryOrder.SalesOrder.TotalAmount),
+		WarehouseID:               deliveryOrder.WarehouseID,
+		WarehouseAddress:          deliveryOrder.Warehouse.Address.String,
+		OrderSourceID:             deliveryOrder.OrderSourceID,
+		OrderStatusID:             deliveryOrder.OrderStatusID,
+		AgentID:                   deliveryOrder.AgentID,
+		StoreID:                   deliveryOrder.StoreID,
+		DoCode:                    deliveryOrder.DoCode,
+		DoDate:                    deliveryOrder.DoDate,
+		DoRefCode:                 deliveryOrder.DoRefCode.String,
+		DoRefDate:                 deliveryOrder.DoRefDate.String,
+		DriverName:                deliveryOrder.DriverName.String,
+		PlatNumber:                deliveryOrder.PlatNumber.String,
+		Note:                      deliveryOrder.Note.String,
+		DeliveryOrderDetails:      deliveryOrderDetailResults,
+	}
+
+	result.Data = deliveryOrderResult
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
 	return

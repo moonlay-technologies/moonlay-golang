@@ -164,7 +164,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		return &models.SalesOrderResponse{}, errorLogData
 	}
 
-	salesOrdersResponse.SalesmanName = models.NullString{sql.NullString{String: getSalesmanResult.Salesman.Name, Valid: true}}
+	salesOrdersResponse.SalesmanName = models.NullString{NullString: sql.NullString{String: getSalesmanResult.Salesman.Name, Valid: true}}
 
 	salesOrder := &models.SalesOrder{
 		CartID:            request.CartID,
@@ -175,18 +175,18 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		VisitationID:      request.VisitationID,
 		OrderStatusID:     getOrderStatusResult.OrderStatus.ID,
 		OrderSourceID:     request.OrderSourceID,
-		GLat:              models.NullFloat64{sql.NullFloat64{Float64: request.GLat, Valid: true}},
-		GLong:             models.NullFloat64{sql.NullFloat64{Float64: request.GLong, Valid: true}},
+		GLat:              models.NullFloat64{NullFloat64: sql.NullFloat64{Float64: request.GLat, Valid: true}},
+		GLong:             models.NullFloat64{NullFloat64: sql.NullFloat64{Float64: request.GLong, Valid: true}},
 		SoCode:            soCode,
-		SoRefCode:         models.NullString{sql.NullString{String: request.SoRefCode, Valid: true}},
+		SoRefCode:         models.NullString{NullString: sql.NullString{String: request.SoRefCode, Valid: true}},
 		SoDate:            now.Format("2006-01-02"),
-		SoRefDate:         models.NullString{sql.NullString{String: request.SoRefDate, Valid: true}},
-		Note:              models.NullString{sql.NullString{String: request.Note, Valid: true}},
-		InternalComment:   models.NullString{sql.NullString{String: request.InternalComment, Valid: true}},
+		SoRefDate:         models.NullString{NullString: sql.NullString{String: request.SoRefDate, Valid: true}},
+		Note:              models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}},
+		InternalComment:   models.NullString{NullString: sql.NullString{String: request.InternalComment, Valid: true}},
 		TotalAmount:       request.TotalAmount,
 		TotalTonase:       request.TotalTonase,
-		DeviceId:          models.NullString{sql.NullString{String: request.DeviceId, Valid: true}},
-		ReferralCode:      models.NullString{sql.NullString{String: request.ReferralCode, Valid: true}},
+		DeviceId:          models.NullString{NullString: sql.NullString{String: request.DeviceId, Valid: true}},
+		ReferralCode:      models.NullString{NullString: sql.NullString{String: request.ReferralCode, Valid: true}},
 		IsDoneSyncToEs:    "0",
 		CreatedAt:         &now,
 		StartDateSyncToEs: &now,
@@ -215,7 +215,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 			SentQty:           v.SentQty,
 			ResidualQty:       v.ResidualQty,
 			Price:             v.Price,
-			Note:              models.NullString{sql.NullString{String: request.Note, Valid: true}},
+			Note:              models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}},
 			IsDoneSyncToEs:    "0",
 			StartDateSyncToEs: &now,
 			CreatedAt:         &now,
