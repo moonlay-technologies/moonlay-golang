@@ -19,6 +19,7 @@ import (
 
 type DeliveryOrderControllerInterface interface {
 	Create(ctx *gin.Context)
+	UpdateByID(ctx *gin.Context)
 	Get(ctx *gin.Context)
 	GetByID(ctx *gin.Context)
 }
@@ -198,6 +199,112 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		PlatNumber:                deliveryOrder.PlatNumber.String,
 		Note:                      deliveryOrder.Note.String,
 		DeliveryOrderDetails:      deliveryOrderDetailResults,
+	}
+
+	result.Data = deliveryOrderResult
+	result.StatusCode = http.StatusOK
+	ctx.JSON(http.StatusOK, result)
+	return
+}
+
+func (c *deliveryOrderController) UpdateByID(ctx *gin.Context) {
+	id := ctx.Param("id")
+	intID, _ := strconv.Atoi(id)
+
+	var result baseModel.Response
+	var resultErrorLog *baseModel.ErrorLog
+	insertRequest := &models.DeliveryOrderUpdateByIDRequest{}
+
+	ctx.Set("full_path", ctx.FullPath())
+	ctx.Set("method", ctx.Request.Method)
+
+	err := ctx.ShouldBindJSON(insertRequest)
+	if err != nil {
+		var unmarshalTypeError *json.UnmarshalTypeError
+
+		if errors.As(err, &unmarshalTypeError) {
+			c.requestValidationMiddleware.DataTypeValidation(ctx, err, unmarshalTypeError)
+			return
+		} else {
+			c.requestValidationMiddleware.MandatoryValidation(ctx, err)
+			return
+		}
+	}
+
+	uniqueField := []*models.UniqueRequest{
+		{
+			Table: "delivery_orders",
+			Field: "do_ref_code",
+			Value: insertRequest.DoRefCode,
+		},
+	}
+
+	err = c.requestValidationMiddleware.UniqueValidation(ctx, uniqueField)
+	if err != nil {
+		fmt.Println("Error unique validation", err)
+		return
+	}
+
+	dbTransaction, err := c.db.BeginTx(ctx, nil)
+
+	if err != nil {
+		errorLog := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		resultErrorLog = errorLog
+		result.StatusCode = http.StatusInternalServerError
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	deliveryOrder, errorLog := c.deliveryOrderUseCase.UpdateByID(intID, insertRequest, dbTransaction, ctx)
+	if errorLog != nil {
+		err = dbTransaction.Rollback()
+
+		if err != nil {
+			errorLog = helper.WriteLog(err, http.StatusInternalServerError, nil)
+			resultErrorLog = errorLog
+			result.StatusCode = http.StatusInternalServerError
+			result.Error = resultErrorLog
+			ctx.JSON(result.StatusCode, result)
+			return
+		}
+
+		result.StatusCode = errorLog.StatusCode
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	err = dbTransaction.Commit()
+
+	if err != nil {
+		errorLog = helper.WriteLog(err, http.StatusInternalServerError, nil)
+		resultErrorLog = errorLog
+		result.StatusCode = http.StatusInternalServerError
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	deliveryOrderDetailResults := []*models.DeliveryOrderDetailUpdateByIDRequest{}
+	for _, v := range deliveryOrder.DeliveryOrderDetails {
+		deliveryOrderDetailResult := models.DeliveryOrderDetailUpdateByIDRequest{
+			Qty:  v.Qty,
+			Note: v.Note.String,
+		}
+		deliveryOrderDetailResults = append(deliveryOrderDetailResults, &deliveryOrderDetailResult)
+	}
+
+	deliveryOrderResult := &models.DeliveryOrderUpdateByIDRequest{
+		WarehouseID:          deliveryOrder.WarehouseID,
+		OrderSourceID:        deliveryOrder.OrderSourceID,
+		OrderStatusID:        deliveryOrder.OrderStatusID,
+		DoRefCode:            deliveryOrder.DoRefCode.String,
+		DoRefDate:            deliveryOrder.DoRefDate.String,
+		DriverName:           deliveryOrder.DriverName.String,
+		PlatNumber:           deliveryOrder.PlatNumber.String,
+		Note:                 deliveryOrder.Note.String,
+		DeliveryOrderDetails: deliveryOrderDetailResults,
 	}
 
 	result.Data = deliveryOrderResult

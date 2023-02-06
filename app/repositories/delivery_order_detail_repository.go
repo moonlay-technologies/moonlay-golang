@@ -18,6 +18,7 @@ import (
 )
 
 type DeliveryOrderDetailRepositoryInterface interface {
+	GetByDeliveryOrderID(deliveryOrderID int, countOnly bool, ctx context.Context, result chan *models.DeliveryOrderDetailsChan)
 	GetBySalesOrderID(salesOrderID int, countOnly bool, ctx context.Context, result chan *models.SalesOrderDetailsChan)
 	Insert(request *models.DeliveryOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.DeliveryOrderDetailChan)
 	UpdateByID(id int, deliveryOrderDetail *models.DeliveryOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.DeliveryOrderDetailChan)
@@ -32,6 +33,100 @@ func InitDeliveryOrderDetailRepository(db dbresolver.DB, redisdb redisdb.RedisIn
 	return &deliveryOrderDetail{
 		db:      db,
 		redisdb: redisdb,
+	}
+}
+
+func (r *deliveryOrderDetail) GetByDeliveryOrderID(deliveryOrderID int, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderDetailsChan) {
+	response := &models.DeliveryOrderDetailsChan{}
+	var deliveryOrderDetails []*models.DeliveryOrderDetail
+	var total int64
+
+	deliveryOrderDetailRedisKey := fmt.Sprintf("%s:%d", constants.DELIVERY_ORDER_DETAIL_BY_DELIVERY_ORDER_ID, deliveryOrderID)
+	deliveryOrderDetailsRedis, err := r.redisdb.Client().Get(ctx, deliveryOrderDetailRedisKey).Result()
+
+	if err == redis.Nil {
+		err = r.db.QueryRow("SELECT COUNT(*) as total FROM delivery_order_details WHERE deleted_at IS NULL AND delivery_order_id = ?", deliveryOrderID).Scan(&total)
+
+		if err != nil {
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+
+		if total == 0 {
+			err = helper.NewError("delivery_order_detail data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+
+		if countOnly == false {
+			query, err := r.db.Query(""+
+				"SELECT dod.id, dod.delivery_order_id, dod.so_detail_id, dod.brand_id, dod.product_id, dod.uom_id, dod.order_status_id, dod.do_detail_code, dod.qty, dod.note, dod.is_done_sync_to_es, dod.start_date_sync_to_es, dod.end_date_sync_to_es, dod.created_at, dod.updated_at "+
+				"FROM delivery_order_details as dod "+
+				"INNER JOIN sales_order_details as sod ON sod.id = dod.so_detail_id "+
+				"INNER JOIN brands as b ON b.id = dod.brand_id "+
+				"INNER JOIN products as p ON p.id = dod.product_id "+
+				"INNER JOIN uoms as u ON u.id = dod.uom_id "+
+				"INNER JOIN order_statuses as os ON os.id = dod.order_status_id "+
+				"WHERE dod.deleted_at IS NULL AND dod.delivery_order_id = ?", deliveryOrderID)
+
+			if err != nil {
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+				response.Error = err
+				response.ErrorLog = errorLogData
+				resultChan <- response
+				return
+			}
+
+			for query.Next() {
+				var deliveryOrderDetail models.DeliveryOrderDetail
+				err = query.Scan(&deliveryOrderDetail.ID, &deliveryOrderDetail.DeliveryOrderID, &deliveryOrderDetail.SoDetailID, &deliveryOrderDetail.BrandID, &deliveryOrderDetail.ProductID, &deliveryOrderDetail.UomID, &deliveryOrderDetail.OrderStatusID, &deliveryOrderDetail.DoDetailCode, &deliveryOrderDetail.Qty, &deliveryOrderDetail.Note, &deliveryOrderDetail.IsDoneSyncToEs, &deliveryOrderDetail.StartDateSyncToEs, &deliveryOrderDetail.EndDateSyncToEs, &deliveryOrderDetail.CreatedAt, &deliveryOrderDetail.UpdatedAt)
+
+				if err != nil {
+					errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+					response.Error = err
+					response.ErrorLog = errorLogData
+					resultChan <- response
+					return
+				}
+
+				deliveryOrderDetails = append(deliveryOrderDetails, &deliveryOrderDetail)
+			}
+
+			deliveryOrderDetailsJson, _ := json.Marshal(deliveryOrderDetails)
+			setDeliveryOrderDetailsOnRedis := r.redisdb.Client().Set(ctx, deliveryOrderDetailsRedis, deliveryOrderDetailsJson, 1*time.Hour)
+
+			if setDeliveryOrderDetailsOnRedis.Err() != nil {
+				errorLogData := helper.WriteLog(setDeliveryOrderDetailsOnRedis.Err(), http.StatusInternalServerError, nil)
+				response.Error = setDeliveryOrderDetailsOnRedis.Err()
+				response.ErrorLog = errorLogData
+				resultChan <- response
+				return
+			}
+
+			response.Total = total
+			response.DeliveryOrderDetails = deliveryOrderDetails
+			resultChan <- response
+			return
+		}
+
+	} else if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	} else {
+		_ = json.Unmarshal([]byte(deliveryOrderDetailsRedis), &deliveryOrderDetails)
+		response.DeliveryOrderDetails = deliveryOrderDetails
+		response.Total = total
+		resultChan <- response
+		return
 	}
 }
 
@@ -246,6 +341,11 @@ func (r *deliveryOrderDetail) UpdateByID(id int, request *models.DeliveryOrderDe
 
 	if request.OrderStatusID != 0 {
 		query := fmt.Sprintf("%s=%v", "order_status_id", request.OrderStatusID)
+		rawSqlQueries = append(rawSqlQueries, query)
+	}
+
+	if request.Qty != 0 {
+		query := fmt.Sprintf("%s=%v", "qty", request.Qty)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 

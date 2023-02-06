@@ -68,7 +68,7 @@ func (r *deliveryOrder) GetByID(id int, countOnly bool, ctx context.Context, res
 		if countOnly == false {
 			deliveryOrder = models.DeliveryOrder{}
 			err = r.db.QueryRow(""+
-				"SELECT do.id, sales_order_id, warehouse_id, order_status_id, order_source_id, do_code, do_date, do_ref_code, do_ref_date, driver_name, plat_number, note, created_at, so.so_code, so.so_date, w.code, w.name, w.province_id, w.city_id, w.district_id, w.village_id, provinces.name as province_name, cities.name as city_name, districts.name as district_name, villages.name as village_name, order_statuses.name as order_status_name, order_sources.source_name as order_source_name "+
+				"SELECT do.id, sales_order_id, warehouse_id, do.order_status_id, do.order_source_id, do_code, do_date, do_ref_code, do_ref_date, driver_name, plat_number, do.note, do.created_at, so.so_code, so.so_date, w.code, w.name, w.province_id, w.city_id, w.district_id, w.village_id, provinces.name as province_name, cities.name as city_name, districts.name as district_name, villages.name as village_name, order_statuses.name as order_status_name, order_sources.source_name as order_source_name "+
 				"FROM delivery_orders as do "+
 				"INNER JOIN sales_orders as so ON so.id = do.sales_order_id "+
 				"INNER JOIN warehouses as w ON w.id = do.warehouse_id "+
@@ -77,7 +77,7 @@ func (r *deliveryOrder) GetByID(id int, countOnly bool, ctx context.Context, res
 				"INNER JOIN districts ON districts.city_id = cities.id "+
 				"INNER JOIN villages ON villages.district_id = districts.id "+
 				"INNER JOIN order_statuses ON order_statuses.id = do.order_status_id "+
-				"INNER JOIN order_sources  ON order_sources.id = do.order_status_id "+
+				"INNER JOIN order_sources  ON order_sources.id = do.order_source_id "+
 				"WHERE do.deleted_at IS NULL AND do.id = ?", id).
 				Scan(&deliveryOrder.ID, &deliveryOrder.SalesOrderID, &deliveryOrder.WarehouseID, &deliveryOrder.OrderStatusID, &deliveryOrder.OrderSourceID, &deliveryOrder.DoCode, &deliveryOrder.DoDate, &deliveryOrder.DoRefCode, &deliveryOrder.DoRefDate, &deliveryOrder.DriverName, &deliveryOrder.PlatNumber, &deliveryOrder.Note, &deliveryOrder.CreatedAt, &deliveryOrder.SalesOrderCode, &deliveryOrder.SalesOrderDate, &deliveryOrder.WarehouseCode, &deliveryOrder.WarehouseName, &deliveryOrder.WarehouseProvinceID, &deliveryOrder.WarehouseCityID, &deliveryOrder.WarehouseDistrictID, &deliveryOrder.WarehouseVillageID, &deliveryOrder.WarehouseProvinceName, &deliveryOrder.WarehouseCityName, &deliveryOrder.WarehouseDistrictName, &deliveryOrder.WarehouseVillageName, &deliveryOrder.OrderStatusName, &deliveryOrder.OrderSourceName)
 

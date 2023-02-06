@@ -58,6 +58,11 @@ type DeliveryOrderDetailStoreResponse struct {
 	Note            string `json:"note,omitempty" bson:"note,omitempty"`
 }
 
+type DeliveryOrderDetailUpdateByIDRequest struct {
+	Qty  int    `json:"qty,omitempty" bson:"qty,omitempty" binding:"required"`
+	Note string `json:"note,omitempty" bson:"note,omitempty"`
+}
+
 type DeliveryOrderDetailChan struct {
 	DeliveryOrderDetail *DeliveryOrderDetail
 	Error               error
