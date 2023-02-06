@@ -20,6 +20,7 @@ import (
 type DeliveryOrderControllerInterface interface {
 	Create(ctx *gin.Context)
 	UpdateByID(ctx *gin.Context)
+	UpdateDeliveryOrderDetailByID(ctx *gin.Context)
 	Get(ctx *gin.Context)
 	GetByID(ctx *gin.Context)
 }
@@ -308,6 +309,82 @@ func (c *deliveryOrderController) UpdateByID(ctx *gin.Context) {
 	}
 
 	result.Data = deliveryOrderResult
+	result.StatusCode = http.StatusOK
+	ctx.JSON(http.StatusOK, result)
+	return
+}
+
+func (c *deliveryOrderController) UpdateDeliveryOrderDetailByID(ctx *gin.Context) {
+	id := ctx.Param("id")
+	intID, _ := strconv.Atoi(id)
+
+	var result baseModel.Response
+	var resultErrorLog *baseModel.ErrorLog
+	insertRequest := &models.DeliveryOrderDetailUpdateByIDRequest{}
+
+	ctx.Set("full_path", ctx.FullPath())
+	ctx.Set("method", ctx.Request.Method)
+
+	err := ctx.ShouldBindJSON(insertRequest)
+	if err != nil {
+		var unmarshalTypeError *json.UnmarshalTypeError
+
+		if errors.As(err, &unmarshalTypeError) {
+			c.requestValidationMiddleware.DataTypeValidation(ctx, err, unmarshalTypeError)
+			return
+		} else {
+			c.requestValidationMiddleware.MandatoryValidation(ctx, err)
+			return
+		}
+	}
+
+	dbTransaction, err := c.db.BeginTx(ctx, nil)
+
+	if err != nil {
+		errorLog := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		resultErrorLog = errorLog
+		result.StatusCode = http.StatusInternalServerError
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	deliveryOrderDetail, errorLog := c.deliveryOrderUseCase.UpdateDODetailByID(intID, insertRequest, dbTransaction, ctx)
+	if errorLog != nil {
+		err = dbTransaction.Rollback()
+
+		if err != nil {
+			errorLog = helper.WriteLog(err, http.StatusInternalServerError, nil)
+			resultErrorLog = errorLog
+			result.StatusCode = http.StatusInternalServerError
+			result.Error = resultErrorLog
+			ctx.JSON(result.StatusCode, result)
+			return
+		}
+
+		result.StatusCode = errorLog.StatusCode
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	err = dbTransaction.Commit()
+
+	if err != nil {
+		errorLog = helper.WriteLog(err, http.StatusInternalServerError, nil)
+		resultErrorLog = errorLog
+		result.StatusCode = http.StatusInternalServerError
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	deliveryOrderDetailResult := models.DeliveryOrderDetailUpdateByIDRequest{
+		Qty:  deliveryOrderDetail.Qty,
+		Note: deliveryOrderDetail.Note.String,
+	}
+
+	result.Data = deliveryOrderDetailResult
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
 	return
