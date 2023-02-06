@@ -16,6 +16,11 @@ type DeliveryOrderDetailRepositoryInterface struct {
 	mock.Mock
 }
 
+// GetByID provides a mock function with given fields: ID, countOnly, ctx, result
+func (_m *DeliveryOrderDetailRepositoryInterface) GetByID(ID int, countOnly bool, ctx context.Context, result chan *models.DeliveryOrderDetailsChan) {
+	_m.Called(ID, countOnly, ctx, result)
+}
+
 // GetByDeliveryOrderID provides a mock function with given fields: deliveryOrderID, countOnly, ctx, result
 func (_m *DeliveryOrderDetailRepositoryInterface) GetByDeliveryOrderID(deliveryOrderID int, countOnly bool, ctx context.Context, result chan *models.DeliveryOrderDetailsChan) {
 	_m.Called(deliveryOrderID, countOnly, ctx, result)
