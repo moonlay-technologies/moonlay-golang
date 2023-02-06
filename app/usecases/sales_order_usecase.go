@@ -793,6 +793,7 @@ func (u *salesOrderUseCase) UpdateBydId(id int, request *models.SalesOrderUpdate
 	}
 
 	salesOrder := &models.SalesOrder{
+		ID:              id,
 		OrderStatusID:   getOrderStatusResult.OrderStatus.ID,
 		OrderStatusName: getOrderStatusResult.OrderStatus.Name,
 		OrderSourceName: getOrderSourceResult.OrderSource.SourceName,
@@ -810,10 +811,6 @@ func (u *salesOrderUseCase) UpdateBydId(id int, request *models.SalesOrderUpdate
 		InternalComment: models.NullString{sql.NullString{String: request.InternalComment, Valid: true}},
 		TotalAmount:     request.TotalAmount,
 		TotalTonase:     request.TotalTonase,
-		DeviceId:        models.NullString{sql.NullString{String: request.DeviceId, Valid: true}},
-		ReferralCode:    models.NullString{sql.NullString{String: request.ReferralCode, Valid: true}},
-		UpdatedAt:       &now,
-		LatestUpdatedBy: request.UserID,
 	}
 
 	// Check Brand
@@ -938,6 +935,20 @@ func (u *salesOrderUseCase) UpdateBydId(id int, request *models.SalesOrderUpdate
 		return &models.SalesOrder{}, updateSalesOrderResult.ErrorLog
 	}
 
+	getSalesOrderByIdResultChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderRepository.GetByID(id, false, ctx, getSalesOrderByIdResultChan)
+	getSalesOrderByIdResult := <-getSalesOrderByIdResultChan
+
+	if getSalesOrderByIdResult.Error != nil {
+		return &models.SalesOrder{}, getSalesOrderByIdResult.ErrorLog
+	}
+
+	salesOrder.SoCode = getSalesOrderByIdResult.SalesOrder.SoCode
+	salesOrder.StartCreatedDate = getSalesOrderByIdResult.SalesOrder.StartCreatedDate
+	salesOrder.CreatedAt = getSalesOrderByIdResult.SalesOrder.CreatedAt
+
+	var SoDetails []*models.SalesOrderDetail
+
 	for _, v := range request.SalesOrderDetails {
 		salesOrderDetail := &models.SalesOrderDetail{
 			ID:          v.ID,
@@ -947,7 +958,7 @@ func (u *salesOrderUseCase) UpdateBydId(id int, request *models.SalesOrderUpdate
 			SentQty:     v.SentQty,
 			ResidualQty: v.ResidualQty,
 			Price:       v.Price,
-			Note:        models.NullString{sql.NullString{String: request.Note, Valid: true}},
+			Note:        models.NullString{sql.NullString{String: v.Note, Valid: true}},
 			UpdatedAt:   &now,
 		}
 
@@ -959,17 +970,31 @@ func (u *salesOrderUseCase) UpdateBydId(id int, request *models.SalesOrderUpdate
 			return &models.SalesOrder{}, updateSalesOrderDetailResult.ErrorLog
 		}
 
+		getSalesOrderDetailByIDResultChan := make(chan *models.SalesOrderDetailChan)
+		go u.salesOrderDetailRepository.GetByID(v.ID, false, ctx, getSalesOrderDetailByIDResultChan)
+		getSalesOrderDetailByIDResult := <-getSalesOrderDetailByIDResultChan
+
+		if getSalesOrderDetailByIDResult.Error != nil {
+			return &models.SalesOrder{}, getSalesOrderDetailByIDResult.ErrorLog
+		}
+
+		SoDetails = append(SoDetails, &models.SalesOrderDetail{
+			ID:            v.ID,
+			SalesOrderID:  id,
+			ProductID:     v.ProductID,
+			UomID:         v.UomID,
+			OrderStatusID: getSalesOrderDetailByIDResult.SalesOrderDetail.OrderStatusID,
+			SoDetailCode:  getSalesOrderDetailByIDResult.SalesOrderDetail.SoDetailCode,
+			Qty:           v.Qty,
+			ResidualQty:   v.ResidualQty,
+			Price:         v.Price,
+			Note:          models.NullString{sql.NullString{String: v.Note, Valid: true}},
+			CreatedAt:     getSalesOrderDetailByIDResult.SalesOrderDetail.CreatedAt,
+		})
+
 	}
 
-	getSalesOrderDetailBySOIdResultChan := make(chan *models.SalesOrderDetailsChan)
-	go u.salesOrderDetailRepository.GetBySalesOrderID(id, false, ctx, getSalesOrderDetailBySOIdResultChan)
-	getSalesOrderDetailBySOIdResult := <-getSalesOrderDetailBySOIdResultChan
-
-	if getSalesOrderDetailBySOIdResult.Error != nil {
-		return &models.SalesOrder{}, getSalesOrderDetailBySOIdResult.ErrorLog
-	}
-
-	salesOrder.SalesOrderDetails = getSalesOrderDetailBySOIdResult.SalesOrderDetails
+	salesOrder.SalesOrderDetails = SoDetails
 
 	salesOrderLog := &models.SalesOrderLog{
 		RequestID: request.RequestID,
