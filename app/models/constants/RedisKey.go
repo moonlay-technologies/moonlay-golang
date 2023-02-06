@@ -9,5 +9,6 @@ const (
 
 	DELIVERY_ORDER                             = "delivery-order"
 	DELIVERY_ORDER_BY_SALES_ORDER              = "delivery-order-by-sales-order"
+	DELIVERY_ORDER_DETAIL_BY_ID                = "delivery-order-detail-by-id"
 	DELIVERY_ORDER_DETAIL_BY_DELIVERY_ORDER_ID = "delivery-order-detail-by-delivery-order-id"
 )
