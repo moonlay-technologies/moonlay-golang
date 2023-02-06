@@ -321,7 +321,12 @@ func (r *salesOrderDetail) UpdateByID(id int, request *models.SalesOrderDetail, 
 	rawSqlQueries := []string{}
 
 	if request.Qty != 0 {
-		query := fmt.Sprintf("%s=%v", "qty", request.Qty)
+		query := fmt.Sprintf("%s=%v", "product_id", request.ProductID)
+		rawSqlQueries = append(rawSqlQueries, query)
+	}
+
+	if request.Qty != 0 {
+		query := fmt.Sprintf("%s=%v", "uom_id", request.UomID)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
@@ -359,7 +364,7 @@ func (r *salesOrderDetail) UpdateByID(id int, request *models.SalesOrderDetail, 
 	rawSqlQueries = append(rawSqlQueries, query)
 
 	rawSqlQueriesJoin := strings.Join(rawSqlQueries, ",")
-	fmt.Println(rawSqlQueriesJoin)
+
 	updateQuery := fmt.Sprintf("UPDATE sales_order_details set %v WHERE id = ?", rawSqlQueriesJoin)
 	result, err := sqlTransaction.ExecContext(ctx, updateQuery, id)
 
