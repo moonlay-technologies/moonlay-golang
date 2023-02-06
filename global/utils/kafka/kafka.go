@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/segmentio/kafka-go"
 	"net"
 	"os"
 	"strconv"
 	"syscall"
 	"time"
+
+	"github.com/segmentio/kafka-go"
 )
 
 type kafkaClient struct {
@@ -115,7 +116,7 @@ func (k *kafkaClient) SetWriter(topic string) {
 
 	if os.Getenv("ENVIRONMENT") == "local" {
 		writer = &kafka.Writer{
-			Addr:         kafka.TCP(k.brokers[0], k.brokers[1], k.brokers[2]),
+			Addr:         kafka.TCP(k.brokers[0], k.brokers[1]),
 			Topic:        topic,
 			Balancer:     kafka.CRC32Balancer{},
 			BatchTimeout: 5 * time.Millisecond,
