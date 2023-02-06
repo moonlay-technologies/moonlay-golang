@@ -25,8 +25,10 @@ func WriteLog(err error, errorCode int, message interface{}) *model.ErrorLog {
 		file = file[strings.LastIndex(file, "/")+1:]
 		funcName := runtime.FuncForPC(pc).Name()
 		var output *model.ErrorLog
-		output.StatusCode = errorCode
-		output.Err = err
+		output = &model.ErrorLog{
+			StatusCode: errorCode,
+			Err:        err,
+		}
 
 		if errorCode == 422 {
 			output.Message = "Field Validation"
@@ -35,7 +37,7 @@ func WriteLog(err error, errorCode int, message interface{}) *model.ErrorLog {
 			output.SystemMessage = err.Error()
 			if message == nil {
 				output.Message = DefaultStatusText[errorCode]
-				if message == "" {
+				if output.Message == "" {
 					output.Message = http.StatusText(errorCode)
 				}
 			} else {
