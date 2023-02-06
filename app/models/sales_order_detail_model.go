@@ -9,6 +9,7 @@ type SalesOrderDetail struct {
 	ID                int          `json:"id,omitempty" bson:"id,omitempty"`
 	SalesOrderID      int          `json:"sales_order_id,omitempty" bson:"sales_order_id,omitempty"`
 	ProductID         int          `json:"product_id,omitempty" bson:"product_id,omitempty" `
+	BrandID           int          `json:"brand_id,omitempty" bson:"brand_id,omitempty" `
 	Product           *Product     `json:"product,omitempty" bson:"product,omitempty"`
 	UomID             int          `json:"uom_id,omitempty" bson:"uom_id,omitempty"`
 	Uom               *Uom         `json:"uom,omitempty" bson:"uom,omitempty"`

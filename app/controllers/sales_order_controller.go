@@ -22,6 +22,7 @@ type SalesOrderControllerInterface interface {
 	Create(ctx *gin.Context)
 	Get(ctx *gin.Context)
 	UpdateByID(ctx *gin.Context)
+	UpdateSODetailByID(ctx *gin.Context)
 }
 
 type salesOrderController struct {
@@ -402,7 +403,7 @@ func (c *salesOrderController) UpdateByID(ctx *gin.Context) {
 		return
 	}
 
-	salesOrder, errorLog := c.salesOrderUseCase.UpdateBydId(id, updateRequest, dbTransaction, ctx)
+	salesOrder, errorLog := c.salesOrderUseCase.UpdateById(id, updateRequest, dbTransaction, ctx)
 
 	if errorLog != nil {
 		err = dbTransaction.Rollback()
@@ -434,6 +435,112 @@ func (c *salesOrderController) UpdateByID(ctx *gin.Context) {
 	}
 
 	result.Data = salesOrder
+	result.StatusCode = http.StatusOK
+	ctx.JSON(http.StatusOK, result)
+	return
+}
+
+func (c *salesOrderController) UpdateSODetailByID(ctx *gin.Context) {
+	var result baseModel.Response
+	var resultErrorLog *baseModel.ErrorLog
+	var id int
+	updateRequest := &models.SalesOrderDetailUpdateRequest{}
+
+	ctx.Set("full_path", ctx.FullPath())
+	ctx.Set("method", ctx.Request.Method)
+
+	ids := ctx.Param("id")
+	id, err := strconv.Atoi(ids)
+
+	if err != nil {
+		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		resultErrorLog.Message = err.Error()
+		result.StatusCode = http.StatusBadRequest
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	err = ctx.BindJSON(updateRequest)
+
+	if err != nil {
+		var unmarshalTypeError *json.UnmarshalTypeError
+
+		if errors.As(err, &unmarshalTypeError) {
+			c.requestValidationMiddleware.DataTypeValidation(ctx, err, unmarshalTypeError)
+			return
+		} else {
+			c.requestValidationMiddleware.MandatoryValidation(ctx, err)
+			return
+		}
+	}
+
+	mustActiveField := []*models.MustActiveRequest{
+		{
+			Table:    "products",
+			ReqField: "product_id",
+			Clause:   fmt.Sprintf("id = %d AND isActive = %d", updateRequest.ProductID, 1),
+		},
+		{
+			Table:    "uoms",
+			ReqField: "uom_id",
+			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", updateRequest.UomID),
+		},
+		{
+			Table:    "brands",
+			ReqField: "brand_id",
+			Clause:   fmt.Sprintf("id = %d AND status_active = %d", updateRequest.BrandID, 1),
+		},
+	}
+
+	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
+	if err != nil {
+		return
+	}
+
+	dbTransaction, err := c.db.BeginTx(ctx, nil)
+
+	if err != nil {
+		errorLog := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		resultErrorLog = errorLog
+		result.StatusCode = http.StatusInternalServerError
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	salesOrderDetail, errorLog := c.salesOrderUseCase.UpdateSODetailById(id, updateRequest, dbTransaction, ctx)
+
+	if errorLog != nil {
+		err = dbTransaction.Rollback()
+
+		if err != nil {
+			errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			resultErrorLog = errorLog
+			result.StatusCode = http.StatusInternalServerError
+			result.Error = resultErrorLog
+			ctx.JSON(result.StatusCode, result)
+			return
+		}
+
+		result.StatusCode = errorLog.StatusCode
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	err = dbTransaction.Commit()
+
+	if err != nil {
+		errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		resultErrorLog = errorLog
+		result.StatusCode = http.StatusInternalServerError
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	result.Data = salesOrderDetail
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
 	return
