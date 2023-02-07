@@ -285,31 +285,31 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchResult(openSearc
 			salesOrder.SoDate = obj["so_date"].(string)
 
 			if obj["so_ref_code"] != nil {
-				salesOrder.SoRefCode = models.NullString{sql.NullString{String: obj["so_ref_code"].(string), Valid: true}}
+				salesOrder.SoRefCode = models.NullString{NullString: sql.NullString{String: obj["so_ref_code"].(string), Valid: true}}
 			}
 
 			if obj["so_ref_date"] != nil {
-				salesOrder.SoRefDate = models.NullString{sql.NullString{String: obj["so_ref_date"].(string), Valid: true}}
+				salesOrder.SoRefDate = models.NullString{NullString: sql.NullString{String: obj["so_ref_date"].(string), Valid: true}}
 			}
 
 			if obj["g_long"] != nil {
 				gLongString := obj["g_long"]
 				gLong := gLongString.(float64)
-				salesOrder.GLong = models.NullFloat64{sql.NullFloat64{Float64: gLong, Valid: true}}
+				salesOrder.GLong = models.NullFloat64{NullFloat64: sql.NullFloat64{Float64: gLong, Valid: true}}
 			}
 
 			if obj["g_lat"] != nil {
 				gLatString := obj["g_lat"]
 				gLat := gLatString.(float64)
-				salesOrder.GLat = models.NullFloat64{sql.NullFloat64{Float64: gLat, Valid: true}}
+				salesOrder.GLat = models.NullFloat64{NullFloat64: sql.NullFloat64{Float64: gLat, Valid: true}}
 			}
 
 			if obj["note"] != nil {
-				salesOrder.Note = models.NullString{sql.NullString{String: obj["note"].(string), Valid: true}}
+				salesOrder.Note = models.NullString{NullString: sql.NullString{String: obj["note"].(string), Valid: true}}
 			}
 
 			if obj["internal_comment"] != nil {
-				salesOrder.InternalComment = models.NullString{sql.NullString{String: obj["internal_comment"].(string), Valid: true}}
+				salesOrder.InternalComment = models.NullString{NullString: sql.NullString{String: obj["internal_comment"].(string), Valid: true}}
 			}
 
 			brandId := obj["brand_id"].(float64)
@@ -317,66 +317,66 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchResult(openSearc
 			salesOrder.BrandName = brandObj["name"].(string)
 			salesOrder.TotalTonase = obj["total_tonase"].(float64)
 			salesOrder.TotalAmount = obj["total_amount"].(float64)
-			salesOrder.AgentName = models.NullString{sql.NullString{String: agentObj["name"].(string), Valid: true}}
-			salesOrder.AgentProvinceName = models.NullString{sql.NullString{String: agentObj["province_name"].(string), Valid: true}}
-			salesOrder.AgentCityName = models.NullString{sql.NullString{String: agentObj["city_name"].(string), Valid: true}}
-			salesOrder.AgentDistrictName = models.NullString{sql.NullString{String: agentObj["district_name"].(string), Valid: true}}
-			salesOrder.AgentVillageName = models.NullString{sql.NullString{String: agentObj["village_name"].(string), Valid: true}}
+			salesOrder.AgentName = models.NullString{NullString: sql.NullString{String: agentObj["name"].(string), Valid: true}}
+			salesOrder.AgentProvinceName = models.NullString{NullString: sql.NullString{String: agentObj["province_name"].(string), Valid: true}}
+			salesOrder.AgentCityName = models.NullString{NullString: sql.NullString{String: agentObj["city_name"].(string), Valid: true}}
+			salesOrder.AgentDistrictName = models.NullString{NullString: sql.NullString{String: agentObj["district_name"].(string), Valid: true}}
+			salesOrder.AgentVillageName = models.NullString{NullString: sql.NullString{String: agentObj["village_name"].(string), Valid: true}}
 
 			if agentObj["address"] != nil {
-				salesOrder.AgentAddress = models.NullString{sql.NullString{String: agentObj["address"].(string), Valid: true}}
+				salesOrder.AgentAddress = models.NullString{NullString: sql.NullString{String: agentObj["address"].(string), Valid: true}}
 			}
 
 			if agentObj["phone"] != nil {
-				salesOrder.AgentPhone = models.NullString{sql.NullString{String: agentObj["phone"].(string), Valid: true}}
+				salesOrder.AgentPhone = models.NullString{NullString: sql.NullString{String: agentObj["phone"].(string), Valid: true}}
 			}
 
 			if agentObj["main_mobile_phone"] != nil {
-				salesOrder.AgentMainMobilePhone = models.NullString{sql.NullString{String: agentObj["main_mobile_phone"].(string), Valid: true}}
+				salesOrder.AgentMainMobilePhone = models.NullString{NullString: sql.NullString{String: agentObj["main_mobile_phone"].(string), Valid: true}}
 			}
 
-			salesOrder.StoreName = models.NullString{sql.NullString{String: storeObj["name"].(string), Valid: true}}
-			salesOrder.StoreCode = models.NullString{sql.NullString{String: storeObj["store_code"].(string), Valid: true}}
+			salesOrder.StoreName = models.NullString{NullString: sql.NullString{String: storeObj["name"].(string), Valid: true}}
+			salesOrder.StoreCode = models.NullString{NullString: sql.NullString{String: storeObj["store_code"].(string), Valid: true}}
 
 			if storeObj["email"] != nil {
-				salesOrder.StoreEmail = models.NullString{sql.NullString{String: storeObj["email"].(string), Valid: true}}
+				salesOrder.StoreEmail = models.NullString{NullString: sql.NullString{String: storeObj["email"].(string), Valid: true}}
 			}
 
-			salesOrder.StoreProvinceName = models.NullString{sql.NullString{String: storeObj["province_name"].(string), Valid: true}}
-			salesOrder.StoreCityName = models.NullString{sql.NullString{String: storeObj["city_name"].(string), Valid: true}}
-			salesOrder.StoreDistrictName = models.NullString{sql.NullString{String: storeObj["district_name"].(string), Valid: true}}
-			salesOrder.StoreVillageName = models.NullString{sql.NullString{String: storeObj["village_name"].(string), Valid: true}}
+			salesOrder.StoreProvinceName = models.NullString{NullString: sql.NullString{String: storeObj["province_name"].(string), Valid: true}}
+			salesOrder.StoreCityName = models.NullString{NullString: sql.NullString{String: storeObj["city_name"].(string), Valid: true}}
+			salesOrder.StoreDistrictName = models.NullString{NullString: sql.NullString{String: storeObj["district_name"].(string), Valid: true}}
+			salesOrder.StoreVillageName = models.NullString{NullString: sql.NullString{String: storeObj["village_name"].(string), Valid: true}}
 
 			if storeObj["address"] != nil {
-				salesOrder.StoreAddress = models.NullString{sql.NullString{String: storeObj["address"].(string), Valid: true}}
+				salesOrder.StoreAddress = models.NullString{NullString: sql.NullString{String: storeObj["address"].(string), Valid: true}}
 			}
 
 			if storeObj["phone"] != nil {
-				salesOrder.StorePhone = models.NullString{sql.NullString{String: storeObj["phone"].(string), Valid: true}}
+				salesOrder.StorePhone = models.NullString{NullString: sql.NullString{String: storeObj["phone"].(string), Valid: true}}
 			}
 
 			if storeObj["main_mobile_phone"] != nil {
-				salesOrder.StoreMainMobilePhone = models.NullString{sql.NullString{String: storeObj["main_mobile_phone"].(string), Valid: true}}
+				salesOrder.StoreMainMobilePhone = models.NullString{NullString: sql.NullString{String: storeObj["main_mobile_phone"].(string), Valid: true}}
 			}
 
 			if userObj["first_name"] != nil {
-				salesOrder.UserFirstName = models.NullString{sql.NullString{String: userObj["first_name"].(string), Valid: true}}
+				salesOrder.UserFirstName = models.NullString{NullString: sql.NullString{String: userObj["first_name"].(string), Valid: true}}
 			}
 
 			if userObj["last_name"] != nil {
-				salesOrder.UserLastName = models.NullString{sql.NullString{String: userObj["last_name"].(string), Valid: true}}
+				salesOrder.UserLastName = models.NullString{NullString: sql.NullString{String: userObj["last_name"].(string), Valid: true}}
 			}
 
 			if userObj["email"] != nil {
-				salesOrder.UserEmail = models.NullString{sql.NullString{String: userObj["email"].(string), Valid: true}}
+				salesOrder.UserEmail = models.NullString{NullString: sql.NullString{String: userObj["email"].(string), Valid: true}}
 			}
 
 			salesOrder.OrderStatusName = orderStatusObj["name"].(string)
 			salesOrder.OrderSourceName = orderSourceObj["source_name"].(string)
 
 			if obj["salesman"] != nil {
-				salesOrder.SalesmanName = models.NullString{sql.NullString{String: salesmanObj["name"].(string), Valid: true}}
-				salesOrder.SalesmanEmail = models.NullString{sql.NullString{String: salesmanObj["email"].(string), Valid: true}}
+				salesOrder.SalesmanName = models.NullString{NullString: sql.NullString{String: salesmanObj["name"].(string), Valid: true}}
+				salesOrder.SalesmanEmail = models.NullString{NullString: sql.NullString{String: salesmanObj["email"].(string), Valid: true}}
 			}
 
 			salesOrderDetails := []*models.SalesOrderDetail{}

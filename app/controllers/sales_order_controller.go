@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"order-service/app/middlewares"
 	"order-service/app/models"
+	"order-service/app/models/constants"
 	"order-service/app/usecases"
 	"order-service/global/utils/helper"
 	baseModel "order-service/global/utils/model"
@@ -218,26 +219,14 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 	}
 
 	mustActiveField := []*models.MustActiveRequest{
-		{
-			Table:    "agents",
-			ReqField: "agent_id",
-			Clause:   fmt.Sprintf("id = %d AND status = '%s'", insertRequest.AgentID, "active"),
-		},
-		{
-			Table:    "stores",
-			ReqField: "store_id",
-			Clause:   fmt.Sprintf("id = %d AND status = '%s'", insertRequest.StoreID, "active"),
-		},
+		helper.GenerateMustActive("agents", "agent_id", insertRequest.AgentID, "active"),
+		helper.GenerateMustActive("stores", "store_id", insertRequest.StoreID, "active"),
 		{
 			Table:    "brands",
 			ReqField: "brand_id",
 			Clause:   fmt.Sprintf("id = %d AND status_active = %d", insertRequest.BrandID, 1),
 		},
-		{
-			Table:    "users",
-			ReqField: "user_id",
-			Clause:   fmt.Sprintf("id = %d AND status = '%s'", insertRequest.UserID, "ACTIVE"),
-		},
+		helper.GenerateMustActive("users", "user_id", insertRequest.UserID, "ACTIVE"),
 	}
 	for i, v := range insertRequest.SalesOrderDetails {
 		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
@@ -257,11 +246,11 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 	}
 
 	uniqueField := []*models.UniqueRequest{{
-		Table: "sales_orders",
+		Table: constants.SALES_ORDERS_TABLE,
 		Field: "so_ref_code",
 		Value: insertRequest.SoRefCode,
 	}, {
-		Table: "sales_orders",
+		Table: constants.SALES_ORDERS_TABLE,
 		Field: "device_id",
 		Value: insertRequest.DeviceId,
 	}}
