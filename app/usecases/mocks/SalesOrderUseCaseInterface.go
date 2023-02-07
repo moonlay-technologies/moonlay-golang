@@ -258,6 +258,10 @@ func (_m *SalesOrderUseCaseInterface) UpdateSODetailById(id int, request *models
 	return nil, nil
 }
 
+func (_m *SalesOrderUseCaseInterface) UpdateSODetailBySOId(SoId int, request []*models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) ([]*models.SalesOrder, *model.ErrorLog) {
+	return nil, nil
+}
+
 type mockConstructorTestingTNewSalesOrderUseCaseInterface interface {
 	mock.TestingT
 	Cleanup(func())
