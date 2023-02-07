@@ -63,7 +63,7 @@ type SalesOrderDetailStoreResponse struct {
 
 type SalesOrderDetailUpdateRequest struct {
 	SalesOrderDetailTemplate
-	ID      int     `json:"id,omitempty" bson:"id,omitempty"`
+	ID      int     `json:"id,omitempty" bson:"id,omitempty" binding:"required"`
 	BrandID int     `json:"brand_id,omitempty" binding:"required"`
 	Price   float64 `json:"price,omitempty"`
 }
