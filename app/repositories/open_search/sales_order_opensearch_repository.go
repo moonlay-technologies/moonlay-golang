@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"order-service/app/models"
+	"order-service/app/models/constants"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/model"
 	"order-service/global/utils/opensearch_dbo"
@@ -26,19 +27,19 @@ type SalesOrderOpenSearchRepositoryInterface interface {
 }
 
 type salesOrderOpenSearch struct {
-	db opensearch_dbo.OpenSearchClientInterface
+	openSearch opensearch_dbo.OpenSearchClientInterface
 }
 
-func InitSalesOrderOpenSearchRepository(db opensearch_dbo.OpenSearchClientInterface) SalesOrderOpenSearchRepositoryInterface {
+func InitSalesOrderOpenSearchRepository(openSearch opensearch_dbo.OpenSearchClientInterface) SalesOrderOpenSearchRepositoryInterface {
 	return &salesOrderOpenSearch{
-		db: db,
+		openSearch: openSearch,
 	}
 }
 
 func (r *salesOrderOpenSearch) Create(request *models.SalesOrder, resultChan chan *models.SalesOrderChan) {
 	response := &models.SalesOrderChan{}
 	salesOrderJson, _ := json.Marshal(request)
-	st, err := r.db.CreateDocument("sales_orders", request.SoCode, salesOrderJson)
+	st, err := r.openSearch.CreateDocument(constants.SALES_ORDERS_INDEX, request.SoCode, salesOrderJson)
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -248,7 +249,7 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 }
 
 func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchResult(openSearchQueryJson []byte, withSalesOrderDetails bool) (*models.SalesOrders, *model.ErrorLog) {
-	openSearchQueryResult, err := r.db.Query("sales_orders", openSearchQueryJson)
+	openSearchQueryResult, err := r.openSearch.Query(constants.SALES_ORDERS_INDEX, openSearchQueryJson)
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
