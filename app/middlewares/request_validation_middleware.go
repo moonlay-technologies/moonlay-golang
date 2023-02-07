@@ -19,6 +19,7 @@ type RequestValidationMiddlewareInterface interface {
 	MandatoryValidation(ctx *gin.Context, err error)
 	UniqueValidation(ctx *gin.Context, value []*models.UniqueRequest) error
 	MustActiveValidation(ctx *gin.Context, value []*models.MustActiveRequest) error
+	InvalidValidation(ctx *gin.Context, err error, unmarshalTypeError *json.InvalidUnmarshalError)
 }
 
 type requestValidationMiddleware struct {
@@ -134,4 +135,22 @@ func (u *requestValidationMiddleware) MustActiveValidation(ctx *gin.Context, val
 	}
 
 	return error
+}
+
+func (u *requestValidationMiddleware) InvalidValidation(ctx *gin.Context, err error, unmarshalTypeError *json.InvalidUnmarshalError) {
+	var result baseModel.Response
+	messages := []string{}
+
+	message := fmt.Sprintf("Error: %s", unmarshalTypeError.Error())
+	messages = append(messages, message)
+
+	errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+		Message:       messages,
+		SystemMessage: []string{err.Error()},
+		StatusCode:    http.StatusBadRequest,
+	})
+	result.StatusCode = http.StatusBadRequest
+	result.Error = errorLog
+	ctx.JSON(result.StatusCode, result)
+	return
 }
