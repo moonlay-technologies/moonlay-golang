@@ -393,9 +393,6 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByID(ctx *gin.Context
 }
 
 func (c *deliveryOrderController) UpdateDeliveryOrderDetailByDeliveryOrderID(ctx *gin.Context) {
-	id := ctx.Param("id")
-	intID, _ := strconv.Atoi(id)
-
 	var result baseModel.Response
 	var resultErrorLog *baseModel.ErrorLog
 	insertRequest := []*models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest{}
@@ -403,7 +400,18 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByDeliveryOrderID(ctx
 	ctx.Set("full_path", ctx.FullPath())
 	ctx.Set("method", ctx.Request.Method)
 
-	err := ctx.BindJSON(&insertRequest)
+	id := ctx.Param("id")
+	intID, err := strconv.Atoi(id)
+	if err != nil {
+		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		resultErrorLog.Message = err.Error()
+		result.StatusCode = http.StatusBadRequest
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	err = ctx.BindJSON(&insertRequest)
 
 	if err != nil {
 		var unmarshalTypeError *json.UnmarshalTypeError
