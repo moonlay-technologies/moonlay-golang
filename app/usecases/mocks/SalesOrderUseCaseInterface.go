@@ -264,3 +264,7 @@ func NewSalesOrderUseCaseInterface(t mockConstructorTestingTNewSalesOrderUseCase
 
 	return mock
 }
+
+func (_m *SalesOrderUseCaseInterface) UpdateBydId(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrder, *model.ErrorLog) {
+	return nil, nil
+}

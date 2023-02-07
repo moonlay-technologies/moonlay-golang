@@ -270,10 +270,10 @@ func (r *salesOrderDetail) GetByID(id int, countOnly bool, ctx context.Context, 
 		if countOnly == false {
 			salesOrderDetail = models.SalesOrderDetail{}
 			err = r.db.QueryRow(""+
-				"SELECT id, product_id, uom_id, order_status_id, qty, sent_qty, residual_qty, price, note "+
+				"SELECT id, product_id, uom_id, order_status_id, qty, sent_qty, residual_qty, price, note, so_detail_code, created_at "+
 				"FROM sales_order_details as sod "+
 				"WHERE sod.deleted_at IS NULL AND sod.id = ?", id).
-				Scan(&salesOrderDetail.ID, &salesOrderDetail.ProductID, &salesOrderDetail.UomID, &salesOrderDetail.OrderStatusID, &salesOrderDetail.Qty, &salesOrderDetail.SentQty, &salesOrderDetail.ResidualQty, &salesOrderDetail.Price, &salesOrderDetail.Note)
+				Scan(&salesOrderDetail.ID, &salesOrderDetail.ProductID, &salesOrderDetail.UomID, &salesOrderDetail.OrderStatusID, &salesOrderDetail.Qty, &salesOrderDetail.SentQty, &salesOrderDetail.ResidualQty, &salesOrderDetail.Price, &salesOrderDetail.Note, &salesOrderDetail.SoDetailCode, &salesOrderDetail.CreatedAt)
 
 			if err != nil {
 				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -321,7 +321,12 @@ func (r *salesOrderDetail) UpdateByID(id int, request *models.SalesOrderDetail, 
 	rawSqlQueries := []string{}
 
 	if request.Qty != 0 {
-		query := fmt.Sprintf("%s=%v", "qty", request.Qty)
+		query := fmt.Sprintf("%s=%v", "product_id", request.ProductID)
+		rawSqlQueries = append(rawSqlQueries, query)
+	}
+
+	if request.Qty != 0 {
+		query := fmt.Sprintf("%s=%v", "uom_id", request.UomID)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
@@ -341,7 +346,7 @@ func (r *salesOrderDetail) UpdateByID(id int, request *models.SalesOrderDetail, 
 	}
 
 	if len(request.Note.String) > 0 {
-		query := fmt.Sprintf("%s='%v'", "note", request.Note)
+		query := fmt.Sprintf("%s='%v'", "note", request.Note.String)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
@@ -359,7 +364,7 @@ func (r *salesOrderDetail) UpdateByID(id int, request *models.SalesOrderDetail, 
 	rawSqlQueries = append(rawSqlQueries, query)
 
 	rawSqlQueriesJoin := strings.Join(rawSqlQueries, ",")
-	fmt.Println(rawSqlQueriesJoin)
+
 	updateQuery := fmt.Sprintf("UPDATE sales_order_details set %v WHERE id = ?", rawSqlQueriesJoin)
 	result, err := sqlTransaction.ExecContext(ctx, updateQuery, id)
 

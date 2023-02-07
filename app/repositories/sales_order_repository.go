@@ -524,22 +524,22 @@ func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, sqlTransacti
 	}
 
 	if request.GLong.Float64 != 0 {
-		query := fmt.Sprintf("%s=%v", "g_long", request.GLong)
+		query := fmt.Sprintf("%s=%v", "g_long", request.GLong.Float64)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
 	if request.GLat.Float64 != 0 {
-		query := fmt.Sprintf("%s=%v", "g_lat", request.GLat)
+		query := fmt.Sprintf("%s=%v", "g_lat", request.GLat.Float64)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
 	if request.Note.String != "" {
-		query := fmt.Sprintf("%s='%v'", "note", request.Note)
+		query := fmt.Sprintf("%s='%v'", "note", request.Note.String)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
 	if request.InternalComment.String != "" {
-		query := fmt.Sprintf("%s='%v'", "internal_comment", request.InternalComment)
+		query := fmt.Sprintf("%s='%v'", "internal_comment", request.InternalComment.String)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
@@ -569,12 +569,12 @@ func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, sqlTransacti
 	}
 
 	if request.DeviceId.String != "" {
-		query := fmt.Sprintf("%s=%v", "device_id", request.DeviceId)
+		query := fmt.Sprintf("%s='%v'", "device_id", request.DeviceId.String)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
 	if request.ReferralCode.String != "" {
-		query := fmt.Sprintf("%s=%v", "referral_code", request.ReferralCode)
+		query := fmt.Sprintf("%s='%v'", "referral_code", request.ReferralCode.String)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
