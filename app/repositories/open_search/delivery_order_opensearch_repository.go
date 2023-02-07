@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"order-service/app/models"
+	"order-service/app/models/constants"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/model"
 	"order-service/global/utils/opensearch_dbo"
@@ -22,19 +23,19 @@ type DeliveryOrderOpenSearchRepositoryInterface interface {
 }
 
 type deliveryOrderOpenSearch struct {
-	db opensearch_dbo.OpenSearchClientInterface
+	openSearch opensearch_dbo.OpenSearchClientInterface
 }
 
-func InitDeliveryOrderOpenSearchRepository(db opensearch_dbo.OpenSearchClientInterface) DeliveryOrderOpenSearchRepositoryInterface {
+func InitDeliveryOrderOpenSearchRepository(openSearch opensearch_dbo.OpenSearchClientInterface) DeliveryOrderOpenSearchRepositoryInterface {
 	return &deliveryOrderOpenSearch{
-		db: db,
+		openSearch: openSearch,
 	}
 }
 
 func (r *deliveryOrderOpenSearch) Create(request *models.DeliveryOrder, resultChan chan *models.DeliveryOrderChan) {
 	response := &models.DeliveryOrderChan{}
 	deliveryOrderJson, _ := json.Marshal(request)
-	_, err := r.db.CreateDocument("delivery_orders", request.DoCode, deliveryOrderJson)
+	_, err := r.openSearch.CreateDocument(constants.DELIVERY_ORDERS_INDEX, request.DoCode, deliveryOrderJson)
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -226,7 +227,7 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 }
 
 func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchResult(openSearchQueryJson []byte, withDeliveryOrderDetails bool) (*models.DeliveryOrders, *model.ErrorLog) {
-	openSearchQueryResult, err := r.db.Query("delivery_orders", openSearchQueryJson)
+	openSearchQueryResult, err := r.openSearch.Query(constants.DELIVERY_ORDERS_INDEX, openSearchQueryJson)
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
