@@ -47,7 +47,7 @@ func (r *salesOrder) GetByID(id int, countOnly bool, ctx context.Context, result
 	salesOrderOnRedis, err := r.redisdb.Client().Get(ctx, salesOrderRedisKey).Result()
 
 	if err == redis.Nil {
-		err = r.db.QueryRow("SELECT COUNT(*) as total FROM sales_orders WHERE deleted_at IS NULL AND id = ?", id).Scan(&total)
+		err = r.db.QueryRow("SELECT COUNT(*) as total FROM "+constants.SALES_ORDERS_TABLE+" WHERE deleted_at IS NULL AND id = ?", id).Scan(&total)
 
 		if err != nil {
 			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -70,7 +70,7 @@ func (r *salesOrder) GetByID(id int, countOnly bool, ctx context.Context, result
 			salesOrder = models.SalesOrder{}
 			err = r.db.QueryRow(""+
 				"SELECT so.id, so.agent_id, a.name as agent_name, a.email as agent_email, a.province_id as agent_province_id, ap.name agent_province_name, a.city_id as agent_city_id, ac.name as agent_city_name, a.district_id as agent_district_id, ad.name as agent_district_name, a.village_id as agent_village_id, av.name as agent_village_name, a.address as agent_address, a.phone as agent_phone, a.main_mobile_phone as agent_mobile_phone, so.store_id, s.name as store_name, s.store_code as store_code, s.email as store_email, s.province_id as store_province_id, sp.name as store_province_name, s.city_id, sc.name as store_city_name, s.district_id, sd.name as store_district_name, s.village_id as store_village_id, sv.name as store_village_name, s.address as store_address, s.phone as store_phone, s.main_mobile_phone as store_mobile_phone, so.brand_id, b.name as brand_name, so.user_id, u.email as user_email, u.first_name as user_first_name, u.last_name as user_last_name, u.role_id as user_role_id, so.order_source_id, os.source_name as order_source_name, so.order_status_id, ost.name as order_status_name, salesmans.id as salesman_id, salesmans.name as salesman_name, so.so_code, so.so_date, so_ref_code, so_ref_date, so.g_long, so.g_lat, so.note, so.internal_comment, so.total_amount, so.total_tonase, so.created_at, so.updated_at "+
-				"FROM sales_orders as so "+
+				"FROM "+constants.SALES_ORDERS_TABLE+" as so "+
 				"INNER JOIN agents as a ON a.id = so.agent_id "+
 				"INNER JOIN stores as s ON s.id = so.store_id "+
 				"INNER JOIN order_sources as os ON os.id = so.order_source_id "+
@@ -139,7 +139,7 @@ func (r *salesOrder) GetByCode(soCode string, countOnly bool, ctx context.Contex
 	salesOrderOnRedis, err := r.redisdb.Client().Get(ctx, salesOrderRedisKey).Result()
 
 	if err == redis.Nil {
-		err = r.db.QueryRow("SELECT COUNT(*) as total FROM sales_orders WHERE deleted_at IS NULL AND so_code = ?", soCode).Scan(&total)
+		err = r.db.QueryRow("SELECT COUNT(*) as total FROM "+constants.SALES_ORDERS_TABLE+" WHERE deleted_at IS NULL AND so_code = ?", soCode).Scan(&total)
 
 		if err != nil {
 			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -162,7 +162,7 @@ func (r *salesOrder) GetByCode(soCode string, countOnly bool, ctx context.Contex
 			salesOrder = models.SalesOrder{}
 			err = r.db.QueryRow(""+
 				"SELECT so.id, so.agent_id, a.name as agent_name, a.email as agent_email, a.province_id as agent_province_id, ap.name agent_province_name, a.city_id as agent_city_id, ac.name as agent_city_name, a.district_id as agent_district_id, ad.name as agent_district_name, a.village_id as agent_village_id, av.name as agent_village_name, a.address as agent_address, a.phone as agent_phone, a.main_mobile_phone as agent_mobile_phone, so.store_id, s.name as store_name, s.store_code as store_code, s.email as store_email, s.province_id as store_province_id, sp.name as store_province_name, s.city_id, sc.name as store_city_name, s.district_id, sd.name as store_district_name, s.village_id as store_village_id, sv.name as store_village_name, s.address as store_address, s.phone as store_phone, s.main_mobile_phone as store_mobile_phone, so.brand_id, b.name as brand_name, so.user_id, u.email as user_email, u.first_name as user_first_name, u.last_name as user_last_name, u.role_id as user_role_id, so.order_source_id, os.source_name as order_source_name, so.order_status_id, ost.name as order_status_name, salesmans.id as salesman_id, salesmans.name as salesman_name, so.so_code, so.so_date, so_ref_code, so_ref_date, so.g_long, so.g_lat, so.note, so.internal_comment, so.total_amount, so.total_tonase, so.created_at, so.updated_at "+
-				"FROM sales_orders as so "+
+				"FROM "+constants.SALES_ORDERS_TABLE+" as so "+
 				"INNER JOIN agents as a ON a.id = so.agent_id "+
 				"INNER JOIN stores as s ON s.id = so.store_id "+
 				"INNER JOIN order_sources as os ON os.id = so.order_source_id "+
@@ -231,7 +231,7 @@ func (r *salesOrder) GetByAgentRefCode(soRefCode string, agentID int, countOnly 
 	salesOrderOnRedis, err := r.redisdb.Client().Get(ctx, salesOrderRedisKey).Result()
 
 	if err == redis.Nil {
-		err = r.db.QueryRow("SELECT COUNT(*) as total FROM sales_orders WHERE deleted_at IS NULL AND so_ref_code = ? AND agent_id= ?", soRefCode, agentID).Scan(&total)
+		err = r.db.QueryRow("SELECT COUNT(*) as total FROM "+constants.SALES_ORDERS_TABLE+" WHERE deleted_at IS NULL AND so_ref_code = ? AND agent_id= ?", soRefCode, agentID).Scan(&total)
 
 		if err != nil {
 			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -254,7 +254,7 @@ func (r *salesOrder) GetByAgentRefCode(soRefCode string, agentID int, countOnly 
 			salesOrder = models.SalesOrder{}
 			err = r.db.QueryRow(""+
 				"SELECT so.id, so.agent_id, a.name as agent_name, a.email as agent_email, a.province_id as agent_province_id, ap.name agent_province_name, a.city_id as agent_city_id, ac.name as agent_city_name, a.district_id as agent_district_id, ad.name as agent_district_name, a.village_id as agent_village_id, av.name as agent_village_name, a.address as agent_address, a.phone as agent_phone, a.main_mobile_phone as agent_mobile_phone, so.store_id, s.name as store_name, s.store_code as store_code, s.email as store_email, s.province_id as store_province_id, sp.name as store_province_name, s.city_id, sc.name as store_city_name, s.district_id, sd.name as store_district_name, s.village_id as store_village_id, sv.name as store_village_name, s.address as store_address, s.phone as store_phone, s.main_mobile_phone as store_mobile_phone, so.brand_id, b.name as brand_name, so.user_id, u.email as user_email, u.first_name as user_first_name, u.last_name as user_last_name, u.role_id as user_role_id, so.order_source_id, os.source_name as order_source_name, so.order_status_id, ost.name as order_status_name, salesmans.id as salesman_id, salesmans.name as salesman_name, so.so_code, so.so_date, so_ref_code, so_ref_date, so.g_long, so.g_lat, so.note, so.internal_comment, so.total_amount, so.total_tonase, so.created_at, so.updated_at "+
-				"FROM sales_orders as so "+
+				"FROM "+constants.SALES_ORDERS_TABLE+" as so "+
 				"INNER JOIN agents as a ON a.id = so.agent_id "+
 				"INNER JOIN stores as s ON s.id = so.store_id "+
 				"INNER JOIN order_sources as os ON os.id = so.order_source_id "+
@@ -471,7 +471,7 @@ func (r *salesOrder) Insert(request *models.SalesOrder, sqlTransaction *sql.Tx, 
 	rawSqlFieldsJoin := strings.Join(rawSqlFields, ",")
 	rawSqlDataTypesJoin := strings.Join(rawSqlDataTypes, ",")
 
-	query := fmt.Sprintf("INSERT INTO sales_orders (%s) VALUES (%v)", rawSqlFieldsJoin, rawSqlDataTypesJoin)
+	query := fmt.Sprintf("INSERT INTO "+constants.SALES_ORDERS_TABLE+" (%s) VALUES (%v)", rawSqlFieldsJoin, rawSqlDataTypesJoin)
 	result, err := sqlTransaction.ExecContext(ctx, query, rawSqlValues...)
 
 	if err != nil {
@@ -627,7 +627,7 @@ func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, sqlTransacti
 	rawSqlQueries = append(rawSqlQueries, query)
 
 	rawSqlQueriesJoin := strings.Join(rawSqlQueries, ",")
-	updateQuery := fmt.Sprintf("UPDATE sales_orders set %v WHERE id = ?", rawSqlQueriesJoin)
+	updateQuery := fmt.Sprintf("UPDATE "+constants.SALES_ORDERS_TABLE+" set %v WHERE id = ?", rawSqlQueriesJoin)
 	result, err := sqlTransaction.ExecContext(ctx, updateQuery, id)
 
 	if err != nil {

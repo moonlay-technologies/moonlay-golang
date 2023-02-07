@@ -70,7 +70,7 @@ func (r *deliveryOrder) GetByID(id int, countOnly bool, ctx context.Context, res
 			err = r.db.QueryRow(""+
 				"SELECT do.id, sales_order_id, warehouse_id, do.order_status_id, do.order_source_id, do_code, do_date, do_ref_code, do_ref_date, driver_name, plat_number, do.note, do.created_at, so.so_code, so.so_date, w.code, w.name, w.province_id, w.city_id, w.district_id, w.village_id, provinces.name as province_name, cities.name as city_name, districts.name as district_name, villages.name as village_name, order_statuses.name as order_status_name, order_sources.source_name as order_source_name "+
 				"FROM delivery_orders as do "+
-				"INNER JOIN sales_orders as so ON so.id = do.sales_order_id "+
+				"INNER JOIN "+constants.SALES_ORDERS_TABLE+" as so ON so.id = do.sales_order_id "+
 				"INNER JOIN warehouses as w ON w.id = do.warehouse_id "+
 				"INNER JOIN provinces ON provinces.id = w.province_id "+
 				"INNER JOIN cities ON cities.province_id = provinces.id "+
@@ -154,7 +154,7 @@ func (r *deliveryOrder) GetBySalesOrderID(salesOrderID int, countOnly bool, ctx 
 			query, err := r.db.Query(""+
 				"SELECT do.id, sales_order_id, warehouse_id, order_status_id, order_source_id, do_code, do_date, do_ref_code, do_ref_date, driver_name, plat_number, note, created_at, so.so_code, so.so_date, w.code, w.name, w.province_id, w.city_id, w.district_id, w.village_id, provinces.name as province_name, cities.name as city_name, districts.name as district_name, villages.name as village_name, order_statuses.name as order_status_name, order_sources.source_name as order_source_name "+
 				"FROM delivery_orders as do "+
-				"INNER JOIN sales_orders as so ON so.id = do.sales_order_id "+
+				"INNER JOIN "+constants.SALES_ORDERS_TABLE+" as so ON so.id = do.sales_order_id "+
 				"INNER JOIN warehouses as w ON w.id = do.warehouse_id "+
 				"INNER JOIN provinces ON provinces.id = w.province_id "+
 				"INNER JOIN cities ON cities.province_id = provinces.id "+

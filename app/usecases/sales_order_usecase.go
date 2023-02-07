@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"order-service/app/models"
+	"order-service/app/models/constants"
 	"order-service/app/repositories"
 	mongoRepositories "order-service/app/repositories/mongod"
 	openSearchRepositories "order-service/app/repositories/open_search"
@@ -292,7 +293,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 
 	keyKafka := []byte(salesOrder.SoCode)
 	messageKafka, _ := json.Marshal(salesOrder)
-	err := u.kafkaClient.WriteToTopic("create-sales-order", keyKafka, messageKafka)
+	err := u.kafkaClient.WriteToTopic(constants.CREATE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -803,13 +804,13 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 		StoreID:         request.StoreID,
 		BrandID:         request.SalesOrderDetails[0].BrandID,
 		UserID:          request.UserID,
-		GLat:            models.NullFloat64{sql.NullFloat64{Float64: request.GLat, Valid: true}},
-		GLong:           models.NullFloat64{sql.NullFloat64{Float64: request.GLong, Valid: true}},
-		SoRefCode:       models.NullString{sql.NullString{String: request.SoRefCode, Valid: true}},
+		GLat:            models.NullFloat64{NullFloat64: sql.NullFloat64{Float64: request.GLat, Valid: true}},
+		GLong:           models.NullFloat64{NullFloat64: sql.NullFloat64{Float64: request.GLong, Valid: true}},
+		SoRefCode:       models.NullString{NullString: sql.NullString{String: request.SoRefCode, Valid: true}},
 		SoDate:          request.SoDate,
-		SoRefDate:       models.NullString{sql.NullString{String: request.SoRefDate, Valid: true}},
-		Note:            models.NullString{sql.NullString{String: request.Note, Valid: true}},
-		InternalComment: models.NullString{sql.NullString{String: request.InternalComment, Valid: true}},
+		SoRefDate:       models.NullString{NullString: sql.NullString{String: request.SoRefDate, Valid: true}},
+		Note:            models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}},
+		InternalComment: models.NullString{NullString: sql.NullString{String: request.InternalComment, Valid: true}},
 		TotalAmount:     request.TotalAmount,
 		TotalTonase:     request.TotalTonase,
 	}
@@ -848,7 +849,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 	}
 
 	salesOrder.AgentID = request.AgentID
-	salesOrder.AgentName = models.NullString{sql.NullString{String: getAgentResult.Agent.Name, Valid: true}}
+	salesOrder.AgentName = models.NullString{NullString: sql.NullString{String: getAgentResult.Agent.Name, Valid: true}}
 	salesOrder.AgentEmail = getAgentResult.Agent.Email
 	salesOrder.AgentProvinceName = getAgentResult.Agent.ProvinceName
 	salesOrder.AgentCityName = getAgentResult.Agent.CityName
@@ -893,7 +894,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 	salesOrder.UserID = request.UserID
 	salesOrder.UserFirstName = getUserResult.User.FirstName
 	salesOrder.UserLastName = getUserResult.User.LastName
-	salesOrder.UserEmail = models.NullString{sql.NullString{String: getUserResult.User.Email, Valid: true}}
+	salesOrder.UserEmail = models.NullString{NullString: sql.NullString{String: getUserResult.User.Email, Valid: true}}
 
 	// Check Salesman
 	getSalesmanResultChan := make(chan *models.SalesmanChan)
@@ -905,7 +906,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 		return &models.SalesOrder{}, errorLogData
 	}
 
-	salesOrder.SalesmanName = models.NullString{sql.NullString{String: getSalesmanResult.Salesman.Name, Valid: true}}
+	salesOrder.SalesmanName = models.NullString{NullString: sql.NullString{String: getSalesmanResult.Salesman.Name, Valid: true}}
 	salesOrder.SalesmanEmail = getSalesmanResult.Salesman.Email
 
 	salesOrderUpdateReq := &models.SalesOrder{
@@ -914,17 +915,17 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 		StoreID:         request.StoreID,
 		BrandID:         request.SalesOrderDetails[0].BrandID,
 		UserID:          request.UserID,
-		GLat:            models.NullFloat64{sql.NullFloat64{Float64: request.GLat, Valid: true}},
-		GLong:           models.NullFloat64{sql.NullFloat64{Float64: request.GLong, Valid: true}},
-		SoRefCode:       models.NullString{sql.NullString{String: request.SoRefCode, Valid: true}},
+		GLat:            models.NullFloat64{NullFloat64: sql.NullFloat64{Float64: request.GLat, Valid: true}},
+		GLong:           models.NullFloat64{NullFloat64: sql.NullFloat64{Float64: request.GLong, Valid: true}},
+		SoRefCode:       models.NullString{NullString: sql.NullString{String: request.SoRefCode, Valid: true}},
 		SoDate:          request.SoDate,
-		SoRefDate:       models.NullString{sql.NullString{String: request.SoRefDate, Valid: true}},
-		Note:            models.NullString{sql.NullString{String: request.Note, Valid: true}},
-		InternalComment: models.NullString{sql.NullString{String: request.InternalComment, Valid: true}},
+		SoRefDate:       models.NullString{NullString: sql.NullString{String: request.SoRefDate, Valid: true}},
+		Note:            models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}},
+		InternalComment: models.NullString{NullString: sql.NullString{String: request.InternalComment, Valid: true}},
 		TotalAmount:     request.TotalAmount,
 		TotalTonase:     request.TotalTonase,
-		DeviceId:        models.NullString{sql.NullString{String: request.DeviceId, Valid: true}},
-		ReferralCode:    models.NullString{sql.NullString{String: request.ReferralCode, Valid: true}},
+		DeviceId:        models.NullString{NullString: sql.NullString{String: request.DeviceId, Valid: true}},
+		ReferralCode:    models.NullString{NullString: sql.NullString{String: request.ReferralCode, Valid: true}},
 		UpdatedAt:       &now,
 		LatestUpdatedBy: request.UserID,
 	}
@@ -961,7 +962,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 			SentQty:     v.SentQty,
 			ResidualQty: v.ResidualQty,
 			Price:       v.Price,
-			Note:        models.NullString{sql.NullString{String: v.Note, Valid: true}},
+			Note:        models.NullString{NullString: sql.NullString{String: v.Note, Valid: true}},
 			UpdatedAt:   &now,
 		}
 
@@ -991,7 +992,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 			Qty:           v.Qty,
 			ResidualQty:   v.ResidualQty,
 			Price:         v.Price,
-			Note:          models.NullString{sql.NullString{String: v.Note, Valid: true}},
+			Note:          models.NullString{NullString: sql.NullString{String: v.Note, Valid: true}},
 			CreatedAt:     getSalesOrderDetailByIDResult.SalesOrderDetail.CreatedAt,
 		})
 
@@ -1017,7 +1018,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 
 	keyKafka := []byte(salesOrder.SoCode)
 	messageKafka, _ := json.Marshal(salesOrder)
-	err := u.kafkaClient.WriteToTopic("create-sales-order", keyKafka, messageKafka)
+	err := u.kafkaClient.WriteToTopic(constants.CREATE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -1066,7 +1067,7 @@ func (u *salesOrderUseCase) UpdateSODetailById(id int, request *models.SalesOrde
 		SentQty:     request.SentQty,
 		ResidualQty: request.ResidualQty,
 		Price:       request.Price,
-		Note:        models.NullString{sql.NullString{String: request.Note, Valid: true}},
+		Note:        models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}},
 		UpdatedAt:   &now,
 	}
 
@@ -1098,7 +1099,7 @@ func (u *salesOrderUseCase) UpdateSODetailById(id int, request *models.SalesOrde
 
 	keyKafka := []byte(soCode)
 	messageKafka, _ := json.Marshal(salesOrderDetail)
-	err := u.kafkaClient.WriteToTopic("create-sales-order", keyKafka, messageKafka)
+	err := u.kafkaClient.WriteToTopic(constants.CREATE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
