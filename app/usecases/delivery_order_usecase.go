@@ -14,6 +14,7 @@ import (
 	"order-service/global/utils/helper"
 	kafkadbo "order-service/global/utils/kafka"
 	"order-service/global/utils/model"
+	"strconv"
 	"time"
 
 	"github.com/bxcodec/dbresolver"
@@ -23,6 +24,7 @@ type DeliveryOrderUseCaseInterface interface {
 	Create(request *models.DeliveryOrderStoreRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.DeliveryOrder, *model.ErrorLog)
 	UpdateByID(ID int, request *models.DeliveryOrderUpdateByIDRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.DeliveryOrder, *model.ErrorLog)
 	UpdateDODetailByID(ID int, request *models.DeliveryOrderDetailUpdateByIDRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.DeliveryOrderDetail, *model.ErrorLog)
+	UpdateDoDetailByDeliveryOrderID(deliveryOrderID int, request []*models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.DeliveryOrderDetails, *model.ErrorLog)
 	Get(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
 	GetByID(request *models.DeliveryOrderRequest, ctx context.Context) (*models.DeliveryOrder, *model.ErrorLog)
 	GetByAgentID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
@@ -468,6 +470,90 @@ func (u *deliveryOrderUseCase) UpdateDODetailByID(ID int, request *models.Delive
 	}
 
 	return deliveryOrderDetail, nil
+}
+
+func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID int, request []*models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.DeliveryOrderDetails, *model.ErrorLog) {
+	now := time.Now()
+
+	getDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailsChan)
+	go u.deliveryOrderDetailRepository.GetByDeliveryOrderID(deliveryOrderID, false, ctx, getDeliveryOrderDetailResultChan)
+	getDeliveryOrderDetailResult := <-getDeliveryOrderDetailResultChan
+
+	if getDeliveryOrderDetailResult.Error != nil {
+		return &models.DeliveryOrderDetails{}, getDeliveryOrderDetailResult.ErrorLog
+	}
+
+	deliveryOrderDetails := &models.DeliveryOrderDetails{}
+	for _, v := range request {
+		checkDeliveryOrderDetailIDResultChan := make(chan *models.DeliveryOrderDetailsChan)
+		go u.deliveryOrderDetailRepository.GetByID(v.ID, false, ctx, checkDeliveryOrderDetailIDResultChan)
+		checkDeliveryOrderDetailIDResult := <-checkDeliveryOrderDetailIDResultChan
+
+		if checkDeliveryOrderDetailIDResult.Error != nil {
+			return &models.DeliveryOrderDetails{}, checkDeliveryOrderDetailIDResult.ErrorLog
+		}
+
+		deliveryOrderDetail := &models.DeliveryOrderDetail{
+			ID:                v.ID,
+			Qty:               v.Qty,
+			Note:              models.NullString{NullString: sql.NullString{String: v.Note, Valid: true}},
+			IsDoneSyncToEs:    "0",
+			UpdatedAt:         &now,
+			StartDateSyncToEs: &now,
+			EndDateSyncToEs:   &now,
+		}
+		deliveryOrderDetails.DeliveryOrderDetails = append(deliveryOrderDetails.DeliveryOrderDetails, deliveryOrderDetail)
+	}
+
+	deliveryOrderDetailss := &models.DeliveryOrderDetails{}
+	for i, x := range getDeliveryOrderDetailResult.DeliveryOrderDetails {
+		updateDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
+		go u.deliveryOrderDetailRepository.UpdateByID(x.ID, deliveryOrderDetails.DeliveryOrderDetails[i], sqlTransaction, ctx, updateDeliveryOrderDetailResultChan)
+		updateDeliveryOrderDetailResult := <-updateDeliveryOrderDetailResultChan
+
+		if updateDeliveryOrderDetailResult.Error != nil {
+			return &models.DeliveryOrderDetails{}, updateDeliveryOrderDetailResult.ErrorLog
+		}
+		updateDeliveryOrderDetailResult.DeliveryOrderDetail.ID = x.ID
+		deliveryOrderDetailss.DeliveryOrderDetails = append(deliveryOrderDetailss.DeliveryOrderDetails, updateDeliveryOrderDetailResult.DeliveryOrderDetail)
+	}
+
+	getDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
+	go u.deliveryOrderRepository.GetByID(deliveryOrderID, false, ctx, getDeliveryOrderResultChan)
+	getDeliveryOrderResult := <-getDeliveryOrderResultChan
+
+	if getDeliveryOrderResult.Error != nil {
+		return &models.DeliveryOrderDetails{}, getDeliveryOrderDetailResult.ErrorLog
+	}
+
+	requestID := strconv.Itoa(deliveryOrderID)
+	deliveryOrderLog := &models.DeliveryOrderLog{
+		RequestID: requestID,
+		DoCode:    getDeliveryOrderResult.DeliveryOrder.DoCode,
+		Data:      deliveryOrderDetailss,
+		Status:    "0",
+		CreatedAt: &now,
+	}
+
+	createDeliveryOrderLogResultChan := make(chan *models.DeliveryOrderLogChan)
+	go u.deliveryOrderLogRepository.Insert(deliveryOrderLog, ctx, createDeliveryOrderLogResultChan)
+	createDeliveryOrderLogResult := <-createDeliveryOrderLogResultChan
+
+	if createDeliveryOrderLogResult.Error != nil {
+		errorLogData := helper.WriteLog(createDeliveryOrderLogResult.Error, http.StatusInternalServerError, nil)
+		return &models.DeliveryOrderDetails{}, errorLogData
+	}
+
+	keyKafka := []byte(getDeliveryOrderResult.DeliveryOrder.DoCode)
+	messageKafka, _ := json.Marshal(deliveryOrderDetails)
+	err := u.kafkaClient.WriteToTopic(constants.UPDATE_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		return &models.DeliveryOrderDetails{}, errorLogData
+	}
+
+	return deliveryOrderDetailss, nil
 }
 
 func (u *deliveryOrderUseCase) Get(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog) {

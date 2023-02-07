@@ -22,6 +22,7 @@ type DeliveryOrderControllerInterface interface {
 	Create(ctx *gin.Context)
 	UpdateByID(ctx *gin.Context)
 	UpdateDeliveryOrderDetailByID(ctx *gin.Context)
+	UpdateDeliveryOrderDetailByDeliveryOrderID(ctx *gin.Context)
 	Get(ctx *gin.Context)
 	GetByID(ctx *gin.Context)
 }
@@ -386,6 +387,95 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByID(ctx *gin.Context
 	}
 
 	result.Data = deliveryOrderDetailResult
+	result.StatusCode = http.StatusOK
+	ctx.JSON(http.StatusOK, result)
+	return
+}
+
+func (c *deliveryOrderController) UpdateDeliveryOrderDetailByDeliveryOrderID(ctx *gin.Context) {
+	var result baseModel.Response
+	var resultErrorLog *baseModel.ErrorLog
+	insertRequest := []*models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest{}
+
+	ctx.Set("full_path", ctx.FullPath())
+	ctx.Set("method", ctx.Request.Method)
+
+	id := ctx.Param("id")
+	intID, err := strconv.Atoi(id)
+	if err != nil {
+		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		resultErrorLog.Message = err.Error()
+		result.StatusCode = http.StatusBadRequest
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	err = ctx.BindJSON(&insertRequest)
+
+	if err != nil {
+		var unmarshalTypeError *json.UnmarshalTypeError
+
+		if errors.As(err, &unmarshalTypeError) {
+			c.requestValidationMiddleware.DataTypeValidation(ctx, err, unmarshalTypeError)
+			return
+		} else {
+			c.requestValidationMiddleware.MandatoryValidation(ctx, err)
+			return
+		}
+	}
+
+	dbTransaction, err := c.db.BeginTx(ctx, nil)
+
+	if err != nil {
+		errorLog := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		resultErrorLog = errorLog
+		result.StatusCode = http.StatusInternalServerError
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	deliveryOrderDetail, errorLog := c.deliveryOrderUseCase.UpdateDoDetailByDeliveryOrderID(intID, insertRequest, dbTransaction, ctx)
+	if errorLog != nil {
+		err = dbTransaction.Rollback()
+
+		if err != nil {
+			errorLog = helper.WriteLog(err, http.StatusInternalServerError, nil)
+			resultErrorLog = errorLog
+			result.StatusCode = http.StatusInternalServerError
+			result.Error = resultErrorLog
+			ctx.JSON(result.StatusCode, result)
+			return
+		}
+
+		result.StatusCode = errorLog.StatusCode
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	err = dbTransaction.Commit()
+	if err != nil {
+		errorLog = helper.WriteLog(err, http.StatusInternalServerError, nil)
+		resultErrorLog = errorLog
+		result.StatusCode = http.StatusInternalServerError
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	deliveryOrderResults := []models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest{}
+	for _, v := range deliveryOrderDetail.DeliveryOrderDetails {
+		deliveryOrderResult := models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest{
+			ID:   v.ID,
+			Qty:  v.Qty,
+			Note: v.Note.String,
+		}
+		deliveryOrderResults = append(deliveryOrderResults, deliveryOrderResult)
+	}
+
+	result.Data = deliveryOrderResults
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
 	return

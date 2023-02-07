@@ -64,6 +64,17 @@ type DeliveryOrderDetailUpdateByIDRequest struct {
 	Note      string `json:"note,omitempty" bson:"note,omitempty"`
 }
 
+type DeliveryOrderDetailUpdateByDeliveryOrderIDRequest struct {
+	RequestID string `json:"request_id,omitempty" bson:"request_id,omitempty"`
+	ID        int    `json:"id,omitempty" bson:"id,omitempty" binding:"required"`
+	Qty       int    `json:"qty,omitempty" bson:"qty,omitempty" binding:"required"`
+	Note      string `json:"note,omitempty" bson:"note,omitempty"`
+}
+
+type DeliveryOrderDetailUpdateByDeliveryOrdersIDRequest struct {
+	DeliveryOrderDetailUpdateByDeliveryOrdersIDRequest []*DeliveryOrderDetailUpdateByDeliveryOrderIDRequest `json:"delivery_order_detail_update_by_do_id,omitempty"`
+}
+
 type DeliveryOrderDetailChan struct {
 	DeliveryOrderDetail *DeliveryOrderDetail
 	Error               error
