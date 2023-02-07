@@ -86,7 +86,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 	now := time.Now()
 	var soCode string
 	salesOrder := &models.SalesOrder{}
-	salesOrder.SalesOrderRequestMap(request)
+	salesOrder.SalesOrderRequestMap(request, now)
 
 	getOrderStatusResultChan := make(chan *models.OrderStatusChan)
 	go u.orderStatusRepository.GetByNameAndType("open", "sales_order", false, ctx, getOrderStatusResultChan)
@@ -186,7 +186,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 	for _, soDetail := range request.SalesOrderDetails {
 		soDetailCode, _ := helper.GenerateSODetailCode(int(createSalesOrderResult.ID), request.AgentID, soDetail.ProductID, soDetail.UomID)
 		salesOrderDetail := &models.SalesOrderDetail{}
-		salesOrderDetail.SalesOrderDetailStoreRequestMap(soDetail)
+		salesOrderDetail.SalesOrderDetailStoreRequestMap(soDetail, now)
 		salesOrderDetail.SalesOrderID = int(createSalesOrderResult.ID)
 		salesOrderDetail.SoDetailCode = soDetailCode
 		salesOrderDetail.Note = models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}}

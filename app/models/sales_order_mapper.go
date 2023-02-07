@@ -5,8 +5,7 @@ import (
 	"time"
 )
 
-func (salesOrder *SalesOrder) SalesOrderRequestMap(request *SalesOrderStoreRequest) {
-	now := time.Now()
+func (salesOrder *SalesOrder) SalesOrderRequestMap(request *SalesOrderStoreRequest, now time.Time) {
 	salesOrder.CartID = request.CartID
 	salesOrder.AgentID = request.AgentID
 	salesOrder.StoreID = request.StoreID
@@ -95,8 +94,7 @@ func (salesOrder *SalesOrder) SalesmanChanMap(request *SalesmanChan) {
 	return
 }
 
-func (v *SalesOrderDetail) SalesOrderDetailStoreRequestMap(soDetail *SalesOrderDetailStoreRequest) {
-	now := time.Now()
+func (v *SalesOrderDetail) SalesOrderDetailStoreRequestMap(soDetail *SalesOrderDetailStoreRequest, now time.Time) {
 	v.ProductID = soDetail.ProductID
 	v.UomID = soDetail.UomID
 	v.OrderStatusID = soDetail.OrderStatusId
