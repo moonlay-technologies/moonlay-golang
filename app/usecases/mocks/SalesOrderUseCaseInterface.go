@@ -250,6 +250,14 @@ func (_m *SalesOrderUseCaseInterface) SyncToOpenSearchFromUpdateEvent(salesOrder
 	return r0
 }
 
+func (_m *SalesOrderUseCaseInterface) UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrder, *model.ErrorLog) {
+	return nil, nil
+}
+
+func (_m *SalesOrderUseCaseInterface) UpdateSODetailById(id int, request *models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetail, *model.ErrorLog) {
+	return nil, nil
+}
+
 type mockConstructorTestingTNewSalesOrderUseCaseInterface interface {
 	mock.TestingT
 	Cleanup(func())
@@ -264,3 +272,5 @@ func NewSalesOrderUseCaseInterface(t mockConstructorTestingTNewSalesOrderUseCase
 
 	return mock
 }
+
+

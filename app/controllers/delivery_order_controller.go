@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"order-service/app/middlewares"
 	"order-service/app/models"
+	"order-service/app/models/constants"
 	"order-service/app/usecases"
 	"order-service/global/utils/helper"
 	baseModel "order-service/global/utils/model"
@@ -102,12 +103,12 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 
 	uniqueField := []*models.UniqueRequest{
 		{
-			Table: "delivery_orders",
+			Table: constants.DELIVERY_ORDERS_TABLE,
 			Field: "do_code",
 			Value: insertRequest.DoCode,
 		},
 		{
-			Table: "delivery_orders",
+			Table: constants.DELIVERY_ORDERS_TABLE,
 			Field: "do_ref_code",
 			Value: insertRequest.DoRefCode,
 		},
@@ -235,7 +236,7 @@ func (c *deliveryOrderController) UpdateByID(ctx *gin.Context) {
 
 	uniqueField := []*models.UniqueRequest{
 		{
-			Table: "delivery_orders",
+			Table: constants.DELIVERY_ORDERS_TABLE,
 			Field: "do_ref_code",
 			Value: insertRequest.DoRefCode,
 		},
