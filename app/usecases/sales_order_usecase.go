@@ -33,7 +33,7 @@ type SalesOrderUseCaseInterface interface {
 	SyncToOpenSearchFromUpdateEvent(salesOrder *models.SalesOrder, ctx context.Context) *model.ErrorLog
 	UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrder, *model.ErrorLog)
 	UpdateSODetailById(id int, request *models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetail, *model.ErrorLog)
-	UpdateSODetailBySOId(SoId int, request []*models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrder, *model.ErrorLog)
+	UpdateSODetailBySOId(SoId int, request []*models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) ([]*models.SalesOrder, *model.ErrorLog)
 }
 
 type salesOrderUseCase struct {
@@ -1111,9 +1111,10 @@ func (u *salesOrderUseCase) UpdateSODetailById(id int, request *models.SalesOrde
 
 }
 
-func (u *salesOrderUseCase) UpdateSODetailBySOId(SoId int, request []*models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrder, *model.ErrorLog) {
+func (u *salesOrderUseCase) UpdateSODetailBySOId(SoId int, request []*models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) ([]*models.SalesOrder, *model.ErrorLog) {
 	now := time.Now()
 	var soCode string
+	var response []*models.SalesOrder
 	var salesOrder *models.SalesOrder
 
 	getSalesOrderByIDResultChan := make(chan *models.SalesOrderChan)
@@ -1121,7 +1122,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(SoId int, request []*models.Sal
 	getSalesOrderByIDResult := <-getSalesOrderByIDResultChan
 
 	if getSalesOrderByIDResult.Error != nil {
-		return &models.SalesOrder{}, getSalesOrderByIDResult.ErrorLog
+		return []*models.SalesOrder{}, getSalesOrderByIDResult.ErrorLog
 	}
 
 	salesOrder = getSalesOrderByIDResult.SalesOrder
@@ -1159,7 +1160,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(SoId int, request []*models.Sal
 		updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
 
 		if updateSalesOrderDetailResult.Error != nil {
-			return &models.SalesOrder{}, updateSalesOrderDetailResult.ErrorLog
+			return []*models.SalesOrder{}, updateSalesOrderDetailResult.ErrorLog
 		}
 
 		getSalesOrderDetailByIDResultChan := make(chan *models.SalesOrderDetailChan)
@@ -1167,7 +1168,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(SoId int, request []*models.Sal
 		getSalesOrderDetailByIDResult := <-getSalesOrderDetailByIDResultChan
 
 		if getSalesOrderDetailByIDResult.Error != nil {
-			return &models.SalesOrder{}, getSalesOrderDetailByIDResult.ErrorLog
+			return []*models.SalesOrder{}, getSalesOrderDetailByIDResult.ErrorLog
 		}
 
 		soDetails = append(soDetails, &models.SalesOrderDetail{
@@ -1189,7 +1190,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(SoId int, request []*models.Sal
 		getProductByIDResult := <-getProductByIDResultChan
 
 		if getProductByIDResult.Error != nil {
-			return &models.SalesOrder{}, getProductByIDResult.ErrorLog
+			return []*models.SalesOrder{}, getProductByIDResult.ErrorLog
 		}
 
 		totalAmount = totalAmount + (v.Price * float64(v.Qty))
@@ -1213,7 +1214,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(SoId int, request []*models.Sal
 	updateSalesOrderResult := <-updateSalesOrderResultChan
 
 	if updateSalesOrderResult.Error != nil {
-		return &models.SalesOrder{}, updateSalesOrderResult.ErrorLog
+		return []*models.SalesOrder{}, updateSalesOrderResult.ErrorLog
 	}
 
 	// Check Order Status
@@ -1222,7 +1223,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(SoId int, request []*models.Sal
 	getOrderStatusResult := <-getOrderStatusResultChan
 
 	if getOrderStatusResult.Error != nil {
-		return &models.SalesOrder{}, getOrderStatusResult.ErrorLog
+		return []*models.SalesOrder{}, getOrderStatusResult.ErrorLog
 	}
 
 	salesOrder.OrderStatusName = getOrderStatusResult.OrderStatus.Name
@@ -1233,7 +1234,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(SoId int, request []*models.Sal
 	getOrderSourceResult := <-getOrderSourceResultChan
 
 	if getOrderSourceResult.Error != nil {
-		return &models.SalesOrder{}, getOrderSourceResult.ErrorLog
+		return []*models.SalesOrder{}, getOrderSourceResult.ErrorLog
 	}
 
 	salesOrder.OrderSourceName = getOrderSourceResult.OrderSource.SourceName
@@ -1243,7 +1244,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(SoId int, request []*models.Sal
 	getBrandResult := <-getBrandResultChan
 
 	if getBrandResult.Error != nil {
-		return &models.SalesOrder{}, getBrandResult.ErrorLog
+		return []*models.SalesOrder{}, getBrandResult.ErrorLog
 	}
 
 	salesOrder.BrandName = getBrandResult.Brand.Name
@@ -1255,7 +1256,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(SoId int, request []*models.Sal
 
 	if getAgentResult.Error != nil {
 		errorLogData := helper.WriteLog(getAgentResult.Error, http.StatusInternalServerError, nil)
-		return &models.SalesOrder{}, errorLogData
+		return []*models.SalesOrder{}, errorLogData
 	}
 
 	salesOrder.AgentName = models.NullString{NullString: sql.NullString{String: getAgentResult.Agent.Name, Valid: true}}
@@ -1275,7 +1276,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(SoId int, request []*models.Sal
 
 	if getStoreResult.Error != nil {
 		errorLogData := helper.WriteLog(getStoreResult.Error, http.StatusInternalServerError, nil)
-		return &models.SalesOrder{}, errorLogData
+		return []*models.SalesOrder{}, errorLogData
 	}
 
 	salesOrder.StoreName = getStoreResult.Store.Name
@@ -1296,7 +1297,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(SoId int, request []*models.Sal
 
 	if getUserResult.Error != nil {
 		errorLogData := helper.WriteLog(getUserResult.Error, http.StatusInternalServerError, nil)
-		return &models.SalesOrder{}, errorLogData
+		return []*models.SalesOrder{}, errorLogData
 	}
 
 	salesOrder.UserFirstName = getUserResult.User.FirstName
@@ -1310,11 +1311,13 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(SoId int, request []*models.Sal
 
 	if getSalesmanResult.Error != nil {
 		errorLogData := helper.WriteLog(getSalesmanResult.Error, http.StatusInternalServerError, nil)
-		return &models.SalesOrder{}, errorLogData
+		return []*models.SalesOrder{}, errorLogData
 	}
 
 	salesOrder.SalesmanName = models.NullString{NullString: sql.NullString{String: getSalesmanResult.Salesman.Name, Valid: true}}
 	salesOrder.SalesmanEmail = getSalesmanResult.Salesman.Email
+
+	response = append(response, salesOrder)
 
 	salesOrderLog := &models.SalesOrderLog{
 		RequestID: "",
@@ -1329,7 +1332,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(SoId int, request []*models.Sal
 	createSalesOrderLogResult := <-createSalesOrderLogResultChan
 
 	if createSalesOrderLogResult.Error != nil {
-		return &models.SalesOrder{}, createSalesOrderLogResult.ErrorLog
+		return []*models.SalesOrder{}, createSalesOrderLogResult.ErrorLog
 	}
 
 	keyKafka := []byte(soCode)
@@ -1338,8 +1341,8 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(SoId int, request []*models.Sal
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-		return &models.SalesOrder{}, errorLogData
+		return []*models.SalesOrder{}, errorLogData
 	}
 
-	return salesOrder, nil
+	return response, nil
 }

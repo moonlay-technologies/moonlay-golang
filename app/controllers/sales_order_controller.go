@@ -557,7 +557,7 @@ func (c *salesOrderController) UpdateSODetailBySOID(ctx *gin.Context) {
 		return
 	}
 
-	err = ctx.BindJSON(updateRequest)
+	err = ctx.BindJSON(&updateRequest)
 
 	if err != nil {
 		var unmarshalTypeError *json.UnmarshalTypeError
