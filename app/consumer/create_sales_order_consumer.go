@@ -37,7 +37,7 @@ func InitCreateSalesOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClie
 }
 
 func (c *createSalesOrderConsumerHandler) ProcessMessage() {
-	fmt.Println("process")
+	fmt.Println("process ", constants.CREATE_SALES_ORDER_TOPIC)
 	topic := c.args[1].(string)
 	groupID := c.args[2].(string)
 	reader := c.kafkaClient.SetConsumerGroupReader(topic, groupID)
@@ -48,7 +48,7 @@ func (c *createSalesOrderConsumerHandler) ProcessMessage() {
 			break
 		}
 
-		fmt.Printf("message at topic/partition/offset %v/%v/%v \n", m.Topic, m.Partition, m.Offset)
+		fmt.Printf("message so at topic/partition/offset %v/%v/%v \n", m.Topic, m.Partition, m.Offset)
 
 		var salesOrder models.SalesOrder
 		err = json.Unmarshal(m.Value, &salesOrder)

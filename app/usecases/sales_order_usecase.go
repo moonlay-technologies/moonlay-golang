@@ -206,6 +206,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 	}
 
 	var salesOrderDetailResponses []*models.SalesOrderDetailStoreResponse
+	salesOrderDetails := []*models.SalesOrderDetail{}
 	for _, v := range request.SalesOrderDetails {
 		soDetailCode, _ := helper.GenerateSODetailCode(int(createSalesOrderResult.ID), request.AgentID, v.ProductID, v.UomID)
 		salesOrderDetail := &models.SalesOrderDetail{
@@ -271,7 +272,9 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		salesOrderDetailResponse.UomCode = getUomResult.Uom.Code.String
 
 		salesOrderDetailResponses = append(salesOrderDetailResponses, salesOrderDetailResponse)
+		salesOrderDetails = append(salesOrderDetails, salesOrderDetail)
 	}
+	salesOrder.SalesOrderDetails = salesOrderDetails
 
 	salesOrdersResponse.SalesOrderDetails = salesOrderDetailResponses
 
@@ -293,6 +296,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 
 	keyKafka := []byte(salesOrder.SoCode)
 	messageKafka, _ := json.Marshal(salesOrder)
+	fmt.Println("message Create SO = ", string(messageKafka))
 	err := u.kafkaClient.WriteToTopic(constants.CREATE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
 
 	if err != nil {
