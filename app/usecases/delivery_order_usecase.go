@@ -88,8 +88,7 @@ func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.Deli
 
 func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.DeliveryOrder, *model.ErrorLog) {
 	now := time.Now()
-	unixTimestamp := now.Unix()
-	unixTimestampInt := int(unixTimestamp)
+
 	getOrderStatusResultChan := make(chan *models.OrderStatusChan)
 	go u.orderStatusRepository.GetByNameAndType("open", "delivery_order", false, ctx, getOrderStatusResultChan)
 	getOrderStatusResult := <-getOrderStatusResultChan
@@ -145,44 +144,15 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	if getSalesmanResult.Error != nil {
 		return &models.DeliveryOrder{}, getSalesmanResult.ErrorLog
 	}
-
-	deliveryOrder := &models.DeliveryOrder{
-		SalesOrder:            getSalesOrderResult.SalesOrder,
-		SalesOrderID:          request.SalesOrderID,
-		Salesman:              getSalesmanResult.Salesman,
-		Warehouse:             getWarehouseResult.Warehouse,
-		Store:                 getStoreResult.Store,
-		StoreID:               request.StoreID,
-		AgentID:               request.AgentID,
-		WarehouseID:           request.WarehouseID,
-		OrderStatus:           getOrderStatusResult.OrderStatus,
-		OrderStatusID:         request.OrderStatusID,
-		OrderSource:           getOrderSourceResult.OrderSource,
-		OrderSourceID:         getOrderSourceResult.OrderSource.ID,
-		DoCode:                request.DoCode,
-		DoDate:                request.DoDate,
-		DoRefCode:             models.NullString{NullString: sql.NullString{String: request.DoRefCode, Valid: true}},
-		DoRefDate:             models.NullString{NullString: sql.NullString{String: request.DoRefDate, Valid: true}},
-		DriverName:            models.NullString{NullString: sql.NullString{String: request.DriverName, Valid: true}},
-		PlatNumber:            models.NullString{NullString: sql.NullString{String: request.PlatNumber, Valid: true}},
-		WarehouseName:         getWarehouseResult.Warehouse.Name,
-		WarehouseCode:         getWarehouseResult.Warehouse.Code,
-		WarehouseProvinceName: getWarehouseResult.Warehouse.ProvinceName,
-		WarehouseCityName:     getWarehouseResult.Warehouse.CityName,
-		WarehouseDistrictName: getWarehouseResult.Warehouse.DistrictName,
-		WarehouseVillageName:  getWarehouseResult.Warehouse.VillageName,
-		IsDoneSyncToEs:        "0",
-		Note:                  models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}},
-		StartDateSyncToEs:     &now,
-		EndDateSyncToEs:       &now,
-		StartCreatedDate:      &now,
-		EndCreatedDate:        &now,
-		CreatedBy:             request.SalesOrderID,
-		LatestUpdatedBy:       unixTimestampInt,
-		CreatedAt:             &now,
-		UpdatedAt:             &now,
-		DeletedAt:             nil,
-	}
+	deliveryOrder := &models.DeliveryOrder{}
+	deliveryOrder.DeliveryOrderStoreRequestMap(request, now)
+	deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
+	deliveryOrder.Salesman = getSalesmanResult.Salesman
+	deliveryOrder.Store = getStoreResult.Store
+	deliveryOrder.OrderStatus = getOrderStatusResult.OrderStatus
+	deliveryOrder.OrderSource = getOrderSourceResult.OrderSource
+	deliveryOrder.OrderSourceID = getOrderSourceResult.OrderSource.ID
+	deliveryOrder.WarehouseChanMap(getWarehouseResult)
 
 	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
 	go u.deliveryOrderRepository.Insert(deliveryOrder, sqlTransaction, ctx, createDeliveryOrderResultChan)
@@ -194,9 +164,9 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 
 	deliveryOrderDetails := []*models.DeliveryOrderDetail{}
 
-	for _, v := range request.DeliveryOrderDetails {
+	for _, doDetail := range request.DeliveryOrderDetails {
 		getSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
-		go u.salesOrderDetailRepository.GetByID(v.SoDetailID, false, ctx, getSalesOrderDetailResultChan)
+		go u.salesOrderDetailRepository.GetByID(doDetail.SoDetailID, false, ctx, getSalesOrderDetailResultChan)
 		getSalesOrderDetailResult := <-getSalesOrderDetailResultChan
 
 		if getSalesOrderDetailResult.Error != nil {
@@ -204,7 +174,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		}
 
 		getProductOrderResultChan := make(chan *models.ProductChan)
-		go u.productRepository.GetByID(v.ProductID, false, ctx, getProductOrderResultChan)
+		go u.productRepository.GetByID(doDetail.ProductID, false, ctx, getProductOrderResultChan)
 		getProductResult := <-getProductOrderResultChan
 
 		if getProductResult.Error != nil {
@@ -212,7 +182,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		}
 
 		getUomResultChan := make(chan *models.UomChan)
-		go u.uomRepository.GetByID(v.UomID, false, ctx, getUomResultChan)
+		go u.uomRepository.GetByID(doDetail.UomID, false, ctx, getUomResultChan)
 		getUomResult := <-getUomResultChan
 
 		if getUomResult.Error != nil {
@@ -221,28 +191,15 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 
 		DoDetailCode, _ := helper.GenerateDODetailCode(int(createDeliveryOrderResult.ID), getSalesOrderResult.SalesOrder.AgentID, getSalesOrderDetailResult.SalesOrderDetail.ProductID, getSalesOrderDetailResult.SalesOrderDetail.UomID)
 
-		deliveryOrderDetail := &models.DeliveryOrderDetail{
-			DeliveryOrderID:   int(createDeliveryOrderResult.ID),
-			SoDetailID:        v.SoDetailID,
-			BrandID:           getSalesOrderResult.SalesOrder.BrandID,
-			ProductID:         getSalesOrderDetailResult.SalesOrderDetail.ProductID,
-			UomID:             getSalesOrderDetailResult.SalesOrderDetail.UomID,
-			OrderStatusID:     getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID,
-			DoDetailCode:      DoDetailCode,
-			Qty:               v.Qty,
-			ProductSKU:        getProductResult.Product.Sku.String,
-			ProductName:       getProductResult.Product.ProductName.String,
-			Note:              models.NullString{NullString: sql.NullString{String: v.Note, Valid: true}},
-			Product:           getProductResult.Product,
-			SoDetail:          getSalesOrderDetailResult.SalesOrderDetail,
-			Uom:               getUomResult.Uom,
-			IsDoneSyncToEs:    "0",
-			StartDateSyncToEs: &now,
-			EndDateSyncToEs:   &now,
-			CreatedAt:         &now,
-			UpdatedAt:         &now,
-			DeletedAt:         nil,
-		}
+		deliveryOrderDetail := &models.DeliveryOrderDetail{}
+		deliveryOrderDetail.DeliveryOrderDetailStoreRequestMap(doDetail, now)
+		deliveryOrderDetail.DeliveryOrderID = int(createDeliveryOrderResult.ID)
+		deliveryOrderDetail.BrandID = getSalesOrderResult.SalesOrder.BrandID
+		deliveryOrderDetail.DoDetailCode = DoDetailCode
+		deliveryOrderDetail.Note = models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}}
+		deliveryOrderDetail.Uom = getUomResult.Uom
+		deliveryOrderDetail.ProductChanMap(getProductResult)
+		deliveryOrderDetail.SalesOrderDetailChanMap(getSalesOrderDetailResult)
 
 		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
 		go u.deliveryOrderDetailRepository.Insert(deliveryOrderDetail, sqlTransaction, ctx, createDeliveryOrderDetailResultChan)
