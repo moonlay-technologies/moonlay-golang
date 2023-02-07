@@ -5,4 +5,5 @@ const (
 	UPDATE_SALES_ORDER_CONSUMER = "update-sales-order-consumer"
 
 	CREATE_DELIVERY_ORDER_CONSUMER = "create-delivery-order-consumer"
+	UPDATE_DELIVERY_ORDER_CONSUMER = "update-delivery-order-consumer"
 )

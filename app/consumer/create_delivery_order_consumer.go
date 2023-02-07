@@ -49,7 +49,7 @@ func (c *createDeliveryOrderConsumerHandler) ProcessMessage() {
 			break
 		}
 
-		fmt.Printf("message at topic/partition/offset %v/%v/%v \n", m.Topic, m.Partition, m.Offset)
+		fmt.Printf("message do at topic/partition/offset %v/%v/%v \n", m.Topic, m.Partition, m.Offset)
 
 		var deliveryOrder models.DeliveryOrder
 		err = json.Unmarshal(m.Value, &deliveryOrder)

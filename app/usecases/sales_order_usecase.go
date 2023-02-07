@@ -85,6 +85,8 @@ func InitSalesOrderUseCaseInterface(salesOrderRepository repositories.SalesOrder
 func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog) {
 	now := time.Now()
 	var soCode string
+	salesOrder := &models.SalesOrder{}
+	salesOrder.SalesOrderRequestMap(request, now)
 
 	getOrderStatusResultChan := make(chan *models.OrderStatusChan)
 	go u.orderStatusRepository.GetByNameAndType("open", "sales_order", false, ctx, getOrderStatusResultChan)
@@ -93,6 +95,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 	if getOrderStatusResult.Error != nil {
 		return &models.SalesOrderResponse{}, getOrderStatusResult.ErrorLog
 	}
+	salesOrder.OrderStatusChanMap(getOrderStatusResult)
 
 	getOrderDetailStatusResultChan := make(chan *models.OrderStatusChan)
 	go u.orderStatusRepository.GetByNameAndType("open", "sales_order_detail", false, ctx, getOrderDetailStatusResultChan)
@@ -110,6 +113,8 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		return &models.SalesOrderResponse{}, getOrderSourceResult.ErrorLog
 	}
 
+	salesOrder.OrderSourceChanMap(getOrderSourceResult)
+
 	salesOrdersResponse := &models.SalesOrderResponse{
 		SalesOrderStoreRequest: *request,
 	}
@@ -122,9 +127,10 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		return &models.SalesOrderResponse{}, getBrandResult.ErrorLog
 	}
 
-	salesOrdersResponse.BrandName = getBrandResult.Brand.Name
+	salesOrder.BrandChanMap(getBrandResult)
 
 	soCode = helper.GenerateSOCode(request.AgentID, getOrderSourceResult.OrderSource.Code)
+	salesOrder.SoCode = soCode
 
 	getAgentResultChan := make(chan *models.AgentChan)
 	go u.agentRepository.GetByID(request.AgentID, false, ctx, getAgentResultChan)
@@ -134,6 +140,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		errorLogData := helper.WriteLog(getAgentResult.Error, http.StatusInternalServerError, nil)
 		return &models.SalesOrderResponse{}, errorLogData
 	}
+	salesOrder.AgentChanMap(getAgentResult)
 
 	getStoreResultChan := make(chan *models.StoreChan)
 	go u.storeRepository.GetByID(request.StoreID, false, ctx, getStoreResultChan)
@@ -143,12 +150,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		errorLogData := helper.WriteLog(getStoreResult.Error, http.StatusInternalServerError, nil)
 		return &models.SalesOrderResponse{}, errorLogData
 	}
-
-	salesOrdersResponse.StoreCode = getStoreResult.Store.StoreCode
-	salesOrdersResponse.StoreName = getStoreResult.Store.Name
-	salesOrdersResponse.StoreAddress = getStoreResult.Store.Address
-	salesOrdersResponse.StoreCityName = getStoreResult.Store.CityName
-	salesOrdersResponse.StoreProvinceName = getStoreResult.Store.ProvinceName
+	salesOrder.StoreChanMap(getStoreResult)
 
 	getUserResultChan := make(chan *models.UserChan)
 	go u.userRepository.GetByID(request.UserID, false, ctx, getUserResultChan)
@@ -158,6 +160,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		errorLogData := helper.WriteLog(getUserResult.Error, http.StatusInternalServerError, nil)
 		return &models.SalesOrderResponse{}, errorLogData
 	}
+	salesOrder.UserChanMap(getUserResult)
 
 	getSalesmanResultChan := make(chan *models.SalesmanChan)
 	go u.salesmanRepository.GetByEmail(getUserResult.User.Email, false, ctx, getSalesmanResultChan)
@@ -167,36 +170,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		errorLogData := helper.WriteLog(getSalesmanResult.Error, http.StatusInternalServerError, nil)
 		return &models.SalesOrderResponse{}, errorLogData
 	}
-
-	salesOrdersResponse.SalesmanName = models.NullString{NullString: sql.NullString{String: getSalesmanResult.Salesman.Name, Valid: true}}
-
-	salesOrder := &models.SalesOrder{
-		CartID:            request.CartID,
-		AgentID:           request.AgentID,
-		StoreID:           request.StoreID,
-		BrandID:           request.BrandID,
-		UserID:            request.UserID,
-		VisitationID:      request.VisitationID,
-		OrderStatusID:     getOrderStatusResult.OrderStatus.ID,
-		OrderSourceID:     request.OrderSourceID,
-		GLat:              models.NullFloat64{NullFloat64: sql.NullFloat64{Float64: request.GLat, Valid: true}},
-		GLong:             models.NullFloat64{NullFloat64: sql.NullFloat64{Float64: request.GLong, Valid: true}},
-		SoCode:            soCode,
-		SoRefCode:         models.NullString{NullString: sql.NullString{String: request.SoRefCode, Valid: true}},
-		SoDate:            now.Format("2006-01-02"),
-		SoRefDate:         models.NullString{NullString: sql.NullString{String: request.SoRefDate, Valid: true}},
-		Note:              models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}},
-		InternalComment:   models.NullString{NullString: sql.NullString{String: request.InternalComment, Valid: true}},
-		TotalAmount:       request.TotalAmount,
-		TotalTonase:       request.TotalTonase,
-		DeviceId:          models.NullString{NullString: sql.NullString{String: request.DeviceId, Valid: true}},
-		ReferralCode:      models.NullString{NullString: sql.NullString{String: request.ReferralCode, Valid: true}},
-		IsDoneSyncToEs:    "0",
-		CreatedAt:         &now,
-		StartDateSyncToEs: &now,
-		StartCreatedDate:  &now,
-		CreatedBy:         request.UserID,
-	}
+	salesOrder.SalesmanChanMap(getSalesmanResult)
 
 	createSalesOrderResultChan := make(chan *models.SalesOrderChan)
 	go u.salesOrderRepository.Insert(salesOrder, sqlTransaction, ctx, createSalesOrderResultChan)
@@ -205,25 +179,17 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 	if createSalesOrderResult.Error != nil {
 		return &models.SalesOrderResponse{}, createSalesOrderResult.ErrorLog
 	}
+	salesOrdersResponse.SoResponseMap(salesOrder)
 
 	var salesOrderDetailResponses []*models.SalesOrderDetailStoreResponse
-	for _, v := range request.SalesOrderDetails {
-		soDetailCode, _ := helper.GenerateSODetailCode(int(createSalesOrderResult.ID), request.AgentID, v.ProductID, v.UomID)
-		salesOrderDetail := &models.SalesOrderDetail{
-			SalesOrderID:      int(createSalesOrderResult.ID),
-			ProductID:         v.ProductID,
-			UomID:             v.UomID,
-			OrderStatusID:     v.OrderStatusId,
-			SoDetailCode:      soDetailCode,
-			Qty:               v.Qty,
-			SentQty:           v.SentQty,
-			ResidualQty:       v.ResidualQty,
-			Price:             v.Price,
-			Note:              models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}},
-			IsDoneSyncToEs:    "0",
-			StartDateSyncToEs: &now,
-			CreatedAt:         &now,
-		}
+	salesOrderDetails := []*models.SalesOrderDetail{}
+	for _, soDetail := range request.SalesOrderDetails {
+		soDetailCode, _ := helper.GenerateSODetailCode(int(createSalesOrderResult.ID), request.AgentID, soDetail.ProductID, soDetail.UomID)
+		salesOrderDetail := &models.SalesOrderDetail{}
+		salesOrderDetail.SalesOrderDetailStoreRequestMap(soDetail, now)
+		salesOrderDetail.SalesOrderID = int(createSalesOrderResult.ID)
+		salesOrderDetail.SoDetailCode = soDetailCode
+		salesOrderDetail.Note = models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}}
 
 		createSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
 		go u.salesOrderDetailRepository.Insert(salesOrderDetail, sqlTransaction, ctx, createSalesOrderDetailResultChan)
@@ -234,11 +200,11 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		}
 
 		salesOrderDetailResponse := &models.SalesOrderDetailStoreResponse{
-			SalesOrderDetailStoreRequest: *v,
+			SalesOrderDetailStoreRequest: *soDetail,
 		}
 
 		getProductResultChan := make(chan *models.ProductChan)
-		go u.productRepository.GetByID(v.ProductID, false, ctx, getProductResultChan)
+		go u.productRepository.GetByID(soDetail.ProductID, false, ctx, getProductResultChan)
 		getProductResult := <-getProductResultChan
 
 		if getProductResult.Error != nil {
@@ -261,7 +227,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		salesOrderDetailResponse.CategoryName = getCategoryResult.Category.Name
 
 		getUomResultChan := make(chan *models.UomChan)
-		go u.uomRepository.GetByID(v.UomID, false, ctx, getUomResultChan)
+		go u.uomRepository.GetByID(soDetail.UomID, false, ctx, getUomResultChan)
 		getUomResult := <-getUomResultChan
 
 		if getUomResult.Error != nil {
@@ -272,7 +238,9 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		salesOrderDetailResponse.UomCode = getUomResult.Uom.Code.String
 
 		salesOrderDetailResponses = append(salesOrderDetailResponses, salesOrderDetailResponse)
+		salesOrderDetails = append(salesOrderDetails, salesOrderDetail)
 	}
+	salesOrder.SalesOrderDetails = salesOrderDetails
 
 	salesOrdersResponse.SalesOrderDetails = salesOrderDetailResponses
 
@@ -294,6 +262,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 
 	keyKafka := []byte(salesOrder.SoCode)
 	messageKafka, _ := json.Marshal(salesOrder)
+	fmt.Println("message Create SO = ", string(messageKafka))
 	err := u.kafkaClient.WriteToTopic(constants.CREATE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
 
 	if err != nil {
