@@ -60,7 +60,7 @@ func (r *salesOrderOpenSearch) Get(request *models.SalesOrderRequest, resultChan
 	response := &models.SalesOrdersChan{}
 	requestQuery := r.generateSalesOrderQueryOpenSearchTermRequest("", "", request)
 	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true)
-
+	fmt.Println(string(requestQuery[:]))
 	if err.Err != nil {
 		response.Error = err.Err
 		response.ErrorLog = err
@@ -225,6 +225,18 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 		filters = append(filters, filter)
 	}
 
+	musts := []map[string]interface{}{}
+
+	if request.AgentName != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"agent_name": request.AgentName,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
 	if len(request.SortField) > 0 && len(request.SortValue) > 0 {
 		sortValue := map[string]interface{}{
 			"order": request.SortValue,
@@ -242,6 +254,7 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 	}
 
 	openSearchDetailBoolQuery["filter"] = filters
+	openSearchDetailBoolQuery["must"] = musts
 	openSearchDetailQuery["bool"] = openSearchDetailBoolQuery
 	openSearchQuery["query"] = openSearchDetailQuery
 	openSearchQueryJson, _ := json.Marshal(openSearchQuery)

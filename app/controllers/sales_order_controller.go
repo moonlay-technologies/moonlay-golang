@@ -48,7 +48,7 @@ func InitSalesOrderController(cartUseCase usecases.CartUseCaseInterface, salesOr
 func (c *salesOrderController) Get(ctx *gin.Context) {
 	var result baseModel.Response
 	var resultErrorLog *baseModel.ErrorLog
-	var pageInt, perPageInt int
+	var pageInt, perPageInt, agentIdInt, storeIdInt int
 
 	page, isPageExist := ctx.GetQuery("page")
 	if isPageExist == false {
@@ -104,6 +104,56 @@ func (c *salesOrderController) Get(ctx *gin.Context) {
 		sortValue = "desc"
 	}
 
+	globalSearchValue, isGlobalSearchValueExist := ctx.GetQuery("global_search_value")
+	if isGlobalSearchValueExist == false {
+		globalSearchValue = ""
+	}
+
+	agentId, isAgentIdExist := ctx.GetQuery("agent_id")
+	if isAgentIdExist == false {
+		agentId = "0"
+	}
+
+	agentIdInt, err = strconv.Atoi(agentId)
+	if err != nil {
+		err = helper.NewError("Parameter 'agent_id' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	storeId, isAgentIdExist := ctx.GetQuery("store_id")
+	if isAgentIdExist == false {
+		storeId = "0"
+	}
+
+	storeIdInt, err = strconv.Atoi(storeId)
+	if err != nil {
+		err = helper.NewError("Parameter 'store_id' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	agentName, isAgentNameExist := ctx.GetQuery("agent_name")
+	if isAgentNameExist == false {
+		agentName = ""
+	}
+
+	storeCode, isStoreCodeExist := ctx.GetQuery("store_code")
+	if isStoreCodeExist == false {
+		storeCode = ""
+	}
+
+	storeName, isStoreNameExist := ctx.GetQuery("store_name")
+	if isStoreNameExist == false {
+		storeName = ""
+	}
+
 	sortField, isSortFieldExist := ctx.GetQuery("sort_field")
 	if isSortFieldExist == false {
 		sortField = "created_at"
@@ -130,14 +180,20 @@ func (c *salesOrderController) Get(ctx *gin.Context) {
 	}
 
 	salesOrderRequest := &models.SalesOrderRequest{
-		Page:           pageInt,
-		PerPage:        perPageInt,
-		StartCreatedAt: startCreatedAt,
-		EndCreatedAt:   endCreatedAt,
-		StartSoDate:    startSoDate,
-		EndSoDate:      endSoDate,
-		SortField:      sortField,
-		SortValue:      sortValue,
+		Page:              pageInt,
+		PerPage:           perPageInt,
+		AgentID:           agentIdInt,
+		StoreID:           storeIdInt,
+		GlobalSearchValue: globalSearchValue,
+		AgentName:         agentName,
+		StoreCode:         storeCode,
+		StoreName:         storeName,
+		StartCreatedAt:    startCreatedAt,
+		EndCreatedAt:      endCreatedAt,
+		StartSoDate:       startSoDate,
+		EndSoDate:         endSoDate,
+		SortField:         sortField,
+		SortValue:         sortValue,
 	}
 
 	salesOrders, errorLog := c.salesOrderUseCase.Get(salesOrderRequest)
