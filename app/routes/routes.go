@@ -48,7 +48,7 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 			deliveryOrderControllerGroup.POST("", deliveryOrderController.Create)
 			deliveryOrderControllerGroup.PUT(":id", deliveryOrderController.UpdateByID)
 			deliveryOrderControllerGroup.PUT("/details/:id", deliveryOrderController.UpdateDeliveryOrderDetailByID)
-			deliveryOrderControllerGroup.PUT("/detailss/:id", deliveryOrderController.UpdateDeliveryOrderDetailByDeliveryOrderID)
+			deliveryOrderControllerGroup.PUT("/:id/details", deliveryOrderController.UpdateDeliveryOrderDetailByDeliveryOrderID)
 			deliveryOrderControllerGroup.GET(":id", deliveryOrderController.GetByID)
 			deliveryOrderControllerGroup.GET("", deliveryOrderController.Get)
 		}
