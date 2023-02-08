@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
@@ -203,6 +204,249 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 		filters = append(filters, filter)
 	}
 
+	musts := []map[string]interface{}{}
+
+	if request.GlobalSearchValue != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"global_search_value": request.GlobalSearchValue,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.AgentID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"agent_id": request.AgentID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.StoreID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"store_id": request.StoreID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.AgentName != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"agent_name": request.AgentName,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.StoreCode != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"store_code": request.StoreCode,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.StoreName != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"store_name": request.StoreName,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.BrandID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"brand_id": request.BrandID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.BrandName != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"brand_name": request.BrandName,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.OrderSourceID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"order_source_id": request.OrderSourceID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.OrderStatusID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"order_status_id": request.OrderStatusID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.DoCode != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"do_code": request.DoCode,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.DoRefCode != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"do_ref_code": request.DoRefCode,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+	fmt.Println("test", request.DoRefCode)
+
+	if request.DoRefDate != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"do_ref_date": request.DoRefDate,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.DoRefferalCode != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"do_refferal_code": request.DoRefferalCode,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.TotalAmount != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"total_amount": request.TotalAmount,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.TotalTonase != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"total_tonase": request.TotalTonase,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.ProductSKU != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"product_sku": request.ProductSKU,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.ProductName != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"product_name": request.ProductName,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.CategoryID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"category_id": request.CategoryID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.SalesmanID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"salesman_id": request.SalesmanID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.ProvinceID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"province_id": request.ProvinceID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.CityID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"city_id": request.CityID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.DistrictID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"district_id": request.DistrictID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.VillageID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"village_id": request.VillageID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
 	if len(request.SortField) > 0 && len(request.SortValue) > 0 {
 		sortValue := map[string]interface{}{
 			"order": request.SortValue,
@@ -220,6 +464,7 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 	}
 
 	openSearchDetailBoolQuery["filter"] = filters
+	openSearchDetailBoolQuery["must"] = musts
 	openSearchDetailQuery["bool"] = openSearchDetailBoolQuery
 	openSearchQuery["query"] = openSearchDetailQuery
 	openSearchQueryJson, _ := json.Marshal(openSearchQuery)
