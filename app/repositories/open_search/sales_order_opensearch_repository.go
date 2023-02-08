@@ -237,6 +237,116 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 		musts = append(musts, match)
 	}
 
+	if request.StoreCode != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"store_code": request.StoreCode,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.StoreName != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"store_name": request.StoreName,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.BrandName != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"brand_name": request.BrandName,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.SoCode != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"so_code": request.SoCode,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.SoRefCode != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"so_ref_code": request.SoRefCode,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.SoRefDate != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"so_ref_date": request.SoRefDate,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.ReferralCode != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"referral_code": request.ReferralCode,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.TotalAmount != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"total_amount": request.TotalAmount,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.TotalTonase != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"total_tonase": request.TotalTonase,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.ProductSKU != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"sales_order_details.product.sku": request.ProductSKU,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.ProductName != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"sales_order_details.product.product_name": request.ProductName,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
 	if len(request.SortField) > 0 && len(request.SortValue) > 0 {
 		sortValue := map[string]interface{}{
 			"order": request.SortValue,
