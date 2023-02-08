@@ -29,16 +29,16 @@ RUN export GO111MODULE=on
 RUN mkdir -pv /src/app/ssl
 
 RUN cd app && \
-    CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /src/app/pocordersrv .
+    CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /src/app/ordersrv .
 
 COPY app/.env.$APP_ENV /src/app/.env
 COPY app/ssl/ /src/app/ssl
 
-#WORKDIR /src/app
+WORKDIR /src/app
 #RUN rm -r /order-service
 
-RUN chmod +x ./app/pocordersrv
+RUN chmod +x ./ordersrv
 
 EXPOSE 8000
-ENTRYPOINT ["/order-service/app/pocordersrv"]
-CMD ["pocordersrv"]
+ENTRYPOINT ["/src/app/ordersrv"]
+CMD ["ordersrv"]
