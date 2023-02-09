@@ -39,7 +39,7 @@ pipelines:
     development:
       - step:
           name: 'Deployment to Development'
-          deployment: dev
+          deployment: test
           script:
             - echo "Deployment Pipeline run on AWS CodePipeline"
     # uat:
