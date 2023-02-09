@@ -52,7 +52,7 @@ func (c *createSalesOrderConsumerHandler) ProcessMessage() {
 
 		var salesOrder models.SalesOrder
 		err = json.Unmarshal(m.Value, &salesOrder)
-
+		fmt.Println(salesOrder)
 		if err != nil {
 			errorLogData := helper.WriteLogConsumer(constants.SALES_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
 			fmt.Println(errorLogData)

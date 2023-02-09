@@ -48,8 +48,7 @@ func InitSalesOrderController(cartUseCase usecases.CartUseCaseInterface, salesOr
 func (c *salesOrderController) Get(ctx *gin.Context) {
 	var result baseModel.Response
 	var resultErrorLog *baseModel.ErrorLog
-	var pageInt, perPageInt, agentIdInt, storeIdInt, brandIdInt, orderSourceIdInt, orderStatusIdInt, categoryIdInt, salesmanIdInt, provinceIdInt, cityIdInt, districtIdInt, villageIdInt int
-	var totalAmountFloat, totalTonaseFloat float64
+	var pageInt, perPageInt, agentIdInt, storeIdInt, brandIdInt, orderSourceIdInt, orderStatusIdInt, productIdInt, categoryIdInt, salesmanIdInt, provinceIdInt, cityIdInt, districtIdInt, villageIdInt, idInt int
 
 	page, isPageExist := ctx.GetQuery("page")
 	if isPageExist == false {
@@ -105,6 +104,15 @@ func (c *salesOrderController) Get(ctx *gin.Context) {
 		sortField = "created_at"
 	}
 
+	if sortField != "order_status_id" && sortField != "so_date" && sortField != "so_ref_code" && sortField != "store_code" && sortField != "store_name" && sortField != "created_at" && sortField != "updated_at" {
+		err = helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'so_date' or 'so_ref_code' or 'store_code' or 'store_name' or 'created_at' or 'updated_at' ")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
 	sortValue, isSortValueExist := ctx.GetQuery("sort_value")
 	if isSortValueExist == false {
 		sortValue = "desc"
@@ -130,8 +138,8 @@ func (c *salesOrderController) Get(ctx *gin.Context) {
 		return
 	}
 
-	storeId, isAgentIdExist := ctx.GetQuery("store_id")
-	if isAgentIdExist == false {
+	storeId, isStoreIdExist := ctx.GetQuery("store_id")
+	if isStoreIdExist == false {
 		storeId = "0"
 	}
 
@@ -143,21 +151,6 @@ func (c *salesOrderController) Get(ctx *gin.Context) {
 		result.Error = errorLogData
 		ctx.JSON(result.StatusCode, result)
 		return
-	}
-
-	agentName, isAgentNameExist := ctx.GetQuery("agent_name")
-	if isAgentNameExist == false {
-		agentName = ""
-	}
-
-	storeCode, isStoreCodeExist := ctx.GetQuery("store_code")
-	if isStoreCodeExist == false {
-		storeCode = ""
-	}
-
-	storeName, isStoreNameExist := ctx.GetQuery("store_name")
-	if isStoreNameExist == false {
-		storeName = ""
 	}
 
 	brandId, isBrandIdExist := ctx.GetQuery("brand_id")
@@ -173,11 +166,6 @@ func (c *salesOrderController) Get(ctx *gin.Context) {
 		result.Error = errorLogData
 		ctx.JSON(result.StatusCode, result)
 		return
-	}
-
-	brandName, isBrandNameExist := ctx.GetQuery("brand_name")
-	if isBrandNameExist == false {
-		brandName = ""
 	}
 
 	orderSourceId, isOrderSourceIdExist := ctx.GetQuery("order_source_id")
@@ -210,11 +198,6 @@ func (c *salesOrderController) Get(ctx *gin.Context) {
 		return
 	}
 
-	soCode, isSoCodeExist := ctx.GetQuery("so_code")
-	if isSoCodeExist == false {
-		soCode = ""
-	}
-
 	startSoDate, isStartSoDate := ctx.GetQuery("start_so_date")
 	if isStartSoDate == false {
 		startSoDate = ""
@@ -225,29 +208,14 @@ func (c *salesOrderController) Get(ctx *gin.Context) {
 		endSoDate = ""
 	}
 
-	soRefCode, isSoRefCodeExist := ctx.GetQuery("so_ref_code")
-	if isSoRefCodeExist == false {
-		soRefCode = ""
+	id, isIdExist := ctx.GetQuery("id")
+	if isIdExist == false {
+		id = "0"
 	}
 
-	soRefDate, isSoRefDateExist := ctx.GetQuery("so_ref_date")
-	if isSoRefDateExist == false {
-		soRefDate = ""
-	}
-
-	referralCode, isReferralCodeExist := ctx.GetQuery("referral_code")
-	if isReferralCodeExist == false {
-		referralCode = ""
-	}
-
-	totalAmount, isTotalAmountExist := ctx.GetQuery("total_amount")
-	if isTotalAmountExist == false {
-		totalAmount = "0"
-	}
-
-	totalAmountFloat, err = strconv.ParseFloat(totalAmount, 64)
+	idInt, err = strconv.Atoi(id)
 	if err != nil {
-		err = helper.NewError("Parameter 'total_amount' harus bernilai float")
+		err = helper.NewError("Parameter 'id' harus bernilai integer")
 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
 		result.StatusCode = http.StatusBadRequest
 		result.Error = errorLogData
@@ -255,29 +223,19 @@ func (c *salesOrderController) Get(ctx *gin.Context) {
 		return
 	}
 
-	totalTonase, isTotalTonaseExist := ctx.GetQuery("total_tonase")
-	if isTotalTonaseExist == false {
-		totalTonase = "0"
+	productId, isProductIdExist := ctx.GetQuery("product_id")
+	if isProductIdExist == false {
+		productId = "0"
 	}
 
-	totalTonaseFloat, err = strconv.ParseFloat(totalTonase, 64)
+	productIdInt, err = strconv.Atoi(productId)
 	if err != nil {
-		err = helper.NewError("Parameter 'total_tonase' harus bernilai float")
+		err = helper.NewError("Parameter 'product_id' harus bernilai integer")
 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
 		result.StatusCode = http.StatusBadRequest
 		result.Error = errorLogData
 		ctx.JSON(result.StatusCode, result)
 		return
-	}
-
-	productSku, isProductSkuExist := ctx.GetQuery("product_sku")
-	if isProductSkuExist == false {
-		productSku = ""
-	}
-
-	productName, isProductNameExist := ctx.GetQuery("product_name")
-	if isProductNameExist == false {
-		productName = ""
 	}
 
 	categoryId, isCategoryIdExist := ctx.GetQuery("category_id")
@@ -388,23 +346,13 @@ func (c *salesOrderController) Get(ctx *gin.Context) {
 		GlobalSearchValue: globalSearchValue,
 		AgentID:           agentIdInt,
 		StoreID:           storeIdInt,
-		AgentName:         agentName,
-		StoreCode:         storeCode,
-		StoreName:         storeName,
 		BrandID:           brandIdInt,
-		BrandName:         brandName,
 		OrderSourceID:     orderSourceIdInt,
 		OrderStatusID:     orderStatusIdInt,
-		SoCode:            soCode,
 		StartSoDate:       startSoDate,
 		EndSoDate:         endSoDate,
-		SoRefCode:         soRefCode,
-		SoRefDate:         soRefDate,
-		ReferralCode:      referralCode,
-		TotalAmount:       totalAmountFloat,
-		TotalTonase:       totalTonaseFloat,
-		ProductSKU:        productSku,
-		ProductName:       productName,
+		ID:                idInt,
+		ProductID:         productIdInt,
 		CategoryID:        categoryIdInt,
 		SalesmanID:        salesmanIdInt,
 		ProvinceID:        provinceIdInt,
