@@ -13,7 +13,7 @@ pipelines:
           name: 'Build and Test'
           image: golang
           script:
-            - source bitbucket-pipelines-go.sh
+            # - source bitbucket-pipelines-go.sh
             - if [ "${BITBUCKET_PR_DESTINATION_BRANCH}" != "development" ]; then printf 'ignoring'; exit; fi
             - go mod vendor
             - go test -cover -coverpkg "./app/usecases" "./app/usecases"
