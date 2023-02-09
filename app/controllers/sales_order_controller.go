@@ -592,7 +592,7 @@ func (c *salesOrderController) UpdateByID(ctx *gin.Context) {
 	ctx.Set("full_path", ctx.FullPath())
 	ctx.Set("method", ctx.Request.Method)
 
-	ids := ctx.Param("id")
+	ids := ctx.Param("so-id")
 	id, err := strconv.Atoi(ids)
 
 	if err != nil {
