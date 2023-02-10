@@ -40,3 +40,8 @@ type Uoms struct {
 	Uoms  []*Uom `json:"uoms,omitempty"`
 	Total int64  `json:"total,omitempty"`
 }
+
+type UomOpenSearchResponse struct {
+	Name NullString `json:"name,omitempty"`
+	Code NullString `json:"code,omitempty"`
+}
