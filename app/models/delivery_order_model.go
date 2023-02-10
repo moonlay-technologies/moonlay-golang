@@ -143,6 +143,7 @@ type DeliveryOrderRequest struct {
 	StoreName         string  `json:"store_name,omitempty"`
 	BrandID           int     `json:"brand_id,omitempty"`
 	BrandName         string  `json:"brand_name,omitempty"`
+	ProductID         int     `json:"product_id,omitempty"`
 	OrderSourceID     int     `json:"order_source_id,omitempty"`
 	OrderStatusID     int     `json:"order_status_id,omitempty"`
 	SalesOrderID      int     `json:"sales_order_id,omitempty"`
@@ -172,6 +173,7 @@ type DeliveryOrderRequest struct {
 	StoreCode         string  `json:"store_code,omitempty"`
 	StartCreatedAt    string  `json:"start_created_at,omitempty"`
 	EndCreatedAt      string  `json:"end_created_at,omitempty"`
+	UpdatedAt         string  `json:"updated_at,omitempty"`
 	StartDoDate       string  `json:"start_do_date,omitempty"`
 	EndDoDate         string  `json:"end_do_date,omitempty"`
 }

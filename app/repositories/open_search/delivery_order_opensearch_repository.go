@@ -323,7 +323,6 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 
 		musts = append(musts, match)
 	}
-	fmt.Println("test", request.DoRefCode)
 
 	if request.DoRefDate != "" {
 		match := map[string]interface{}{
@@ -399,6 +398,36 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 		match := map[string]interface{}{
 			"match": map[string]interface{}{
 				"salesman_id": request.SalesmanID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.ProductID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"product_id": request.ProductID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.ID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"id": request.ID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.SalesOrderID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"sales_order_id": request.SalesOrderID,
 			},
 		}
 
@@ -486,7 +515,6 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 	}
 	openSearchQuery["query"] = openSearchDetailQueryBool
 	openSearchQueryJson, _ := json.Marshal(openSearchQuery)
-	// fmt.Println("fix_query", openSearchQuery)
 	return openSearchQueryJson
 }
 
