@@ -225,6 +225,143 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 		filters = append(filters, filter)
 	}
 
+	musts := []map[string]interface{}{}
+
+	if request.GlobalSearchValue != "" {
+		match := map[string]interface{}{
+			"multi_match": map[string]interface{}{
+				"query":  request.GlobalSearchValue,
+				"fields": []string{"store_code", "store_name", "so_code", "so_ref_code"},
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.AgentID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"agent.id": request.AgentID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.StoreID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"store_id": request.StoreID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.BrandID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"brand_id": request.BrandID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.OrderSourceID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"order_source_id": request.OrderSourceID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.OrderStatusID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"order_status.id": request.OrderStatusID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.ID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"id": request.ID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.ProductID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"sales_order_details.product_id": request.ProductID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.CategoryID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"sales_order_details.product.category_id": request.CategoryID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.ProvinceID != 0 {
+		match := map[string]interface{}{
+			"multi_match": map[string]interface{}{
+				"query":  request.ProvinceID,
+				"fields": []string{"agent.province_id", "store.province_id"},
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.CityID != 0 {
+		match := map[string]interface{}{
+			"multi_match": map[string]interface{}{
+				"query":  request.CityID,
+				"fields": []string{"agent.city_id", "store.city_id"},
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.DistrictID != 0 {
+		match := map[string]interface{}{
+			"multi_match": map[string]interface{}{
+				"query":  request.DistrictID,
+				"fields": []string{"agent.district_id", "store.district_id"},
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.VillageID != 0 {
+		match := map[string]interface{}{
+			"multi_match": map[string]interface{}{
+				"query":  request.VillageID,
+				"fields": []string{"agent.village_id", "store.village_id"},
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
 	if len(request.SortField) > 0 && len(request.SortValue) > 0 {
 		sortValue := map[string]interface{}{
 			"order": request.SortValue,
@@ -242,6 +379,7 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 	}
 
 	openSearchDetailBoolQuery["filter"] = filters
+	openSearchDetailBoolQuery["must"] = musts
 	openSearchDetailQuery["bool"] = openSearchDetailBoolQuery
 	openSearchQuery["query"] = openSearchDetailQuery
 	openSearchQueryJson, _ := json.Marshal(openSearchQuery)
@@ -311,6 +449,10 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchResult(openSearc
 
 			if obj["internal_comment"] != nil {
 				salesOrder.InternalComment = models.NullString{NullString: sql.NullString{String: obj["internal_comment"].(string), Valid: true}}
+			}
+
+			if obj["referral_code"] != nil {
+				salesOrder.ReferralCode = models.NullString{NullString: sql.NullString{String: obj["referral_code"].(string), Valid: true}}
 			}
 
 			brandId := obj["brand_id"].(float64)

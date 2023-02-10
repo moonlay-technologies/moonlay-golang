@@ -8,31 +8,44 @@ image: atlassian/default-image:3
 pipelines:
   pull-requests:
     '**':
-      - parallel:
-        - step:
-            name: 'Build and Test'
-            script:
-              - if [ "${BITBUCKET_PR_DESTINATION_BRANCH}" != "development" ]; then printf 'ignoring'; exit; fi
-              - go mod vendor
-              - go test -cover -coverpkg "./app/usecases" "./app/usecases"
-        - step:
-            name: 'Lint'
-            script:
-              - if [ "${BITBUCKET_PR_DESTINATION_BRANCH}" != "development" ]; then printf 'ignoring'; exit; fi
-              - echo "Your linting goes here..."
-        - step:
-            name: 'Security scan'
-            script:
-              - if [ "${BITBUCKET_PR_DESTINATION_BRANCH}" != "development" ]; then printf 'ignoring'; exit; fi
-              - echo "Your security scan goes here..."
-        - step:
-            name: 'Sonarqube Analysis'
-            script:
-              - if [ "${BITBUCKET_PR_DESTINATION_BRANCH}" != "development" ]; then printf 'ignoring'; exit; fi
-              - pipe: sonarsource/sonarqube-scan:1.0.0
-                variables:
-                  SONAR_HOST_URL: ${SONAR_HOST_URL}
-                  SONAR_TOKEN: ${SONAR_TOKEN} 
+      # - parallel:
+      - step:
+          name: 'Build and Test'
+          image: golang
+          script:
+            # - source bitbucket-pipelines-go.sh
+            - if [ "${BITBUCKET_PR_DESTINATION_BRANCH}" != "development" ]; then printf 'ignoring'; exit; fi
+            - go mod vendor
+            - go test -cover -coverprofile=cover.out -coverpkg "./app/usecases" "./app/usecases"
+            - echo "Quality Gate :\ checking test coverage treshold"
+            - echo "Threshold :\ 2 %"
+            - totalCoverage=`go tool cover -func cover.out | grep total | grep -Eo '[0-9]+\.[0-9]+'`
+            - echo "Current test coverage :\ $totalCoverage %"
+            - if (( $(echo "$totalCoverage 2" | awk '{print ($1 > $2)}') )); then
+            -  echo "OK";
+            - else
+            -  echo "Current test coverage is below threshold. Please add more unit tests or adjust threshold to a lower value.";
+            -  echo "Failed";
+            -  exit 1;
+            - fi
+        # - step:
+        #     name: 'Lint'
+        #     script:
+        #       - if [ "${BITBUCKET_PR_DESTINATION_BRANCH}" != "development" ]; then printf 'ignoring'; exit; fi
+        #       - golint -set_exit_status ./...
+        # - step:
+        #     name: 'Security scan'
+        #     script:
+        #       - if [ "${BITBUCKET_PR_DESTINATION_BRANCH}" != "development" ]; then printf 'ignoring'; exit; fi
+        #       - go vet ./...
+        # - step:
+        #     name: 'Sonarqube Analysis'
+        #     script:
+        #       - if [ "${BITBUCKET_PR_DESTINATION_BRANCH}" != "development" ]; then printf 'ignoring'; exit; fi
+        #       - pipe: sonarsource/sonarqube-scan:1.0.0
+        #         variables:
+        #           SONAR_HOST_URL: ${SONAR_HOST_URL} 
+        #           SONAR_TOKEN: ${SONAR_TOKEN} 
 
     # The following deployment steps will be executed for each pipeline run. To configure your steps and conditionally deploy see https://support.atlassian.com/bitbucket-cloud/docs/configure-bitbucket-pipelinesyml/
   branches:
@@ -41,16 +54,16 @@ pipelines:
           name: 'Deployment to Development'
           deployment: test
           script:
-            - echo "Deploying to test environment"
-    uat:
-      - step:
-          name: 'Deployment to Staging'
-          deployment: staging
-          script:
-            - echo "Your deployment to staging script goes here..."
-    master:
-      - step:
-          name: 'Deployment to Production'
-          deployment: production
-          script:
-            - echo "Your deployment to production script goes here..."
+            - echo "Deployment Pipeline run on AWS CodePipeline"
+    # uat:
+    #   - step:
+    #       name: 'Deployment to Staging'
+    #       deployment: staging
+    #       script:
+    #         - echo "Your deployment to staging script goes here..."
+    # master:
+    #   - step:
+    #       name: 'Deployment to Production'
+    #       deployment: production
+    #       script:
+    #         - echo "Your deployment to production script goes here..."
