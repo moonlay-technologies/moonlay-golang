@@ -484,7 +484,8 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByDeliveryOrderID(ctx
 func (c *deliveryOrderController) Get(ctx *gin.Context) {
 	var result baseModel.Response
 	var resultErrorLog *baseModel.ErrorLog
-	var pageInt, perPageInt int
+	var pageInt, perPageInt, intAgentID, intStoreID, intBrandID, intOrderSourceID, intOrderStatusID, intCategoryID, intSalesmanID, intProvinceID, intCityID, intDistrictID, intVillageID int
+	var floatTotalAmount, floatTotalTonase float64
 
 	page, isPageExist := ctx.GetQuery("page")
 	if isPageExist == false {
@@ -545,6 +546,266 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 		sortField = "created_at"
 	}
 
+	globalSearchValue, isGlobalSearchValueExist := ctx.GetQuery("global_search_value")
+	if isGlobalSearchValueExist == false {
+		globalSearchValue = ""
+	}
+
+	agentID, isAgentIDExist := ctx.GetQuery("agent_id")
+	if isAgentIDExist == false {
+		agentID = "0"
+	}
+
+	intAgentID, err = strconv.Atoi(agentID)
+	if err != nil {
+		err = helper.NewError("Parameter 'agent_id' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	storeID, isStoreIDExist := ctx.GetQuery("store_id")
+	if isStoreIDExist == false {
+		storeID = "0"
+	}
+
+	intStoreID, err = strconv.Atoi(storeID)
+	if err != nil {
+		err = helper.NewError("Parameter 'store_id' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	agentName, isAgentNameExist := ctx.GetQuery("agent_name")
+	if isAgentNameExist == false {
+		agentName = ""
+	}
+
+	storeCode, isStoreCodeExist := ctx.GetQuery("store_code")
+	if isStoreCodeExist == false {
+		storeCode = ""
+	}
+
+	storeName, isStoreNameExist := ctx.GetQuery("store_name")
+	if isStoreNameExist == false {
+		storeName = ""
+	}
+
+	brandID, isBrandIDExist := ctx.GetQuery("brand_id")
+	if isBrandIDExist == false {
+		brandID = "0"
+	}
+
+	intBrandID, err = strconv.Atoi(brandID)
+	if err != nil {
+		err = helper.NewError("Parameter 'brand_id' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	brandName, isBrandNameExist := ctx.GetQuery("brand_name")
+	if isBrandNameExist == false {
+		brandName = ""
+	}
+
+	orderSourceID, isOrderSourceIDExist := ctx.GetQuery("order_source_id")
+	if isOrderSourceIDExist == false {
+		orderSourceID = "0"
+	}
+
+	intOrderSourceID, err = strconv.Atoi(orderSourceID)
+	if err != nil {
+		err = helper.NewError("Parameter 'order_source_id' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	orderStatusID, isOrderStatusIDExist := ctx.GetQuery("order_status_id")
+	if isOrderStatusIDExist == false {
+		orderStatusID = "0"
+	}
+
+	intOrderStatusID, err = strconv.Atoi(orderStatusID)
+	if err != nil {
+		err = helper.NewError("Parameter 'order_status_id' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	doCode, isDoCodeExist := ctx.GetQuery("do_code")
+	if isDoCodeExist == false {
+		doCode = ""
+	}
+
+	startDoDate, isStartSoDate := ctx.GetQuery("start_do_date")
+	if isStartSoDate == false {
+		startDoDate = ""
+	}
+
+	endDoDate, isEndSoDate := ctx.GetQuery("end_do_date")
+	if isEndSoDate == false {
+		endDoDate = ""
+	}
+
+	doRefCode, isDoRefCodeExist := ctx.GetQuery("do_ref_code")
+	if isDoRefCodeExist == false {
+		doRefCode = ""
+	}
+
+	doRefDate, isDoRefDateExist := ctx.GetQuery("do_ref_date")
+	if isDoRefDateExist == false {
+		doRefDate = ""
+	}
+
+	doRefferalCode, isDoRefferalCodeExist := ctx.GetQuery("do_refferal_code")
+	if isDoRefferalCodeExist == false {
+		doRefferalCode = ""
+	}
+
+	totalAmount, isTotalAmountExist := ctx.GetQuery("total_amount")
+	if isTotalAmountExist == false {
+		totalAmount = "0"
+	}
+
+	floatTotalAmount, err = strconv.ParseFloat(totalAmount, 64)
+	if err != nil {
+		err = helper.NewError("Parameter 'total_amount' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	totalTonase, isTotalTonaseExist := ctx.GetQuery("total_tonase")
+	if isTotalTonaseExist == false {
+		totalTonase = "0"
+	}
+
+	floatTotalTonase, err = strconv.ParseFloat(totalTonase, 64)
+	if err != nil {
+		err = helper.NewError("Parameter 'total_tonase' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	productSku, isProductSkuExist := ctx.GetQuery("product_sku")
+	if isProductSkuExist == false {
+		productSku = ""
+	}
+
+	productName, isProductNameExist := ctx.GetQuery("product_name")
+	if isProductNameExist == false {
+		productName = ""
+	}
+
+	categoryID, isCategoryIDExist := ctx.GetQuery("category_id")
+	if isCategoryIDExist == false {
+		categoryID = "0"
+	}
+
+	intCategoryID, err = strconv.Atoi(categoryID)
+	if err != nil {
+		err = helper.NewError("Parameter 'category_id' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	salesmanID, isSalesmanIDExist := ctx.GetQuery("salesman_id")
+	if isSalesmanIDExist == false {
+		salesmanID = "0"
+	}
+
+	intSalesmanID, err = strconv.Atoi(salesmanID)
+	if err != nil {
+		err = helper.NewError("Parameter 'salesman_id' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	provinceID, isProvinceIDExist := ctx.GetQuery("province_id")
+	if isProvinceIDExist == false {
+		provinceID = "0"
+	}
+
+	intProvinceID, err = strconv.Atoi(provinceID)
+	if err != nil {
+		err = helper.NewError("Parameter 'province_id' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	cityID, isCityIDExist := ctx.GetQuery("city_id")
+	if isCityIDExist == false {
+		cityID = "0"
+	}
+
+	intCityID, err = strconv.Atoi(cityID)
+	if err != nil {
+		err = helper.NewError("Parameter 'city_id' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	districtID, isDistrictIDExist := ctx.GetQuery("district_id")
+	if isDistrictIDExist == false {
+		districtID = "0"
+	}
+
+	intDistrictID, err = strconv.Atoi(districtID)
+	if err != nil {
+		err = helper.NewError("Parameter 'district_id' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	villageID, isVillageIDExist := ctx.GetQuery("village_id")
+	if isVillageIDExist == false {
+		villageID = "0"
+	}
+
+	intVillageID, err = strconv.Atoi(villageID)
+	if err != nil {
+		err = helper.NewError("Parameter 'village_id' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
 	startCreatedAt, isStartCreatedAt := ctx.GetQuery("start_created_at")
 	if isStartCreatedAt == false {
 		startCreatedAt = ""
@@ -555,25 +816,39 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 		endCreatedAt = ""
 	}
 
-	startSoDate, isStartSoDate := ctx.GetQuery("start_so_date")
-	if isStartSoDate == false {
-		startSoDate = ""
-	}
-
-	endSoDate, isEndSoDate := ctx.GetQuery("end_so_date")
-	if isEndSoDate == false {
-		endSoDate = ""
-	}
-
 	deliveryOrderReqeuest := &models.DeliveryOrderRequest{
-		Page:           pageInt,
-		PerPage:        perPageInt,
-		StartCreatedAt: startCreatedAt,
-		EndCreatedAt:   endCreatedAt,
-		StartSoDate:    startSoDate,
-		EndSoDate:      endSoDate,
-		SortField:      sortField,
-		SortValue:      sortValue,
+		Page:              pageInt,
+		PerPage:           perPageInt,
+		SortField:         sortField,
+		SortValue:         sortValue,
+		GlobalSearchValue: globalSearchValue,
+		AgentID:           intAgentID,
+		StoreID:           intStoreID,
+		AgentName:         agentName,
+		StoreCode:         storeCode,
+		StoreName:         storeName,
+		BrandID:           intBrandID,
+		BrandName:         brandName,
+		OrderSourceID:     intOrderSourceID,
+		OrderStatusID:     intOrderStatusID,
+		DoCode:            doCode,
+		StartDoDate:       startDoDate,
+		EndDoDate:         endDoDate,
+		DoRefCode:         doRefCode,
+		DoRefDate:         doRefDate,
+		DoRefferalCode:    doRefferalCode,
+		TotalAmount:       floatTotalAmount,
+		TotalTonase:       floatTotalTonase,
+		ProductSKU:        productSku,
+		ProductName:       productName,
+		CategoryID:        intCategoryID,
+		SalesmanID:        intSalesmanID,
+		ProvinceID:        intProvinceID,
+		CityID:            intCityID,
+		DistrictID:        intDistrictID,
+		VillageID:         intVillageID,
+		StartCreatedAt:    startCreatedAt,
+		EndCreatedAt:      endCreatedAt,
 	}
 
 	deliveryOrders, errorLog := c.deliveryOrderUseCase.Get(deliveryOrderReqeuest)

@@ -2,14 +2,15 @@ package controllers
 
 import (
 	"context"
-	"github.com/bxcodec/dbresolver"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/usecases"
 	"order-service/global/utils/helper"
 	baseModel "order-service/global/utils/model"
 	"strconv"
+
+	"github.com/bxcodec/dbresolver"
+	"github.com/gin-gonic/gin"
 )
 
 type StoreControllerInterface interface {
@@ -246,14 +247,14 @@ func (c *storeController) GetDeliveryOrders(ctx *gin.Context) {
 		endCreatedAt = ""
 	}
 
-	startSoDate, isStartSoDate := ctx.GetQuery("start_so_date")
+	startDoDate, isStartSoDate := ctx.GetQuery("start_do_date")
 	if isStartSoDate == false {
-		startSoDate = ""
+		startDoDate = ""
 	}
 
-	endSoDate, isEndSoDate := ctx.GetQuery("end_so_date")
+	endDoDate, isEndSoDate := ctx.GetQuery("end_do_date")
 	if isEndSoDate == false {
-		endSoDate = ""
+		endDoDate = ""
 	}
 
 	deliveryOrderRequest := &models.DeliveryOrderRequest{
@@ -262,8 +263,8 @@ func (c *storeController) GetDeliveryOrders(ctx *gin.Context) {
 		PerPage:        perPageInt,
 		StartCreatedAt: startCreatedAt,
 		EndCreatedAt:   endCreatedAt,
-		StartSoDate:    startSoDate,
-		EndSoDate:      endSoDate,
+		StartDoDate:    startDoDate,
+		EndDoDate:      endDoDate,
 		SortField:      sortField,
 		SortValue:      sortValue,
 	}
