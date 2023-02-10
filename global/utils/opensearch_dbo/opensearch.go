@@ -150,7 +150,7 @@ func (os *openSearchClient) Query(index string, query []byte) (*model.OpenSearch
 		fmt.Println("Error Insert Index Open Search : ", err.Error())
 		return &model.OpenSearchQueryResponse{}, err
 	}
-	fmt.Println(response)
+
 	if response.IsError() == true {
 		errStr := fmt.Sprintf("Error failed Query Document to open_search")
 		err = helper.NewError(errStr)
@@ -169,8 +169,6 @@ func (os *openSearchClient) Query(index string, query []byte) (*model.OpenSearch
 		fmt.Println(err)
 		return &model.OpenSearchQueryResponse{}, err
 	}
-
-	fmt.Println(searchResponse)
 
 	return searchResponse, nil
 }
