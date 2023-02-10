@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
@@ -522,7 +521,6 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchResult(ope
 	openSearchQueryResult, err := r.openSearch.Query(constants.DELIVERY_ORDERS_INDEX, openSearchQueryJson)
 
 	if err != nil {
-		fmt.Println("errs", err)
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		return &models.DeliveryOrders{}, errorLogData
 	}
