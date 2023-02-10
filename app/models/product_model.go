@@ -66,3 +66,12 @@ type Products struct {
 	Products []*Product `json:"products,omitempty"`
 	Total    int64      `json:"total,omitempty"`
 }
+
+type ProductOpenSearchResponse struct {
+	ID          int        `json:"id,omitempty" bson:"id,omitempty"`
+	Sku         NullString `json:"sku,omitempty" bson:"sku,omitempty"`
+	AliasSku    NullString `json:"alias_sku,omitempty" bson:"alias_sku,omitempty"`
+	ProductName NullString `json:"product_name,omitempty" bson:"product_name,omitempty"`
+	Description NullString `json:"description,omitempty" bson:"description,omitempty"`
+	CategoryID  int        `json:"category_id" bson:"category_id,omitempty"`
+}

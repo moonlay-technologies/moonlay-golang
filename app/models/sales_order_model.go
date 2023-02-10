@@ -188,3 +188,54 @@ type SalesOrders struct {
 	SalesOrders []*SalesOrder `json:"sales_orders,omitempty"`
 	Total       int64         `json:"total,omitempty"`
 }
+
+type SalesOrderOpenSearchResponse struct {
+	ID                   int                                   `json:"id,omitempty" bson:"id,omitempty"`
+	AgentName            NullString                            `json:"agent_name,omitempty" bson:"agent_name,omitempty"`
+	AgentEmail           NullString                            `json:"agent_email,omitempty" bson:"agent_email,omitempty"`
+	AgentProvinceName    NullString                            `json:"agent_province_name,omitempty" bson:"agent_province_name,omitempty"`
+	AgentCityName        NullString                            `json:"agent_city_name,omitempty" bson:"agent_city_name,omitempty"`
+	AgentDistrictName    NullString                            `json:"agent_district_name,omitempty" bson:"agent_district_name,omitempty"`
+	AgentVillageName     NullString                            `json:"agent_village_name,omitempty" bson:"agent_village_name,omitempty"`
+	AgentAddress         NullString                            `json:"agent_address,omitempty" bson:"agent_address,omitempty"`
+	AgentPhone           NullString                            `json:"agent_phone,omitempty" bson:"agent_phone,omitempty"`
+	AgentMainMobilePhone NullString                            `json:"agent_main_mobile_phone,omitempty" bson:"agent_main_mobile_phone,omitempty"`
+	StoreName            NullString                            `json:"store_name,omitempty" bson:"store_name,omitempty"`
+	StoreCode            NullString                            `json:"store_code,omitempty" bson:"store_code,omitempty"`
+	StoreEmail           NullString                            `json:"store_email,omitempty" bson:"store_email,omitempty"`
+	StoreProvinceName    NullString                            `json:"store_province_name,omitempty" bson:"store_province_name,omitempty"`
+	StoreCityName        NullString                            `json:"store_city_name,omitempty" bson:"store_city_name,omitempty"`
+	StoreDistrictName    NullString                            `json:"store_district_name,omitempty" bson:"store_district_name,omitempty"`
+	StoreVillageName     NullString                            `json:"store_village_name,omitempty" bson:"store_village_name,omitempty"`
+	StoreAddress         NullString                            `json:"store_address,omitempty" bson:"store_address,omitempty"`
+	StorePhone           NullString                            `json:"store_phone,omitempty" bson:"store_phone,omitempty"`
+	StoreMainMobilePhone NullString                            `json:"store_main_mobile_phone,omitempty" bson:"store_main_mobile_phone,omitempty"`
+	BrandID              int                                   `json:"brand_id,omitempty" bson:"brand_id,omitempty"`
+	BrandName            string                                `json:"brand_name,omitempty" bson:"brand_name,omitempty"`
+	UserFirstName        NullString                            `json:"user_first_name,omitempty" bson:"user_first_name,omitempty"`
+	UserLastName         NullString                            `json:"user_last_name,omitempty" bson:"user_last_name,omitempty"`
+	UserEmail            NullString                            `json:"user_email,omitempty" bson:"user_email,omitempty"`
+	OrderSourceName      string                                `json:"order_source_name,omitempty" bson:"order_source_name,omitempty"`
+	OrderStatusName      string                                `json:"order_status_name,omitempty" bson:"order_status_name,omitempty"`
+	SoCode               string                                `json:"so_code,omitempty" bson:"so_code,omitempty"`
+	SoDate               string                                `json:"so_date,omitempty" bson:"so_date,omitempty"`
+	SoRefCode            NullString                            `json:"so_ref_code,omitempty" bson:"so_ref_code,omitempty"`
+	SoRefDate            NullString                            `json:"so_ref_date,omitempty" bson:"so_ref_date,omitempty"`
+	ReferralCode         NullString                            `json:"referral_code,omitempty" bson:"referral_code,omitempty"`
+	GLat                 NullFloat64                           `json:"g_lat,omitempty" bson:"g_lat,omitempty"`
+	GLong                NullFloat64                           `json:"g_long,omitempty" bson:"g_long,omitempty"`
+	Note                 NullString                            `json:"note,omitempty" bson:"note,omitempty"`
+	InternalComment      NullString                            `json:"internal_comment,omitempty" bson:"internal_comment,omitempty"`
+	TotalAmount          float64                               `json:"total_amount,omitempty" bson:"total_amount,omitempty"`
+	TotalTonase          float64                               `json:"total_tonase,omitempty" bson:"total_tonase,omitempty"`
+	SalesOrderDetails    []*SalesOrderDetailOpenSearchResponse `json:"sales_order_details,omitempty" bson:"sales_order_details,omitempty"`
+	SalesmanName         NullString                            `json:"salesman_name,omitempty" bson:"salesman_name,omitempty"`
+	SalesmanEmail        NullString                            `json:"salesman_email,omitempty" bson:"salesman_email,omitempty"`
+	CreatedAt            *time.Time                            `json:"created_at,omitempty" bson:"created_at,omitempty"`
+	UpdatedAt            *time.Time                            `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
+}
+
+type SalesOrdersOpenSearchResponse struct {
+	SalesOrders []*SalesOrderOpenSearchResponse `json:"sales_orders,omitempty"`
+	Total       int64                           `json:"total,omitempty"`
+}

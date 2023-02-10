@@ -94,3 +94,22 @@ type SalesOrderDetails struct {
 	SalesOrderDetails []*SalesOrderDetail `json:"sales_order_details,omitempty"`
 	Total             int64               `json:"total,omitempty"`
 }
+
+type SalesOrderDetailOpenSearchResponse struct {
+	ID            int                            `json:"id,omitempty" bson:"id,omitempty"`
+	SalesOrderID  int                            `json:"sales_order_id,omitempty" bson:"sales_order_id,omitempty"`
+	ProductID     int                            `json:"product_id,omitempty" bson:"product_id,omitempty" `
+	BrandID       int                            `json:"brand_id,omitempty" bson:"brand_id,omitempty" `
+	Product       *ProductOpenSearchResponse     `json:"product,omitempty" bson:"product,omitempty"`
+	UomID         int                            `json:"uom_id,omitempty" bson:"uom_id,omitempty"`
+	Uom           *UomOpenSearchResponse         `json:"uom,omitempty" bson:"uom,omitempty"`
+	OrderStatusID int                            `json:"order_status_id,omitempty" bson:"order_status_id,omitempty"`
+	OrderStatus   *OrderStatusOpenSearchResponse `json:"order_status,omitempty" bson:"order_status,omitempty"`
+	SoDetailCode  string                         `json:"so_detail_code,omitempty" bson:"so_detail_code,omitempty"`
+	Qty           int                            `json:"qty,omitempty" bson:"qty,omitempty"`
+	SentQty       int                            `json:"sent_qty,omitempty" bson:"sent_qty,omitempty"`
+	ResidualQty   int                            `json:"residual_qty,omitempty" bson:"residual_qty,omitempty"`
+	Price         float64                        `json:"price,omitempty" bson:"price,omitempty"`
+	Note          NullString                     `json:"note,omitempty" bson:"note,omitempty"`
+	CreatedAt     *time.Time                     `json:"created_at,omitempty" bson:"created_at,omitempty"`
+}
