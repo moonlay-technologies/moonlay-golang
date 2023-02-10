@@ -44,15 +44,15 @@ func (_m *SalesOrderUseCaseInterface) Create(request *models.SalesOrderStoreRequ
 }
 
 // Get provides a mock function with given fields: request
-func (_m *SalesOrderUseCaseInterface) Get(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog) {
+func (_m *SalesOrderUseCaseInterface) Get(request *models.SalesOrderRequest) (*models.SalesOrdersOpenSearchResponse, *model.ErrorLog) {
 	ret := _m.Called(request)
 
-	var r0 *models.SalesOrders
-	if rf, ok := ret.Get(0).(func(*models.SalesOrderRequest) *models.SalesOrders); ok {
+	var r0 *models.SalesOrdersOpenSearchResponse
+	if rf, ok := ret.Get(0).(func(*models.SalesOrderRequest) *models.SalesOrdersOpenSearchResponse); ok {
 		r0 = rf(request)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*models.SalesOrders)
+			r0 = ret.Get(0).(*models.SalesOrdersOpenSearchResponse)
 		}
 	}
 

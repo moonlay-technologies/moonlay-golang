@@ -40,3 +40,8 @@ type OrderStatuses struct {
 	OrderStatuses []*OrderStatus `json:"order_statuses,omitempty"`
 	Total         int64          `json:"total,omitempty"`
 }
+
+type OrderStatusOpenSearchResponse struct {
+	ID   int    `json:"id,omitempty" bson:"id"`
+	Name string `json:"name,omitempty" bson:"name"`
+}
