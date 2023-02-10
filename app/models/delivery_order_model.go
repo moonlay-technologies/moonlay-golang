@@ -172,8 +172,24 @@ type DeliveryOrderRequest struct {
 	StoreCode         string  `json:"store_code,omitempty"`
 	StartCreatedAt    string  `json:"start_created_at,omitempty"`
 	EndCreatedAt      string  `json:"end_created_at,omitempty"`
-	StartSoDate       string  `json:"start_so_date,omitempty"`
-	EndSoDate         string  `json:"end_so_date,omitempty"`
+	StartDoDate       string  `json:"start_do_date,omitempty"`
+	EndDoDate         string  `json:"end_do_date,omitempty"`
+}
+
+type DeliveryOrderResponse struct {
+	SalesOrderID        int                            `json:"sales_order_id,omitempty"`
+	WarehouseID         int                            `json:"warehouse_id,omitempty"`
+	OrderSourceID       int                            `json:"order_source_id,omitempty"`
+	AgentID             int                            `json:"agentID,omitempty"`
+	StoreID             int                            `json:"storeID,omitempty"`
+	DoCode              string                         `json:"do_code,omitempty"`
+	DoDate              string                         `json:"do_date,omitempty"`
+	DoRefCode           string                         `json:"do_ref_code,omitempty"`
+	DoRefDate           string                         `json:"do_ref_date,omitempty"`
+	DriverName          string                         `json:"driver_name,omitempty"`
+	PlatNumber          string                         `json:"plat_number,omitempty"`
+	Note                string                         `json:"note,omitempty"`
+	DeliveryOrderDetail []*DeliveryOrderDetailResponse `json:"delivery_order_details,omitempty"`
 }
 
 type DeliveryOrders struct {
