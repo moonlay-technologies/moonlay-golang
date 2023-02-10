@@ -473,10 +473,6 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 		Table: constants.SALES_ORDERS_TABLE,
 		Field: "so_ref_code",
 		Value: insertRequest.SoRefCode,
-	}, {
-		Table: constants.SALES_ORDERS_TABLE,
-		Field: "device_id",
-		Value: insertRequest.DeviceId,
 	}}
 	err = c.requestValidationMiddleware.UniqueValidation(ctx, uniqueField)
 	if err != nil {
