@@ -18,6 +18,7 @@ import (
 type SalesOrderLogRepositoryInterface interface {
 	Insert(request *models.SalesOrderLog, ctx context.Context, result chan *models.SalesOrderLogChan)
 	GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.SalesOrderLogChan)
+	GetByCollumn(collumnName string, value string, countOnly bool, ctx context.Context, resultChan chan *models.SalesOrderLogChan)
 	UpdateByID(ID string, request *models.SalesOrderLog, ctx context.Context, result chan *models.SalesOrderLogChan)
 }
 
@@ -30,7 +31,7 @@ type salesOrderLogRepository struct {
 func InitSalesOrderLogRepository(mongod mongodb.MongoDBInterface) SalesOrderLogRepositoryInterface {
 	return &salesOrderLogRepository{
 		mongod:     mongod,
-		collection: constants.SALES_ORDER_LOGS,
+		collection: constants.SALES_ORDER_TABLE_LOGS,
 	}
 }
 
@@ -39,6 +40,54 @@ func (r *salesOrderLogRepository) GetByID(ID string, countOnly bool, ctx context
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
 	objectID, _ := primitive.ObjectIDFromHex(ID)
 	filter := bson.M{"_id": objectID}
+	total, err := collection.CountDocuments(ctx, filter)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	if total == 0 {
+		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	if countOnly == false {
+		salesOrderLog := &models.SalesOrderLog{}
+		err = collection.FindOne(ctx, filter).Decode(salesOrderLog)
+
+		if err != nil {
+			fmt.Println(err.Error())
+			response.Error = err
+			resultChan <- response
+			return
+		}
+
+		response.SalesOrderLog = salesOrderLog
+		response.Total = total
+		response.Error = nil
+		resultChan <- response
+		return
+	} else {
+		response.SalesOrderLog = nil
+		response.Total = total
+		resultChan <- response
+		return
+	}
+}
+
+func (r *salesOrderLogRepository) GetByCollumn(collumnName string, value string, countOnly bool, ctx context.Context, resultChan chan *models.SalesOrderLogChan) {
+	response := &models.SalesOrderLogChan{}
+	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
+	objectID, _ := primitive.ObjectIDFromHex(value)
+	filter := bson.M{collumnName: objectID}
 	total, err := collection.CountDocuments(ctx, filter)
 
 	if err != nil {

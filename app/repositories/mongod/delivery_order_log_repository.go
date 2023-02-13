@@ -18,6 +18,7 @@ import (
 type DeliveryOrderLogRepositoryInterface interface {
 	Insert(request *models.DeliveryOrderLog, ctx context.Context, result chan *models.DeliveryOrderLogChan)
 	GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan)
+	GetByCollumn(collumn string, value string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan)
 	UpdateByID(ID string, request *models.DeliveryOrderLog, ctx context.Context, result chan *models.DeliveryOrderLogChan)
 }
 
@@ -30,7 +31,7 @@ type deliveryOrderLogRepository struct {
 func InitDeliveryOrderLogRepository(mongod mongodb.MongoDBInterface) DeliveryOrderLogRepositoryInterface {
 	return &deliveryOrderLogRepository{
 		mongod:     mongod,
-		collection: constants.DELIVERY_ORDER_LOGS,
+		collection: constants.DELIVERY_ORDER_TABLE_LOGS,
 	}
 }
 
@@ -39,6 +40,54 @@ func (r *deliveryOrderLogRepository) GetByID(ID string, countOnly bool, ctx cont
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
 	objectID, _ := primitive.ObjectIDFromHex(ID)
 	filter := bson.M{"_id": objectID}
+	total, err := collection.CountDocuments(ctx, filter)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	if total == 0 {
+		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	if countOnly == false {
+		deliveryOrderLog := &models.DeliveryOrderLog{}
+		err = collection.FindOne(ctx, filter).Decode(deliveryOrderLog)
+
+		if err != nil {
+			fmt.Println(err.Error())
+			response.Error = err
+			resultChan <- response
+			return
+		}
+
+		response.DeliveryOrderLog = deliveryOrderLog
+		response.Total = total
+		response.Error = nil
+		resultChan <- response
+		return
+	} else {
+		response.DeliveryOrderLog = nil
+		response.Total = total
+		resultChan <- response
+		return
+	}
+}
+
+func (r *deliveryOrderLogRepository) GetByCollumn(collumn string, value string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan) {
+	response := &models.DeliveryOrderLogChan{}
+	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
+	objectID, _ := primitive.ObjectIDFromHex(value)
+	filter := bson.M{collumn: objectID}
 	total, err := collection.CountDocuments(ctx, filter)
 
 	if err != nil {
