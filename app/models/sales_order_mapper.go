@@ -110,12 +110,51 @@ func (v *SalesOrderDetail) SalesOrderDetailStoreRequestMap(soDetail *SalesOrderD
 }
 
 func (result *SalesOrderResponse) SoResponseMap(request *SalesOrder) {
+	result.ID = request.ID
+	result.AgentID = request.AgentID
+	result.AgentName = NullString{sql.NullString{String: request.Agent.Name, Valid: true}}
+	result.AgentEmail = request.Agent.Email
+	result.AgentProvinceName = request.Agent.ProvinceName
+	result.AgentCityName = request.Agent.CityName
+	result.AgentDistrictName = request.Agent.DistrictName
+	result.AgentVillageName = request.Agent.VillageName
+	result.AgentAddress = request.Agent.Address
+	result.AgentPhone = request.Agent.Phone
+	result.AgentMainMobilePhone = request.Agent.MainMobilePhone
+	result.StoreID = request.StoreID
+	result.StoreName = request.Store.Name
+	result.StoreCode = request.Store.StoreCode
+	result.StoreEmail = request.Store.Email
+	result.StoreProvinceName = request.Store.ProvinceName
+	result.StoreCityName = request.Store.CityName
+	result.StoreDistrictName = request.Store.DistrictName
+	result.StoreVillageName = request.Store.VillageName
+	result.StoreAddress = request.Store.Address
+	result.StorePhone = request.Store.Phone
+	result.StoreMainMobilePhone = request.Store.MainMobilePhone
+	result.BrandID = request.BrandID
 	result.BrandName = request.BrandName
-	result.StoreCode = request.StoreCode
-	result.StoreName = request.StoreName
-	result.StoreAddress = request.StoreAddress
-	result.StoreCityName = request.StoreCityName
-	result.StoreProvinceName = request.StoreProvinceName
+	result.UserID = request.UserID
+	result.UserFirstName = request.UserFirstName
+	result.UserLastName = request.UserLastName
+	result.UserEmail = request.UserEmail
+	result.OrderSourceID = request.OrderSourceID
+	result.OrderSourceName = request.OrderSourceName
+	result.OrderStatusID = request.OrderStatusID
+	result.OrderStatusName = request.OrderStatusName
+	result.SoCode = request.SoCode
+	result.SoDate = request.SoDate
+	result.SoRefCode = request.SoRefCode.String
+	result.SoRefDate = request.SoRefDate.String
+	result.GLat = request.GLat.Float64
+	result.GLong = request.GLong.Float64
+	result.Note = request.Note.String
+	result.InternalComment = request.InternalComment.String
+	result.TotalAmount = request.TotalAmount
+	result.TotalTonase = request.TotalTonase
+	result.StartCreatedDate = request.StartCreatedDate
 	result.SalesmanName = request.SalesmanName
+	result.SalesmanEmail = request.SalesmanEmail
+	result.CreatedAt = request.CreatedAt
 	return
 }
