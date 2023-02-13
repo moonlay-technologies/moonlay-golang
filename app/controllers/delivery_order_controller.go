@@ -484,7 +484,7 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByDeliveryOrderID(ctx
 func (c *deliveryOrderController) Get(ctx *gin.Context) {
 	var result baseModel.Response
 	var resultErrorLog *baseModel.ErrorLog
-	var pageInt, perPageInt, intAgentID, intStoreID, intBrandID, intOrderSourceID, intOrderStatusID, intCategoryID, intSalesmanID, intProvinceID, intCityID, intDistrictID, intVillageID int
+	var pageInt, perPageInt, intID, intSalesOrderID, intAgentID, intStoreID, intBrandID, intProductID, intOrderSourceID, intOrderStatusID, intCategoryID, intSalesmanID, intProvinceID, intCityID, intDistrictID, intVillageID int
 	var floatTotalAmount, floatTotalTonase float64
 
 	page, isPageExist := ctx.GetQuery("page")
@@ -581,6 +581,36 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 		return
 	}
 
+	id, isIdExist := ctx.GetQuery("id")
+	if isIdExist == false {
+		id = "0"
+	}
+
+	intID, err = strconv.Atoi(id)
+	if err != nil {
+		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	salesOrderID, isSalesOrderIDExist := ctx.GetQuery("sales_order_id")
+	if isSalesOrderIDExist == false {
+		salesOrderID = "0"
+	}
+
+	intSalesOrderID, err = strconv.Atoi(salesOrderID)
+	if err != nil {
+		err = helper.NewError("Parameter 'sales_order_id' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
 	agentName, isAgentNameExist := ctx.GetQuery("agent_name")
 	if isAgentNameExist == false {
 		agentName = ""
@@ -604,6 +634,21 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 	intBrandID, err = strconv.Atoi(brandID)
 	if err != nil {
 		err = helper.NewError("Parameter 'brand_id' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	productID, isProductIDExist := ctx.GetQuery("product_id")
+	if isProductIDExist == false {
+		productID = "0"
+	}
+
+	intProductID, err = strconv.Atoi(productID)
+	if err != nil {
+		err = helper.NewError("Parameter 'product_id' harus bernilai integer")
 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
 		result.StatusCode = http.StatusBadRequest
 		result.Error = errorLogData
@@ -816,12 +861,19 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 		endCreatedAt = ""
 	}
 
+	updatedAt, isUpdatedAtExist := ctx.GetQuery("updated_at")
+	if isUpdatedAtExist == false {
+		updatedAt = ""
+	}
+
 	deliveryOrderReqeuest := &models.DeliveryOrderRequest{
 		Page:              pageInt,
 		PerPage:           perPageInt,
 		SortField:         sortField,
 		SortValue:         sortValue,
 		GlobalSearchValue: globalSearchValue,
+		ID:                intID,
+		SalesOrderID:      intSalesOrderID,
 		AgentID:           intAgentID,
 		StoreID:           intStoreID,
 		AgentName:         agentName,
@@ -829,6 +881,7 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 		StoreName:         storeName,
 		BrandID:           intBrandID,
 		BrandName:         brandName,
+		ProductID:         intProductID,
 		OrderSourceID:     intOrderSourceID,
 		OrderStatusID:     intOrderStatusID,
 		DoCode:            doCode,
@@ -849,6 +902,7 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 		VillageID:         intVillageID,
 		StartCreatedAt:    startCreatedAt,
 		EndCreatedAt:      endCreatedAt,
+		UpdatedAt:         updatedAt,
 	}
 
 	deliveryOrders, errorLog := c.deliveryOrderUseCase.Get(deliveryOrderReqeuest)

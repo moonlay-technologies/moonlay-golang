@@ -42,7 +42,7 @@ type DeliveryOrderDetailStoreRequest struct {
 	ProductID       int    `json:"product_id,omitempty" bson:"product_id,omitempty" binding:"required"`
 	UomID           int    `json:"uom_id,omitempty" bson:"uom_id,omitempty" binding:"required"`
 	OrderStatusID   int    `json:"order_status_id,omitempty" bson:"order_status_id,omitempty" binding:"required"`
-	DoDetailCode    int    `json:"do_detail_code,omitempty" bson:"do_detail_code,omitempty" binding:"required"`
+	DoDetailCode    string `json:"do_detail_code,omitempty" bson:"do_detail_code,omitempty" binding:"required"`
 	Qty             int    `json:"qty,omitempty" bson:"qty,omitempty" binding:"required"`
 	Note            string `json:"note,omitempty" bson:"note,omitempty"`
 }
@@ -96,12 +96,12 @@ type DeliveryOrderDetailRequest struct {
 	Keyword string `json:"keyword,omitempty" bson:"keyword,omitempty"`
 }
 
-type DeliveryOrderDetailResponse struct {
-	SoDetailID int `json:"so_detail_id,omitempty" bson:"so_detail_id,omitempty"`
-	Qty        int `json:"qty,omitempty" bson:"qty,omitempty"`
-}
-
 type DeliveryOrderDetails struct {
 	DeliveryOrderDetails []*DeliveryOrderDetail `json:"delivery_order_details,omitempty"`
 	Total                int64                  `json:"total,omitempty"`
+}
+
+type DeliveryOrderDetailOpenSearchDetailResponse struct {
+	SoDetailID int `json:"so_detail_id,omitempty" bson:"so_detail_id,omitempty"`
+	Qty        int `json:"qty,omitempty" bson:"qty,omitempty"`
 }

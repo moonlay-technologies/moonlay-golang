@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
@@ -209,8 +208,8 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 
 	if request.GlobalSearchValue != "" {
 		multiMatch = map[string]interface{}{
-			"query":         request.GlobalSearchValue,
-			"default_field": "do_code",
+			"query":  request.GlobalSearchValue,
+			"fields": []string{"do_code", "do_ref_code", "sales_order.so_code", "store.store_code", "store.name"},
 		}
 	}
 
@@ -323,7 +322,6 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 
 		musts = append(musts, match)
 	}
-	fmt.Println("test", request.DoRefCode)
 
 	if request.DoRefDate != "" {
 		match := map[string]interface{}{
@@ -405,6 +403,36 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 		musts = append(musts, match)
 	}
 
+	if request.ProductID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"product_id": request.ProductID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.ID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"id": request.ID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.SalesOrderID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"sales_order_id": request.SalesOrderID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
 	if request.ProvinceID != 0 {
 		match := map[string]interface{}{
 			"match": map[string]interface{}{
@@ -458,7 +486,15 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 			sortValue["unmapped_type"] = "date"
 		}
 
-		if request.SortField == "do_date" {
+		if request.SortField == "do_date" || request.SortField == "order_status_id" || request.SortField == "created_at" || request.SortField == "updated_at" {
+			openSearchQuery["sort"] = []map[string]interface{}{
+				{
+					request.SortField: sortValue,
+				},
+			}
+		}
+
+		if request.SortField == "do_ref_code" {
 			openSearchQuery["sort"] = []map[string]interface{}{
 				{
 					request.SortField + ".keyword": sortValue,
@@ -466,11 +502,6 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 			}
 		}
 
-		openSearchQuery["sort"] = []map[string]interface{}{
-			{
-				request.SortField: sortValue,
-			},
-		}
 	}
 
 	openSearchDetailQueryString := map[string]interface{}{}
@@ -478,7 +509,7 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 	openSearchDetailBoolQuery["filter"] = filters
 	openSearchDetailBoolQuery["must"] = musts
 	openSearchDetailQueryBool["bool"] = openSearchDetailBoolQuery
-	openSearchDetailQueryString["query_string"] = multiMatch
+	openSearchDetailQueryString["multi_match"] = multiMatch
 	if request.GlobalSearchValue != "" {
 		openSearchQuery["query"] = openSearchDetailQueryString
 		openSearchQueryJson, _ := json.Marshal(openSearchQuery)
@@ -486,7 +517,6 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 	}
 	openSearchQuery["query"] = openSearchDetailQueryBool
 	openSearchQueryJson, _ := json.Marshal(openSearchQuery)
-	// fmt.Println("fix_query", openSearchQuery)
 	return openSearchQueryJson
 }
 
@@ -494,7 +524,6 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchResult(ope
 	openSearchQueryResult, err := r.openSearch.Query(constants.DELIVERY_ORDERS_INDEX, openSearchQueryJson)
 
 	if err != nil {
-		fmt.Println("errs", err)
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		return &models.DeliveryOrders{}, errorLogData
 	}
