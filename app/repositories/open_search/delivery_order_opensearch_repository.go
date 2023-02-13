@@ -208,8 +208,8 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 
 	if request.GlobalSearchValue != "" {
 		multiMatch = map[string]interface{}{
-			"query":         request.GlobalSearchValue,
-			"default_field": "do_code",
+			"query":  request.GlobalSearchValue,
+			"fields": []string{"do_code", "do_ref_code", "sales_order.so_code", "store.store_code", "store.name"},
 		}
 	}
 
@@ -486,7 +486,15 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 			sortValue["unmapped_type"] = "date"
 		}
 
-		if request.SortField == "do_date" {
+		if request.SortField == "do_date" || request.SortField == "order_status_id" || request.SortField == "created_at" || request.SortField == "updated_at" {
+			openSearchQuery["sort"] = []map[string]interface{}{
+				{
+					request.SortField: sortValue,
+				},
+			}
+		}
+
+		if request.SortField == "do_ref_code" {
 			openSearchQuery["sort"] = []map[string]interface{}{
 				{
 					request.SortField + ".keyword": sortValue,
@@ -494,11 +502,6 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 			}
 		}
 
-		openSearchQuery["sort"] = []map[string]interface{}{
-			{
-				request.SortField: sortValue,
-			},
-		}
 	}
 
 	openSearchDetailQueryString := map[string]interface{}{}
@@ -506,7 +509,7 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 	openSearchDetailBoolQuery["filter"] = filters
 	openSearchDetailBoolQuery["must"] = musts
 	openSearchDetailQueryBool["bool"] = openSearchDetailBoolQuery
-	openSearchDetailQueryString["query_string"] = multiMatch
+	openSearchDetailQueryString["multi_match"] = multiMatch
 	if request.GlobalSearchValue != "" {
 		openSearchQuery["query"] = openSearchDetailQueryString
 		openSearchQueryJson, _ := json.Marshal(openSearchQuery)

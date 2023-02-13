@@ -96,12 +96,12 @@ type DeliveryOrderDetailRequest struct {
 	Keyword string `json:"keyword,omitempty" bson:"keyword,omitempty"`
 }
 
-type DeliveryOrderDetailResponse struct {
-	SoDetailID int `json:"so_detail_id,omitempty" bson:"so_detail_id,omitempty"`
-	Qty        int `json:"qty,omitempty" bson:"qty,omitempty"`
-}
-
 type DeliveryOrderDetails struct {
 	DeliveryOrderDetails []*DeliveryOrderDetail `json:"delivery_order_details,omitempty"`
 	Total                int64                  `json:"total,omitempty"`
+}
+
+type DeliveryOrderDetailOpenSearchDetailResponse struct {
+	SoDetailID int `json:"so_detail_id,omitempty" bson:"so_detail_id,omitempty"`
+	Qty        int `json:"qty,omitempty" bson:"qty,omitempty"`
 }

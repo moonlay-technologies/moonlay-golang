@@ -178,23 +178,28 @@ type DeliveryOrderRequest struct {
 	EndDoDate         string  `json:"end_do_date,omitempty"`
 }
 
-type DeliveryOrderResponse struct {
-	SalesOrderID        int                            `json:"sales_order_id,omitempty"`
-	WarehouseID         int                            `json:"warehouse_id,omitempty"`
-	OrderSourceID       int                            `json:"order_source_id,omitempty"`
-	AgentID             int                            `json:"agentID,omitempty"`
-	StoreID             int                            `json:"storeID,omitempty"`
-	DoCode              string                         `json:"do_code,omitempty"`
-	DoDate              string                         `json:"do_date,omitempty"`
-	DoRefCode           string                         `json:"do_ref_code,omitempty"`
-	DoRefDate           string                         `json:"do_ref_date,omitempty"`
-	DriverName          string                         `json:"driver_name,omitempty"`
-	PlatNumber          string                         `json:"plat_number,omitempty"`
-	Note                string                         `json:"note,omitempty"`
-	DeliveryOrderDetail []*DeliveryOrderDetailResponse `json:"delivery_order_details,omitempty"`
-}
-
 type DeliveryOrders struct {
 	DeliveryOrders []*DeliveryOrder `json:"delivery_orders,omitempty"`
 	Total          int64            `json:"total,omitempty"`
+}
+
+type DeliveryOrderOpenSearchResponse struct {
+	SalesOrderID        int                                            `json:"sales_order_id,omitempty"`
+	WarehouseID         int                                            `json:"warehouse_id,omitempty"`
+	OrderSourceID       int                                            `json:"order_source_id,omitempty"`
+	AgentID             int                                            `json:"agentID,omitempty"`
+	StoreID             int                                            `json:"storeID,omitempty"`
+	DoCode              string                                         `json:"do_code,omitempty"`
+	DoDate              string                                         `json:"do_date,omitempty"`
+	DoRefCode           NullString                                     `json:"do_ref_code,omitempty"`
+	DoRefDate           NullString                                     `json:"do_ref_date,omitempty"`
+	DriverName          NullString                                     `json:"driver_name,omitempty"`
+	PlatNumber          NullString                                     `json:"plat_number,omitempty"`
+	Note                NullString                                     `json:"note,omitempty"`
+	DeliveryOrderDetail []*DeliveryOrderDetailOpenSearchDetailResponse `json:"delivery_order_details,omitempty"`
+}
+
+type DeliveryOrdersOpenSearchResponse struct {
+	DeliveryOrders []*DeliveryOrderOpenSearchResponse `json:"delivery_orders,omitempty"`
+	Total          int64                              `json:"total,omitempty"`
 }
