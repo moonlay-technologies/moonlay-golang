@@ -4,13 +4,21 @@ import (
 	"context"
 	"fmt"
 	"order-service/app/models"
+	repos "order-service/app/repositories"
+	mongoRepo "order-service/app/repositories/mongod"
 	repositories "order-service/app/repositories/open_search"
 	"order-service/app/usecases/mocks"
 	"order-service/global/utils/helper"
+	kafkadbo "order-service/global/utils/kafka"
+	"order-service/global/utils/mongodb"
 	"order-service/global/utils/opensearch_dbo"
+	"order-service/global/utils/redisdb"
 	"order-service/global/utils/sqldb"
 	"os"
+	"strings"
 	"testing"
+
+	envConfig "github.com/joho/godotenv"
 
 	"github.com/bxcodec/dbresolver"
 	"github.com/getsentry/sentry-go"
@@ -18,31 +26,32 @@ import (
 )
 
 func newDeliveryOrderUsecase(status bool) deliveryOrderUseCase {
-	var ctx context.Context
-	mockDeliveryOrderRepository := &mocks.DeliveryOrderRepositoryInterface{}
-	mockDeliveryOrderDetailRepository := &mocks.DeliveryOrderDetailRepositoryInterface{}
+	ctx := context.Background()
+	// mockDeliveryOrderRepository := &mocks.DeliveryOrderRepositoryInterface{}
+	// mockDeliveryOrderDetailRepository := &mocks.DeliveryOrderDetailRepositoryInterface{}
 	mockSalesOrderRepository := &mocks.SalesOrderRepositoryInterface{}
 	mockSalesOrderDetailRepository := &mocks.SalesOrderDetailRepositoryInterface{}
-	mockOrderStatusRepository := &mocks.OrderStatusRepositoryInterface{}
-	mockOrderSourceRepository := &mocks.OrderSourceRepositoryInterface{}
-	mockWarehouseRepository := &mocks.WarehouseRepositoryInterface{}
+	// mockOrderStatusRepository := &mocks.OrderStatusRepositoryInterface{}
+	// mockOrderSourceRepository := &mocks.OrderSourceRepositoryInterface{}
+	// mockWarehouseRepository := &mocks.WarehouseRepositoryInterface{}
 	mockBrandRepository := &mocks.BrandRepositoryInterface{}
 	mockUomRepository := &mocks.UomRepositoryInterface{}
 	mockProductRepository := &mocks.ProductRepositoryInterface{}
 	mockAgentRepository := &mocks.AgentRepositoryInterface{}
 	mockStoreRepository := &mocks.StoreRepositoryInterface{}
-	mockDeliveryOrderLogRepository := &mocks.DeliveryOrderLogRepositoryInterface{}
+	// mockDeliveryOrderLogRepository := &mocks.DeliveryOrderLogRepositoryInterface{}
 	mockSalesOrderUseCase := &mocks.SalesOrderUseCaseInterface{}
-	mockKafkaClient := &mocks.KafkaClientInterface{}
+	// mockKafkaClient := &mocks.KafkaClientInterface{}
+	mockSalesOrderOpenSearchRepository := &mocks.SalesOrderOpenSearchRepositoryInterface{}
 	openSearchHosts := []string{os.Getenv("OPENSEARCH_HOST_01")}
 	openSearchClient := opensearch_dbo.InitOpenSearchClientInterface(openSearchHosts, os.Getenv("OPENSEARCH_USERNAME"), os.Getenv("OPENSEARCH_PASSWORD"), ctx)
 	deliveryOrderOpenSearch := repositories.InitDeliveryOrderOpenSearchRepository(openSearchClient)
 
-	// mockDeliveryOrderOpenSearchRepository := &mocks.DeliveryOrderOpenSearchRepositoryInterface{
-	// 	DeliveryOrderOpenSearchRepositoryInterface: repositories.InitDeliveryOrderOpenSearchRepository(openSearchClient),
-	// }
-	mockSalesOrderOpenSearchRepository := &mocks.SalesOrderOpenSearchRepositoryInterface{}
-
+	if err := envConfig.Load(".env"); err != nil {
+		errStr := fmt.Sprintf(".env not load properly %s", err.Error())
+		helper.SetSentryError(err, errStr, sentry.LevelError)
+		panic(err)
+	}
 	//mysql write
 	mysqlWrite, err := sqldb.InitSql("mysql", os.Getenv("MYSQL_WRITE_HOST"), os.Getenv("MYSQL_WRITE_PORT"), os.Getenv("MYSQL_WRITE_USERNAME"), os.Getenv("MYSQL_WRITE_PASSWORD"), os.Getenv("MYSQL_WRITE_DATABASE"))
 	if err != nil {
@@ -59,33 +68,115 @@ func newDeliveryOrderUsecase(status bool) deliveryOrderUseCase {
 		panic(err)
 	}
 
+	// MongoDB
+	mongoDb := mongodb.InitMongoDB(os.Getenv("MONGO_HOST"), os.Getenv("MONGO_DATABASE"), os.Getenv("MONGO_USER"), os.Getenv("MONGO_PASSWORD"), os.Getenv("MONGO_PORT"), ctx)
+
+	// Kafka
+	kafkaHosts := strings.Split(os.Getenv("KAFKA_HOSTS"), ",")
+
 	dbConnection := dbresolver.WrapDBs(mysqlWrite.DB(), mysqlRead.DB())
-	defer dbConnection.Close()
-
+	redisDb := redisdb.InitRedis(os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT"), os.Getenv("REDIS_PASSWORD"), os.Getenv("REDIS_DATABASE"))
+	deliveryOrderRepository := repos.InitDeliveryRepository(dbConnection, redisDb)
+	deliveryOrderDetailRepository := repos.InitDeliveryOrderDetailRepository(dbConnection, redisDb)
+	warehouseRepository := repos.InitWarehouseRepository(dbConnection, redisDb)
+	orderSourceRepository := repos.InitOrderSourceRepository(dbConnection, redisDb)
+	orderStatusRepository := repos.InitOrderStatusRepository(dbConnection, redisDb)
+	deliveryOrderLogRepository := mongoRepo.InitDeliveryOrderLogRepository(mongoDb)
+	kafkaClient := kafkadbo.InitKafkaClientInterface(ctx, kafkaHosts)
 	// mocking
-	// mockDeliveryOrderOpenSearchRepository.On("GetByID", mock.Anything, mock.Anything).Return(mockDeliveryOrderOpenSearchRepository)
-
 	return deliveryOrderUseCase{
-		deliveryOrderRepository:           mockDeliveryOrderRepository,
-		deliveryOrderDetailRepository:     mockDeliveryOrderDetailRepository,
+		deliveryOrderRepository:           deliveryOrderRepository,
+		deliveryOrderDetailRepository:     deliveryOrderDetailRepository,
 		salesOrderRepository:              mockSalesOrderRepository,
 		salesOrderDetailRepository:        mockSalesOrderDetailRepository,
-		orderStatusRepository:             mockOrderStatusRepository,
-		orderSourceRepository:             mockOrderSourceRepository,
-		warehouseRepository:               mockWarehouseRepository,
+		orderStatusRepository:             orderStatusRepository,
+		orderSourceRepository:             orderSourceRepository,
+		warehouseRepository:               warehouseRepository,
 		brandRepository:                   mockBrandRepository,
 		uomRepository:                     mockUomRepository,
 		productRepository:                 mockProductRepository,
 		agentRepository:                   mockAgentRepository,
 		storeRepository:                   mockStoreRepository,
-		deliveryOrderLogRepository:        mockDeliveryOrderLogRepository,
+		deliveryOrderLogRepository:        deliveryOrderLogRepository,
 		salesOrderUseCase:                 mockSalesOrderUseCase,
-		kafkaClient:                       mockKafkaClient,
+		kafkaClient:                       kafkaClient,
 		deliveryOrderOpenSearchRepository: deliveryOrderOpenSearch,
 		salesOrderOpenSearchRepository:    mockSalesOrderOpenSearchRepository,
 		db:                                dbConnection,
 		ctx:                               ctx,
 	}
+}
+
+func Test_DeliveryOrderUseCase_InitDeliveryOrderUseCaseInterface_ShouldSuccess(t *testing.T) {
+	// Arrange
+	deliveryOrderUseCase := newDeliveryOrderUsecase(false)
+	// deliveryOrderUseCaseInterface := InitDeliveryOrderUseCaseInterface(deliveryOrderUseCase.deliveryOrderRepository, deliveryOrderUseCase.deliveryOrderDetailRepository, deliveryOrderUseCase.salesOrderRepository, deliveryOrderUseCase.salesOrderDetailRepository, deliveryOrderUseCase.orderStatusRepository, deliveryOrderUseCase.orderSourceRepository, deliveryOrderUseCase.warehouseRepository, deliveryOrderUseCase.brandRepository, deliveryOrderUseCase.uomRepository, deliveryOrderUseCase.agentRepository, deliveryOrderUseCase.storeRepository, deliveryOrderUseCase.productRepository, deliveryOrderUseCase.userRepository, deliveryOrderUseCase.salesmanRepository, deliveryOrderUseCase.deliveryOrderLogRepository, deliveryOrderUseCase.deliveryOrderOpenSearchRepository, deliveryOrderUseCase.salesOrderOpenSearchRepository, deliveryOrderUseCase.salesOrderUseCase, deliveryOrderUseCase.kafkaClient, deliveryOrderUseCase.db, deliveryOrderUseCase.ctx)
+	// Act
+	dataDeliveryOrderUseCaseInit := InitDeliveryOrderUseCaseInterface(deliveryOrderUseCase.deliveryOrderRepository, deliveryOrderUseCase.deliveryOrderDetailRepository, deliveryOrderUseCase.salesOrderRepository, deliveryOrderUseCase.salesOrderDetailRepository, deliveryOrderUseCase.orderStatusRepository, deliveryOrderUseCase.orderSourceRepository, deliveryOrderUseCase.warehouseRepository, deliveryOrderUseCase.brandRepository, deliveryOrderUseCase.uomRepository, deliveryOrderUseCase.agentRepository, deliveryOrderUseCase.storeRepository, deliveryOrderUseCase.productRepository, deliveryOrderUseCase.userRepository, deliveryOrderUseCase.salesmanRepository, deliveryOrderUseCase.deliveryOrderLogRepository, deliveryOrderUseCase.deliveryOrderOpenSearchRepository, deliveryOrderUseCase.salesOrderOpenSearchRepository, deliveryOrderUseCase.salesOrderUseCase, deliveryOrderUseCase.kafkaClient, deliveryOrderUseCase.db, deliveryOrderUseCase.ctx)
+
+	// Assert
+	assert.NotNil(t, dataDeliveryOrderUseCaseInit)
+}
+
+func Test_DeliveryOrderUseCase_UpdateByID_ShouldSuccess(t *testing.T) {
+	// Arrange
+	deliveryOrderUsecase := newDeliveryOrderUsecase(false)
+	ctx := context.Background()
+	db := deliveryOrderUsecase.db
+	sqlTx, _ := db.Begin()
+	request := &models.DeliveryOrderUpdateByIDRequest{
+		WarehouseID:   10,
+		OrderSourceID: 2,
+		OrderStatusID: 17,
+		DeliveryOrderDetails: []*models.DeliveryOrderDetailUpdateByIDRequest{
+			{
+				Qty:  8,
+				Note: "Kirim Segera",
+			},
+		},
+	}
+
+	// Act
+	_, err := deliveryOrderUsecase.UpdateByID(90, request, sqlTx, ctx)
+	// Assert
+	assert.Nil(t, err)
+}
+
+func Test_DeliveryOrderUseCase_UpdateDODetailByID_ShouldSuccess(t *testing.T) {
+	// Arrange
+	deliveryOrderUsecase := newDeliveryOrderUsecase(false)
+	ctx := context.Background()
+	db := deliveryOrderUsecase.db
+	sqlTx, _ := db.Begin()
+	request := &models.DeliveryOrderDetailUpdateByIDRequest{
+		Qty:  8,
+		Note: "Kirim Segera",
+	}
+
+	// Act
+	_, err := deliveryOrderUsecase.UpdateDODetailByID(90, request, sqlTx, ctx)
+	// Assert
+	assert.Nil(t, err)
+}
+
+func Test_DeliveryOrderUseCase_UpdateDoDetailByDeliveryOrderID_ShouldSuccess(t *testing.T) {
+	// Arrange
+	deliveryOrderUsecase := newDeliveryOrderUsecase(false)
+	ctx := context.Background()
+	db := deliveryOrderUsecase.db
+	sqlTx, _ := db.Begin()
+	request := []*models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest{
+		{
+			ID:   90,
+			Qty:  8,
+			Note: "Kirim Segera",
+		},
+	}
+
+	// Act
+	_, err := deliveryOrderUsecase.UpdateDoDetailByDeliveryOrderID(90, request, sqlTx, ctx)
+	// Assert
+	assert.Nil(t, err)
 }
 
 func Test_DeliveryOrderUseCase_Get_ShouldError(t *testing.T) {
