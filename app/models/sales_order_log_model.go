@@ -1,9 +1,10 @@
 package models
 
 import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"order-service/global/utils/model"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type SalesOrderLog struct {

@@ -117,15 +117,38 @@ type SalesOrderStoreRequest struct {
 }
 
 type SalesOrderResponse struct {
+	ID int `json:"id,omitempty" bson:"id,omitempty"`
 	SalesOrderStoreRequest
-	StoreCode         NullString                       `json:"store_code,omitempty" bson:"store_code,omitempty"`
-	StoreName         NullString                       `json:"store_name,omitempty" bson:"store_name,omitempty"`
-	StoreAddress      NullString                       `json:"store_address,omitempty" bson:"store_address,omitempty"`
-	StoreCityName     NullString                       `json:"store_city_name,omitempty" bson:"store_city_name,omitempty"`
-	StoreProvinceName NullString                       `json:"store_province_name,omitempty" bson:"store_province_name,omitempty"`
-	BrandName         string                           `json:"brand_name,omitempty" bson:"brand_name,omitempty"`
-	SalesmanName      NullString                       `json:"salesman_name,omitempty" bson:"salesman_name,omitempty"`
-	SalesOrderDetails []*SalesOrderDetailStoreResponse `json:"sales_order_details" bson:"sales_order_details,omitempty"`
+	AgentName            string                           `json:"agent_name,omitempty" bson:"agent_name,omitempty"`
+	AgentEmail           string                           `json:"agent_email,omitempty" bson:"agent_email,omitempty"`
+	AgentProvinceName    string                           `json:"agent_province_name,omitempty" bson:"agent_province_name,omitempty"`
+	AgentCityName        string                           `json:"agent_city_name,omitempty" bson:"agent_city_name,omitempty"`
+	AgentDistrictName    string                           `json:"agent_district_name,omitempty" bson:"agent_district_name,omitempty"`
+	AgentVillageName     string                           `json:"agent_village_name,omitempty" bson:"agent_village_name,omitempty"`
+	AgentAddress         string                           `json:"agent_address,omitempty" bson:"agent_address,omitempty"`
+	AgentPhone           string                           `json:"agent_phone,omitempty" bson:"agent_phone,omitempty"`
+	AgentMainMobilePhone string                           `json:"agent_main_mobile_phone,omitempty" bson:"agent_main_mobile_phone,omitempty"`
+	StoreName            string                           `json:"store_name,omitempty" bson:"store_name,omitempty"`
+	StoreCode            string                           `json:"store_code,omitempty" bson:"store_code,omitempty"`
+	StoreEmail           string                           `json:"store_email,omitempty" bson:"store_email,omitempty"`
+	StoreProvinceName    string                           `json:"store_province_name,omitempty" bson:"store_province_name,omitempty"`
+	StoreCityName        string                           `json:"store_city_name,omitempty" bson:"store_city_name,omitempty"`
+	StoreDistrictName    string                           `json:"store_district_name,omitempty" bson:"store_district_name,omitempty"`
+	StoreVillageName     string                           `json:"store_village_name,omitempty" bson:"store_village_name,omitempty"`
+	StoreAddress         string                           `json:"store_address,omitempty" bson:"store_address,omitempty"`
+	StorePhone           string                           `json:"store_phone,omitempty" bson:"store_phone,omitempty"`
+	StoreMainMobilePhone string                           `json:"store_main_mobile_phone,omitempty" bson:"store_main_mobile_phone,omitempty"`
+	BrandName            string                           `json:"brand_name,omitempty" bson:"brand_name,omitempty"`
+	UserFirstName        string                           `json:"user_first_name,omitempty" bson:"user_first_name,omitempty"`
+	UserLastName         string                           `json:"user_last_name,omitempty" bson:"user_last_name,omitempty"`
+	UserEmail            string                           `json:"user_email,omitempty" bson:"user_email,omitempty"`
+	OrderSourceName      string                           `json:"order_source_name,omitempty" bson:"order_source_name,omitempty"`
+	OrderStatusName      string                           `json:"order_status_name,omitempty" bson:"order_status_name,omitempty"`
+	StartCreatedDate     *time.Time                       `json:"start_created_date,omitempty" bson:"start_created_date,omitempty"`
+	SalesOrderDetails    []*SalesOrderDetailStoreResponse `json:"sales_order_details" bson:"sales_order_details,omitempty"`
+	SalesmanName         string                           `json:"salesman_name,omitempty" bson:"salesman_name,omitempty"`
+	SalesmanEmail        string                           `json:"salesman_email,omitempty" bson:"salesman_email,omitempty"`
+	CreatedAt            *time.Time                       `json:"created_at,omitempty" bson:"created_at,omitempty"`
 }
 
 type SalesOrderUpdateRequest struct {

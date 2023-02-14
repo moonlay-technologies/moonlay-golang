@@ -34,6 +34,7 @@ func (salesOrder *SalesOrder) SalesOrderRequestMap(request *SalesOrderStoreReque
 
 func (salesOrder *SalesOrder) OrderStatusChanMap(request *OrderStatusChan) {
 	salesOrder.OrderStatus = request.OrderStatus
+	salesOrder.OrderStatusID = request.OrderStatus.ID
 	salesOrder.OrderStatusName = request.OrderStatus.Name
 	return
 }
@@ -110,12 +111,51 @@ func (v *SalesOrderDetail) SalesOrderDetailStoreRequestMap(soDetail *SalesOrderD
 }
 
 func (result *SalesOrderResponse) SoResponseMap(request *SalesOrder) {
+	result.ID = request.ID
+	result.AgentID = request.AgentID
+	result.AgentName = request.AgentName.String
+	result.AgentEmail = request.AgentEmail.String
+	result.AgentProvinceName = request.AgentProvinceName.String
+	result.AgentCityName = request.AgentCityName.String
+	result.AgentDistrictName = request.AgentDistrictName.String
+	result.AgentVillageName = request.AgentVillageName.String
+	result.AgentAddress = request.AgentAddress.String
+	result.AgentPhone = request.AgentPhone.String
+	result.AgentMainMobilePhone = request.AgentMainMobilePhone.String
+	result.StoreID = request.StoreID
+	result.StoreName = request.StoreName.String
+	result.StoreCode = request.StoreCode.String
+	result.StoreEmail = request.StoreEmail.String
+	result.StoreProvinceName = request.StoreProvinceName.String
+	result.StoreCityName = request.StoreCityName.String
+	result.StoreDistrictName = request.StoreDistrictName.String
+	result.StoreVillageName = request.StoreVillageName.String
+	result.StoreAddress = request.StoreAddress.String
+	result.StorePhone = request.StorePhone.String
+	result.StoreMainMobilePhone = request.StoreMainMobilePhone.String
+	result.BrandID = request.BrandID
 	result.BrandName = request.BrandName
-	result.StoreCode = request.StoreCode
-	result.StoreName = request.StoreName
-	result.StoreAddress = request.StoreAddress
-	result.StoreCityName = request.StoreCityName
-	result.StoreProvinceName = request.StoreProvinceName
-	result.SalesmanName = request.SalesmanName
+	result.UserID = request.UserID
+	result.UserFirstName = request.UserFirstName.String
+	result.UserLastName = request.UserLastName.String
+	result.UserEmail = request.UserEmail.String
+	result.OrderSourceID = request.OrderSourceID
+	result.OrderSourceName = request.OrderSourceName
+	result.OrderStatusID = request.OrderStatusID
+	result.OrderStatusName = request.OrderStatusName
+	result.SoCode = request.SoCode
+	result.SoDate = request.SoDate
+	result.SoRefCode = request.SoRefCode.String
+	result.SoRefDate = request.SoRefDate.String
+	result.GLat = request.GLat.Float64
+	result.GLong = request.GLong.Float64
+	result.Note = request.Note.String
+	result.InternalComment = request.InternalComment.String
+	result.TotalAmount = request.TotalAmount
+	result.TotalTonase = request.TotalTonase
+	result.StartCreatedDate = request.StartCreatedDate
+	result.SalesmanName = request.SalesmanName.String
+	result.SalesmanEmail = request.SalesmanEmail.String
+	result.CreatedAt = request.CreatedAt
 	return
 }
