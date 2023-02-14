@@ -34,6 +34,7 @@ func (salesOrder *SalesOrder) SalesOrderRequestMap(request *SalesOrderStoreReque
 
 func (salesOrder *SalesOrder) OrderStatusChanMap(request *OrderStatusChan) {
 	salesOrder.OrderStatus = request.OrderStatus
+	salesOrder.OrderStatusID = request.OrderStatus.ID
 	salesOrder.OrderStatusName = request.OrderStatus.Name
 	return
 }
@@ -112,32 +113,32 @@ func (v *SalesOrderDetail) SalesOrderDetailStoreRequestMap(soDetail *SalesOrderD
 func (result *SalesOrderResponse) SoResponseMap(request *SalesOrder) {
 	result.ID = request.ID
 	result.AgentID = request.AgentID
-	result.AgentName = NullString{sql.NullString{String: request.Agent.Name, Valid: true}}
-	result.AgentEmail = request.Agent.Email
-	result.AgentProvinceName = request.Agent.ProvinceName
-	result.AgentCityName = request.Agent.CityName
-	result.AgentDistrictName = request.Agent.DistrictName
-	result.AgentVillageName = request.Agent.VillageName
-	result.AgentAddress = request.Agent.Address
-	result.AgentPhone = request.Agent.Phone
-	result.AgentMainMobilePhone = request.Agent.MainMobilePhone
+	result.AgentName = request.AgentName.String
+	result.AgentEmail = request.AgentEmail.String
+	result.AgentProvinceName = request.AgentProvinceName.String
+	result.AgentCityName = request.AgentCityName.String
+	result.AgentDistrictName = request.AgentDistrictName.String
+	result.AgentVillageName = request.AgentVillageName.String
+	result.AgentAddress = request.AgentAddress.String
+	result.AgentPhone = request.AgentPhone.String
+	result.AgentMainMobilePhone = request.AgentMainMobilePhone.String
 	result.StoreID = request.StoreID
-	result.StoreName = request.Store.Name
-	result.StoreCode = request.Store.StoreCode
-	result.StoreEmail = request.Store.Email
-	result.StoreProvinceName = request.Store.ProvinceName
-	result.StoreCityName = request.Store.CityName
-	result.StoreDistrictName = request.Store.DistrictName
-	result.StoreVillageName = request.Store.VillageName
-	result.StoreAddress = request.Store.Address
-	result.StorePhone = request.Store.Phone
-	result.StoreMainMobilePhone = request.Store.MainMobilePhone
+	result.StoreName = request.StoreName.String
+	result.StoreCode = request.StoreCode.String
+	result.StoreEmail = request.StoreEmail.String
+	result.StoreProvinceName = request.StoreProvinceName.String
+	result.StoreCityName = request.StoreCityName.String
+	result.StoreDistrictName = request.StoreDistrictName.String
+	result.StoreVillageName = request.StoreVillageName.String
+	result.StoreAddress = request.StoreAddress.String
+	result.StorePhone = request.StorePhone.String
+	result.StoreMainMobilePhone = request.StoreMainMobilePhone.String
 	result.BrandID = request.BrandID
 	result.BrandName = request.BrandName
 	result.UserID = request.UserID
-	result.UserFirstName = request.UserFirstName
-	result.UserLastName = request.UserLastName
-	result.UserEmail = request.UserEmail
+	result.UserFirstName = request.UserFirstName.String
+	result.UserLastName = request.UserLastName.String
+	result.UserEmail = request.UserEmail.String
 	result.OrderSourceID = request.OrderSourceID
 	result.OrderSourceName = request.OrderSourceName
 	result.OrderStatusID = request.OrderStatusID
@@ -153,8 +154,8 @@ func (result *SalesOrderResponse) SoResponseMap(request *SalesOrder) {
 	result.TotalAmount = request.TotalAmount
 	result.TotalTonase = request.TotalTonase
 	result.StartCreatedDate = request.StartCreatedDate
-	result.SalesmanName = request.SalesmanName
-	result.SalesmanEmail = request.SalesmanEmail
+	result.SalesmanName = request.SalesmanName.String
+	result.SalesmanEmail = request.SalesmanEmail.String
 	result.CreatedAt = request.CreatedAt
 	return
 }
