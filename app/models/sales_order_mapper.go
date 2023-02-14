@@ -107,6 +107,7 @@ func (v *SalesOrderDetail) SalesOrderDetailStoreRequestMap(soDetail *SalesOrderD
 	v.IsDoneSyncToEs = "0"
 	v.StartDateSyncToEs = &now
 	v.CreatedAt = &now
+	v.UpdatedAt = &now
 	return
 }
 
