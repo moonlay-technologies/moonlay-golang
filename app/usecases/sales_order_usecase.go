@@ -1111,7 +1111,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 		return &models.SalesOrderResponse{}, updateSalesOrderResult.ErrorLog
 	}
 
-	salesOrdersResponse.SoResponseMap(getSalesOrderByIDResult.SalesOrder)
+	salesOrdersResponse.SoUpdateByIdResponseMap(getSalesOrderByIDResult.SalesOrder)
 
 	soCode = getSalesOrderByIDResult.SalesOrder.SoCode
 
