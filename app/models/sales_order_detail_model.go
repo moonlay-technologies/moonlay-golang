@@ -54,11 +54,13 @@ type SalesOrderDetailStoreRequest struct {
 }
 
 type SalesOrderDetailStoreResponse struct {
+	ID int `json:"id,omitempty" bson:"id,omitempty"`
 	SalesOrderDetailStoreRequest
-	ProductSKU   string `json:"product_sku,omitempty"`
-	ProductName  string `json:"product_name,omitempty"`
-	CategoryName string `json:"category_name,omitempty"`
-	UomCode      string `json:"uom_code,omitempty"`
+	ProductSKU   string     `json:"product_sku,omitempty"`
+	ProductName  string     `json:"product_name,omitempty"`
+	CategoryName string     `json:"category_name,omitempty"`
+	UomCode      string     `json:"uom_code,omitempty"`
+	CreatedAt    *time.Time `json:"created_at,omitempty" bson:"created_at,omitempty"`
 }
 
 type SalesOrderDetailUpdateRequest struct {
