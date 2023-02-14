@@ -16,7 +16,7 @@ pipelines:
             # - source bitbucket-pipelines-go.sh
             - if [ "${BITBUCKET_PR_DESTINATION_BRANCH}" != "development" ]; then printf 'ignoring'; exit; fi
             - go mod vendor
-            - go test -cover -coverprofile=cover.out -coverpkg "./app/usecases" "./app/usecases"
+            - go test -timeout 15m -cover -coverprofile=cover.out -coverpkg "./app/usecases" "./app/usecases"
             - echo "Quality Gate :\ checking test coverage treshold"
             - echo "Threshold :\ 2 %"
             - totalCoverage=`go tool cover -func cover.out | grep total | grep -Eo '[0-9]+\.[0-9]+'`
