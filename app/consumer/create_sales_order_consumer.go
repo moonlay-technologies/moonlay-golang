@@ -101,6 +101,9 @@ func (c *createSalesOrderConsumerHandler) ProcessMessage() {
 			fmt.Println(errorLogData)
 			continue
 		}
+
+		salesOrderLog.Status = constants.LOG_STATUS_MONGO_SUCCESS
+		go c.salesOrderLogRepository.UpdateByID(salesOrderLog.ID.Hex(), salesOrderLog, c.ctx, salesOrderLogResultChan)
 	}
 
 	if err := reader.Close(); err != nil {
