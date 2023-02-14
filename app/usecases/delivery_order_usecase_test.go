@@ -27,21 +27,14 @@ import (
 
 func newDeliveryOrderUsecase(status bool) deliveryOrderUseCase {
 	ctx := context.Background()
-	// mockDeliveryOrderRepository := &mocks.DeliveryOrderRepositoryInterface{}
-	// mockDeliveryOrderDetailRepository := &mocks.DeliveryOrderDetailRepositoryInterface{}
 	mockSalesOrderRepository := &mocks.SalesOrderRepositoryInterface{}
 	mockSalesOrderDetailRepository := &mocks.SalesOrderDetailRepositoryInterface{}
-	// mockOrderStatusRepository := &mocks.OrderStatusRepositoryInterface{}
-	// mockOrderSourceRepository := &mocks.OrderSourceRepositoryInterface{}
-	// mockWarehouseRepository := &mocks.WarehouseRepositoryInterface{}
 	mockBrandRepository := &mocks.BrandRepositoryInterface{}
 	mockUomRepository := &mocks.UomRepositoryInterface{}
 	mockProductRepository := &mocks.ProductRepositoryInterface{}
 	mockAgentRepository := &mocks.AgentRepositoryInterface{}
 	mockStoreRepository := &mocks.StoreRepositoryInterface{}
-	// mockDeliveryOrderLogRepository := &mocks.DeliveryOrderLogRepositoryInterface{}
 	mockSalesOrderUseCase := &mocks.SalesOrderUseCaseInterface{}
-	// mockKafkaClient := &mocks.KafkaClientInterface{}
 	mockSalesOrderOpenSearchRepository := &mocks.SalesOrderOpenSearchRepositoryInterface{}
 	openSearchHosts := []string{os.Getenv("OPENSEARCH_HOST_01")}
 	openSearchClient := opensearch_dbo.InitOpenSearchClientInterface(openSearchHosts, os.Getenv("OPENSEARCH_USERNAME"), os.Getenv("OPENSEARCH_PASSWORD"), ctx)
@@ -83,7 +76,7 @@ func newDeliveryOrderUsecase(status bool) deliveryOrderUseCase {
 	orderStatusRepository := repos.InitOrderStatusRepository(dbConnection, redisDb)
 	deliveryOrderLogRepository := mongoRepo.InitDeliveryOrderLogRepository(mongoDb)
 	kafkaClient := kafkadbo.InitKafkaClientInterface(ctx, kafkaHosts)
-	// mocking
+
 	return deliveryOrderUseCase{
 		deliveryOrderRepository:           deliveryOrderRepository,
 		deliveryOrderDetailRepository:     deliveryOrderDetailRepository,
@@ -182,7 +175,6 @@ func Test_DeliveryOrderUseCase_UpdateDoDetailByDeliveryOrderID_ShouldSuccess(t *
 func Test_DeliveryOrderUseCase_Get_ShouldError(t *testing.T) {
 	// Arrange
 	deliveryOrderUsecase := newDeliveryOrderUsecase(false)
-	// var ctx context.Context
 	request := &models.DeliveryOrderRequest{}
 	request.ID = 1
 
