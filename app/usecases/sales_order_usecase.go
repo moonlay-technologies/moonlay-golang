@@ -197,34 +197,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 	if createSalesOrderResult.Error != nil {
 		return &models.SalesOrderResponse{}, createSalesOrderResult.ErrorLog
 	}
-	salesOrdersResponse.SoResponseMap(&models.SalesOrder{
-		CartID:            salesOrder.CartID,
-		AgentID:           salesOrder.AgentID,
-		StoreID:           salesOrder.StoreID,
-		StoreCode:         salesOrder.StoreCode,
-		StoreName:         salesOrder.StoreName,
-		StoreAddress:      salesOrder.StoreAddress,
-		StoreCityName:     salesOrder.StoreCityName,
-		StoreProvinceName: salesOrder.StoreProvinceName,
-		BrandID:           salesOrder.BrandID,
-		BrandName:         salesOrder.BrandName,
-		UserID:            salesOrder.UserID,
-		SalesmanName:      salesOrder.SalesmanName,
-		VisitationID:      salesOrder.VisitationID,
-		OrderSourceID:     salesOrder.OrderSourceID,
-		OrderStatusID:     salesOrder.OrderStatusID,
-		SoCode:            salesOrder.SoCode,
-		SoDate:            salesOrder.SoDate,
-		SoRefCode:         salesOrder.SoRefCode,
-		GLong:             salesOrder.GLong,
-		GLat:              salesOrder.GLat,
-		Note:              salesOrder.Note,
-		InternalComment:   salesOrder.InternalComment,
-		TotalAmount:       salesOrder.TotalAmount,
-		TotalTonase:       salesOrder.TotalTonase,
-		DeviceId:          salesOrder.DeviceId,
-		ReferralCode:      salesOrder.ReferralCode,
-	})
+	salesOrdersResponse.CreateSoResponseMap(salesOrder)
 
 	var salesOrderDetailResponses []*models.SalesOrderDetailStoreResponse
 	salesOrderDetails := []*models.SalesOrderDetail{}
@@ -310,7 +283,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 
 	keyKafka := []byte(salesOrder.SoCode)
 	messageKafka, _ := json.Marshal(salesOrder)
-
+	fmt.Println("message Create SO = ", string(messageKafka))
 	err := u.kafkaClient.WriteToTopic(constants.CREATE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
 
 	if err != nil {
