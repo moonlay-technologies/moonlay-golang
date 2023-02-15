@@ -209,7 +209,17 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 		filters = append(filters, filter)
 	}
 
-	if request.ID != 0 {
+	if request.StoreID > 0 {
+		filter := map[string]interface{}{
+			"term": map[string]interface{}{
+				"store_id": request.StoreID,
+			},
+		}
+
+		filters = append(filters, filter)
+	}
+
+	if request.ID > 0 {
 		filter := map[string]interface{}{
 			"term": map[string]interface{}{
 				"id": request.ID,
@@ -219,7 +229,7 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 		filters = append(filters, filter)
 	}
 
-	if request.ProductID != 0 {
+	if request.ProductID > 0 {
 		filter := map[string]interface{}{
 			"term": map[string]interface{}{
 				"sales_order_details.product_id": request.ProductID,
@@ -229,7 +239,7 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 		filters = append(filters, filter)
 	}
 
-	if request.CategoryID != 0 {
+	if request.CategoryID > 0 {
 		filter := map[string]interface{}{
 			"term": map[string]interface{}{
 				"sales_order_details.product.category_id": request.CategoryID,
@@ -239,7 +249,7 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 		filters = append(filters, filter)
 	}
 
-	if request.BrandID != 0 {
+	if request.BrandID > 0 {
 		filter := map[string]interface{}{
 			"term": map[string]interface{}{
 				"brand_id": request.BrandID,
@@ -249,7 +259,7 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 		filters = append(filters, filter)
 	}
 
-	if request.OrderSourceID != 0 {
+	if request.OrderSourceID > 0 {
 		filter := map[string]interface{}{
 			"term": map[string]interface{}{
 				"order_source_id": request.OrderSourceID,
@@ -259,7 +269,7 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 		filters = append(filters, filter)
 	}
 
-	if request.OrderStatusID != 0 {
+	if request.OrderStatusID > 0 {
 		filter := map[string]interface{}{
 			"term": map[string]interface{}{
 				"order_status_id": request.OrderStatusID,
@@ -352,16 +362,6 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 		match := map[string]interface{}{
 			"match": map[string]interface{}{
 				"agent.id": request.AgentID,
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
-	if request.StoreID != 0 {
-		match := map[string]interface{}{
-			"match": map[string]interface{}{
-				"store_id": request.StoreID,
 			},
 		}
 
