@@ -18,7 +18,7 @@ import (
 type DeliveryOrderLogRepositoryInterface interface {
 	Insert(request *models.DeliveryOrderLog, ctx context.Context, result chan *models.DeliveryOrderLogChan)
 	GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan)
-	GetByCollumn(collumn string, value string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan)
+	GetByCollumn(collumnName string, value string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan)
 	UpdateByID(ID string, request *models.DeliveryOrderLog, ctx context.Context, result chan *models.DeliveryOrderLogChan)
 }
 
@@ -83,11 +83,10 @@ func (r *deliveryOrderLogRepository) GetByID(ID string, countOnly bool, ctx cont
 	}
 }
 
-func (r *deliveryOrderLogRepository) GetByCollumn(collumn string, value string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan) {
+func (r *deliveryOrderLogRepository) GetByCollumn(collumnName string, value string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan) {
 	response := &models.DeliveryOrderLogChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
-	objectID, _ := primitive.ObjectIDFromHex(value)
-	filter := bson.M{collumn: objectID}
+	filter := bson.M{collumnName: value}
 	total, err := collection.CountDocuments(ctx, filter)
 
 	if err != nil {

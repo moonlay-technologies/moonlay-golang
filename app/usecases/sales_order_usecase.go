@@ -197,34 +197,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 	if createSalesOrderResult.Error != nil {
 		return &models.SalesOrderResponse{}, createSalesOrderResult.ErrorLog
 	}
-	salesOrdersResponse.SoResponseMap(&models.SalesOrder{
-		CartID:            salesOrder.CartID,
-		AgentID:           salesOrder.AgentID,
-		StoreID:           salesOrder.StoreID,
-		StoreCode:         salesOrder.StoreCode,
-		StoreName:         salesOrder.StoreName,
-		StoreAddress:      salesOrder.StoreAddress,
-		StoreCityName:     salesOrder.StoreCityName,
-		StoreProvinceName: salesOrder.StoreProvinceName,
-		BrandID:           salesOrder.BrandID,
-		BrandName:         salesOrder.BrandName,
-		UserID:            salesOrder.UserID,
-		SalesmanName:      salesOrder.SalesmanName,
-		VisitationID:      salesOrder.VisitationID,
-		OrderSourceID:     salesOrder.OrderSourceID,
-		OrderStatusID:     salesOrder.OrderStatusID,
-		SoCode:            salesOrder.SoCode,
-		SoDate:            salesOrder.SoDate,
-		SoRefCode:         salesOrder.SoRefCode,
-		GLong:             salesOrder.GLong,
-		GLat:              salesOrder.GLat,
-		Note:              salesOrder.Note,
-		InternalComment:   salesOrder.InternalComment,
-		TotalAmount:       salesOrder.TotalAmount,
-		TotalTonase:       salesOrder.TotalTonase,
-		DeviceId:          salesOrder.DeviceId,
-		ReferralCode:      salesOrder.ReferralCode,
-	})
+	salesOrdersResponse.CreateSoResponseMap(salesOrder)
 
 	var salesOrderDetailResponses []*models.SalesOrderDetailStoreResponse
 	salesOrderDetails := []*models.SalesOrderDetail{}
@@ -310,7 +283,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 
 	keyKafka := []byte(salesOrder.SoCode)
 	messageKafka, _ := json.Marshal(salesOrder)
-
+	fmt.Println("message Create SO = ", string(messageKafka))
 	err := u.kafkaClient.WriteToTopic(constants.CREATE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
 
 	if err != nil {
@@ -1033,10 +1006,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 		if getSalesOrderDetailByIDResult.Error != nil {
 			return &models.SalesOrderResponse{}, getSalesOrderDetailByIDResult.ErrorLog
 		}
-
-		salesOrderDetail := &models.SalesOrderDetail{
-			UpdatedAt: &now,
-		}
+		salesOrderDetail := &models.SalesOrderDetail{}
 		soDetail := &models.SalesOrderDetailStoreRequest{
 			SalesOrderDetailTemplate: v.SalesOrderDetailTemplate,
 			SalesOrderId:             id,
@@ -1070,6 +1040,8 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 		}
 
 		salesOrderDetailResponses = append(salesOrderDetailResponses, salesOrderDetailResponse)
+		salesOrderDetail.ID = v.ID
+		salesOrderDetail.OrderStatusID = getSalesOrderDetailByIDResult.SalesOrderDetail.OrderStatusID
 		soDetails = append(soDetails, salesOrderDetail)
 
 		totalAmount = totalAmount + (v.Price * float64(v.Qty))
@@ -1111,7 +1083,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 		return &models.SalesOrderResponse{}, updateSalesOrderResult.ErrorLog
 	}
 
-	salesOrdersResponse.SoResponseMap(getSalesOrderByIDResult.SalesOrder)
+	salesOrdersResponse.SoUpdateByIdResponseMap(getSalesOrderByIDResult.SalesOrder)
 
 	soCode = getSalesOrderByIDResult.SalesOrder.SoCode
 
@@ -1132,8 +1104,8 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 	}
 
 	keyKafka := []byte(getSalesOrderByIDResult.SalesOrder.SoCode)
-	messageKafka, _ := json.Marshal(getSalesOrderByIDResult)
-	err := u.kafkaClient.WriteToTopic(constants.CREATE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
+	messageKafka, _ := json.Marshal(getSalesOrderByIDResult.SalesOrder)
+	err := u.kafkaClient.WriteToTopic(constants.UPDATE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -1214,7 +1186,7 @@ func (u *salesOrderUseCase) UpdateSODetailById(id int, request *models.SalesOrde
 
 	keyKafka := []byte(soCode)
 	messageKafka, _ := json.Marshal(salesOrderDetail)
-	err := u.kafkaClient.WriteToTopic(constants.CREATE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
+	err := u.kafkaClient.WriteToTopic(constants.UPDATE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -1451,7 +1423,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(SoId int, request []*models.Sal
 
 	keyKafka := []byte(soCode)
 	messageKafka, _ := json.Marshal(salesOrder)
-	err := u.kafkaClient.WriteToTopic(constants.CREATE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
+	err := u.kafkaClient.WriteToTopic(constants.UPDATE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)

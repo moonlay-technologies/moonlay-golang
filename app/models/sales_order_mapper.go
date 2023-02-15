@@ -107,10 +107,22 @@ func (v *SalesOrderDetail) SalesOrderDetailStoreRequestMap(soDetail *SalesOrderD
 	v.IsDoneSyncToEs = "0"
 	v.StartDateSyncToEs = &now
 	v.CreatedAt = &now
+	v.UpdatedAt = &now
 	return
 }
 
-func (result *SalesOrderResponse) SoResponseMap(request *SalesOrder) {
+func (result *SalesOrderResponse) CreateSoResponseMap(request *SalesOrder) {
+	result.StoreCode = request.StoreCode.String
+	result.StoreName = request.StoreName.String
+	result.StoreAddress = request.StoreAddress.String
+	result.StoreCityName = request.StoreCityName.String
+	result.StoreProvinceName = request.StoreProvinceName.String
+	result.BrandName = request.BrandName
+	result.SalesmanName = request.SalesmanName.String
+	return
+}
+
+func (result *SalesOrderResponse) SoUpdateByIdResponseMap(request *SalesOrder) {
 	result.ID = request.ID
 	result.AgentID = request.AgentID
 	result.AgentName = request.AgentName.String
