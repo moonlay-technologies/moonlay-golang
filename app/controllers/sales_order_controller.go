@@ -104,8 +104,8 @@ func (c *salesOrderController) Get(ctx *gin.Context) {
 		sortField = "created_at"
 	}
 
-	if sortField != "order_status_id" && sortField != "so_date" && sortField != "so_ref_code" && sortField != "store_code" && sortField != "store_name" && sortField != "created_at" && sortField != "updated_at" {
-		err = helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'so_date' or 'so_ref_code' or 'store_code' or 'store_name' or 'created_at' or 'updated_at' ")
+	if sortField != "order_status_id" && sortField != "so_date" && sortField != "so_ref_code" && sortField != "so_code" && sortField != "store_code" && sortField != "store_name" && sortField != "created_at" && sortField != "updated_at" {
+		err = helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'so_date' or 'so_ref_code' or 'so_code' or 'store_code' or 'store_name' or 'created_at' or 'updated_at' ")
 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
 		result.StatusCode = http.StatusBadRequest
 		result.Error = errorLogData
@@ -652,11 +652,22 @@ func (c *salesOrderController) UpdateByID(ctx *gin.Context) {
 func (c *salesOrderController) UpdateSODetailByID(ctx *gin.Context) {
 	var result baseModel.Response
 	var resultErrorLog *baseModel.ErrorLog
-	var id int
 	updateRequest := &models.SalesOrderDetailUpdateRequest{}
 
 	ctx.Set("full_path", ctx.FullPath())
 	ctx.Set("method", ctx.Request.Method)
+
+	soIds := ctx.Param("so-id")
+	soId, err := strconv.Atoi(soIds)
+
+	if err != nil {
+		err = helper.NewError("Parameter 'so-id' harus bernilai integer")
+		resultErrorLog.Message = err.Error()
+		result.StatusCode = http.StatusBadRequest
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
 
 	ids := ctx.Param("id")
 	id, err := strconv.Atoi(ids)
@@ -718,7 +729,7 @@ func (c *salesOrderController) UpdateSODetailByID(ctx *gin.Context) {
 		return
 	}
 
-	salesOrderDetail, errorLog := c.salesOrderUseCase.UpdateSODetailById(id, updateRequest, dbTransaction, ctx)
+	salesOrderDetail, errorLog := c.salesOrderUseCase.UpdateSODetailById(soId, id, updateRequest, dbTransaction, ctx)
 
 	if errorLog != nil {
 		err = dbTransaction.Rollback()
