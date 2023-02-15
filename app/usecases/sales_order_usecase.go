@@ -32,7 +32,7 @@ type SalesOrderUseCaseInterface interface {
 	SyncToOpenSearchFromCreateEvent(salesOrder *models.SalesOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromUpdateEvent(salesOrder *models.SalesOrder, ctx context.Context) *model.ErrorLog
 	UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
-	UpdateSODetailById(id int, request *models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetail, *model.ErrorLog)
+	UpdateSODetailById(soId, id int, request *models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetail, *model.ErrorLog)
 	UpdateSODetailBySOId(SoId int, request []*models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) ([]*models.SalesOrder, *model.ErrorLog)
 }
 
@@ -283,7 +283,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 
 	keyKafka := []byte(salesOrder.SoCode)
 	messageKafka, _ := json.Marshal(salesOrder)
-	fmt.Println("message Create SO = ", string(messageKafka))
+
 	err := u.kafkaClient.WriteToTopic(constants.CREATE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
 
 	if err != nil {
@@ -797,7 +797,7 @@ func (u *salesOrderUseCase) SyncToOpenSearchFromUpdateEvent(salesOrder *models.S
 	}
 
 	if deliveryOrdersFound == true {
-		fmt.Println("sj ktm")
+
 		for x := range getDeliveryOrdersResult.DeliveryOrders {
 			getDeliveryOrdersResult.DeliveryOrders[x].SalesOrder = nil
 		}
@@ -901,9 +901,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 	}
 	getSalesOrderByIDResult.SalesOrder.OrderSourceChanMap(getOrderSourceResult)
 
-	salesOrdersResponse := &models.SalesOrderResponse{
-		ID: id,
-	}
+	salesOrdersResponse := &models.SalesOrderResponse{}
 
 	// Check Brand
 	brandIds := []int{}
@@ -1100,13 +1098,21 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 	return salesOrdersResponse, nil
 }
 
-func (u *salesOrderUseCase) UpdateSODetailById(id int, request *models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetail, *model.ErrorLog) {
+func (u *salesOrderUseCase) UpdateSODetailById(soId, id int, request *models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetail, *model.ErrorLog) {
 	now := time.Now()
 	var soCode string
 
+	getSalesOrderByIDResultChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderRepository.GetByID(soId, false, ctx, getSalesOrderByIDResultChan)
+	getSalesOrderByIDResult := <-getSalesOrderByIDResultChan
+
+	if getSalesOrderByIDResult.Error != nil {
+		return &models.SalesOrderDetail{}, getSalesOrderByIDResult.ErrorLog
+	}
+
 	// Check Order Status
 	getOrderStatusResultChan := make(chan *models.OrderStatusChan)
-	go u.orderStatusRepository.GetByNameAndType("open", "sales_order", false, ctx, getOrderStatusResultChan)
+	go u.orderStatusRepository.GetByID(getSalesOrderByIDResult.SalesOrder.OrderStatusID, false, ctx, getOrderStatusResultChan)
 	getOrderStatusResult := <-getOrderStatusResultChan
 
 	if getOrderStatusResult.Error != nil {
@@ -1120,6 +1126,13 @@ func (u *salesOrderUseCase) UpdateSODetailById(id int, request *models.SalesOrde
 
 	if getOrderDetailStatusResult.Error != nil {
 		return &models.SalesOrderDetail{}, getOrderDetailStatusResult.ErrorLog
+	}
+
+	errorValidation := u.updateSOValidation(getSalesOrderByIDResult.SalesOrder.ID, getOrderStatusResult.OrderStatus.Name, ctx)
+
+	if errorValidation != nil {
+		errorLogData := helper.WriteLog(errorValidation, http.StatusBadRequest, "Ada kesalahan, silahkan coba lagi nanti")
+		return &models.SalesOrderDetail{}, errorLogData
 	}
 
 	// Check Brand
@@ -1420,7 +1433,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(SoId int, request []*models.Sal
 
 func (u *salesOrderUseCase) updateSOValidation(salesOrderId int, orderStatusName string, ctx context.Context) error {
 
-	if orderStatusName == "close" {
+	if orderStatusName == "closed" {
 		return fmt.Errorf("Cannot update. Sales order status are close")
 	}
 
