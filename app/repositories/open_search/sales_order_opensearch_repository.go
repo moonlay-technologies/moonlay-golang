@@ -199,6 +199,116 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 		filters = append(filters, filter)
 	}
 
+	if request.SalesmanID > 0 {
+		filter := map[string]interface{}{
+			"term": map[string]interface{}{
+				"salesman.id": request.SalesmanID,
+			},
+		}
+
+		filters = append(filters, filter)
+	}
+
+	if request.ID != 0 {
+		filter := map[string]interface{}{
+			"term": map[string]interface{}{
+				"id": request.ID,
+			},
+		}
+
+		filters = append(filters, filter)
+	}
+
+	if request.ProductID != 0 {
+		filter := map[string]interface{}{
+			"term": map[string]interface{}{
+				"sales_order_details.product_id": request.ProductID,
+			},
+		}
+
+		filters = append(filters, filter)
+	}
+
+	if request.CategoryID != 0 {
+		filter := map[string]interface{}{
+			"term": map[string]interface{}{
+				"sales_order_details.product.category_id": request.CategoryID,
+			},
+		}
+
+		filters = append(filters, filter)
+	}
+
+	if request.BrandID != 0 {
+		filter := map[string]interface{}{
+			"term": map[string]interface{}{
+				"brand_id": request.BrandID,
+			},
+		}
+
+		filters = append(filters, filter)
+	}
+
+	if request.OrderSourceID != 0 {
+		filter := map[string]interface{}{
+			"term": map[string]interface{}{
+				"order_source_id": request.OrderSourceID,
+			},
+		}
+
+		filters = append(filters, filter)
+	}
+
+	if request.OrderStatusID != 0 {
+		filter := map[string]interface{}{
+			"term": map[string]interface{}{
+				"order_status_id": request.OrderStatusID,
+			},
+		}
+
+		filters = append(filters, filter)
+	}
+
+	if request.ProvinceID > 0 {
+		filter := map[string]interface{}{
+			"term": map[string]interface{}{
+				"store.province_id": request.ProvinceID,
+			},
+		}
+
+		filters = append(filters, filter)
+	}
+
+	if request.CityID > 0 {
+		filter := map[string]interface{}{
+			"term": map[string]interface{}{
+				"store.city_id": request.CityID,
+			},
+		}
+
+		filters = append(filters, filter)
+	}
+
+	if request.DistrictID > 0 {
+		filter := map[string]interface{}{
+			"term": map[string]interface{}{
+				"store.district_id": request.DistrictID,
+			},
+		}
+
+		filters = append(filters, filter)
+	}
+
+	if request.VillageID > 0 {
+		filter := map[string]interface{}{
+			"term": map[string]interface{}{
+				"store.village_id": request.VillageID,
+			},
+		}
+
+		filters = append(filters, filter)
+	}
+
 	if len(request.StartCreatedAt) > 0 && len(request.EndCreatedAt) > 0 {
 		filter := map[string]interface{}{
 			"range": map[string]interface{}{
@@ -258,122 +368,22 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 		musts = append(musts, match)
 	}
 
-	if request.BrandID != 0 {
-		match := map[string]interface{}{
-			"match": map[string]interface{}{
-				"brand_id": request.BrandID,
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
-	if request.OrderSourceID != 0 {
-		match := map[string]interface{}{
-			"match": map[string]interface{}{
-				"order_source_id": request.OrderSourceID,
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
-	if request.OrderStatusID != 0 {
-		match := map[string]interface{}{
-			"match": map[string]interface{}{
-				"order_status.id": request.OrderStatusID,
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
-	if request.ID != 0 {
-		match := map[string]interface{}{
-			"match": map[string]interface{}{
-				"id": request.ID,
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
-	if request.ProductID != 0 {
-		match := map[string]interface{}{
-			"match": map[string]interface{}{
-				"sales_order_details.product_id": request.ProductID,
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
-	if request.CategoryID != 0 {
-		match := map[string]interface{}{
-			"match": map[string]interface{}{
-				"sales_order_details.product.category_id": request.CategoryID,
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
-	if request.ProvinceID != 0 {
-		match := map[string]interface{}{
-			"multi_match": map[string]interface{}{
-				"query":  request.ProvinceID,
-				"fields": []string{"agent.province_id", "store.province_id"},
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
-	if request.CityID != 0 {
-		match := map[string]interface{}{
-			"multi_match": map[string]interface{}{
-				"query":  request.CityID,
-				"fields": []string{"agent.city_id", "store.city_id"},
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
-	if request.DistrictID != 0 {
-		match := map[string]interface{}{
-			"multi_match": map[string]interface{}{
-				"query":  request.DistrictID,
-				"fields": []string{"agent.district_id", "store.district_id"},
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
-	if request.VillageID != 0 {
-		match := map[string]interface{}{
-			"multi_match": map[string]interface{}{
-				"query":  request.VillageID,
-				"fields": []string{"agent.village_id", "store.village_id"},
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
 	if len(request.SortField) > 0 && len(request.SortValue) > 0 {
 		sortValue := map[string]interface{}{
 			"order": request.SortValue,
 		}
 
-		if request.SortField == "created_at" {
+		if request.SortField == "created_at" || request.SortField == "updated_at" {
 			sortValue["unmapped_type"] = "date"
 		}
 
+		field := request.SortField
+		if request.SortField == "so_ref_code" || request.SortField == "so_code" || request.SortField == "store_code" || request.SortField == "store_name" {
+			field = field + ".keyword"
+		}
 		openSearchQuery["sort"] = []map[string]interface{}{
 			{
-				request.SortField: sortValue,
+				field: sortValue,
 			},
 		}
 	}
@@ -383,6 +393,7 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 	openSearchDetailQuery["bool"] = openSearchDetailBoolQuery
 	openSearchQuery["query"] = openSearchDetailQuery
 	openSearchQueryJson, _ := json.Marshal(openSearchQuery)
+
 	return openSearchQueryJson
 }
 

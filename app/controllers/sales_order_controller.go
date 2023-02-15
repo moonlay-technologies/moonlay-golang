@@ -104,8 +104,8 @@ func (c *salesOrderController) Get(ctx *gin.Context) {
 		sortField = "created_at"
 	}
 
-	if sortField != "order_status_id" && sortField != "so_date" && sortField != "so_ref_code" && sortField != "store_code" && sortField != "store_name" && sortField != "created_at" && sortField != "updated_at" {
-		err = helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'so_date' or 'so_ref_code' or 'store_code' or 'store_name' or 'created_at' or 'updated_at' ")
+	if sortField != "order_status_id" && sortField != "so_date" && sortField != "so_ref_code" && sortField != "so_code" && sortField != "store_code" && sortField != "store_name" && sortField != "created_at" && sortField != "updated_at" {
+		err = helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'so_date' or 'so_ref_code' or 'so_code' or 'store_code' or 'store_name' or 'created_at' or 'updated_at' ")
 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
 		result.StatusCode = http.StatusBadRequest
 		result.Error = errorLogData
