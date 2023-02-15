@@ -32,6 +32,28 @@ func (salesOrder *SalesOrder) SalesOrderRequestMap(request *SalesOrderStoreReque
 	return
 }
 
+func (salesOrder *SalesOrder) UpdateSalesOrderChanMap(request *SalesOrderChan) {
+	salesOrder.AgentID = request.SalesOrder.AgentID
+	salesOrder.StoreID = request.SalesOrder.StoreID
+	salesOrder.BrandID = request.SalesOrder.BrandID
+	salesOrder.UserID = request.SalesOrder.UserID
+	salesOrder.OrderSourceID = request.SalesOrder.OrderSourceID
+	salesOrder.GLat = request.SalesOrder.GLat
+	salesOrder.GLong = request.SalesOrder.GLong
+	salesOrder.SoRefCode = request.SalesOrder.SoRefCode
+	salesOrder.SoDate = request.SalesOrder.SoDate
+	salesOrder.SoRefDate = request.SalesOrder.SoRefDate
+	salesOrder.Note = request.SalesOrder.Note
+	salesOrder.InternalComment = request.SalesOrder.InternalComment
+	salesOrder.TotalAmount = request.SalesOrder.TotalAmount
+	salesOrder.TotalTonase = request.SalesOrder.TotalTonase
+	salesOrder.DeviceId = request.SalesOrder.DeviceId
+	salesOrder.ReferralCode = request.SalesOrder.ReferralCode
+	salesOrder.UpdatedAt = request.SalesOrder.UpdatedAt
+	salesOrder.LatestUpdatedBy = request.SalesOrder.UserID
+	return
+}
+
 func (salesOrder *SalesOrder) OrderStatusChanMap(request *OrderStatusChan) {
 	salesOrder.OrderStatus = request.OrderStatus
 	salesOrder.OrderStatusID = request.OrderStatus.ID
