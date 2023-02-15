@@ -254,7 +254,7 @@ func (_m *SalesOrderUseCaseInterface) UpdateById(id int, request *models.SalesOr
 	return nil, nil
 }
 
-func (_m *SalesOrderUseCaseInterface) UpdateSODetailById(id int, request *models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetail, *model.ErrorLog) {
+func (_m *SalesOrderUseCaseInterface) UpdateSODetailById(soId, id int, request *models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetail, *model.ErrorLog) {
 	return nil, nil
 }
 
