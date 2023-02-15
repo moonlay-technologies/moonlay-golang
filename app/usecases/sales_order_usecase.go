@@ -903,23 +903,6 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 
 	salesOrdersResponse := &models.SalesOrderResponse{
 		ID: id,
-		// SalesOrderStoreRequest: models.SalesOrderStoreRequest{
-		// 	SalesOrderTemplate: models.SalesOrderTemplate{
-		// 		OrderSourceID:   request.OrderSourceID,
-		// 		AgentID:         request.AgentID,
-		// 		StoreID:         request.StoreID,
-		// 		UserID:          request.UserID,
-		// 		GLat:            request.GLat,
-		// 		GLong:           request.GLong,
-		// 		SoRefCode:       request.SoRefCode,
-		// 		Note:            request.Note,
-		// 		InternalComment: request.InternalComment,
-		// 	},
-		// 	OrderStatusID: getOrderStatusResult.OrderStatus.ID,
-		// 	BrandID:       request.SalesOrderDetails[0].BrandID,
-		// 	SoDate:        request.SoDate,
-		// 	SoRefDate:     request.SoRefDate,
-		// },
 	}
 
 	// Check Brand
@@ -1075,6 +1058,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 		UpdatedAt:       &now,
 		LatestUpdatedBy: request.UserID,
 	}
+
 	updateSalesOrderResultChan := make(chan *models.SalesOrderChan)
 	go u.salesOrderRepository.UpdateByID(id, salesOrderUpdateReq, sqlTransaction, ctx, updateSalesOrderResultChan)
 	updateSalesOrderResult := <-updateSalesOrderResultChan
@@ -1083,6 +1067,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 		return &models.SalesOrderResponse{}, updateSalesOrderResult.ErrorLog
 	}
 
+	getSalesOrderByIDResult.SalesOrder.UpdateSalesOrderChanMap(updateSalesOrderResult)
 	salesOrdersResponse.SoUpdateByIdResponseMap(getSalesOrderByIDResult.SalesOrder)
 
 	soCode = getSalesOrderByIDResult.SalesOrder.SoCode
