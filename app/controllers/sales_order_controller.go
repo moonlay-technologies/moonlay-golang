@@ -652,11 +652,22 @@ func (c *salesOrderController) UpdateByID(ctx *gin.Context) {
 func (c *salesOrderController) UpdateSODetailByID(ctx *gin.Context) {
 	var result baseModel.Response
 	var resultErrorLog *baseModel.ErrorLog
-	var id int
 	updateRequest := &models.SalesOrderDetailUpdateRequest{}
 
 	ctx.Set("full_path", ctx.FullPath())
 	ctx.Set("method", ctx.Request.Method)
+
+	soIds := ctx.Param("so-id")
+	soId, err := strconv.Atoi(soIds)
+
+	if err != nil {
+		err = helper.NewError("Parameter 'so-id' harus bernilai integer")
+		resultErrorLog.Message = err.Error()
+		result.StatusCode = http.StatusBadRequest
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
 
 	ids := ctx.Param("id")
 	id, err := strconv.Atoi(ids)
@@ -718,7 +729,7 @@ func (c *salesOrderController) UpdateSODetailByID(ctx *gin.Context) {
 		return
 	}
 
-	salesOrderDetail, errorLog := c.salesOrderUseCase.UpdateSODetailById(id, updateRequest, dbTransaction, ctx)
+	salesOrderDetail, errorLog := c.salesOrderUseCase.UpdateSODetailById(soId, id, updateRequest, dbTransaction, ctx)
 
 	if errorLog != nil {
 		err = dbTransaction.Rollback()
