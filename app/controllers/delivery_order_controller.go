@@ -926,7 +926,7 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 func (c *deliveryOrderController) GetBySalesmanID(ctx *gin.Context) {
 	var result baseModel.Response
 	var resultErrorLog *baseModel.ErrorLog
-	var pageInt, perPageInt, intAgentID, intStoreID, intBrandID, intOrderStatusID, intProductID, intCategoryID, intSalesmanID, intProvinceID, intCityID, intDistrictID, intVillageID int
+	var pageInt, perPageInt, intID, intSalesOrderID, intAgentID, intStoreID, intBrandID, intOrderStatusID, intProductID, intCategoryID, intSalesmanID, intProvinceID, intCityID, intDistrictID, intVillageID int
 
 	page, isPageExist := ctx.GetQuery("page")
 	if isPageExist == false {
@@ -991,6 +991,36 @@ func (c *deliveryOrderController) GetBySalesmanID(ctx *gin.Context) {
 	globalSearchValue, isGlobalSearchValueExist := ctx.GetQuery("global_search_value")
 	if isGlobalSearchValueExist == false {
 		globalSearchValue = ""
+	}
+
+	id, isIdExist := ctx.GetQuery("id")
+	if isIdExist == false {
+		id = "0"
+	}
+
+	intID, err = strconv.Atoi(id)
+	if err != nil {
+		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	salesOrderID, isSalesOrderIDExist := ctx.GetQuery("sales_order_id")
+	if isSalesOrderIDExist == false {
+		salesOrderID = "0"
+	}
+
+	intSalesOrderID, err = strconv.Atoi(salesOrderID)
+	if err != nil {
+		err = helper.NewError("Parameter 'sales_order_id' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
 	}
 
 	agentID, isAgentIDExist := ctx.GetQuery("agent_id")
@@ -1204,6 +1234,8 @@ func (c *deliveryOrderController) GetBySalesmanID(ctx *gin.Context) {
 		SortField:         sortField,
 		SortValue:         sortValue,
 		GlobalSearchValue: globalSearchValue,
+		ID:                intID,
+		SalesOrderID:      intSalesOrderID,
 		AgentID:           intAgentID,
 		StoreID:           intStoreID,
 		BrandID:           intBrandID,

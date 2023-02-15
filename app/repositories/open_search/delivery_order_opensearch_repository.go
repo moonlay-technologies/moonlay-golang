@@ -21,7 +21,7 @@ type DeliveryOrderOpenSearchRepositoryInterface interface {
 	GetByAgentID(request *models.DeliveryOrderRequest, result chan *models.DeliveryOrdersChan)
 	generateDeliveryOrderQueryOpenSearchResult(openSearchQueryJson []byte, withDeliveryOrderDetails bool) (*models.DeliveryOrders, *model.ErrorLog)
 	generateDeliveryOrderQueryOpenSearchTermRequest(term_field string, term_value interface{}, request *models.DeliveryOrderRequest) []byte
-	generateDeliveryOrderQueryOpenSearchBySalesmanIDTermRequest(term_field string, term_value interface{}, request *models.DeliveryOrderRequest) []byte
+	generateDeliveryOrderQueryOpenSearchByQueryParamTermRequest(term_field string, term_value interface{}, request *models.DeliveryOrderRequest) []byte
 }
 
 type deliveryOrderOpenSearch struct {
@@ -124,7 +124,7 @@ func (r *deliveryOrderOpenSearch) GetBySalesmanID(request *models.DeliveryOrderR
 
 func (r *deliveryOrderOpenSearch) GetBySalesmansID(request *models.DeliveryOrderRequest, resultChan chan *models.DeliveryOrdersChan) {
 	response := &models.DeliveryOrdersChan{}
-	requestQuery := r.generateDeliveryOrderQueryOpenSearchBySalesmanIDTermRequest("", "", request)
+	requestQuery := r.generateDeliveryOrderQueryOpenSearchByQueryParamTermRequest("", "", request)
 	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery, true)
 
 	if err.Err != nil {
@@ -539,7 +539,7 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 	return openSearchQueryJson
 }
 
-func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchBySalesmanIDTermRequest(term_field string, term_value interface{}, request *models.DeliveryOrderRequest) []byte {
+func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchByQueryParamTermRequest(term_field string, term_value interface{}, request *models.DeliveryOrderRequest) []byte {
 	openSearchQuery := map[string]interface{}{}
 	// openSearchDetailQuery := map[string]interface{}{}
 	openSearchDetailBoolQuery := map[string]interface{}{}
@@ -598,6 +598,46 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchBySalesman
 		}
 	}
 
+	if request.StartDoDate != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"do_date": request.StartDoDate,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.EndDoDate != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"do_date": request.EndDoDate,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.StartCreatedAt != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"created_at": request.StartCreatedAt,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.EndCreatedAt != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"created_at": request.EndCreatedAt,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
 	if request.AgentID != 0 {
 		match := map[string]interface{}{
 			"match": map[string]interface{}{
@@ -618,60 +658,10 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchBySalesman
 		musts = append(musts, match)
 	}
 
-	if request.AgentName != "" {
-		match := map[string]interface{}{
-			"match": map[string]interface{}{
-				"agent_name": request.AgentName,
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
-	if request.StoreCode != "" {
-		match := map[string]interface{}{
-			"match": map[string]interface{}{
-				"store_code": request.StoreCode,
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
-	if request.StoreName != "" {
-		match := map[string]interface{}{
-			"match": map[string]interface{}{
-				"store_name": request.StoreName,
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
 	if request.BrandID != 0 {
 		match := map[string]interface{}{
 			"match": map[string]interface{}{
-				"brand_id": request.BrandID,
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
-	if request.BrandName != "" {
-		match := map[string]interface{}{
-			"match": map[string]interface{}{
-				"brand_name": request.BrandName,
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
-	if request.OrderSourceID != 0 {
-		match := map[string]interface{}{
-			"match": map[string]interface{}{
-				"order_source_id": request.OrderSourceID,
+				"sales_order.brand_id": request.BrandID,
 			},
 		}
 
@@ -718,80 +708,10 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchBySalesman
 		musts = append(musts, match)
 	}
 
-	if request.DoRefferalCode != "" {
-		match := map[string]interface{}{
-			"match": map[string]interface{}{
-				"do_refferal_code": request.DoRefferalCode,
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
-	if request.TotalAmount != 0 {
-		match := map[string]interface{}{
-			"match": map[string]interface{}{
-				"total_amount": request.TotalAmount,
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
-	if request.TotalTonase != 0 {
-		match := map[string]interface{}{
-			"match": map[string]interface{}{
-				"total_tonase": request.TotalTonase,
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
-	if request.ProductSKU != "" {
-		match := map[string]interface{}{
-			"match": map[string]interface{}{
-				"product_sku": request.ProductSKU,
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
-	if request.ProductName != "" {
-		match := map[string]interface{}{
-			"match": map[string]interface{}{
-				"product_name": request.ProductName,
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
-	if request.CategoryID != 0 {
-		match := map[string]interface{}{
-			"match": map[string]interface{}{
-				"category_id": request.CategoryID,
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
-	if request.SalesmanID != 0 {
-		match := map[string]interface{}{
-			"match": map[string]interface{}{
-				"sales_order.salesman_id": request.SalesmanID,
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
 	if request.ProductID != 0 {
 		match := map[string]interface{}{
 			"match": map[string]interface{}{
-				"product_id": request.ProductID,
+				"delivery_order_details.product_id": request.ProductID,
 			},
 		}
 
@@ -818,10 +738,30 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchBySalesman
 		musts = append(musts, match)
 	}
 
+	if request.CategoryID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"category_id": request.CategoryID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
+	if request.SalesmanID != 0 {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"sales_order.salesman_id": request.SalesmanID,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
 	if request.ProvinceID != 0 {
 		match := map[string]interface{}{
 			"match": map[string]interface{}{
-				"province_id": request.ProvinceID,
+				"store.province_id": request.ProvinceID,
 			},
 		}
 
@@ -831,7 +771,7 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchBySalesman
 	if request.CityID != 0 {
 		match := map[string]interface{}{
 			"match": map[string]interface{}{
-				"city_id": request.CityID,
+				"store.city_id": request.CityID,
 			},
 		}
 
@@ -841,7 +781,7 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchBySalesman
 	if request.DistrictID != 0 {
 		match := map[string]interface{}{
 			"match": map[string]interface{}{
-				"district_id": request.DistrictID,
+				"store.district_id": request.DistrictID,
 			},
 		}
 
@@ -851,7 +791,7 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchBySalesman
 	if request.VillageID != 0 {
 		match := map[string]interface{}{
 			"match": map[string]interface{}{
-				"village_id": request.VillageID,
+				"store.village_id": request.VillageID,
 			},
 		}
 
