@@ -901,9 +901,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 	}
 	getSalesOrderByIDResult.SalesOrder.OrderSourceChanMap(getOrderSourceResult)
 
-	salesOrdersResponse := &models.SalesOrderResponse{
-		ID: id,
-	}
+	salesOrdersResponse := &models.SalesOrderResponse{}
 
 	// Check Brand
 	brandIds := []int{}
