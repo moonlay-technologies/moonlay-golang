@@ -485,8 +485,7 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByDeliveryOrderID(ctx
 func (c *deliveryOrderController) Get(ctx *gin.Context) {
 	var result baseModel.Response
 	var resultErrorLog *baseModel.ErrorLog
-	var pageInt, perPageInt, intID, intSalesOrderID, intAgentID, intStoreID, intBrandID, intProductID, intOrderSourceID, intOrderStatusID, intCategoryID, intSalesmanID, intProvinceID, intCityID, intDistrictID, intVillageID int
-	var floatTotalAmount, floatTotalTonase float64
+	var pageInt, perPageInt, intID, intSalesOrderID, intAgentID, intStoreID, intBrandID, intOrderStatusID, intProductID, intCategoryID, intSalesmanID, intProvinceID, intCityID, intDistrictID, intVillageID int
 
 	page, isPageExist := ctx.GetQuery("page")
 	if isPageExist == false {
@@ -528,8 +527,9 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 		return
 	}
 
-	if perPageInt == 0 {
-		err = helper.NewError("Parameter 'per_page' harus bernilai integer > 0")
+	perPageInt, err = strconv.Atoi(perPage)
+	if err != nil {
+		err = helper.NewError("Parameter 'per_page' harus bernilai integer")
 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
 		result.StatusCode = http.StatusBadRequest
 		result.Error = errorLogData
@@ -550,36 +550,6 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 	globalSearchValue, isGlobalSearchValueExist := ctx.GetQuery("global_search_value")
 	if isGlobalSearchValueExist == false {
 		globalSearchValue = ""
-	}
-
-	agentID, isAgentIDExist := ctx.GetQuery("agent_id")
-	if isAgentIDExist == false {
-		agentID = "0"
-	}
-
-	intAgentID, err = strconv.Atoi(agentID)
-	if err != nil {
-		err = helper.NewError("Parameter 'agent_id' harus bernilai integer")
-		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		result.StatusCode = http.StatusBadRequest
-		result.Error = errorLogData
-		ctx.JSON(result.StatusCode, result)
-		return
-	}
-
-	storeID, isStoreIDExist := ctx.GetQuery("store_id")
-	if isStoreIDExist == false {
-		storeID = "0"
-	}
-
-	intStoreID, err = strconv.Atoi(storeID)
-	if err != nil {
-		err = helper.NewError("Parameter 'store_id' harus bernilai integer")
-		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		result.StatusCode = http.StatusBadRequest
-		result.Error = errorLogData
-		ctx.JSON(result.StatusCode, result)
-		return
 	}
 
 	id, isIdExist := ctx.GetQuery("id")
@@ -612,19 +582,34 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 		return
 	}
 
-	agentName, isAgentNameExist := ctx.GetQuery("agent_name")
-	if isAgentNameExist == false {
-		agentName = ""
+	agentID, isAgentIDExist := ctx.GetQuery("agent_id")
+	if isAgentIDExist == false {
+		agentID = "0"
 	}
 
-	storeCode, isStoreCodeExist := ctx.GetQuery("store_code")
-	if isStoreCodeExist == false {
-		storeCode = ""
+	intAgentID, err = strconv.Atoi(agentID)
+	if err != nil {
+		err = helper.NewError("Parameter 'agent_id' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
 	}
 
-	storeName, isStoreNameExist := ctx.GetQuery("store_name")
-	if isStoreNameExist == false {
-		storeName = ""
+	storeID, isStoreIDExist := ctx.GetQuery("store_id")
+	if isStoreIDExist == false {
+		storeID = "0"
+	}
+
+	intStoreID, err = strconv.Atoi(storeID)
+	if err != nil {
+		err = helper.NewError("Parameter 'store_id' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
 	}
 
 	brandID, isBrandIDExist := ctx.GetQuery("brand_id")
@@ -635,41 +620,6 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 	intBrandID, err = strconv.Atoi(brandID)
 	if err != nil {
 		err = helper.NewError("Parameter 'brand_id' harus bernilai integer")
-		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		result.StatusCode = http.StatusBadRequest
-		result.Error = errorLogData
-		ctx.JSON(result.StatusCode, result)
-		return
-	}
-
-	productID, isProductIDExist := ctx.GetQuery("product_id")
-	if isProductIDExist == false {
-		productID = "0"
-	}
-
-	intProductID, err = strconv.Atoi(productID)
-	if err != nil {
-		err = helper.NewError("Parameter 'product_id' harus bernilai integer")
-		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		result.StatusCode = http.StatusBadRequest
-		result.Error = errorLogData
-		ctx.JSON(result.StatusCode, result)
-		return
-	}
-
-	brandName, isBrandNameExist := ctx.GetQuery("brand_name")
-	if isBrandNameExist == false {
-		brandName = ""
-	}
-
-	orderSourceID, isOrderSourceIDExist := ctx.GetQuery("order_source_id")
-	if isOrderSourceIDExist == false {
-		orderSourceID = "0"
-	}
-
-	intOrderSourceID, err = strconv.Atoi(orderSourceID)
-	if err != nil {
-		err = helper.NewError("Parameter 'order_source_id' harus bernilai integer")
 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
 		result.StatusCode = http.StatusBadRequest
 		result.Error = errorLogData
@@ -717,49 +667,19 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 		doRefDate = ""
 	}
 
-	doRefferalCode, isDoRefferalCodeExist := ctx.GetQuery("do_refferal_code")
-	if isDoRefferalCodeExist == false {
-		doRefferalCode = ""
+	productID, isProductIDExist := ctx.GetQuery("product_id")
+	if isProductIDExist == false {
+		productID = "0"
 	}
 
-	totalAmount, isTotalAmountExist := ctx.GetQuery("total_amount")
-	if isTotalAmountExist == false {
-		totalAmount = "0"
-	}
-
-	floatTotalAmount, err = strconv.ParseFloat(totalAmount, 64)
+	intProductID, err = strconv.Atoi(productID)
 	if err != nil {
-		err = helper.NewError("Parameter 'total_amount' harus bernilai integer")
+		err = helper.NewError("Parameter 'product_id' harus bernilai integer")
 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
 		result.StatusCode = http.StatusBadRequest
 		result.Error = errorLogData
 		ctx.JSON(result.StatusCode, result)
 		return
-	}
-
-	totalTonase, isTotalTonaseExist := ctx.GetQuery("total_tonase")
-	if isTotalTonaseExist == false {
-		totalTonase = "0"
-	}
-
-	floatTotalTonase, err = strconv.ParseFloat(totalTonase, 64)
-	if err != nil {
-		err = helper.NewError("Parameter 'total_tonase' harus bernilai integer")
-		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		result.StatusCode = http.StatusBadRequest
-		result.Error = errorLogData
-		ctx.JSON(result.StatusCode, result)
-		return
-	}
-
-	productSku, isProductSkuExist := ctx.GetQuery("product_sku")
-	if isProductSkuExist == false {
-		productSku = ""
-	}
-
-	productName, isProductNameExist := ctx.GetQuery("product_name")
-	if isProductNameExist == false {
-		productName = ""
 	}
 
 	categoryID, isCategoryIDExist := ctx.GetQuery("category_id")
@@ -877,24 +797,14 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 		SalesOrderID:      intSalesOrderID,
 		AgentID:           intAgentID,
 		StoreID:           intStoreID,
-		AgentName:         agentName,
-		StoreCode:         storeCode,
-		StoreName:         storeName,
 		BrandID:           intBrandID,
-		BrandName:         brandName,
-		ProductID:         intProductID,
-		OrderSourceID:     intOrderSourceID,
 		OrderStatusID:     intOrderStatusID,
 		DoCode:            doCode,
 		StartDoDate:       startDoDate,
 		EndDoDate:         endDoDate,
 		DoRefCode:         doRefCode,
 		DoRefDate:         doRefDate,
-		DoRefferalCode:    doRefferalCode,
-		TotalAmount:       floatTotalAmount,
-		TotalTonase:       floatTotalTonase,
-		ProductSKU:        productSku,
-		ProductName:       productName,
+		ProductID:         intProductID,
 		CategoryID:        intCategoryID,
 		SalesmanID:        intSalesmanID,
 		ProvinceID:        intProvinceID,

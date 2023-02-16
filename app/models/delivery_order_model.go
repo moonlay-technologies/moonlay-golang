@@ -187,8 +187,9 @@ type DeliveryOrderOpenSearchResponse struct {
 	SalesOrderID        int                                            `json:"sales_order_id,omitempty"`
 	WarehouseID         int                                            `json:"warehouse_id,omitempty"`
 	OrderSourceID       int                                            `json:"order_source_id,omitempty"`
-	AgentID             int                                            `json:"agentID,omitempty"`
-	StoreID             int                                            `json:"storeID,omitempty"`
+	AgentID             int                                            `json:"agent_id,omitempty"`
+	AgentName           string                                         `json:"agent_name,omitempty"`
+	StoreID             int                                            `json:"store_id,omitempty"`
 	DoCode              string                                         `json:"do_code,omitempty"`
 	DoDate              string                                         `json:"do_date,omitempty"`
 	DoRefCode           NullString                                     `json:"do_ref_code,omitempty"`
