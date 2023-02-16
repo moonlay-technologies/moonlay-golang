@@ -75,3 +75,19 @@ type ProductOpenSearchResponse struct {
 	Description NullString `json:"description,omitempty" bson:"description,omitempty"`
 	CategoryID  int        `json:"category_id" bson:"category_id,omitempty"`
 }
+
+type ProductOpenSearchDeliveryOrderResponse struct {
+	ID                    int        `json:"id,omitempty" bson:"id,omitempty"`
+	ProductSku            NullString `json:"product_sku,omitempty" bson:"product_sku,omitempty"`
+	AliasSku              NullString `json:"alias_sku,omitempty" bson:"alias_sku,omitempty"`
+	ProductName           NullString `json:"product_name,omitempty" bson:"product_name,omitempty"`
+	Description           NullString `json:"description,omitempty" bson:"description,omitempty"`
+	UnitMeasurementSmall  NullString `json:"unit_measurement_small,omitempty" bson:"unit_measurement_small,omitempty"`
+	UnitMeasurementMedium NullString `json:"unit_measurement_medium,omitempty" bson:"unit_measurement_medium,omitempty"`
+	UnitMeasurementBig    NullString `json:"unit_measurement_big,omitempty" bson:"unit_measurement_big,omitempty"`
+	Ukuran                NullString `json:"ukuran,omitempty" bson:"ukuran,omitempty"`
+	NettWeightUm          NullString `json:"nett_weight_um,omitempty" bson:"nett_weight_um,omitempty"`
+	Currency              NullString `json:"currency,omitempty" bson:"currency,omitempty"`
+	DataType              NullString `json:"data_type,omitempty" bson:"data_type,omitempty"`
+	Image                 NullString `json:"image,omitempty" bson:"image,omitempty"`
+}
