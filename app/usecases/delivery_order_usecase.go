@@ -530,6 +530,7 @@ func (u *deliveryOrderUseCase) Get(request *models.DeliveryOrderRequest) (*model
 			WarehouseID:   v.WarehouseID,
 			OrderSourceID: v.OrderSourceID,
 			AgentID:       v.AgentID,
+			AgentName:     v.Agent.Name,
 			StoreID:       v.StoreID,
 			DoCode:        v.DoCode,
 			DoDate:        v.DoDate,
