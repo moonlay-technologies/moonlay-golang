@@ -40,16 +40,16 @@ type SalesOrderDetailTemplate struct {
 	ProductID   int    `json:"product_id,omitempty" binding:"required"`
 	UomID       int    `json:"uom_id,omitempty" binding:"required"`
 	Qty         int    `json:"qty,omitempty" binding:"required"`
-	SentQty     int    `json:"sent_qty,omitempty" binding:"required"`
-	ResidualQty int    `json:"residual_qty,omitempty" binding:"required"`
+	SentQty     int    `json:"sent_qty,omitempty"`
+	ResidualQty int    `json:"residual_qty,omitempty"`
 	Note        string `json:"note,omitempty"`
 }
 
 type SalesOrderDetailStoreRequest struct {
 	SalesOrderDetailTemplate
-	SalesOrderId  int     `json:"sales_order_id,omitempty" binding:"required"`
-	OrderStatusId int     `json:"order_status_id,omitempty" binding:"required"`
-	SoDetailCode  string  `json:"so_detail_code,omitempty" binding:"required"`
+	SalesOrderId  int     `json:"sales_order_id,omitempty"`
+	OrderStatusId int     `json:"order_status_id,omitempty"`
+	SoDetailCode  string  `json:"so_detail_code,omitempty"`
 	Price         float64 `json:"price,omitempty" binding:"required"`
 }
 

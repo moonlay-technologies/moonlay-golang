@@ -208,6 +208,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		salesOrderDetail.SalesOrderID = int(createSalesOrderResult.ID)
 		salesOrderDetail.SoDetailCode = soDetailCode
 		salesOrderDetail.Note = models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}}
+		salesOrderDetail.OrderStatusID = getOrderDetailStatusResult.OrderStatus.ID
 
 		createSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
 		go u.salesOrderDetailRepository.Insert(salesOrderDetail, sqlTransaction, ctx, createSalesOrderDetailResultChan)
