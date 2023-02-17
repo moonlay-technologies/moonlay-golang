@@ -13,6 +13,7 @@ import (
 	"order-service/global/utils/helper"
 	baseModel "order-service/global/utils/model"
 	"strconv"
+	"time"
 
 	"github.com/bxcodec/dbresolver"
 	"github.com/gin-gonic/gin"
@@ -440,6 +441,36 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 			c.requestValidationMiddleware.MandatoryValidation(ctx, err)
 			return
 		}
+	}
+
+	dateField := []*models.DateInputRequest{
+		{
+			Field: "so_date",
+			Value: insertRequest.SoDate,
+		},
+		{
+			Field: "so_ref_date",
+			Value: insertRequest.SoRefDate,
+		},
+	}
+	err = c.requestValidationMiddleware.DateInputValidation(ctx, dateField)
+	if err != nil {
+		return
+	}
+
+	parseSoDate, err := time.Parse("2006-01-02", insertRequest.SoDate)
+	parseSoRefDate, err := time.Parse("2006-01-02", insertRequest.SoRefDate)
+	now := time.Now()
+
+	if !(parseSoDate.Add(1*time.Hour).After(parseSoRefDate) && parseSoRefDate.Before(time.Now()) && parseSoRefDate.Month() == now.Month() && parseSoRefDate.Year() == now.Year()) {
+
+		errorLog := helper.WriteLog(fmt.Errorf("so_date and so_ref_date must equal less than today and must be in the current month"), http.StatusBadRequest, "so_date dan so_ref_date harus sama dengan kurang dari hari ini dan harus di bulan berjalan")
+		resultErrorLog = errorLog
+		result.StatusCode = http.StatusBadRequest
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+
+		return
 	}
 
 	mustActiveField := []*models.MustActiveRequest{

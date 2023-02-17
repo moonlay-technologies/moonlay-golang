@@ -9,6 +9,7 @@ import (
 	"order-service/global/utils/helper"
 	baseModel "order-service/global/utils/model"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -19,7 +20,7 @@ type RequestValidationMiddlewareInterface interface {
 	MandatoryValidation(ctx *gin.Context, err error)
 	UniqueValidation(ctx *gin.Context, value []*models.UniqueRequest) error
 	MustActiveValidation(ctx *gin.Context, value []*models.MustActiveRequest) error
-	InvalidValidation(ctx *gin.Context, err error, unmarshalTypeError *json.InvalidUnmarshalError)
+	DateInputValidation(ctx *gin.Context, value []*models.DateInputRequest) error
 }
 
 type requestValidationMiddleware struct {
@@ -137,20 +138,33 @@ func (u *requestValidationMiddleware) MustActiveValidation(ctx *gin.Context, val
 	return error
 }
 
-func (u *requestValidationMiddleware) InvalidValidation(ctx *gin.Context, err error, unmarshalTypeError *json.InvalidUnmarshalError) {
+func (u *requestValidationMiddleware) DateInputValidation(ctx *gin.Context, value []*models.DateInputRequest) error {
 	var result baseModel.Response
 	messages := []string{}
+	systemMessages := []string{}
+	var error error
 
-	message := fmt.Sprintf("Error: %s", unmarshalTypeError.Error())
-	messages = append(messages, message)
+	for _, v := range value {
+		_, err := time.Parse("2006-01-02", v.Value)
+		if err != nil {
+			message := fmt.Sprintf("Data %s harus berformat yyyy-mm-dd", v.Field)
+			messages = append(messages, message)
+			systemMessage := fmt.Sprintf("%s have to in yyyy-mm-dd format", v.Field)
+			systemMessages = append(systemMessages, systemMessage)
+		}
+	}
 
-	errorLog := helper.NewWriteLog(baseModel.ErrorLog{
-		Message:       messages,
-		SystemMessage: []string{err.Error()},
-		StatusCode:    http.StatusBadRequest,
-	})
-	result.StatusCode = http.StatusBadRequest
-	result.Error = errorLog
-	ctx.JSON(result.StatusCode, result)
-	return
+	if len(messages) > 0 {
+		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       messages,
+			SystemMessage: systemMessages,
+			StatusCode:    http.StatusBadRequest,
+		})
+		result.StatusCode = http.StatusExpectationFailed
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+		error = fmt.Errorf("Invalid date value!")
+	}
+
+	return error
 }
