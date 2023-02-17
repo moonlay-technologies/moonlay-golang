@@ -15,6 +15,7 @@ import (
 	kafkadbo "order-service/global/utils/kafka"
 	"order-service/global/utils/model"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/bxcodec/dbresolver"
@@ -35,6 +36,7 @@ type DeliveryOrderUseCaseInterface interface {
 	GetByOrderSourceID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
 	SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, salesOrderUseCase SalesOrderUseCaseInterface, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromUpdateEvent(deliveryOrder *models.DeliveryOrder, ctx context.Context) *model.ErrorLog
+	SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, ctx context.Context) *model.ErrorLog
 }
 
 type deliveryOrderUseCase struct {
@@ -1045,6 +1047,40 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromUpdateEvent(deliveryOrder *mo
 		deliveryOrder.DeliveryOrderDetails[k].Brand = getBrandResult.Brand
 	}
 
+	deliveryOrder.UpdatedAt = &now
+
+	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
+	go u.deliveryOrderOpenSearchRepository.Create(deliveryOrder, createDeliveryOrderResultChan)
+	createDeliveryOrderResult := <-createDeliveryOrderResultChan
+
+	if createDeliveryOrderResult.Error != nil {
+		fmt.Println(createDeliveryOrderResult.ErrorLog.Err.Error())
+		return createDeliveryOrderResult.ErrorLog
+	}
+
+	return &model.ErrorLog{}
+}
+
+func (u *deliveryOrderUseCase) SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, ctx context.Context) *model.ErrorLog {
+	now := time.Now()
+	getDeliveryOrdersResultChan := make(chan *models.DeliveryOrderChan)
+	go u.deliveryOrderOpenSearchRepository.GetByID(&models.DeliveryOrderRequest{ID: *deliveryOrderId}, getDeliveryOrdersResultChan)
+	getDeliveryOrdersResult := <-getDeliveryOrdersResultChan
+
+	if getDeliveryOrdersResult.Error != nil {
+		if !strings.Contains(getDeliveryOrdersResult.Error.Error(), "not found") {
+			errorLogData := helper.WriteLog(getDeliveryOrdersResult.Error, http.StatusInternalServerError, nil)
+			return errorLogData
+		}
+	}
+	deliveryOrder := getDeliveryOrdersResult.DeliveryOrder
+
+	for k := range deliveryOrder.DeliveryOrderDetails {
+		deliveryOrder.DeliveryOrderDetails[k].DeletedAt = &now
+		deliveryOrder.DeliveryOrderDetails[k].UpdatedAt = &now
+	}
+
+	deliveryOrder.DeletedAt = &now
 	deliveryOrder.UpdatedAt = &now
 
 	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
