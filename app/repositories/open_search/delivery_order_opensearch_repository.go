@@ -322,6 +322,16 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 		musts = append(musts, match)
 	}
 
+	if request.SoCode != "" {
+		match := map[string]interface{}{
+			"match": map[string]interface{}{
+				"sales_order.so_code": request.SoCode,
+			},
+		}
+
+		musts = append(musts, match)
+	}
+
 	if request.DoRefCode != "" {
 		match := map[string]interface{}{
 			"match": map[string]interface{}{

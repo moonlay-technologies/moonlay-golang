@@ -647,6 +647,11 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 		doCode = ""
 	}
 
+	soCode, isSoCodeExist := ctx.GetQuery("so_code")
+	if isSoCodeExist == false {
+		soCode = ""
+	}
+
 	startDoDate, isStartSoDate := ctx.GetQuery("start_do_date")
 	if isStartSoDate == false {
 		startDoDate = ""
@@ -800,6 +805,7 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 		BrandID:           intBrandID,
 		OrderStatusID:     intOrderStatusID,
 		DoCode:            doCode,
+		SoCode:            soCode,
 		StartDoDate:       startDoDate,
 		EndDoDate:         endDoDate,
 		DoRefCode:         doRefCode,
