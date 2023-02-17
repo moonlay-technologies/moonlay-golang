@@ -3,10 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/bxcodec/dbresolver"
-	"github.com/getsentry/sentry-go"
-	envConfig "github.com/joho/godotenv"
-	log "github.com/sirupsen/logrus"
 	"order-service/app/handlers"
 	"order-service/global/utils/helper"
 	kafkadbo "order-service/global/utils/kafka"
@@ -18,26 +14,35 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+
+	"github.com/bxcodec/dbresolver"
+	"github.com/getsentry/sentry-go"
+	envConfig "github.com/joho/godotenv"
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {
 	log.SetFormatter(&log.JSONFormatter{})
 	log.SetOutput(os.Stdout)
-	arg := os.Args[1]
+	if len(os.Args) > 1 {
+		arg := os.Args[1]
 
-	switch arg {
-	case "main":
-		mainWithoutArg()
-		break
-	case "command":
-		args := []interface{}{}
-		args = append(args, os.Args[1], os.Args[2], os.Args[3], os.Args[4])
-		commands(args)
-	case "consumer":
-		args := []interface{}{}
-		args = append(args, os.Args[1], os.Args[2], os.Args[3], os.Args[4], os.Args[5])
-		consumers(args)
-	default:
+		switch arg {
+		case "main":
+			mainWithoutArg()
+			break
+		case "command":
+			args := []interface{}{}
+			args = append(args, os.Args[1], os.Args[2], os.Args[3], os.Args[4])
+			commands(args)
+		case "consumer":
+			args := []interface{}{}
+			args = append(args, os.Args[1], os.Args[2], os.Args[3], os.Args[4], os.Args[5])
+			consumers(args)
+		default:
+			mainWithoutArg()
+		}
+	} else {
 		mainWithoutArg()
 	}
 }
