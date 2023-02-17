@@ -42,6 +42,6 @@ type Uoms struct {
 }
 
 type UomOpenSearchResponse struct {
-	Name NullString `json:"name,omitempty"`
-	Code NullString `json:"code,omitempty"`
+	Name NullString `json:"uom_name,omitempty"`
+	Code NullString `json:"uom_code,omitempty"`
 }

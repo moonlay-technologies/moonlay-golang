@@ -209,6 +209,16 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 		filters = append(filters, filter)
 	}
 
+	if request.AgentID != 0 {
+		filter := map[string]interface{}{
+			"term": map[string]interface{}{
+				"agent.id": request.AgentID,
+			},
+		}
+
+		filters = append(filters, filter)
+	}
+
 	if request.StoreID > 0 {
 		filter := map[string]interface{}{
 			"term": map[string]interface{}{
@@ -352,16 +362,6 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 			"multi_match": map[string]interface{}{
 				"query":  request.GlobalSearchValue,
 				"fields": []string{"store_code", "store_name", "so_code", "so_ref_code"},
-			},
-		}
-
-		musts = append(musts, match)
-	}
-
-	if request.AgentID != 0 {
-		match := map[string]interface{}{
-			"match": map[string]interface{}{
-				"agent.id": request.AgentID,
 			},
 		}
 

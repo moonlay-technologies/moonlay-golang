@@ -42,6 +42,6 @@ type OrderStatuses struct {
 }
 
 type OrderStatusOpenSearchResponse struct {
-	ID   int    `json:"id,omitempty" bson:"id"`
+	ID   int    `json:"order_status_id,omitempty" bson:"id"`
 	Name string `json:"name,omitempty" bson:"name"`
 }

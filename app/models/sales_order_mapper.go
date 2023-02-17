@@ -193,3 +193,54 @@ func (result *SalesOrderResponse) SoUpdateByIdResponseMap(request *SalesOrder) {
 	result.CreatedAt = request.CreatedAt
 	return
 }
+
+func (salesOrder *SalesOrderOpenSearchResponse) SalesOrderOpenSearchResponseMap(request *SalesOrder) {
+	salesOrder.ID = request.ID
+	salesOrder.AgentName = request.AgentName
+	salesOrder.AgentEmail = request.AgentEmail
+	salesOrder.AgentName = request.AgentName
+	salesOrder.AgentCityName = request.AgentCityName
+	salesOrder.AgentVillageName = request.AgentVillageName
+	salesOrder.AgentAddress = request.AgentAddress
+	salesOrder.AgentPhone = request.AgentPhone
+	salesOrder.AgentMainMobilePhone = request.AgentMainMobilePhone
+
+	salesOrder.StoreName = request.StoreName
+	salesOrder.StoreCode = request.StoreCode
+	salesOrder.StoreEmail = request.StoreEmail
+	salesOrder.StoreName = request.StoreName
+	salesOrder.StoreCityName = request.StoreCityName
+	salesOrder.StoreDistrictName = request.StoreDistrictName
+	salesOrder.StoreVillageName = request.StoreVillageName
+	salesOrder.StoreAddress = request.StoreAddress
+	salesOrder.StorePhone = request.StorePhone
+	salesOrder.StoreMainMobilePhone = request.StoreMainMobilePhone
+
+	salesOrder.BrandName = request.BrandName
+
+	salesOrder.UserFirstName = request.UserFirstName
+	salesOrder.UserLastName = request.UserLastName
+	salesOrder.UserEmail = request.UserEmail
+
+	salesOrder.OrderSourceName = request.OrderSourceName
+	salesOrder.OrderStatusName = request.OrderStatusName
+
+	salesOrder.SoCode = request.SoCode
+	salesOrder.SoDate = request.SoDate
+	salesOrder.SoRefCode = request.SoRefCode
+	salesOrder.SoRefDate = request.SoRefDate
+	salesOrder.GLat = request.GLat
+	salesOrder.GLong = request.GLong
+	salesOrder.Note = request.Note
+	salesOrder.ReferralCode = request.ReferralCode
+	salesOrder.InternalComment = request.InternalComment
+	salesOrder.TotalAmount = request.TotalAmount
+	salesOrder.TotalTonase = request.TotalTonase
+
+	salesOrder.SalesmanName = request.SalesmanName
+	salesOrder.SalesmanEmail = request.SalesmanEmail
+	salesOrder.CreatedAt = request.CreatedAt
+	salesOrder.UpdatedAt = request.UpdatedAt
+
+	return
+}
