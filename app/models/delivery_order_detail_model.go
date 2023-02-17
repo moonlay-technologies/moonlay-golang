@@ -26,6 +26,9 @@ type DeliveryOrderDetail struct {
 	OrderStatusName   string            `json:"order_status_name,omitempty" bson:"order_status_name"`
 	DoDetailCode      string            `json:"do_detail_code,omitempty" bson:"do_detail_code"`
 	Qty               int               `json:"qty,omitempty" bson:"qty"`
+	SentQty           int               `json:"sent_qty,omitempty" bson:"sent_qty,omitempty"`
+	ResidualQty       int               `json:"residual_qty,omitempty" bson:"residual_qty,omitempty"`
+	Price             float64           `json:"price,omitempty" bson:"price,omitempty"`
 	Note              NullString        `json:"note,omitempty" bson:"note"`
 	IsDoneSyncToEs    string            `json:"is_done_sync_to_es,omitempty" bson:"is_done_sync_to_es"`
 	StartDateSyncToEs *time.Time        `json:"start_date_sync_to_es,omitempty" bson:"start_date_sync_to_es"`
@@ -104,4 +107,23 @@ type DeliveryOrderDetails struct {
 type DeliveryOrderDetailOpenSearchDetailResponse struct {
 	SoDetailID int `json:"so_detail_id,omitempty" bson:"so_detail_id,omitempty"`
 	Qty        int `json:"qty,omitempty" bson:"qty,omitempty"`
+}
+
+type DeliveryOrderDetailOpenSearchResponse struct {
+	ID              int                                     `json:"id,omitempty" bson:"id,omitempty"`
+	DeliveryOrderID int                                     `json:"delivery_order_id,omitempty" bson:"delivery_order_id,omitempty"`
+	ProductID       int                                     `json:"product_id,omitempty" bson:"product_id,omitempty"`
+	Product         *ProductOpenSearchDeliveryOrderResponse `json:"product,omitempty" bson:"product,omitempty"`
+	UomID           int                                     `json:"uom_id,omitempty" bson:"uom_id,omitempty"`
+	UomName         string                                  `json:"uom_name,omitempty" bson:"uom_name,omitempty"`
+	UomCode         string                                  `json:"uom_code,omitempty" bson:"uom_code,omitempty"`
+	OrderStatusID   int                                     `json:"order_status_id,omitempty" bson:"order_status_id,omitempty"`
+	OrderStatusName string                                  `json:"order_status_name,omitempty" bson:"order_status_name,omitempty"`
+	DoDetailCode    string                                  `json:"do_detail_code,omitempty" bson:"do_detail_code,omitempty"`
+	Qty             int                                     `json:"qty,omitempty" bson:"qty,omitempty"`
+	SentQty         int                                     `json:"sent_qty,omitempty" bson:"sent_qty,omitempty"`
+	ResidualQty     int                                     `json:"residual_qty,omitempty" bson:"residual_qty,omitempty"`
+	Price           float64                                 `json:"price,omitempty" bson:"price,omitempty"`
+	Note            NullString                              `json:"note,omitempty" bson:"note,omitempty"`
+	CreatedAt       *time.Time                              `json:"created_at,omitempty" bson:"created_at,omitempty"`
 }

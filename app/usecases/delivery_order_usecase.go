@@ -15,6 +15,7 @@ import (
 	kafkadbo "order-service/global/utils/kafka"
 	"order-service/global/utils/model"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/bxcodec/dbresolver"
@@ -30,10 +31,12 @@ type DeliveryOrderUseCaseInterface interface {
 	GetByAgentID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
 	GetByStoreID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
 	GetBySalesmanID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
+	GetBySalesmansID(request *models.DeliveryOrderRequest) (*models.DeliveryOrdersOpenSearchResponses, *model.ErrorLog)
 	GetByOrderStatusID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
 	GetByOrderSourceID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
 	SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, salesOrderUseCase SalesOrderUseCaseInterface, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromUpdateEvent(deliveryOrder *models.DeliveryOrder, ctx context.Context) *model.ErrorLog
+	SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, ctx context.Context) *model.ErrorLog
 }
 
 type deliveryOrderUseCase struct {
@@ -529,6 +532,7 @@ func (u *deliveryOrderUseCase) Get(request *models.DeliveryOrderRequest) (*model
 			WarehouseID:   v.WarehouseID,
 			OrderSourceID: v.OrderSourceID,
 			AgentID:       v.AgentID,
+			AgentName:     v.Agent.Name,
 			StoreID:       v.StoreID,
 			DoCode:        v.DoCode,
 			DoDate:        v.DoDate,
@@ -615,6 +619,110 @@ func (u *deliveryOrderUseCase) GetBySalesmanID(request *models.DeliveryOrderRequ
 
 	deliveryOrders := &models.DeliveryOrders{
 		DeliveryOrders: getDeliveryOrdersResult.DeliveryOrders,
+		Total:          getDeliveryOrdersResult.Total,
+	}
+
+	return deliveryOrders, &model.ErrorLog{}
+}
+
+func (u *deliveryOrderUseCase) GetBySalesmansID(request *models.DeliveryOrderRequest) (*models.DeliveryOrdersOpenSearchResponses, *model.ErrorLog) {
+	getDeliveryOrdersResultChan := make(chan *models.DeliveryOrdersChan)
+	go u.deliveryOrderOpenSearchRepository.GetBySalesmansID(request, getDeliveryOrdersResultChan)
+	getDeliveryOrdersResult := <-getDeliveryOrdersResultChan
+
+	if getDeliveryOrdersResult.Error != nil {
+		return &models.DeliveryOrdersOpenSearchResponses{}, getDeliveryOrdersResult.ErrorLog
+	}
+
+	deliveryOrderResult := []*models.DeliveryOrderOpenSearchResponses{}
+	for _, v := range getDeliveryOrdersResult.DeliveryOrders {
+		deliveryOrder := models.DeliveryOrderOpenSearchResponses{
+			ID:                    v.ID,
+			SoCode:                v.SalesOrder.SoCode,
+			SoDate:                v.SalesOrder.SoDate,
+			WarehouseName:         models.NullString{NullString: sql.NullString{String: v.Warehouse.Name, Valid: true}},
+			WarehouseCode:         models.NullString{NullString: sql.NullString{String: v.Warehouse.Code, Valid: true}},
+			WarehouseProvinceName: models.NullString{NullString: sql.NullString{String: v.Warehouse.ProvinceName.String, Valid: true}},
+			WarehouseCityName:     models.NullString{NullString: sql.NullString{String: v.Warehouse.CityName.String, Valid: true}},
+			WarehouseDistrictName: models.NullString{NullString: sql.NullString{String: v.Warehouse.DistrictName.String, Valid: true}},
+			WarehouseVillageName:  v.Warehouse.VillageName,
+			DriverName:            models.NullString{NullString: sql.NullString{String: v.DriverName.String, Valid: true}},
+			PlatNumber:            v.PlatNumber,
+			AgentName:             models.NullString{NullString: sql.NullString{String: v.Agent.Name, Valid: true}},
+			AgentEmail:            models.NullString{NullString: sql.NullString{String: v.Agent.Email.String, Valid: true}},
+			AgentProvinceName:     models.NullString{NullString: sql.NullString{String: v.Agent.ProvinceName.String, Valid: true}},
+			AgentCityName:         models.NullString{NullString: sql.NullString{String: v.Agent.CityName.String, Valid: true}},
+			AgentDistrictName:     models.NullString{NullString: sql.NullString{String: v.Agent.DistrictName.String, Valid: true}},
+			AgentVillageName:      models.NullString{NullString: sql.NullString{String: v.Agent.VillageName.String, Valid: true}},
+			AgentAddress:          models.NullString{NullString: sql.NullString{String: v.Agent.Address.String, Valid: true}},
+			AgentPhone:            models.NullString{NullString: sql.NullString{String: v.Agent.Phone.String, Valid: true}},
+			AgentMainMobilePhone:  models.NullString{NullString: sql.NullString{String: v.Agent.MainMobilePhone.String, Valid: true}},
+			StoreName:             models.NullString{NullString: sql.NullString{String: v.Store.Name.String, Valid: true}},
+			StoreCode:             models.NullString{NullString: sql.NullString{String: v.Store.StoreCode.String, Valid: true}},
+			StoreEmail:            models.NullString{NullString: sql.NullString{String: v.Store.Email.String, Valid: true}},
+			StoreProvinceName:     models.NullString{NullString: sql.NullString{String: v.Store.ProvinceName.String, Valid: true}},
+			StoreCityName:         models.NullString{NullString: sql.NullString{String: v.Store.CityName.String, Valid: true}},
+			StoreDistrictName:     models.NullString{NullString: sql.NullString{String: v.Store.DistrictName.String, Valid: true}},
+			StoreVillageName:      models.NullString{NullString: sql.NullString{String: v.Store.VillageName.String, Valid: true}},
+			StoreAddress:          models.NullString{NullString: sql.NullString{String: v.Store.Address.String, Valid: true}},
+			StorePhone:            models.NullString{NullString: sql.NullString{String: v.Store.Phone.String, Valid: true}},
+			StoreMainMobilePhone:  models.NullString{NullString: sql.NullString{String: v.Store.MainMobilePhone.String, Valid: true}},
+			BrandName:             v.SalesOrder.BrandName,
+			UserFirstName:         models.NullString{NullString: sql.NullString{String: v.SalesOrder.UserFirstName.String, Valid: true}},
+			UserLastName:          models.NullString{NullString: sql.NullString{String: v.SalesOrder.UserLastName.String, Valid: true}},
+			UserEmail:             models.NullString{NullString: sql.NullString{String: v.SalesOrder.UserEmail.String, Valid: true}},
+			OrderSourceName:       v.OrderSource.SourceName,
+			OrderStatusName:       v.OrderStatus.Name,
+			DoCode:                v.DoCode,
+			DoDate:                v.DoDate,
+			DoRefCode:             v.DoRefCode,
+			DoRefDate:             v.DoRefDate,
+			Note:                  v.Note,
+		}
+		deliveryOrderResult = append(deliveryOrderResult, &deliveryOrder)
+		var deliveryOrderDetails []*models.DeliveryOrderDetailOpenSearchResponse
+		for _, x := range v.DeliveryOrderDetails {
+			deliveryOrderDetail := models.DeliveryOrderDetailOpenSearchResponse{
+				ID:              x.ID,
+				DeliveryOrderID: x.DeliveryOrderID,
+				ProductID:       x.ProductID,
+				Product: &models.ProductOpenSearchDeliveryOrderResponse{
+					ID:                    x.Product.ID,
+					ProductSku:            x.Product.Sku,
+					AliasSku:              x.Product.AliasSku,
+					ProductName:           x.Product.ProductName,
+					Description:           x.Product.Description,
+					UnitMeasurementSmall:  x.Product.UnitMeasurementSmall,
+					UnitMeasurementMedium: x.Product.UnitMeasurementMedium,
+					UnitMeasurementBig:    x.Product.UnitMeasurementBig,
+					Ukuran:                x.Product.Ukuran,
+					NettWeightUm:          x.Product.NettWeightUm,
+					Currency:              x.Product.Currency,
+					DataType:              x.Product.DataType,
+					Image:                 x.Product.Image,
+				},
+				UomID:           x.UomID,
+				UomName:         x.Uom.Name.String,
+				UomCode:         x.Uom.Code.String,
+				OrderStatusID:   x.OrderStatusID,
+				OrderStatusName: x.OrderStatusName,
+				DoDetailCode:    x.DoDetailCode,
+				Qty:             x.Qty,
+				SentQty:         x.SentQty,
+				ResidualQty:     x.ResidualQty,
+				Price:           x.Price,
+				Note:            x.Note,
+				CreatedAt:       x.CreatedAt,
+			}
+			deliveryOrderDetails = append(deliveryOrderDetails, &deliveryOrderDetail)
+		}
+		deliveryOrder.DeliveryOrderDetails = deliveryOrderDetails
+		deliveryOrder.CreatedAt = v.CreatedAt
+		deliveryOrder.UpdatedAt = v.UpdatedAt
+	}
+
+	deliveryOrders := &models.DeliveryOrdersOpenSearchResponses{
+		DeliveryOrders: deliveryOrderResult,
 		Total:          getDeliveryOrdersResult.Total,
 	}
 
@@ -939,6 +1047,40 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromUpdateEvent(deliveryOrder *mo
 		deliveryOrder.DeliveryOrderDetails[k].Brand = getBrandResult.Brand
 	}
 
+	deliveryOrder.UpdatedAt = &now
+
+	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
+	go u.deliveryOrderOpenSearchRepository.Create(deliveryOrder, createDeliveryOrderResultChan)
+	createDeliveryOrderResult := <-createDeliveryOrderResultChan
+
+	if createDeliveryOrderResult.Error != nil {
+		fmt.Println(createDeliveryOrderResult.ErrorLog.Err.Error())
+		return createDeliveryOrderResult.ErrorLog
+	}
+
+	return &model.ErrorLog{}
+}
+
+func (u *deliveryOrderUseCase) SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, ctx context.Context) *model.ErrorLog {
+	now := time.Now()
+	getDeliveryOrdersResultChan := make(chan *models.DeliveryOrderChan)
+	go u.deliveryOrderOpenSearchRepository.GetByID(&models.DeliveryOrderRequest{ID: *deliveryOrderId}, getDeliveryOrdersResultChan)
+	getDeliveryOrdersResult := <-getDeliveryOrdersResultChan
+
+	if getDeliveryOrdersResult.Error != nil {
+		if !strings.Contains(getDeliveryOrdersResult.Error.Error(), "not found") {
+			errorLogData := helper.WriteLog(getDeliveryOrdersResult.Error, http.StatusInternalServerError, nil)
+			return errorLogData
+		}
+	}
+	deliveryOrder := getDeliveryOrdersResult.DeliveryOrder
+
+	for k := range deliveryOrder.DeliveryOrderDetails {
+		deliveryOrder.DeliveryOrderDetails[k].DeletedAt = &now
+		deliveryOrder.DeliveryOrderDetails[k].UpdatedAt = &now
+	}
+
+	deliveryOrder.DeletedAt = &now
 	deliveryOrder.UpdatedAt = &now
 
 	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
