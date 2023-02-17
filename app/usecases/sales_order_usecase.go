@@ -1040,6 +1040,13 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, id int, request *models.Sal
 		return &models.SalesOrderDetail{}, getOrderStatusResult.ErrorLog
 	}
 
+	errorValidation := u.updateSOValidation(getSalesOrderByIDResult.SalesOrder.ID, getOrderStatusResult.OrderStatus.Name, ctx)
+
+	if errorValidation != nil {
+		errorLogData := helper.WriteLog(errorValidation, http.StatusBadRequest, "Ada kesalahan, silahkan coba lagi nanti")
+		return &models.SalesOrderDetail{}, errorLogData
+	}
+
 	// Check Order Detail Status
 	getOrderDetailStatusResultChan := make(chan *models.OrderStatusChan)
 	go u.orderStatusRepository.GetByNameAndType("open", "sales_order_detail", false, ctx, getOrderDetailStatusResultChan)
@@ -1047,13 +1054,6 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, id int, request *models.Sal
 
 	if getOrderDetailStatusResult.Error != nil {
 		return &models.SalesOrderDetail{}, getOrderDetailStatusResult.ErrorLog
-	}
-
-	errorValidation := u.updateSOValidation(getSalesOrderByIDResult.SalesOrder.ID, getOrderStatusResult.OrderStatus.Name, ctx)
-
-	if errorValidation != nil {
-		errorLogData := helper.WriteLog(errorValidation, http.StatusBadRequest, "Ada kesalahan, silahkan coba lagi nanti")
-		return &models.SalesOrderDetail{}, errorLogData
 	}
 
 	// Check Brand
@@ -1065,17 +1065,8 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, id int, request *models.Sal
 		return &models.SalesOrderDetail{}, getBrandResult.ErrorLog
 	}
 
-	salesOrderDetail := &models.SalesOrderDetail{
-		ID:          request.ID,
-		ProductID:   request.ProductID,
-		UomID:       request.UomID,
-		Qty:         request.Qty,
-		SentQty:     request.SentQty,
-		ResidualQty: request.ResidualQty,
-		Price:       request.Price,
-		Note:        models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}},
-		UpdatedAt:   &now,
-	}
+	salesOrderDetail := &models.SalesOrderDetail{}
+	salesOrderDetail.SalesOrderDetailUpdateRequestMap(request, now)
 
 	updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
 	go u.salesOrderDetailRepository.UpdateByID(request.ID, salesOrderDetail, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
@@ -1148,17 +1139,9 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(SoId int, request []*models.Sal
 	totalTonase := salesOrder.TotalTonase
 
 	for _, v := range request {
-		salesOrderDetail := &models.SalesOrderDetail{
-			ID:          v.ID,
-			ProductID:   v.ProductID,
-			UomID:       v.UomID,
-			Qty:         v.Qty,
-			SentQty:     v.SentQty,
-			ResidualQty: v.ResidualQty,
-			Price:       v.Price,
-			Note:        models.NullString{NullString: sql.NullString{String: v.Note, Valid: true}},
-			UpdatedAt:   &now,
-		}
+
+		salesOrderDetail := &models.SalesOrderDetail{}
+		salesOrderDetail.SalesOrderDetailUpdateRequestMap(v, now)
 
 		updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
 		go u.salesOrderDetailRepository.UpdateByID(v.ID, salesOrderDetail, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
