@@ -108,9 +108,9 @@ type SalesOrderDetailOpenSearchResponse struct {
 	OrderStatusID int                            `json:"order_status_id,omitempty" bson:"order_status_id,omitempty"`
 	OrderStatus   *OrderStatusOpenSearchResponse `json:"order_status,omitempty" bson:"order_status,omitempty"`
 	SoDetailCode  string                         `json:"so_detail_code,omitempty" bson:"so_detail_code,omitempty"`
-	Qty           int                            `json:"qty,omitempty" bson:"qty,omitempty"`
-	SentQty       int                            `json:"sent_qty,omitempty" bson:"sent_qty,omitempty"`
-	ResidualQty   int                            `json:"residual_qty,omitempty" bson:"residual_qty,omitempty"`
+	Qty           NullInt64                      `json:"qty,omitempty" bson:"qty,omitempty"`
+	SentQty       NullInt64                      `json:"sent_qty,omitempty" bson:"sent_qty,omitempty"`
+	ResidualQty   NullInt64                      `json:"residual_qty,omitempty" bson:"residual_qty,omitempty"`
 	Price         float64                        `json:"price,omitempty" bson:"price,omitempty"`
 	Note          NullString                     `json:"note,omitempty" bson:"note,omitempty"`
 	CreatedAt     *time.Time                     `json:"created_at,omitempty" bson:"created_at,omitempty"`

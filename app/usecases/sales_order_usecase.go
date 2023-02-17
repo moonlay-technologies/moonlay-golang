@@ -307,98 +307,18 @@ func (u *salesOrderUseCase) Get(request *models.SalesOrderRequest) (*models.Sale
 	for _, v := range getSalesOrdersResult.SalesOrders {
 		var salesOrder models.SalesOrderOpenSearchResponse
 
-		salesOrder.ID = v.ID
-		salesOrder.AgentName = v.AgentName
-		salesOrder.AgentEmail = v.AgentEmail
-		salesOrder.AgentProvinceName = v.AgentProvinceName
-		salesOrder.AgentCityName = v.AgentCityName
-		salesOrder.AgentVillageName = v.AgentVillageName
-		salesOrder.AgentAddress = v.AgentAddress
-		salesOrder.AgentPhone = v.AgentPhone
-		salesOrder.AgentMainMobilePhone = v.AgentMainMobilePhone
-
-		salesOrder.StoreName = v.StoreName
-		salesOrder.StoreCode = v.StoreCode
-		salesOrder.StoreEmail = v.StoreEmail
-		salesOrder.StoreProvinceName = v.StoreProvinceName
-		salesOrder.StoreCityName = v.StoreCityName
-		salesOrder.StoreDistrictName = v.StoreDistrictName
-		salesOrder.StoreVillageName = v.StoreVillageName
-		salesOrder.StoreAddress = v.StoreAddress
-		salesOrder.StorePhone = v.StorePhone
-		salesOrder.StoreMainMobilePhone = v.StoreMainMobilePhone
-
-		salesOrder.BrandID = v.BrandID
-		salesOrder.BrandName = v.BrandName
-
-		salesOrder.UserFirstName = v.UserFirstName
-		salesOrder.UserLastName = v.UserLastName
-		salesOrder.UserEmail = v.UserEmail
-
-		salesOrder.OrderSourceName = v.OrderSourceName
-		salesOrder.OrderStatusName = v.OrderStatusName
-
-		salesOrder.SoCode = v.SoCode
-		salesOrder.SoDate = v.SoDate
-		salesOrder.SoRefCode = v.SoRefCode
-		salesOrder.SoRefDate = v.SoRefDate
-		salesOrder.GLat = v.GLat
-		salesOrder.GLong = v.GLong
-		salesOrder.Note = v.Note
-		salesOrder.ReferralCode = v.ReferralCode
-		salesOrder.InternalComment = v.InternalComment
-		salesOrder.TotalAmount = v.TotalAmount
-		salesOrder.TotalTonase = v.TotalTonase
+		salesOrder.SalesOrderOpenSearchResponseMap(v)
 
 		var salesOrderDetails []*models.SalesOrderDetailOpenSearchResponse
 		for _, x := range v.SalesOrderDetails {
 			var salesOrderDetail models.SalesOrderDetailOpenSearchResponse
 
-			salesOrderDetail.ID = x.ID
-			salesOrderDetail.SalesOrderID = x.SalesOrderID
-			salesOrderDetail.ProductID = x.ProductID
-
-			var product models.ProductOpenSearchResponse
-			product.ID = x.Product.ID
-			product.Sku = x.Product.Sku
-			product.AliasSku = x.Product.AliasSku
-			product.ProductName = x.Product.ProductName
-			product.Description = x.Product.Description
-			product.CategoryID = x.Product.CategoryID
-
-			salesOrderDetail.Product = &product
-
-			var uom models.UomOpenSearchResponse
-			salesOrderDetail.UomID = x.UomID
-			uom.Name = x.Uom.Name
-			uom.Code = x.Uom.Code
-
-			salesOrderDetail.Uom = &uom
-
-			salesOrderDetail.OrderStatusID = x.OrderStatusID
-			var orderStatus models.OrderStatusOpenSearchResponse
-			orderStatus.ID = x.OrderStatus.ID
-			orderStatus.Name = x.OrderStatus.Name
-
-			salesOrderDetail.OrderStatus = &orderStatus
-
-			salesOrderDetail.SoDetailCode = x.SoDetailCode
-			salesOrderDetail.Qty = x.Qty
-			salesOrderDetail.SentQty = x.SentQty
-			salesOrderDetail.ResidualQty = x.ResidualQty
-			salesOrderDetail.Price = x.Price
-			salesOrderDetail.Note = x.Note
-			salesOrderDetail.CreatedAt = x.CreatedAt
+			salesOrderDetail.SalesOrderDetailOpenSearchResponseMap(x)
 
 			salesOrderDetails = append(salesOrderDetails, &salesOrderDetail)
 		}
 
 		salesOrder.SalesOrderDetails = salesOrderDetails
-
-		salesOrder.SalesmanName = v.SalesmanName
-		salesOrder.SalesmanEmail = v.SalesmanEmail
-		salesOrder.CreatedAt = v.CreatedAt
-		salesOrder.UpdatedAt = v.UpdatedAt
 
 		salesOrdersResult = append(salesOrdersResult, &salesOrder)
 	}
