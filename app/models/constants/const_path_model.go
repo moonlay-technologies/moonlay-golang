@@ -7,4 +7,5 @@ const (
 	STORES               = "stores"
 	SALESMANS            = "salesmans"
 	HEALTH_CHECK         = "health-check"
+	HOST_TO_HOST         = "h2h"
 )

@@ -88,6 +88,16 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 		}
 	}
 
+	hostToHostController := controllers.InitHTTPHostToHostController(database, redisdb, mongodbClient, kafkaClient, opensearchClient, ctx)
+	basicAuthRootGroup.Use()
+	{
+		hostToHostControllerGroup := basicAuthRootGroup.Group(constants.HOST_TO_HOST)
+		hostToHostControllerGroup.Use()
+		{
+			hostToHostControllerGroup.GET("/"+constants.SALES_ORDERS_PATH, hostToHostController.GetSalesOrders)
+		}
+	}
+
 	//
 	//oauthRootGroup.Use(middlewares.OauthMiddleware(mongod))
 	//{
