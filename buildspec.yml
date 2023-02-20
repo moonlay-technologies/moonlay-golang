@@ -15,7 +15,7 @@ phases:
     commands:
       - echo "Building the docker image.."
       - DOCKER_BUILDKIT=1 docker build -t $REPOSITORY_NAME:$HANDLER_TYPE-$REPOSITORY_SLUG-latest --build-arg APP_ENV=$REPOSITORY_ENV_BRANCH --build-arg COMMAND_TYPE=main -f Dockerfile .
-      - docker tag $REPOSITORY_NAME:$REPOSITORY_SLUG-latest 650142038379.dkr.ecr.ap-southeast-1.amazonaws.com/$REPOSITORY_NAME:$HANDLER_TYPE-$REPOSITORY_SLUG-latest
+      - docker tag $REPOSITORY_NAME:$HANDLER_TYPE-$REPOSITORY_SLUG-latest 650142038379.dkr.ecr.ap-southeast-1.amazonaws.com/$REPOSITORY_NAME:$HANDLER_TYPE-$REPOSITORY_SLUG-latest
   post_build:
     commands:
       - echo "Push to ECR"
