@@ -39,6 +39,6 @@ WORKDIR /src/app
 
 RUN chmod +x ./ordersrv
 
-EXPOSE 5000
+EXPOSE 8000
 ENTRYPOINT ["/src/app/ordersrv"]
 CMD ["ordersrv"]
