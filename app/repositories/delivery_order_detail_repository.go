@@ -390,7 +390,17 @@ func (r *deliveryOrderDetail) Insert(request *models.DeliveryOrderDetail, sqlTra
 		rawSqlValues = append(rawSqlValues, request.StartDateSyncToEs.Format("2006-01-02 15:04:05"))
 	}
 
+	if request.EndDateSyncToEs != nil {
+		rawSqlFields = append(rawSqlFields, "end_date_sync_to_es")
+		rawSqlDataTypes = append(rawSqlDataTypes, "?")
+		rawSqlValues = append(rawSqlValues, request.StartDateSyncToEs.Format("2006-01-02 15:04:05"))
+	}
+
 	rawSqlFields = append(rawSqlFields, "created_at")
+	rawSqlDataTypes = append(rawSqlDataTypes, "?")
+	rawSqlValues = append(rawSqlValues, request.CreatedAt.Format("2006-01-02 15:04:05"))
+
+	rawSqlFields = append(rawSqlFields, "updated_at")
 	rawSqlDataTypes = append(rawSqlDataTypes, "?")
 	rawSqlValues = append(rawSqlValues, request.CreatedAt.Format("2006-01-02 15:04:05"))
 

@@ -65,49 +65,44 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		}
 	}
 
-	mustActiveField := []*models.MustActiveRequest{
-		{
-			Table:    "agents",
-			ReqField: "agent_id",
-			Clause:   fmt.Sprintf("id = %d AND status = '%s'", insertRequest.AgentID, "active"),
-		},
-		{
-			Table:    "stores",
-			ReqField: "store_id",
-			Clause:   fmt.Sprintf("id = %d AND status = '%s'", insertRequest.StoreID, "active"),
-		},
-	}
+	// mustActiveField := []*models.MustActiveRequest{
+	// 	{
+	// 		Table:    "agents",
+	// 		ReqField: "agent_id",
+	// 		Clause:   fmt.Sprintf("id = %d AND status = '%s'", insertRequest.AgentID, "active"),
+	// 	},
+	// 	{
+	// 		Table:    "stores",
+	// 		ReqField: "store_id",
+	// 		Clause:   fmt.Sprintf("id = %d AND status = '%s'", insertRequest.StoreID, "active"),
+	// 	},
+	// }
 
-	for i, v := range insertRequest.DeliveryOrderDetails {
-		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
-			Table:    "brands",
-			ReqField: fmt.Sprintf("delivery_order_details[%d].brand_id", i),
-			Clause:   fmt.Sprintf("id = %d AND status_active = %d", v.BrandID, 1),
-		})
-		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
-			Table:    "products",
-			ReqField: fmt.Sprintf("delivery_order_details[%d].product_id", i),
-			Clause:   fmt.Sprintf("id = %d AND isActive = %d", v.ProductID, 1),
-		})
-		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
-			Table:    "uoms",
-			ReqField: fmt.Sprintf("delivery_order_details[%d].uom_id", i),
-			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", v.UomID),
-		})
-	}
+	// for i, v := range insertRequest.DeliveryOrderDetails {
+	// 	mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+	// 		Table:    "brands",
+	// 		ReqField: fmt.Sprintf("delivery_order_details[%d].brand_id", i),
+	// 		Clause:   fmt.Sprintf("id = %d AND status_active = %d", v.BrandID, 1),
+	// 	})
+	// 	mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+	// 		Table:    "products",
+	// 		ReqField: fmt.Sprintf("delivery_order_details[%d].product_id", i),
+	// 		Clause:   fmt.Sprintf("id = %d AND isActive = %d", v.ProductID, 1),
+	// 	})
+	// 	mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+	// 		Table:    "uoms",
+	// 		ReqField: fmt.Sprintf("delivery_order_details[%d].uom_id", i),
+	// 		Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", v.UomID),
+	// 	})
+	// }
 
-	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
-	if err != nil {
-		fmt.Println("Error active validation", err)
-		return
-	}
+	// err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
+	// if err != nil {
+	// 	fmt.Println("Error active validation", err)
+	// 	return
+	// }
 
 	uniqueField := []*models.UniqueRequest{
-		{
-			Table: constants.DELIVERY_ORDERS_TABLE,
-			Field: "do_code",
-			Value: insertRequest.DoCode,
-		},
 		{
 			Table: constants.DELIVERY_ORDERS_TABLE,
 			Field: "do_ref_code",
@@ -166,35 +161,47 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 	for _, v := range deliveryOrder.DeliveryOrderDetails {
 		deliveryOrderDetailResult := models.DeliveryOrderDetailStoreResponse{
 			DeliveryOrderID: v.DeliveryOrderID,
+			OrderStatusID:   v.OrderStatus.ID,
 			SoDetailID:      v.SoDetailID,
 			ProductSku:      v.ProductSKU,
 			ProductName:     v.ProductName,
-			UomCode:         v.Uom.Code.String,
-			Qty:             v.Qty,
+			SalesOrderQty:   v.SoDetail.Qty,
+			SentQty:         v.SoDetail.SentQty,
 			ResidualQty:     v.SoDetail.ResidualQty,
+			UomCode:         v.Uom.Code.String,
+			Price:           int(v.SoDetail.Price),
+			Qty:             v.Qty,
 			Note:            v.Note.String,
 		}
 		deliveryOrderDetailResults = append(deliveryOrderDetailResults, &deliveryOrderDetailResult)
 	}
 
+	storeProvinceID, _ := strconv.Atoi(deliveryOrder.Store.ProvinceID.String)
+	storeCityID, _ := strconv.Atoi(deliveryOrder.Store.CityID.String)
 	deliveryOrderResult := &models.DeliveryOrderStoreResponse{
 		SalesOrderID:              deliveryOrder.SalesOrderID,
+		SalesOrderOrderStatusID:   deliveryOrder.SalesOrder.OrderStatusID,
+		SalesOrderOrderStatusName: deliveryOrder.SalesOrder.OrderStatusName,
 		SalesOrderSoCode:          deliveryOrder.SalesOrder.SoCode,
 		SalesOrderSoDate:          deliveryOrder.SalesOrder.SoDate,
 		SalesOrderReferralCode:    deliveryOrder.SalesOrder.SoRefCode.String,
 		SalesOrderNote:            deliveryOrder.SalesOrder.Note.String,
 		SalesOrderInternalComment: deliveryOrder.SalesOrder.InternalComment.String,
+		SalesmanID:                deliveryOrder.Salesman.ID,
 		SalesmanName:              deliveryOrder.Salesman.Name,
 		StoreName:                 deliveryOrder.Store.Name.String,
-		StoreCityName:             deliveryOrder.Store.Name.String,
-		StoreProvinceName:         deliveryOrder.Store.ProvinceName.String,
+		StoreProvinceID:           storeProvinceID,
+		StoreProvince:             deliveryOrder.Store.ProvinceName.String,
+		StoreCityID:               storeCityID,
+		StoreCity:                 deliveryOrder.Store.CityName.String,
 		TotalAmount:               int(deliveryOrder.SalesOrder.TotalAmount),
 		WarehouseID:               deliveryOrder.WarehouseID,
+		WarehouseName:             deliveryOrder.Warehouse.Name,
 		WarehouseAddress:          deliveryOrder.Warehouse.Address.String,
 		OrderSourceID:             deliveryOrder.OrderSourceID,
+		OrderSourceName:           deliveryOrder.OrderSource.SourceName,
 		OrderStatusID:             deliveryOrder.OrderStatusID,
-		AgentID:                   deliveryOrder.AgentID,
-		StoreID:                   deliveryOrder.StoreID,
+		OrderStatusName:           deliveryOrder.OrderStatus.Name,
 		DoCode:                    deliveryOrder.DoCode,
 		DoDate:                    deliveryOrder.DoDate,
 		DoRefCode:                 deliveryOrder.DoRefCode.String,
@@ -202,6 +209,7 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		DriverName:                deliveryOrder.DriverName.String,
 		PlatNumber:                deliveryOrder.PlatNumber.String,
 		Note:                      deliveryOrder.Note.String,
+		InternalComment:           deliveryOrder.SalesOrder.InternalComment.String,
 		DeliveryOrderDetails:      deliveryOrderDetailResults,
 	}
 
