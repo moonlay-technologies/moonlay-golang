@@ -187,6 +187,7 @@ type DeliveryOrders struct {
 }
 
 type DeliveryOrderOpenSearchResponse struct {
+	ID                  int                                            `json:"id,omitempty" bson:"id,omitempty"`
 	SalesOrderID        int                                            `json:"sales_order_id,omitempty" bson:"sales_order_id,omitempty"`
 	WarehouseID         int                                            `json:"warehouse_id,omitempty" bson:"warehouse_id,omitempty"`
 	OrderSourceID       int                                            `json:"order_source_id,omitempty" bson:"order_source_id,omitempty"`

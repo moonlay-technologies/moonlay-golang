@@ -720,6 +720,7 @@ func (u *deliveryOrderUseCase) Get(request *models.DeliveryOrderRequest) (*model
 	deliveryOrderResult := []*models.DeliveryOrderOpenSearchResponse{}
 	for _, v := range getDeliveryOrdersResult.DeliveryOrders {
 		deliveryOrder := models.DeliveryOrderOpenSearchResponse{
+			ID:            v.ID,
 			SalesOrderID:  v.SalesOrderID,
 			WarehouseID:   v.WarehouseID,
 			OrderSourceID: v.OrderSourceID,
