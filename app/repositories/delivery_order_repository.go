@@ -328,6 +328,28 @@ func (r *deliveryOrder) Insert(request *models.DeliveryOrder, sqlTransaction *sq
 		rawSqlValues = append(rawSqlValues, request.EndDateSyncToEs.Format("2006-01-02 15:04:05"))
 	}
 
+	if request.StartCreatedDate != nil {
+		rawSqlFields = append(rawSqlFields, "start_created_date")
+		rawSqlDataTypes = append(rawSqlDataTypes, "?")
+		rawSqlValues = append(rawSqlValues, request.StartCreatedDate.Format("2006-01-02 15:04:05"))
+	}
+
+	if request.EndCreatedDate != nil {
+		rawSqlFields = append(rawSqlFields, "end_created_date")
+		rawSqlDataTypes = append(rawSqlDataTypes, "?")
+		rawSqlValues = append(rawSqlValues, request.EndCreatedDate.Format("2006-01-02 15:04:05"))
+	}
+
+	if request.CreatedBy != 0 {
+		rawSqlFields = append(rawSqlFields, "created_by")
+		rawSqlDataTypes = append(rawSqlDataTypes, "?")
+		rawSqlValues = append(rawSqlValues, request.CreatedBy)
+	}
+
+	rawSqlFields = append(rawSqlFields, "latest_updated_by")
+	rawSqlDataTypes = append(rawSqlDataTypes, "?")
+	rawSqlValues = append(rawSqlValues, request.LatestUpdatedBy.Format("2006-01-02 15:04:05"))
+
 	rawSqlFields = append(rawSqlFields, "created_at")
 	rawSqlDataTypes = append(rawSqlDataTypes, "?")
 	rawSqlValues = append(rawSqlValues, request.CreatedAt.Format("2006-01-02 15:04:05"))

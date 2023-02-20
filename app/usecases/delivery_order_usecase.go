@@ -89,23 +89,180 @@ func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.Deli
 	}
 }
 
+// func (u *deliveryOrderUseCase) Creates(request *models.DeliveryOrderStoreRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.DeliveryOrder, *model.ErrorLog) {
+// 	now := time.Now()
+
+// 	getOrderStatusResultChan := make(chan *models.OrderStatusChan)
+// 	go u.orderStatusRepository.GetByNameAndType("open", "delivery_order", false, ctx, getOrderStatusResultChan)
+// 	getOrderStatusResult := <-getOrderStatusResultChan
+
+// 	if getOrderStatusResult.Error != nil {
+// 		return &models.DeliveryOrder{}, getOrderStatusResult.ErrorLog
+// 	}
+
+// 	getOrderSourceResultChan := make(chan *models.OrderSourceChan)
+// 	go u.orderSourceRepository.GetByID(request.OrderSourceID, false, ctx, getOrderSourceResultChan)
+// 	getOrderSourceResult := <-getOrderSourceResultChan
+
+// 	if getOrderSourceResult.Error != nil {
+// 		return &models.DeliveryOrder{}, getOrderSourceResult.ErrorLog
+// 	}
+
+// 	getWarehouseResultChan := make(chan *models.WarehouseChan)
+// 	go u.warehouseRepository.GetByID(request.WarehouseID, false, ctx, getWarehouseResultChan)
+// 	getWarehouseResult := <-getWarehouseResultChan
+
+// 	if getWarehouseResult.Error != nil {
+// 		return &models.DeliveryOrder{}, getWarehouseResult.ErrorLog
+// 	}
+
+// 	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
+// 	go u.salesOrderRepository.GetByID(request.SalesOrderID, false, ctx, getSalesOrderResultChan)
+// 	getSalesOrderResult := <-getSalesOrderResultChan
+
+// 	if getSalesOrderResult.Error != nil {
+// 		return &models.DeliveryOrder{}, getSalesOrderResult.ErrorLog
+// 	}
+
+// 	getStoreResultChan := make(chan *models.StoreChan)
+// 	go u.storeRepository.GetByID(request.StoreID, false, ctx, getStoreResultChan)
+// 	getStoreResult := <-getStoreResultChan
+
+// 	if getStoreResult.Error != nil {
+// 		return &models.DeliveryOrder{}, getStoreResult.ErrorLog
+// 	}
+
+// 	getUserResultChan := make(chan *models.UserChan)
+// 	go u.userRepository.GetByID(getSalesOrderResult.SalesOrder.UserID, false, ctx, getUserResultChan)
+// 	getUserResult := <-getUserResultChan
+
+// 	if getUserResult.Error != nil {
+// 		return &models.DeliveryOrder{}, getUserResult.ErrorLog
+// 	}
+
+// 	getSalesmanResultChan := make(chan *models.SalesmanChan)
+// 	go u.salesmanRepository.GetByEmail(getUserResult.User.Email, false, ctx, getSalesmanResultChan)
+// 	getSalesmanResult := <-getSalesmanResultChan
+
+// 	if getSalesmanResult.Error != nil {
+// 		return &models.DeliveryOrder{}, getSalesmanResult.ErrorLog
+// 	}
+// 	deliveryOrder := &models.DeliveryOrder{}
+// 	deliveryOrder.DeliveryOrderStoreRequestMap(request, now)
+// 	deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
+// 	deliveryOrder.Salesman = getSalesmanResult.Salesman
+// 	deliveryOrder.Store = getStoreResult.Store
+// 	deliveryOrder.OrderStatus = getOrderStatusResult.OrderStatus
+// 	deliveryOrder.OrderSource = getOrderSourceResult.OrderSource
+// 	deliveryOrder.OrderSourceID = getOrderSourceResult.OrderSource.ID
+// 	deliveryOrder.WarehouseChanMap(getWarehouseResult)
+
+// 	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
+// 	go u.deliveryOrderRepository.Insert(deliveryOrder, sqlTransaction, ctx, createDeliveryOrderResultChan)
+// 	createDeliveryOrderResult := <-createDeliveryOrderResultChan
+
+// 	if createDeliveryOrderResult.Error != nil {
+// 		return &models.DeliveryOrder{}, createDeliveryOrderResult.ErrorLog
+// 	}
+
+// 	deliveryOrderDetails := []*models.DeliveryOrderDetail{}
+
+// 	for _, doDetail := range request.DeliveryOrderDetails {
+// 		getSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
+// 		go u.salesOrderDetailRepository.GetByID(doDetail.SoDetailID, false, ctx, getSalesOrderDetailResultChan)
+// 		getSalesOrderDetailResult := <-getSalesOrderDetailResultChan
+
+// 		if getSalesOrderDetailResult.Error != nil {
+// 			return &models.DeliveryOrder{}, getSalesOrderDetailResult.ErrorLog
+// 		}
+
+// 		getProductOrderResultChan := make(chan *models.ProductChan)
+// 		go u.productRepository.GetByID(doDetail.ProductID, false, ctx, getProductOrderResultChan)
+// 		getProductResult := <-getProductOrderResultChan
+
+// 		if getProductResult.Error != nil {
+// 			return &models.DeliveryOrder{}, getProductResult.ErrorLog
+// 		}
+
+// 		getUomResultChan := make(chan *models.UomChan)
+// 		go u.uomRepository.GetByID(doDetail.UomID, false, ctx, getUomResultChan)
+// 		getUomResult := <-getUomResultChan
+
+// 		if getUomResult.Error != nil {
+// 			return &models.DeliveryOrder{}, getUomResult.ErrorLog
+// 		}
+
+// 		DoDetailCode, _ := helper.GenerateDODetailCode(int(createDeliveryOrderResult.ID), getSalesOrderResult.SalesOrder.AgentID, getSalesOrderDetailResult.SalesOrderDetail.ProductID, getSalesOrderDetailResult.SalesOrderDetail.UomID)
+
+// 		deliveryOrderDetail := &models.DeliveryOrderDetail{}
+// 		deliveryOrderDetail.DeliveryOrderDetailStoreRequestMap(doDetail, now)
+// 		deliveryOrderDetail.DeliveryOrderID = int(createDeliveryOrderResult.ID)
+// 		deliveryOrderDetail.BrandID = getSalesOrderResult.SalesOrder.BrandID
+// 		deliveryOrderDetail.DoDetailCode = DoDetailCode
+// 		deliveryOrderDetail.Note = models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}}
+// 		deliveryOrderDetail.Uom = getUomResult.Uom
+// 		deliveryOrderDetail.ProductChanMap(getProductResult)
+// 		deliveryOrderDetail.SalesOrderDetailChanMap(getSalesOrderDetailResult)
+
+// 		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
+// 		go u.deliveryOrderDetailRepository.Insert(deliveryOrderDetail, sqlTransaction, ctx, createDeliveryOrderDetailResultChan)
+// 		createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
+
+// 		if createDeliveryOrderDetailResult.Error != nil {
+// 			return &models.DeliveryOrder{}, createDeliveryOrderDetailResult.ErrorLog
+// 		}
+
+// 		deliveryOrderDetail.ID = int(createDeliveryOrderDetailResult.ID)
+// 		deliveryOrderDetails = append(deliveryOrderDetails, deliveryOrderDetail)
+// 	}
+
+// 	deliveryOrder.DeliveryOrderDetails = deliveryOrderDetails
+
+// 	deliveryOrderLog := &models.DeliveryOrderLog{
+// 		RequestID: request.RequestID,
+// 		DoCode:    request.DoCode,
+// 		Data:      deliveryOrder,
+// 		Status:    "0",
+// 		CreatedAt: &now,
+// 	}
+
+// 	createDeliveryOrderLogResultChan := make(chan *models.DeliveryOrderLogChan)
+// 	go u.deliveryOrderLogRepository.Insert(deliveryOrderLog, ctx, createDeliveryOrderLogResultChan)
+// 	createDeliveryOrderLogResult := <-createDeliveryOrderLogResultChan
+
+// 	if createDeliveryOrderLogResult.Error != nil {
+// 		return &models.DeliveryOrder{}, createDeliveryOrderLogResult.ErrorLog
+// 	}
+
+// 	keyKafka := []byte(deliveryOrder.DoCode)
+// 	messageKafka, _ := json.Marshal(deliveryOrder)
+// 	err := u.kafkaClient.WriteToTopic(constants.CREATE_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
+
+// 	if err != nil {
+// 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+// 		return &models.DeliveryOrder{}, errorLogData
+// 	}
+
+// 	return deliveryOrder, nil
+// }
+
 func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.DeliveryOrder, *model.ErrorLog) {
 	now := time.Now()
 
-	getOrderStatusResultChan := make(chan *models.OrderStatusChan)
-	go u.orderStatusRepository.GetByNameAndType("open", "delivery_order", false, ctx, getOrderStatusResultChan)
-	getOrderStatusResult := <-getOrderStatusResultChan
+	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderRepository.GetByID(request.SalesOrderID, false, ctx, getSalesOrderResultChan)
+	getSalesOrderResult := <-getSalesOrderResultChan
 
-	if getOrderStatusResult.Error != nil {
-		return &models.DeliveryOrder{}, getOrderStatusResult.ErrorLog
+	if getSalesOrderResult.Error != nil {
+		return &models.DeliveryOrder{}, getSalesOrderResult.ErrorLog
 	}
 
-	getOrderSourceResultChan := make(chan *models.OrderSourceChan)
-	go u.orderSourceRepository.GetByID(request.OrderSourceID, false, ctx, getOrderSourceResultChan)
-	getOrderSourceResult := <-getOrderSourceResultChan
+	getBrandResultChan := make(chan *models.BrandChan)
+	go u.brandRepository.GetByID(getSalesOrderResult.SalesOrder.BrandID, false, ctx, getBrandResultChan)
+	getBrandResult := <-getBrandResultChan
 
-	if getOrderSourceResult.Error != nil {
-		return &models.DeliveryOrder{}, getOrderSourceResult.ErrorLog
+	if getBrandResult.Error != nil {
+		return &models.DeliveryOrder{}, getBrandResult.ErrorLog
 	}
 
 	getWarehouseResultChan := make(chan *models.WarehouseChan)
@@ -116,16 +273,32 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		return &models.DeliveryOrder{}, getWarehouseResult.ErrorLog
 	}
 
-	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.GetByID(request.SalesOrderID, false, ctx, getSalesOrderResultChan)
-	getSalesOrderResult := <-getSalesOrderResultChan
+	getSalesOrderSourceResultChan := make(chan *models.OrderSourceChan)
+	go u.orderSourceRepository.GetByID(getSalesOrderResult.SalesOrder.OrderSourceID, false, ctx, getSalesOrderSourceResultChan)
+	getSalesOrderSourceResult := <-getSalesOrderSourceResultChan
 
-	if getSalesOrderResult.Error != nil {
-		return &models.DeliveryOrder{}, getSalesOrderResult.ErrorLog
+	if getSalesOrderSourceResult.Error != nil {
+		return &models.DeliveryOrder{}, getSalesOrderSourceResult.ErrorLog
+	}
+
+	getSalesOrderStatusResultChan := make(chan *models.OrderStatusChan)
+	go u.orderStatusRepository.GetByID(getSalesOrderResult.SalesOrder.OrderStatusID, false, ctx, getSalesOrderStatusResultChan)
+	getSalesOrderStatusResult := <-getSalesOrderStatusResultChan
+
+	if getSalesOrderStatusResult.Error != nil {
+		return &models.DeliveryOrder{}, getSalesOrderStatusResult.ErrorLog
+	}
+
+	getAgentResultChan := make(chan *models.AgentChan)
+	go u.agentRepository.GetByID(getSalesOrderResult.SalesOrder.AgentID, false, ctx, getAgentResultChan)
+	getAgentResult := <-getAgentResultChan
+
+	if getAgentResult.Error != nil {
+		return &models.DeliveryOrder{}, getAgentResult.ErrorLog
 	}
 
 	getStoreResultChan := make(chan *models.StoreChan)
-	go u.storeRepository.GetByID(request.StoreID, false, ctx, getStoreResultChan)
+	go u.storeRepository.GetByID(getSalesOrderResult.SalesOrder.StoreID, false, ctx, getStoreResultChan)
 	getStoreResult := <-getStoreResultChan
 
 	if getStoreResult.Error != nil {
@@ -147,15 +320,26 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	if getSalesmanResult.Error != nil {
 		return &models.DeliveryOrder{}, getSalesmanResult.ErrorLog
 	}
+
+	doCode := helper.GenerateDOCode(getAgentResult.Agent.ID, getSalesOrderSourceResult.OrderSource.Code)
+	doDate := now.Format("2006-01-02")
 	deliveryOrder := &models.DeliveryOrder{}
+
 	deliveryOrder.DeliveryOrderStoreRequestMap(request, now)
-	deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
-	deliveryOrder.Salesman = getSalesmanResult.Salesman
-	deliveryOrder.Store = getStoreResult.Store
-	deliveryOrder.OrderStatus = getOrderStatusResult.OrderStatus
-	deliveryOrder.OrderSource = getOrderSourceResult.OrderSource
-	deliveryOrder.OrderSourceID = getOrderSourceResult.OrderSource.ID
 	deliveryOrder.WarehouseChanMap(getWarehouseResult)
+	deliveryOrder.OrderStatus = getSalesOrderStatusResult.OrderStatus
+	deliveryOrder.OrderStatusID = getSalesOrderStatusResult.OrderStatus.ID
+	deliveryOrder.OrderSource = getSalesOrderSourceResult.OrderSource
+	deliveryOrder.OrderSourceID = getSalesOrderSourceResult.OrderSource.ID
+	deliveryOrder.Agent = getAgentResult.Agent
+	deliveryOrder.AgentID = getAgentResult.Agent.ID
+	deliveryOrder.Store = getStoreResult.Store
+	deliveryOrder.StoreID = getStoreResult.Store.ID
+	deliveryOrder.DoCode = doCode
+	deliveryOrder.DoDate = doDate
+	deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
+	deliveryOrder.Brand = getBrandResult.Brand
+	deliveryOrder.Salesman = getSalesmanResult.Salesman
 
 	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
 	go u.deliveryOrderRepository.Insert(deliveryOrder, sqlTransaction, ctx, createDeliveryOrderResultChan)
@@ -166,7 +350,6 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	}
 
 	deliveryOrderDetails := []*models.DeliveryOrderDetail{}
-
 	for _, doDetail := range request.DeliveryOrderDetails {
 		getSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
 		go u.salesOrderDetailRepository.GetByID(doDetail.SoDetailID, false, ctx, getSalesOrderDetailResultChan)
@@ -176,32 +359,41 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 			return &models.DeliveryOrder{}, getSalesOrderDetailResult.ErrorLog
 		}
 
-		getProductOrderResultChan := make(chan *models.ProductChan)
-		go u.productRepository.GetByID(doDetail.ProductID, false, ctx, getProductOrderResultChan)
-		getProductResult := <-getProductOrderResultChan
+		getOrderStatusDetailResultChan := make(chan *models.OrderStatusChan)
+		go u.orderStatusRepository.GetByID(getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID, false, ctx, getOrderStatusDetailResultChan)
+		getOrderStatusDetailResult := <-getOrderStatusDetailResultChan
 
-		if getProductResult.Error != nil {
-			return &models.DeliveryOrder{}, getProductResult.ErrorLog
+		if getOrderStatusDetailResult.Error != nil {
+			return &models.DeliveryOrder{}, getOrderStatusDetailResult.ErrorLog
 		}
 
-		getUomResultChan := make(chan *models.UomChan)
-		go u.uomRepository.GetByID(doDetail.UomID, false, ctx, getUomResultChan)
-		getUomResult := <-getUomResultChan
+		getProductDetailResultChan := make(chan *models.ProductChan)
+		go u.productRepository.GetByID(getSalesOrderDetailResult.SalesOrderDetail.ProductID, false, ctx, getProductDetailResultChan)
+		getProductDetailResult := <-getProductDetailResultChan
 
-		if getUomResult.Error != nil {
-			return &models.DeliveryOrder{}, getUomResult.ErrorLog
+		if getProductDetailResult.Error != nil {
+			return &models.DeliveryOrder{}, getProductDetailResult.ErrorLog
 		}
 
-		DoDetailCode, _ := helper.GenerateDODetailCode(int(createDeliveryOrderResult.ID), getSalesOrderResult.SalesOrder.AgentID, getSalesOrderDetailResult.SalesOrderDetail.ProductID, getSalesOrderDetailResult.SalesOrderDetail.UomID)
+		getUomDetailResultChan := make(chan *models.UomChan)
+		go u.uomRepository.GetByID(getSalesOrderDetailResult.SalesOrderDetail.UomID, false, ctx, getUomDetailResultChan)
+		getUomDetailResult := <-getUomDetailResultChan
+
+		if getUomDetailResult.Error != nil {
+			return &models.DeliveryOrder{}, getUomDetailResult.ErrorLog
+		}
+
+		doDetailCode, _ := helper.GenerateDODetailCode(createDeliveryOrderResult.DeliveryOrder.ID, getAgentResult.Agent.ID, getProductDetailResult.Product.ID, getUomDetailResult.Uom.ID)
 
 		deliveryOrderDetail := &models.DeliveryOrderDetail{}
 		deliveryOrderDetail.DeliveryOrderDetailStoreRequestMap(doDetail, now)
 		deliveryOrderDetail.DeliveryOrderID = int(createDeliveryOrderResult.ID)
-		deliveryOrderDetail.BrandID = getSalesOrderResult.SalesOrder.BrandID
-		deliveryOrderDetail.DoDetailCode = DoDetailCode
-		deliveryOrderDetail.Note = models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}}
-		deliveryOrderDetail.Uom = getUomResult.Uom
-		deliveryOrderDetail.ProductChanMap(getProductResult)
+		deliveryOrderDetail.OrderStatus = getOrderStatusDetailResult.OrderStatus
+		deliveryOrderDetail.BrandID = getBrandResult.Brand.ID
+		deliveryOrderDetail.DoDetailCode = doDetailCode
+		deliveryOrderDetail.Note = models.NullString{NullString: sql.NullString{String: doDetail.Note, Valid: true}}
+		deliveryOrderDetail.Uom = getUomDetailResult.Uom
+		deliveryOrderDetail.ProductChanMap(getProductDetailResult)
 		deliveryOrderDetail.SalesOrderDetailChanMap(getSalesOrderDetailResult)
 
 		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
@@ -220,7 +412,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 
 	deliveryOrderLog := &models.DeliveryOrderLog{
 		RequestID: request.RequestID,
-		DoCode:    request.DoCode,
+		DoCode:    doCode,
 		Data:      deliveryOrder,
 		Status:    "0",
 		CreatedAt: &now,
@@ -528,6 +720,7 @@ func (u *deliveryOrderUseCase) Get(request *models.DeliveryOrderRequest) (*model
 	deliveryOrderResult := []*models.DeliveryOrderOpenSearchResponse{}
 	for _, v := range getDeliveryOrdersResult.DeliveryOrders {
 		deliveryOrder := models.DeliveryOrderOpenSearchResponse{
+			ID:            v.ID,
 			SalesOrderID:  v.SalesOrderID,
 			WarehouseID:   v.WarehouseID,
 			OrderSourceID: v.OrderSourceID,
