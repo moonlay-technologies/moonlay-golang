@@ -39,25 +39,29 @@ type DeliveryOrderDetail struct {
 }
 
 type DeliveryOrderDetailStoreRequest struct {
-	DeliveryOrderID int    `json:"delivery_order_id,omitempty" bson:"delivery_order_id,omitempty" binding:"required"`
+	DeliveryOrderID int    `json:"delivery_order_id,omitempty" bson:"delivery_order_id,omitempty"`
 	SoDetailID      int    `json:"so_detail_id,omitempty" bson:"so_detail_id,omitempty" binding:"required"`
-	BrandID         int    `json:"brand_id,omitempty" bson:"brand_id,omitempty" binding:"required"`
-	ProductID       int    `json:"product_id,omitempty" bson:"product_id,omitempty" binding:"required"`
-	UomID           int    `json:"uom_id,omitempty" bson:"uom_id,omitempty" binding:"required"`
-	OrderStatusID   int    `json:"order_status_id,omitempty" bson:"order_status_id,omitempty" binding:"required"`
-	DoDetailCode    string `json:"do_detail_code,omitempty" bson:"do_detail_code,omitempty" binding:"required"`
+	BrandID         int    `json:"brand_id,omitempty" bson:"brand_id,omitempty"`
+	ProductID       int    `json:"product_id,omitempty" bson:"product_id,omitempty"`
+	UomID           int    `json:"uom_id,omitempty" bson:"uom_id,omitempty"`
+	OrderStatusID   int    `json:"order_status_id,omitempty" bson:"order_status_id,omitempty" `
+	DoDetailCode    string `json:"do_detail_code,omitempty" bson:"do_detail_code,omitempty"`
 	Qty             int    `json:"qty,omitempty" bson:"qty,omitempty" binding:"required"`
 	Note            string `json:"note,omitempty" bson:"note,omitempty"`
 }
 
 type DeliveryOrderDetailStoreResponse struct {
 	DeliveryOrderID int    `json:"delivery_order_id,omitempty" bson:"delivery_order_id,omitempty"`
+	OrderStatusID   int    `json:"order_status_id,omitempty" bson:"order_status_id,omitempty"`
 	SoDetailID      int    `json:"so_detail_id,omitempty" bson:"so_detail_id,omitempty"`
 	ProductSku      string `json:"product_sku,omitempty" bson:"product_sku,omitempty"`
 	ProductName     string `json:"product_name,omitempty" bson:"product_name,omitempty"`
-	UomCode         string `json:"uom_code,omitempty" bson:"uom_code,omitempty"`
-	Qty             int    `json:"qty,omitempty" bson:"qty,omitempty"`
+	SalesOrderQty   int    `json:"sales_order_qty,omitempty" bson:"sales_order_qty,omitempty"`
+	SentQty         int    `json:"sent_qty,omitempty" bson:"sent_qty,omitempty"`
 	ResidualQty     int    `json:"residual_qty,omitempty" bson:"residual_qty,omitempty"`
+	UomCode         string `json:"uom_code,omitempty" bson:"uom_code,omitempty"`
+	Price           int    `json:"price,omitempty" bson:"price,omitempty"`
+	Qty             int    `json:"qty,omitempty" bson:"qty,omitempty"`
 	Note            string `json:"note,omitempty" bson:"note,omitempty"`
 }
 

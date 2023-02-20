@@ -7,24 +7,19 @@ import (
 
 func (delicveryOrder *DeliveryOrder) DeliveryOrderStoreRequestMap(request *DeliveryOrderStoreRequest, now time.Time) {
 	delicveryOrder.SalesOrderID = request.SalesOrderID
-	delicveryOrder.StoreID = request.StoreID
-	delicveryOrder.AgentID = request.AgentID
 	delicveryOrder.WarehouseID = request.WarehouseID
-	delicveryOrder.OrderStatusID = request.OrderStatusID
-	delicveryOrder.DoCode = request.DoCode
-	delicveryOrder.DoDate = request.DoDate
 	delicveryOrder.DoRefCode = NullString{NullString: sql.NullString{String: request.DoRefCode, Valid: true}}
 	delicveryOrder.DoRefDate = NullString{NullString: sql.NullString{String: request.DoRefDate, Valid: true}}
 	delicveryOrder.DriverName = NullString{NullString: sql.NullString{String: request.DriverName, Valid: true}}
 	delicveryOrder.PlatNumber = NullString{NullString: sql.NullString{String: request.PlatNumber, Valid: true}}
-	delicveryOrder.IsDoneSyncToEs = "0"
 	delicveryOrder.Note = NullString{NullString: sql.NullString{String: request.Note, Valid: true}}
+	delicveryOrder.IsDoneSyncToEs = "0"
 	delicveryOrder.StartDateSyncToEs = &now
 	delicveryOrder.EndDateSyncToEs = &now
 	delicveryOrder.StartCreatedDate = &now
 	delicveryOrder.EndCreatedDate = &now
 	delicveryOrder.CreatedBy = request.SalesOrderID
-	delicveryOrder.LatestUpdatedBy = int(now.Unix())
+	delicveryOrder.LatestUpdatedBy = &now
 	delicveryOrder.CreatedAt = &now
 	delicveryOrder.UpdatedAt = &now
 	delicveryOrder.DeletedAt = nil
@@ -33,7 +28,9 @@ func (delicveryOrder *DeliveryOrder) DeliveryOrderStoreRequestMap(request *Deliv
 
 func (deliveryOrder *DeliveryOrder) WarehouseChanMap(request *WarehouseChan) {
 	deliveryOrder.Warehouse = request.Warehouse
+	deliveryOrder.WarehouseID = request.Warehouse.ID
 	deliveryOrder.WarehouseName = request.Warehouse.Name
+	deliveryOrder.WarehouseAddress = request.Warehouse.Address
 	deliveryOrder.WarehouseCode = request.Warehouse.Code
 	deliveryOrder.WarehouseProvinceName = request.Warehouse.ProvinceName
 	deliveryOrder.WarehouseCityName = request.Warehouse.CityName
