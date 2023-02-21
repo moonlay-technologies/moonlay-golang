@@ -75,7 +75,7 @@ func (c *createSalesOrderConsumerHandler) ProcessMessage() {
 			continue
 		}
 
-		go c.salesOrderLogRepository.GetByCollumn(constants.SALES_ORDER_CODE_COLLUMN, salesOrder.SoCode, false, c.ctx, salesOrderLogResultChan)
+		go c.salesOrderLogRepository.GetByCollumn(constants.COLUMN_SALES_ORDER_CODE, salesOrder.SoCode, false, c.ctx, salesOrderLogResultChan)
 		salesOrderDetailResult := <-salesOrderLogResultChan
 		if salesOrderDetailResult.Error != nil {
 			go c.salesOrderLogRepository.Insert(salesOrderLog, c.ctx, salesOrderLogResultChan)

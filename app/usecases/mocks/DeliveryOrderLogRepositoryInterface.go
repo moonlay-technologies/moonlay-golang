@@ -20,8 +20,8 @@ func (_m *DeliveryOrderLogRepositoryInterface) GetByID(ID string, countOnly bool
 }
 
 // GetByID provides a mock function with given fields: ID, countOnly, ctx, resultChan
-func (_m *DeliveryOrderLogRepositoryInterface) GetByCollumn(collumn string, value string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan) {
-	_m.Called(collumn, value, countOnly, ctx, resultChan)
+func (_m *DeliveryOrderLogRepositoryInterface) GetByCode(doCode string, status string, action string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan) {
+	_m.Called(doCode, status, action, countOnly, ctx, resultChan)
 }
 
 // Insert provides a mock function with given fields: request, ctx, result

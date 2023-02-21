@@ -12,6 +12,8 @@ type DeliveryOrderLog struct {
 	RequestID string             `json:"request_id,omitempty" bson:"request_id,omitempty"`
 	DoCode    string             `json:"do_code,omitempty" bson:"do_code,omitempty"`
 	Data      interface{}        `json:"data,omitempty" bson:"data,omitempty"`
+	Error     interface{}        `json:"error,omitempty" bson:"error,omitempty"`
+	Action    string             `json:"action,omitempty" bson:"action,omitempty"`
 	Status    string             `json:"status,omitempty" bson:"status,omitempty"`
 	CreatedAt *time.Time         `json:"created_at,omitempty" bson:"created_at,omitempty"`
 	UpdatedAt *time.Time         `json:"updated_at,omitempty" bson:"updated_at,omitempty"`

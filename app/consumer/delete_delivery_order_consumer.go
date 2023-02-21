@@ -31,7 +31,7 @@ type DeleteDeliveryOrderConsumerHandler struct {
 }
 
 func InitDeleteDeliveryOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, salesOrderUseCase usecases.SalesOrderUseCaseInterface, deliveryOrderUseCase usecases.DeliveryOrderUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UpdateDeliveryOrderConsumerHandlerInterface {
-	return &UpdateDeliveryOrderConsumerHandler{
+	return &DeleteDeliveryOrderConsumerHandler{
 		kafkaClient:                kafkaClient,
 		salesOrderUseCase:          salesOrderUseCase,
 		deliveryOrderUseCase:       deliveryOrderUseCase,
@@ -65,22 +65,26 @@ func (c *DeleteDeliveryOrderConsumerHandler) ProcessMessage() {
 		deliveryOrderLog := &models.DeliveryOrderLog{
 			RequestID: "",
 			DoCode:    "",
+			Action:    constants.LOG_ACTION_MONGO_DELETE,
 			Data:      m.Value,
 			Status:    constants.LOG_STATUS_MONGO_ERROR,
 			CreatedAt: &now,
 		}
 
 		if err != nil {
-			errorLogData := helper.WriteLogConsumer(constants.UPDATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
+			errorLogData := helper.WriteLogConsumer(constants.DELETE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
+			deliveryOrderLog.Error = errorLogData
 			go c.deliveryOrderLogRepository.Insert(deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
-			fmt.Println(errorLogData)
+			fmt.Println(deliveryOrderLog.Error)
 			continue
 		}
-		go c.deliveryOrderLogRepository.GetByCollumn(constants.DELIVERY_ORDER_CODE_COLLUMN, deliveryOrder.DoCode, false, c.ctx, deliveryOrderLogResultChan)
+		go c.deliveryOrderLogRepository.GetByCode(deliveryOrder.DoCode, constants.LOG_STATUS_MONGO_DEFAULT, deliveryOrderLog.Action, false, c.ctx, deliveryOrderLogResultChan)
 		deliveryOrderDetailResult := <-deliveryOrderLogResultChan
 		if deliveryOrderDetailResult.Error != nil {
+			errorLogData := helper.WriteLogConsumer(constants.DELETE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), deliveryOrderDetailResult.Error, http.StatusInternalServerError, nil)
+			deliveryOrderLog.Error = errorLogData
 			go c.deliveryOrderLogRepository.Insert(deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
-			fmt.Println(deliveryOrderDetailResult.Error)
+			fmt.Println(deliveryOrderLog.Error)
 			continue
 		}
 		deliveryOrderLog = deliveryOrderDetailResult.DeliveryOrderLog
@@ -91,61 +95,19 @@ func (c *DeleteDeliveryOrderConsumerHandler) ProcessMessage() {
 
 		if errorLog.Err != nil {
 			dbTransaction.Rollback()
-			errorLogData := helper.WriteLogConsumer(constants.UPDATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, nil)
+			errorLogData := helper.WriteLogConsumer(constants.DELETE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, nil)
+			deliveryOrderLog.Error = errorLogData
 			go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
-			fmt.Println(errorLogData)
+			fmt.Println(deliveryOrderLog.Error)
 			continue
 		}
 
 		err = dbTransaction.Commit()
 		if err != nil {
-			errorLogData := helper.WriteLogConsumer(constants.UPDATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
+			errorLogData := helper.WriteLogConsumer(constants.DELETE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
+			deliveryOrderLog.Error = errorLogData
 			go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
-			fmt.Println(errorLogData)
-			continue
-		}
-
-		salesOrderRequest := &models.SalesOrderRequest{
-			ID:            deliveryOrder.SalesOrderID,
-			OrderSourceID: deliveryOrder.OrderSourceID,
-		}
-
-		salesOrderWithDetail, errorLog := c.salesOrderUseCase.GetByIDWithDetail(salesOrderRequest, c.ctx)
-
-		if errorLog.Err != nil {
-			go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
-			fmt.Println(errorLog)
-			continue
-		}
-
-		errorLog = c.salesOrderUseCase.SyncToOpenSearchFromUpdateEvent(salesOrderWithDetail, c.ctx)
-
-		if errorLog.Err != nil {
-			go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
-			fmt.Println(errorLog)
-			continue
-		}
-
-		deliveryOrderRequest := &models.DeliveryOrderRequest{
-			ID: deliveryOrder.ID,
-		}
-
-		deliveryOrderWithDetail, errorLog := c.deliveryOrderUseCase.GetByID(deliveryOrderRequest, c.ctx)
-
-		if errorLog.Err != nil {
-			go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
-			fmt.Println(errorLog)
-			continue
-		}
-
-		salesOrderWithDetail.DeliveryOrders = nil
-		deliveryOrderWithDetail.SalesOrder = salesOrderWithDetail
-		errorLog = c.deliveryOrderUseCase.SyncToOpenSearchFromUpdateEvent(deliveryOrderWithDetail, c.ctx)
-
-		if errorLog.Err != nil {
-			go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
-			errorLogData := helper.WriteLogConsumer(constants.UPDATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, nil)
-			fmt.Println(errorLogData)
+			fmt.Println(deliveryOrderLog.Error)
 			continue
 		}
 
