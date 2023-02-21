@@ -65,43 +65,6 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		}
 	}
 
-	// mustActiveField := []*models.MustActiveRequest{
-	// 	{
-	// 		Table:    "agents",
-	// 		ReqField: "agent_id",
-	// 		Clause:   fmt.Sprintf("id = %d AND status = '%s'", insertRequest.AgentID, "active"),
-	// 	},
-	// 	{
-	// 		Table:    "stores",
-	// 		ReqField: "store_id",
-	// 		Clause:   fmt.Sprintf("id = %d AND status = '%s'", insertRequest.StoreID, "active"),
-	// 	},
-	// }
-
-	// for i, v := range insertRequest.DeliveryOrderDetails {
-	// 	mustActiveField = append(mustActiveField, &models.MustActiveRequest{
-	// 		Table:    "brands",
-	// 		ReqField: fmt.Sprintf("delivery_order_details[%d].brand_id", i),
-	// 		Clause:   fmt.Sprintf("id = %d AND status_active = %d", v.BrandID, 1),
-	// 	})
-	// 	mustActiveField = append(mustActiveField, &models.MustActiveRequest{
-	// 		Table:    "products",
-	// 		ReqField: fmt.Sprintf("delivery_order_details[%d].product_id", i),
-	// 		Clause:   fmt.Sprintf("id = %d AND isActive = %d", v.ProductID, 1),
-	// 	})
-	// 	mustActiveField = append(mustActiveField, &models.MustActiveRequest{
-	// 		Table:    "uoms",
-	// 		ReqField: fmt.Sprintf("delivery_order_details[%d].uom_id", i),
-	// 		Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", v.UomID),
-	// 	})
-	// }
-
-	// err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
-	// if err != nil {
-	// 	fmt.Println("Error active validation", err)
-	// 	return
-	// }
-
 	uniqueField := []*models.UniqueRequest{
 		{
 			Table: constants.DELIVERY_ORDERS_TABLE,

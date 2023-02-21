@@ -62,7 +62,7 @@ func (r *orderSource) GetBySourceName(sourceName string, countOnly bool, ctx con
 		if countOnly == false {
 			orderSource = models.OrderSource{}
 			err = r.db.QueryRow(""+
-				"SELECT id, code, source_name  from order_sources as os"+
+				"SELECT os.id, os.code, os.source_name from order_sources as os "+
 				"WHERE os.deleted_at IS NULL AND os.source_name = ?", sourceName).
 				Scan(&orderSource.ID, &orderSource.Code, &orderSource.SourceName)
 
