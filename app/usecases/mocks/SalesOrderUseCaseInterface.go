@@ -94,12 +94,36 @@ func (_m *SalesOrderUseCaseInterface) GetByAgentID(request *models.SalesOrderReq
 }
 
 // GetByID provides a mock function with given fields: request, withDetail, ctx
-func (_m *SalesOrderUseCaseInterface) GetByID(request *models.SalesOrderRequest, withDetail bool, ctx context.Context) (*models.SalesOrder, *model.ErrorLog) {
-	ret := _m.Called(request, withDetail, ctx)
+func (_m *SalesOrderUseCaseInterface) GetByID(request *models.SalesOrderRequest,  ctx context.Context) ([]*models.SalesOrderOpenSearchResponse, *model.ErrorLog) {
+	ret := _m.Called(request,  ctx)
+
+	var r0 []*models.SalesOrderOpenSearchResponse
+	if rf, ok := ret.Get(0).(func(*models.SalesOrderRequest, context.Context) []*models.SalesOrderOpenSearchResponse); ok {
+		r0 = rf(request,  ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*models.SalesOrderOpenSearchResponse)
+		}
+	}
+
+	var r1 *model.ErrorLog
+	if rf, ok := ret.Get(1).(func(*models.SalesOrderRequest, context.Context) *model.ErrorLog); ok {
+		r1 = rf(request,  ctx)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*model.ErrorLog)
+		}
+	}
+
+	return r0, r1
+}
+
+func (_m *SalesOrderUseCaseInterface) GetByIDWithDetail(request *models.SalesOrderRequest, ctx context.Context) (*models.SalesOrder, *model.ErrorLog) {
+	ret := _m.Called(request, ctx)
 
 	var r0 *models.SalesOrder
-	if rf, ok := ret.Get(0).(func(*models.SalesOrderRequest, bool, context.Context) *models.SalesOrder); ok {
-		r0 = rf(request, withDetail, ctx)
+	if rf, ok := ret.Get(0).(func(*models.SalesOrderRequest, context.Context) *models.SalesOrder); ok {
+		r0 = rf(request, ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*models.SalesOrder)
@@ -107,8 +131,8 @@ func (_m *SalesOrderUseCaseInterface) GetByID(request *models.SalesOrderRequest,
 	}
 
 	var r1 *model.ErrorLog
-	if rf, ok := ret.Get(1).(func(*models.SalesOrderRequest, bool, context.Context) *model.ErrorLog); ok {
-		r1 = rf(request, withDetail, ctx)
+	if rf, ok := ret.Get(1).(func(*models.SalesOrderRequest, context.Context) *model.ErrorLog); ok {
+		r1 = rf(request, ctx)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*model.ErrorLog)

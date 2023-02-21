@@ -110,7 +110,7 @@ func (c *UpdateDeliveryOrderConsumerHandler) ProcessMessage() {
 			OrderSourceID: deliveryOrder.OrderSourceID,
 		}
 
-		salesOrderWithDetail, errorLog := c.salesOrderUseCase.GetByID(salesOrderRequest, true, c.ctx)
+		salesOrderWithDetail, errorLog := c.salesOrderUseCase.GetByIDWithDetail(salesOrderRequest, c.ctx)
 
 		if errorLog.Err != nil {
 			go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
