@@ -18,7 +18,6 @@ func (delicveryOrder *DeliveryOrder) DeliveryOrderStoreRequestMap(request *Deliv
 	delicveryOrder.EndDateSyncToEs = &now
 	delicveryOrder.StartCreatedDate = &now
 	delicveryOrder.EndCreatedDate = &now
-	delicveryOrder.CreatedBy = request.SalesOrderID
 	delicveryOrder.LatestUpdatedBy = &now
 	delicveryOrder.CreatedAt = &now
 	delicveryOrder.UpdatedAt = &now
