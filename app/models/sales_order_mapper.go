@@ -118,6 +118,7 @@ func (salesOrder *SalesOrder) SalesmanChanMap(request *SalesmanChan) {
 }
 
 func (result *SalesOrderResponse) CreateSoResponseMap(request *SalesOrder) {
+	result.SoCode = request.SoCode
 	result.StoreCode = request.StoreCode.String
 	result.StoreName = request.StoreName.String
 	result.StoreAddress = request.StoreAddress.String

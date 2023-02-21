@@ -23,7 +23,8 @@ import (
 type SalesOrderUseCaseInterface interface {
 	Create(request *models.SalesOrderStoreRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
 	Get(request *models.SalesOrderRequest) (*models.SalesOrdersOpenSearchResponse, *model.ErrorLog)
-	GetByID(request *models.SalesOrderRequest, withDetail bool, ctx context.Context) (*models.SalesOrder, *model.ErrorLog)
+	GetByID(request *models.SalesOrderRequest, ctx context.Context) ([]*models.SalesOrderOpenSearchResponse, *model.ErrorLog)
+	GetByIDWithDetail(request *models.SalesOrderRequest, ctx context.Context) (*models.SalesOrder, *model.ErrorLog)
 	GetByAgentID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
 	GetByStoreID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
 	GetBySalesmanID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
@@ -331,177 +332,197 @@ func (u *salesOrderUseCase) Get(request *models.SalesOrderRequest) (*models.Sale
 	return salesOrders, &model.ErrorLog{}
 }
 
-func (u *salesOrderUseCase) GetByID(request *models.SalesOrderRequest, withDetail bool, ctx context.Context) (*models.SalesOrder, *model.ErrorLog) {
+func (u *salesOrderUseCase) GetByID(request *models.SalesOrderRequest, ctx context.Context) ([]*models.SalesOrderOpenSearchResponse, *model.ErrorLog) {
 
-	if withDetail == true {
-		now := time.Now()
-		getSalesOrderResultChan := make(chan *models.SalesOrderChan)
-		go u.salesOrderRepository.GetByID(request.ID, false, ctx, getSalesOrderResultChan)
-		getSalesOrderResult := <-getSalesOrderResultChan
+	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderOpenSearchRepository.GetByID(request, getSalesOrderResultChan)
+	getSalesOrderResult := <-getSalesOrderResultChan
 
-		if getSalesOrderResult.Error != nil {
-			return &models.SalesOrder{}, getSalesOrderResult.ErrorLog
-		}
-
-		getSalesOrderDetailsResultChan := make(chan *models.SalesOrderDetailsChan)
-		go u.salesOrderDetailRepository.GetBySalesOrderID(request.ID, false, ctx, getSalesOrderDetailsResultChan)
-		getSalesOrderDetailsResult := <-getSalesOrderDetailsResultChan
-
-		if getSalesOrderDetailsResult.Error != nil {
-			return &models.SalesOrder{}, getSalesOrderDetailsResult.ErrorLog
-		}
-
-		getSalesOrderResult.SalesOrder.SalesOrderDetails = getSalesOrderDetailsResult.SalesOrderDetails
-
-		for k, v := range getSalesOrderDetailsResult.SalesOrderDetails {
-			getProductResultChan := make(chan *models.ProductChan)
-			go u.productRepository.GetByID(v.ProductID, false, ctx, getProductResultChan)
-			getProductResult := <-getProductResultChan
-
-			if getProductResult.Error != nil {
-				return &models.SalesOrder{}, getProductResult.ErrorLog
-			}
-
-			getSalesOrderDetailsResult.SalesOrderDetails[k].Product = getProductResult.Product
-
-			getUomResultChan := make(chan *models.UomChan)
-			go u.uomRepository.GetByID(v.UomID, false, ctx, getUomResultChan)
-			getUomResult := <-getUomResultChan
-
-			if getUomResult.Error != nil {
-				return &models.SalesOrder{}, getUomResult.ErrorLog
-			}
-
-			getSalesOrderDetailsResult.SalesOrderDetails[k].Uom = getUomResult.Uom
-
-			getOrderStatusDetailResultChan := make(chan *models.OrderStatusChan)
-			go u.orderStatusRepository.GetByID(v.OrderStatusID, false, ctx, getOrderStatusDetailResultChan)
-			getOrderStatusDetailResult := <-getOrderStatusDetailResultChan
-
-			if getOrderStatusDetailResult.Error != nil {
-				return &models.SalesOrder{}, getOrderStatusDetailResult.ErrorLog
-			}
-
-			getSalesOrderResult.SalesOrder.SalesOrderDetails[k].EndDateSyncToEs = &now
-			getSalesOrderResult.SalesOrder.SalesOrderDetails[k].IsDoneSyncToEs = "1"
-			getSalesOrderDetailsResult.SalesOrderDetails[k].OrderStatus = getOrderStatusDetailResult.OrderStatus
-		}
-
-		getSalesOrderResult.SalesOrder.SalesOrderDetails = getSalesOrderDetailsResult.SalesOrderDetails
-
-		getOrderStatusResultChan := make(chan *models.OrderStatusChan)
-		go u.orderStatusRepository.GetByID(getSalesOrderResult.SalesOrder.OrderStatusID, false, ctx, getOrderStatusResultChan)
-		getOrderStatusResult := <-getOrderStatusResultChan
-
-		if getOrderStatusResult.Error != nil {
-			return &models.SalesOrder{}, getOrderStatusResult.ErrorLog
-		}
-
-		getSalesOrderResult.SalesOrder.OrderStatus = getOrderStatusResult.OrderStatus
-
-		getOrderSourceResultChan := make(chan *models.OrderSourceChan)
-		go u.orderSourceRepository.GetByID(request.OrderSourceID, false, ctx, getOrderSourceResultChan)
-		getOrderSourceResult := <-getOrderSourceResultChan
-
-		if getOrderSourceResult.Error != nil {
-			return &models.SalesOrder{}, getOrderSourceResult.ErrorLog
-		}
-
-		getSalesOrderResult.SalesOrder.OrderSource = getOrderSourceResult.OrderSource
-
-		getAgentResultChan := make(chan *models.AgentChan)
-		go u.agentRepository.GetByID(getSalesOrderResult.SalesOrder.AgentID, false, ctx, getAgentResultChan)
-		getAgentResult := <-getAgentResultChan
-
-		if getAgentResult.Error != nil {
-			return &models.SalesOrder{}, getAgentResult.ErrorLog
-		}
-
-		getSalesOrderResult.SalesOrder.Agent = getAgentResult.Agent
-		getSalesOrderResult.SalesOrder.AgentName = models.NullString{NullString: sql.NullString{String: getAgentResult.Agent.Name, Valid: true}}
-		getSalesOrderResult.SalesOrder.AgentEmail = getAgentResult.Agent.Email
-		getSalesOrderResult.SalesOrder.AgentProvinceName = getAgentResult.Agent.ProvinceName
-		getSalesOrderResult.SalesOrder.AgentCityName = getAgentResult.Agent.CityName
-		getSalesOrderResult.SalesOrder.AgentDistrictName = getAgentResult.Agent.DistrictName
-		getSalesOrderResult.SalesOrder.AgentVillageName = getAgentResult.Agent.VillageName
-		getSalesOrderResult.SalesOrder.AgentAddress = getAgentResult.Agent.Address
-		getSalesOrderResult.SalesOrder.AgentPhone = getAgentResult.Agent.Phone
-		getSalesOrderResult.SalesOrder.AgentMainMobilePhone = getAgentResult.Agent.MainMobilePhone
-
-		getStoreResultChan := make(chan *models.StoreChan)
-		go u.storeRepository.GetByID(getSalesOrderResult.SalesOrder.StoreID, false, ctx, getStoreResultChan)
-		getStoreResult := <-getStoreResultChan
-
-		if getStoreResult.Error != nil {
-			return &models.SalesOrder{}, getStoreResult.ErrorLog
-		}
-
-		getSalesOrderResult.SalesOrder.Store = getStoreResult.Store
-		getSalesOrderResult.SalesOrder.StoreName = getStoreResult.Store.Name
-		getSalesOrderResult.SalesOrder.StoreCode = getStoreResult.Store.StoreCode
-		getSalesOrderResult.SalesOrder.StoreEmail = getStoreResult.Store.Email
-		getSalesOrderResult.SalesOrder.StoreProvinceName = getStoreResult.Store.ProvinceName
-		getSalesOrderResult.SalesOrder.StoreCityName = getStoreResult.Store.CityName
-		getSalesOrderResult.SalesOrder.StoreDistrictName = getStoreResult.Store.DistrictName
-		getSalesOrderResult.SalesOrder.StoreVillageName = getStoreResult.Store.VillageName
-		getSalesOrderResult.SalesOrder.StoreAddress = getStoreResult.Store.Address
-		getSalesOrderResult.SalesOrder.StorePhone = getStoreResult.Store.Phone
-		getSalesOrderResult.SalesOrder.StoreMainMobilePhone = getStoreResult.Store.MainMobilePhone
-
-		getBrandResultChan := make(chan *models.BrandChan)
-		go u.brandRepository.GetByID(getSalesOrderResult.SalesOrder.BrandID, false, ctx, getBrandResultChan)
-		getBrandResult := <-getBrandResultChan
-
-		if getBrandResult.Error != nil {
-			return &models.SalesOrder{}, getBrandResult.ErrorLog
-		}
-
-		getSalesOrderResult.SalesOrder.Brand = getBrandResult.Brand
-		getSalesOrderResult.SalesOrder.BrandName = getBrandResult.Brand.Name
-		getSalesOrderResult.SalesOrder.OrderSource = getOrderSourceResult.OrderSource
-		getSalesOrderResult.SalesOrder.OrderSourceName = getOrderSourceResult.OrderSource.SourceName
-		getSalesOrderResult.SalesOrder.OrderStatus = getOrderStatusResult.OrderStatus
-		getSalesOrderResult.SalesOrder.OrderStatusName = getOrderStatusResult.OrderStatus.Name
-
-		getUserResultChan := make(chan *models.UserChan)
-		go u.userRepository.GetByID(getSalesOrderResult.SalesOrder.UserID, false, ctx, getUserResultChan)
-		getUserResult := <-getUserResultChan
-
-		if getUserResult.Error != nil {
-			return &models.SalesOrder{}, getUserResult.ErrorLog
-		}
-
-		getSalesOrderResult.SalesOrder.User = getUserResult.User
-		getSalesOrderResult.SalesOrder.UserFirstName = getUserResult.User.FirstName
-		getSalesOrderResult.SalesOrder.UserLastName = getUserResult.User.LastName
-		getSalesOrderResult.SalesOrder.UserEmail = models.NullString{NullString: sql.NullString{String: getUserResult.User.Email, Valid: true}}
-
-		if getUserResult.User.RoleID.String == "3" {
-			getSalesmanResultChan := make(chan *models.SalesmanChan)
-			go u.salesmanRepository.GetByEmail(getUserResult.User.Email, false, ctx, getSalesmanResultChan)
-			getSalesmanResult := <-getSalesmanResultChan
-
-			if getSalesmanResult.Error != nil {
-				return &models.SalesOrder{}, getSalesmanResult.ErrorLog
-			}
-
-			getSalesOrderResult.SalesOrder.Salesman = getSalesmanResult.Salesman
-			getSalesOrderResult.SalesOrder.SalesmanName = models.NullString{NullString: sql.NullString{String: getSalesmanResult.Salesman.Name, Valid: true}}
-			getSalesOrderResult.SalesOrder.SalesmanEmail = getSalesmanResult.Salesman.Email
-		}
-
-		return getSalesOrderResult.SalesOrder, &model.ErrorLog{}
-	} else {
-		getSalesOrderResultChan := make(chan *models.SalesOrderChan)
-		go u.salesOrderOpenSearchRepository.GetByID(request, getSalesOrderResultChan)
-		getSalesOrderResult := <-getSalesOrderResultChan
-
-		if getSalesOrderResult.Error != nil {
-			return &models.SalesOrder{}, getSalesOrderResult.ErrorLog
-		}
-
-		return getSalesOrderResult.SalesOrder, &model.ErrorLog{}
+	if getSalesOrderResult.Error != nil {
+		return []*models.SalesOrderOpenSearchResponse{}, getSalesOrderResult.ErrorLog
 	}
+
+	var salesOrder models.SalesOrderOpenSearchResponse
+	salesOrder.SalesOrderOpenSearchResponseMap(getSalesOrderResult.SalesOrder)
+
+	var salesOrderDetails []*models.SalesOrderDetailOpenSearchResponse
+	for _, x := range getSalesOrderResult.SalesOrder.SalesOrderDetails {
+		var salesOrderDetail models.SalesOrderDetailOpenSearchResponse
+
+		salesOrderDetail.SalesOrderDetailOpenSearchResponseMap(x)
+
+		salesOrderDetails = append(salesOrderDetails, &salesOrderDetail)
+	}
+
+	salesOrder.SalesOrderDetails = salesOrderDetails
+
+	var salesOrders []*models.SalesOrderOpenSearchResponse
+	salesOrders = append(salesOrders, &salesOrder)
+
+	return salesOrders, &model.ErrorLog{}
+
+}
+
+func (u *salesOrderUseCase) GetByIDWithDetail(request *models.SalesOrderRequest, ctx context.Context) (*models.SalesOrder, *model.ErrorLog) {
+
+	now := time.Now()
+	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderRepository.GetByID(request.ID, false, ctx, getSalesOrderResultChan)
+	getSalesOrderResult := <-getSalesOrderResultChan
+
+	if getSalesOrderResult.Error != nil {
+		return &models.SalesOrder{}, getSalesOrderResult.ErrorLog
+	}
+
+	getSalesOrderDetailsResultChan := make(chan *models.SalesOrderDetailsChan)
+	go u.salesOrderDetailRepository.GetBySalesOrderID(request.ID, false, ctx, getSalesOrderDetailsResultChan)
+	getSalesOrderDetailsResult := <-getSalesOrderDetailsResultChan
+
+	if getSalesOrderDetailsResult.Error != nil {
+		return &models.SalesOrder{}, getSalesOrderDetailsResult.ErrorLog
+	}
+
+	getSalesOrderResult.SalesOrder.SalesOrderDetails = getSalesOrderDetailsResult.SalesOrderDetails
+
+	for k, v := range getSalesOrderDetailsResult.SalesOrderDetails {
+		getProductResultChan := make(chan *models.ProductChan)
+		go u.productRepository.GetByID(v.ProductID, false, ctx, getProductResultChan)
+		getProductResult := <-getProductResultChan
+
+		if getProductResult.Error != nil {
+			return &models.SalesOrder{}, getProductResult.ErrorLog
+		}
+
+		getSalesOrderDetailsResult.SalesOrderDetails[k].Product = getProductResult.Product
+
+		getUomResultChan := make(chan *models.UomChan)
+		go u.uomRepository.GetByID(v.UomID, false, ctx, getUomResultChan)
+		getUomResult := <-getUomResultChan
+
+		if getUomResult.Error != nil {
+			return &models.SalesOrder{}, getUomResult.ErrorLog
+		}
+
+		getSalesOrderDetailsResult.SalesOrderDetails[k].Uom = getUomResult.Uom
+
+		getOrderStatusDetailResultChan := make(chan *models.OrderStatusChan)
+		go u.orderStatusRepository.GetByID(v.OrderStatusID, false, ctx, getOrderStatusDetailResultChan)
+		getOrderStatusDetailResult := <-getOrderStatusDetailResultChan
+
+		if getOrderStatusDetailResult.Error != nil {
+			return &models.SalesOrder{}, getOrderStatusDetailResult.ErrorLog
+		}
+
+		getSalesOrderResult.SalesOrder.SalesOrderDetails[k].EndDateSyncToEs = &now
+		getSalesOrderResult.SalesOrder.SalesOrderDetails[k].IsDoneSyncToEs = "1"
+		getSalesOrderDetailsResult.SalesOrderDetails[k].OrderStatus = getOrderStatusDetailResult.OrderStatus
+	}
+
+	getSalesOrderResult.SalesOrder.SalesOrderDetails = getSalesOrderDetailsResult.SalesOrderDetails
+
+	getOrderStatusResultChan := make(chan *models.OrderStatusChan)
+	go u.orderStatusRepository.GetByID(getSalesOrderResult.SalesOrder.OrderStatusID, false, ctx, getOrderStatusResultChan)
+	getOrderStatusResult := <-getOrderStatusResultChan
+
+	if getOrderStatusResult.Error != nil {
+		return &models.SalesOrder{}, getOrderStatusResult.ErrorLog
+	}
+
+	getSalesOrderResult.SalesOrder.OrderStatus = getOrderStatusResult.OrderStatus
+
+	getOrderSourceResultChan := make(chan *models.OrderSourceChan)
+	go u.orderSourceRepository.GetByID(request.OrderSourceID, false, ctx, getOrderSourceResultChan)
+	getOrderSourceResult := <-getOrderSourceResultChan
+
+	if getOrderSourceResult.Error != nil {
+		return &models.SalesOrder{}, getOrderSourceResult.ErrorLog
+	}
+
+	getSalesOrderResult.SalesOrder.OrderSource = getOrderSourceResult.OrderSource
+
+	getAgentResultChan := make(chan *models.AgentChan)
+	go u.agentRepository.GetByID(getSalesOrderResult.SalesOrder.AgentID, false, ctx, getAgentResultChan)
+	getAgentResult := <-getAgentResultChan
+
+	if getAgentResult.Error != nil {
+		return &models.SalesOrder{}, getAgentResult.ErrorLog
+	}
+
+	getSalesOrderResult.SalesOrder.Agent = getAgentResult.Agent
+	getSalesOrderResult.SalesOrder.AgentName = models.NullString{NullString: sql.NullString{String: getAgentResult.Agent.Name, Valid: true}}
+	getSalesOrderResult.SalesOrder.AgentEmail = getAgentResult.Agent.Email
+	getSalesOrderResult.SalesOrder.AgentProvinceName = getAgentResult.Agent.ProvinceName
+	getSalesOrderResult.SalesOrder.AgentCityName = getAgentResult.Agent.CityName
+	getSalesOrderResult.SalesOrder.AgentDistrictName = getAgentResult.Agent.DistrictName
+	getSalesOrderResult.SalesOrder.AgentVillageName = getAgentResult.Agent.VillageName
+	getSalesOrderResult.SalesOrder.AgentAddress = getAgentResult.Agent.Address
+	getSalesOrderResult.SalesOrder.AgentPhone = getAgentResult.Agent.Phone
+	getSalesOrderResult.SalesOrder.AgentMainMobilePhone = getAgentResult.Agent.MainMobilePhone
+
+	getStoreResultChan := make(chan *models.StoreChan)
+	go u.storeRepository.GetByID(getSalesOrderResult.SalesOrder.StoreID, false, ctx, getStoreResultChan)
+	getStoreResult := <-getStoreResultChan
+
+	if getStoreResult.Error != nil {
+		return &models.SalesOrder{}, getStoreResult.ErrorLog
+	}
+
+	getSalesOrderResult.SalesOrder.Store = getStoreResult.Store
+	getSalesOrderResult.SalesOrder.StoreName = getStoreResult.Store.Name
+	getSalesOrderResult.SalesOrder.StoreCode = getStoreResult.Store.StoreCode
+	getSalesOrderResult.SalesOrder.StoreEmail = getStoreResult.Store.Email
+	getSalesOrderResult.SalesOrder.StoreProvinceName = getStoreResult.Store.ProvinceName
+	getSalesOrderResult.SalesOrder.StoreCityName = getStoreResult.Store.CityName
+	getSalesOrderResult.SalesOrder.StoreDistrictName = getStoreResult.Store.DistrictName
+	getSalesOrderResult.SalesOrder.StoreVillageName = getStoreResult.Store.VillageName
+	getSalesOrderResult.SalesOrder.StoreAddress = getStoreResult.Store.Address
+	getSalesOrderResult.SalesOrder.StorePhone = getStoreResult.Store.Phone
+	getSalesOrderResult.SalesOrder.StoreMainMobilePhone = getStoreResult.Store.MainMobilePhone
+
+	getBrandResultChan := make(chan *models.BrandChan)
+	go u.brandRepository.GetByID(getSalesOrderResult.SalesOrder.BrandID, false, ctx, getBrandResultChan)
+	getBrandResult := <-getBrandResultChan
+
+	if getBrandResult.Error != nil {
+		return &models.SalesOrder{}, getBrandResult.ErrorLog
+	}
+
+	getSalesOrderResult.SalesOrder.Brand = getBrandResult.Brand
+	getSalesOrderResult.SalesOrder.BrandName = getBrandResult.Brand.Name
+	getSalesOrderResult.SalesOrder.OrderSource = getOrderSourceResult.OrderSource
+	getSalesOrderResult.SalesOrder.OrderSourceName = getOrderSourceResult.OrderSource.SourceName
+	getSalesOrderResult.SalesOrder.OrderStatus = getOrderStatusResult.OrderStatus
+	getSalesOrderResult.SalesOrder.OrderStatusName = getOrderStatusResult.OrderStatus.Name
+
+	getUserResultChan := make(chan *models.UserChan)
+	go u.userRepository.GetByID(getSalesOrderResult.SalesOrder.UserID, false, ctx, getUserResultChan)
+	getUserResult := <-getUserResultChan
+
+	if getUserResult.Error != nil {
+		return &models.SalesOrder{}, getUserResult.ErrorLog
+	}
+
+	getSalesOrderResult.SalesOrder.User = getUserResult.User
+	getSalesOrderResult.SalesOrder.UserFirstName = getUserResult.User.FirstName
+	getSalesOrderResult.SalesOrder.UserLastName = getUserResult.User.LastName
+	getSalesOrderResult.SalesOrder.UserEmail = models.NullString{NullString: sql.NullString{String: getUserResult.User.Email, Valid: true}}
+
+	if getUserResult.User.RoleID.String == "3" {
+		getSalesmanResultChan := make(chan *models.SalesmanChan)
+		go u.salesmanRepository.GetByEmail(getUserResult.User.Email, false, ctx, getSalesmanResultChan)
+		getSalesmanResult := <-getSalesmanResultChan
+
+		if getSalesmanResult.Error != nil {
+			return &models.SalesOrder{}, getSalesmanResult.ErrorLog
+		}
+
+		getSalesOrderResult.SalesOrder.Salesman = getSalesmanResult.Salesman
+		getSalesOrderResult.SalesOrder.SalesmanName = models.NullString{NullString: sql.NullString{String: getSalesmanResult.Salesman.Name, Valid: true}}
+		getSalesOrderResult.SalesOrder.SalesmanEmail = getSalesmanResult.Salesman.Email
+	}
+
+	return getSalesOrderResult.SalesOrder, &model.ErrorLog{}
+
 }
 
 func (u *salesOrderUseCase) GetByAgentID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog) {
@@ -592,26 +613,26 @@ func (u *salesOrderUseCase) GetByOrderSourceID(request *models.SalesOrderRequest
 func (u *salesOrderUseCase) SyncToOpenSearchFromCreateEvent(salesOrder *models.SalesOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
 	now := time.Now()
 
-	deliveryOrdersRequest := &models.DeliveryOrderRequest{
-		SalesOrderID: salesOrder.ID,
-	}
+	// deliveryOrdersRequest := &models.DeliveryOrderRequest{
+	// 	SalesOrderID: salesOrder.ID,
+	// }
 
-	getDeliveryOrdersResultChan := make(chan *models.DeliveryOrdersChan)
-	go u.deliveryOrderOpenSearchRepository.GetBySalesOrderID(deliveryOrdersRequest, getDeliveryOrdersResultChan)
-	getDeliveryOrdersResult := <-getDeliveryOrdersResultChan
-	deliveryOrdersFound := true
+	// getDeliveryOrdersResultChan := make(chan *models.DeliveryOrdersChan)
+	// go u.deliveryOrderOpenSearchRepository.GetBySalesOrderID(deliveryOrdersRequest, getDeliveryOrdersResultChan)
+	// getDeliveryOrdersResult := <-getDeliveryOrdersResultChan
+	// deliveryOrdersFound := true
 
-	if getDeliveryOrdersResult.Error != nil {
-		deliveryOrdersFound = false
-		if !strings.Contains(getDeliveryOrdersResult.Error.Error(), "not found") {
-			errorLogData := helper.WriteLog(getDeliveryOrdersResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-	}
+	// if getDeliveryOrdersResult.Error != nil {
+	// 	deliveryOrdersFound = false
+	// 	if !strings.Contains(getDeliveryOrdersResult.Error.Error(), "not found") {
+	// 		errorLogData := helper.WriteLog(getDeliveryOrdersResult.Error, http.StatusInternalServerError, nil)
+	// 		return errorLogData
+	// 	}
+	// }
 
-	if deliveryOrdersFound == true {
-		salesOrder.DeliveryOrders = getDeliveryOrdersResult.DeliveryOrders
-	}
+	// if deliveryOrdersFound == true {
+	// 	salesOrder.DeliveryOrders = getDeliveryOrdersResult.DeliveryOrders
+	// }
 
 	for k, v := range salesOrder.SalesOrderDetails {
 		getProductResultChan := make(chan *models.ProductChan)
