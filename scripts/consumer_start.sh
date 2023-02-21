@@ -1,7 +1,7 @@
 #bin/bash
 aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin 650142038379.dkr.ecr.ap-southeast-1.amazonaws.com
 docker pull 650142038379.dkr.ecr.ap-southeast-1.amazonaws.com/order-service:consumer-"$DEPLOYMENT_GROUP_NAME"-latest
-docker run --restart always --log-opt awslogs-stream=order-service-api -d -p 8000:8000 --name order-service 650142038379.dkr.ecr.ap-southeast-1.amazonaws.com/order-service:consumer-"$DEPLOYMENT_GROUP_NAME"-latest
+docker run --restart always --log-opt awslogs-stream=order-service-consumer -d -p 8000:8000 --name order-service 650142038379.dkr.ecr.ap-southeast-1.amazonaws.com/order-service:consumer-"$DEPLOYMENT_GROUP_NAME"-latest
 cloudfront_id=""
 docker exec -i order-service screen -dmS create_sales_order ./ordersrv consumer create-sales-order create-sales-order create-so-group 0 0
 docker exec -i order-service screen -dmS update_sales_order ./ordersrv consumer update-sales-order update-sales-order update-so-group 0 0
