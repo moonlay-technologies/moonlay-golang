@@ -101,6 +101,7 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 		hostToHostControllerGroup.Use()
 		{
 			hostToHostControllerGroup.GET("/"+constants.SALES_ORDERS_PATH, hostToHostController.GetSalesOrders)
+			hostToHostControllerGroup.GET("/"+constants.DELIVERY_ORDERS_PATH, hostToHostController.GetDeliveryOrders)
 		}
 	}
 
