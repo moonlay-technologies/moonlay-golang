@@ -115,3 +115,8 @@ type SalesOrderDetailOpenSearchResponse struct {
 	Note          NullString                     `json:"note,omitempty" bson:"note,omitempty"`
 	CreatedAt     *time.Time                     `json:"created_at,omitempty" bson:"created_at,omitempty"`
 }
+
+type SalesOrderDetailsOpenSearchResponse struct {
+	SalesOrderDetails []*SalesOrderDetailOpenSearchResponse `json:"sales_order_details,omitempty"`
+	Total             int64                                 `json:"total,omitempty"`
+}

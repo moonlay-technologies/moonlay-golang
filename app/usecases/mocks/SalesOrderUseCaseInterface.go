@@ -286,6 +286,30 @@ func (_m *SalesOrderUseCaseInterface) UpdateSODetailBySOId(SoId int, request []*
 	return nil, nil
 }
 
+func (_m *SalesOrderUseCaseInterface) GetDetails(request *models.SalesOrderRequest) (*models.SalesOrderDetailsOpenSearchResponse, *model.ErrorLog)  {
+	ret := _m.Called(request)
+
+	var r0 *models.SalesOrderDetailsOpenSearchResponse
+	if rf, ok := ret.Get(0).(func(*models.SalesOrderRequest) *models.SalesOrderDetailsOpenSearchResponse); ok {
+		r0 = rf(request)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*models.SalesOrderDetailsOpenSearchResponse)
+		}
+	}
+
+	var r1 *model.ErrorLog
+	if rf, ok := ret.Get(1).(func(*models.SalesOrderRequest) *model.ErrorLog); ok {
+		r1 = rf(request)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*model.ErrorLog)
+		}
+	}
+
+	return r0, r1
+}
+
 type mockConstructorTestingTNewSalesOrderUseCaseInterface interface {
 	mock.TestingT
 	Cleanup(func())
@@ -300,5 +324,4 @@ func NewSalesOrderUseCaseInterface(t mockConstructorTestingTNewSalesOrderUseCase
 
 	return mock
 }
-
 
