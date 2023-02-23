@@ -66,6 +66,7 @@ func (c *createDeliveryOrderConsumerHandler) ProcessMessage() {
 			RequestID: "",
 			DoCode:    "",
 			Data:      m.Value,
+			Action:    constants.LOG_ACTION_MONGO_INSERT,
 			Status:    constants.LOG_STATUS_MONGO_ERROR,
 			CreatedAt: &now,
 		}
@@ -76,7 +77,7 @@ func (c *createDeliveryOrderConsumerHandler) ProcessMessage() {
 			fmt.Println(errorLogData)
 			continue
 		}
-		go c.deliveryOrderLogRepository.GetByCollumn(constants.DELIVERY_ORDER_CODE_COLLUMN, deliveryOrder.DoCode, false, c.ctx, deliveryOrderLogResultChan)
+		go c.deliveryOrderLogRepository.GetByCode(deliveryOrder.DoCode, constants.LOG_STATUS_MONGO_DEFAULT, deliveryOrderLog.Action, false, c.ctx, deliveryOrderLogResultChan)
 		deliveryOrderDetailResult := <-deliveryOrderLogResultChan
 		if deliveryOrderDetailResult.Error != nil {
 			go c.deliveryOrderLogRepository.Insert(deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)

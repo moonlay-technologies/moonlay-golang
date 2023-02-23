@@ -274,6 +274,22 @@ func (_m *SalesOrderUseCaseInterface) SyncToOpenSearchFromUpdateEvent(salesOrder
 	return r0
 }
 
+// SyncToOpenSearchFromDeleteEvent provides a mock function with given fields: salesOrder, ctx
+func (_m *SalesOrderUseCaseInterface) SyncToOpenSearchFromDeleteEvent(salesOrder *models.SalesOrder, ctx context.Context) *model.ErrorLog {
+	ret := _m.Called(salesOrder, ctx)
+
+	var r0 *model.ErrorLog
+	if rf, ok := ret.Get(0).(func(*models.SalesOrder, context.Context) *model.ErrorLog); ok {
+		r0 = rf(salesOrder, ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.ErrorLog)
+		}
+	}
+
+	return r0
+}
+
 func (_m *SalesOrderUseCaseInterface) UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog) {
 	return nil, nil
 }
@@ -325,3 +341,6 @@ func NewSalesOrderUseCaseInterface(t mockConstructorTestingTNewSalesOrderUseCase
 	return mock
 }
 
+func (_m *SalesOrderUseCaseInterface) DeleteById(id int, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog) {
+	return nil, nil
+}

@@ -29,8 +29,8 @@ type DeleteSalesOrderConsumerHandler struct {
 	salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface
 }
 
-func InitDeleteSalesOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface, salesOrderUseCase usecases.SalesOrderUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UpdateSalesOrderConsumerHandlerInterface {
-	return &updateSalesOrderConsumerHandler{
+func InitDeleteSalesOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface, salesOrderUseCase usecases.SalesOrderUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) DeleteSalesOrderConsumerHandlerInterface {
+	return &DeleteSalesOrderConsumerHandler{
 		kafkaClient:             kafkaClient,
 		salesOrderUseCase:       salesOrderUseCase,
 		ctx:                     ctx,
@@ -41,7 +41,7 @@ func InitDeleteSalesOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClie
 }
 
 func (c *DeleteSalesOrderConsumerHandler) ProcessMessage() {
-	fmt.Println("process", constants.UPDATE_SALES_ORDER_TOPIC)
+	fmt.Println("process", constants.DELETE_SALES_ORDER_TOPIC)
 	now := time.Now()
 	topic := c.args[1].(string)
 	groupID := c.args[2].(string)
@@ -57,6 +57,7 @@ func (c *DeleteSalesOrderConsumerHandler) ProcessMessage() {
 		fmt.Printf("message at topic/partition/offset %v/%v/%v \n", m.Topic, m.Partition, m.Offset)
 
 		var salesOrder models.SalesOrder
+		fmt.Println("value = ", string(m.Value))
 		err = json.Unmarshal(m.Value, &salesOrder)
 
 		dbTransaction, err := c.db.BeginTx(c.ctx, nil)
@@ -64,20 +65,24 @@ func (c *DeleteSalesOrderConsumerHandler) ProcessMessage() {
 			RequestID: "",
 			SoCode:    "",
 			Data:      m.Value,
+			Action:    constants.LOG_ACTION_MONGO_DELETE,
 			Status:    constants.LOG_STATUS_MONGO_ERROR,
 			CreatedAt: &now,
 		}
 
 		if err != nil {
 			errorLogData := helper.WriteLogConsumer(constants.UPDATE_SALES_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
+			salesOrderLog.Error = errorLogData
 			go c.salesOrderLogRepository.Insert(salesOrderLog, c.ctx, salesOrderLogResultChan)
 			fmt.Println(errorLogData)
 			continue
 		}
+		fmt.Println("c = ", salesOrder.ID)
 
-		go c.salesOrderLogRepository.GetByCollumn(constants.SALES_ORDER_CODE_COLLUMN, salesOrder.SoCode, false, c.ctx, salesOrderLogResultChan)
+		go c.salesOrderLogRepository.GetByCollumn(constants.COLUMN_SALES_ORDER_CODE, salesOrder.SoCode, false, c.ctx, salesOrderLogResultChan)
 		salesOrderDetailResult := <-salesOrderLogResultChan
 		if salesOrderDetailResult.Error != nil {
+			salesOrderLog.Error = salesOrderDetailResult.Error
 			go c.salesOrderLogRepository.Insert(salesOrderLog, c.ctx, salesOrderLogResultChan)
 			fmt.Println(salesOrderDetailResult.Error)
 			continue
@@ -86,10 +91,11 @@ func (c *DeleteSalesOrderConsumerHandler) ProcessMessage() {
 		salesOrderLog = salesOrderDetailResult.SalesOrderLog
 		salesOrderLog.Status = constants.LOG_STATUS_MONGO_ERROR
 		salesOrderLog.UpdatedAt = &now
-		errorLog := c.salesOrderUseCase.SyncToOpenSearchFromUpdateEvent(&salesOrder, c.ctx)
+		errorLog := c.salesOrderUseCase.SyncToOpenSearchFromDeleteEvent(&salesOrder, c.ctx)
 		if errorLog.Err != nil {
 			dbTransaction.Rollback()
 			errorLogData := helper.WriteLogConsumer(constants.UPDATE_SALES_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, nil)
+			salesOrderLog.Error = errorLogData
 			go c.salesOrderLogRepository.UpdateByID(logId, salesOrderLog, c.ctx, salesOrderLogResultChan)
 			fmt.Println(errorLogData)
 			continue
@@ -98,6 +104,7 @@ func (c *DeleteSalesOrderConsumerHandler) ProcessMessage() {
 		err = dbTransaction.Commit()
 		if err != nil {
 			errorLogData := helper.WriteLogConsumer(constants.UPDATE_SALES_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
+			salesOrderLog.Error = errorLogData
 			go c.salesOrderLogRepository.UpdateByID(logId, salesOrderLog, c.ctx, salesOrderLogResultChan)
 			fmt.Println(errorLogData)
 			continue

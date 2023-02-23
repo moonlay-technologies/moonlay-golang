@@ -363,7 +363,8 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		RequestID: request.RequestID,
 		DoCode:    doCode,
 		Data:      deliveryOrder,
-		Status:    "0",
+		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		Action:    constants.LOG_ACTION_MONGO_INSERT,
 		CreatedAt: &now,
 	}
 
@@ -478,7 +479,8 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 		RequestID: request.RequestID,
 		DoCode:    createDeliveryOrderResult.DeliveryOrder.DoCode,
 		Data:      deliveryOrder,
-		Status:    "0",
+		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		Action:    constants.LOG_ACTION_MONGO_UPDATE,
 		CreatedAt: &now,
 	}
 
@@ -548,7 +550,8 @@ func (u *deliveryOrderUseCase) UpdateDODetailByID(ID int, request *models.Delive
 		RequestID: request.RequestID,
 		DoCode:    deliveryOrder.DoCode,
 		Data:      deliveryOrderDetail,
-		Status:    "0",
+		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		Action:    constants.LOG_ACTION_MONGO_UPDATE,
 		CreatedAt: &now,
 	}
 
@@ -632,7 +635,8 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 		RequestID: requestID,
 		DoCode:    getDeliveryOrderResult.DeliveryOrder.DoCode,
 		Data:      deliveryOrderDetailss,
-		Status:    "0",
+		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		Action:    constants.LOG_ACTION_MONGO_UPDATE,
 		CreatedAt: &now,
 	}
 
@@ -1228,11 +1232,46 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromDeleteEvent(deliveryOrderId *
 
 	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
 	go u.deliveryOrderOpenSearchRepository.Create(deliveryOrder, createDeliveryOrderResultChan)
-	createDeliveryOrderResult := <-createDeliveryOrderResultChan
+	deleteDeliveryOrderResult := <-createDeliveryOrderResultChan
 
-	if createDeliveryOrderResult.Error != nil {
-		fmt.Println(createDeliveryOrderResult.ErrorLog.Err.Error())
-		return createDeliveryOrderResult.ErrorLog
+	if deleteDeliveryOrderResult.Error != nil {
+		fmt.Println(deleteDeliveryOrderResult.ErrorLog.Err.Error())
+		return deleteDeliveryOrderResult.ErrorLog
+	}
+
+	salesOrderRequest := &models.SalesOrderRequest{
+		ID:            deliveryOrder.SalesOrderID,
+		OrderSourceID: deliveryOrder.OrderSourceID,
+	}
+
+	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderOpenSearchRepository.GetByID(salesOrderRequest, getSalesOrderResultChan)
+	getSalesOrderResult := <-getSalesOrderResultChan
+
+	if getSalesOrderResult.ErrorLog != nil {
+		deleteDeliveryOrderResult.ErrorLog = getSalesOrderResult.ErrorLog
+		fmt.Println(deleteDeliveryOrderResult.ErrorLog.Err.Error())
+		return deleteDeliveryOrderResult.ErrorLog
+	}
+
+	salesOrderWithDetail := getSalesOrderResult.SalesOrder
+	for k, v := range salesOrderWithDetail.SalesOrderDetails {
+		v.SentQty -= deliveryOrder.DeliveryOrderDetails[k].Qty
+		v.ResidualQty += deliveryOrder.DeliveryOrderDetails[k].Qty
+	}
+	deleteDeliveryOrderResult.DeliveryOrder.SalesOrder = salesOrderWithDetail
+	deleteDeliveryOrderResult.ErrorLog = u.salesOrderUseCase.SyncToOpenSearchFromUpdateEvent(salesOrderWithDetail, ctx)
+
+	if deleteDeliveryOrderResult.ErrorLog != nil {
+		fmt.Println(deleteDeliveryOrderResult.ErrorLog.Err.Error())
+		return deleteDeliveryOrderResult.ErrorLog
+	}
+
+	deleteDeliveryOrderResult.ErrorLog = u.SyncToOpenSearchFromUpdateEvent(deleteDeliveryOrderResult.DeliveryOrder, ctx)
+
+	if deleteDeliveryOrderResult.ErrorLog != nil {
+		fmt.Println(deleteDeliveryOrderResult.ErrorLog.Err.Error())
+		return deleteDeliveryOrderResult.ErrorLog
 	}
 
 	return &model.ErrorLog{}
