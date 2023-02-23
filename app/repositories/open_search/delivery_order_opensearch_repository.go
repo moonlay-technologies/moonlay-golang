@@ -476,14 +476,20 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 	openSearchDetailQueryString := map[string]interface{}{}
 	openSearchDetailQueryBool := map[string]interface{}{}
 	openSearchDetailBoolQuery["filter"] = filters
-	openSearchDetailBoolQuery["must"] = musts
 	openSearchDetailQueryBool["bool"] = openSearchDetailBoolQuery
 	openSearchDetailQueryString["multi_match"] = multiMatch
+	if (len(request.StartDoDate) > 0 && len(request.EndDoDate) > 0) || (len(request.StartCreatedAt) > 0 && len(request.EndCreatedAt) > 0) {
+		openSearchQuery["query"] = openSearchDetailQueryBool
+		openSearchQueryJson, _ := json.Marshal(openSearchQuery)
+		return openSearchQueryJson
+	}
 	if request.GlobalSearchValue != "" {
 		openSearchQuery["query"] = openSearchDetailQueryString
 		openSearchQueryJson, _ := json.Marshal(openSearchQuery)
 		return openSearchQueryJson
 	}
+	openSearchDetailBoolQuery["must"] = musts
+	openSearchDetailQueryBool["bool"] = openSearchDetailBoolQuery
 	openSearchQuery["query"] = openSearchDetailQueryBool
 	openSearchQueryJson, _ := json.Marshal(openSearchQuery)
 	return openSearchQueryJson
