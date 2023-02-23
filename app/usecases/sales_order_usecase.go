@@ -35,6 +35,7 @@ type SalesOrderUseCaseInterface interface {
 	UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
 	UpdateSODetailById(soId, id int, request *models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetail, *model.ErrorLog)
 	UpdateSODetailBySOId(SoId int, request []*models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) ([]*models.SalesOrder, *model.ErrorLog)
+	GetDetails(request *models.SalesOrderRequest) (*models.SalesOrderDetailsOpenSearchResponse, *model.ErrorLog)
 }
 
 type salesOrderUseCase struct {
@@ -1386,4 +1387,32 @@ func (u *salesOrderUseCase) updateSOValidation(salesOrderId int, orderStatusName
 	}
 
 	return nil
+}
+
+func (u *salesOrderUseCase) GetDetails(request *models.SalesOrderRequest) (*models.SalesOrderDetailsOpenSearchResponse, *model.ErrorLog) {
+	getSalesOrdersResultChan := make(chan *models.SalesOrdersChan)
+	go u.salesOrderOpenSearchRepository.Get(request, getSalesOrdersResultChan)
+	getSalesOrdersResult := <-getSalesOrdersResultChan
+
+	if getSalesOrdersResult.Error != nil {
+		return &models.SalesOrderDetailsOpenSearchResponse{}, getSalesOrdersResult.ErrorLog
+	}
+
+	var salesOrderDetails []*models.SalesOrderDetailOpenSearchResponse
+	for _, v := range getSalesOrdersResult.SalesOrders {
+		for _, x := range v.SalesOrderDetails {
+			var salesOrderDetail models.SalesOrderDetailOpenSearchResponse
+
+			salesOrderDetail.SalesOrderDetailOpenSearchResponseMap(x)
+
+			salesOrderDetails = append(salesOrderDetails, &salesOrderDetail)
+		}
+	}
+
+	salesOrders := &models.SalesOrderDetailsOpenSearchResponse{
+		SalesOrderDetails: salesOrderDetails,
+		Total:             getSalesOrdersResult.Total,
+	}
+
+	return salesOrders, &model.ErrorLog{}
 }
