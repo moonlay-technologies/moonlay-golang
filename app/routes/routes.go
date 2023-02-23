@@ -37,6 +37,12 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 			salesOrderControllerGroup.PUT(":so-id/details/:id", salesOrderController.UpdateSODetailByID)
 			salesOrderControllerGroup.PUT(":so-id/details", salesOrderController.UpdateSODetailBySOID)
 		}
+
+		salesOrderDetailControllerGroup := basicAuthRootGroup.Group(constants.SALES_ORDER_DETAIL)
+		salesOrderControllerGroup.Use()
+		{
+			salesOrderDetailControllerGroup.GET("", salesOrderController.GetDetails)
+		}
 	}
 
 	deliveryOrderController := controllers.InitHTTPDeliveryOrderController(database, redisdb, mongodbClient, kafkaClient, opensearchClient, ctx)
