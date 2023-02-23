@@ -64,6 +64,7 @@ func (c *createSalesOrderConsumerHandler) ProcessMessage() {
 			RequestID: "",
 			SoCode:    "",
 			Data:      m.Value,
+			Action:    constants.LOG_ACTION_MONGO_INSERT,
 			Status:    constants.LOG_STATUS_MONGO_ERROR,
 			CreatedAt: &now,
 		}
