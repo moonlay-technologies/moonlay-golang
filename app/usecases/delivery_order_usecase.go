@@ -217,6 +217,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	deliveryOrder.OrderSourceID = getOrderSourceResult.OrderSource.ID
 	deliveryOrder.Agent = getAgentResult.Agent
 	deliveryOrder.AgentID = getAgentResult.Agent.ID
+	deliveryOrder.AgentName = getAgentResult.Agent.Name
 	deliveryOrder.Store = getStoreResult.Store
 	deliveryOrder.StoreID = getStoreResult.Store.ID
 	deliveryOrder.DoCode = doCode
@@ -676,8 +677,8 @@ func (u *deliveryOrderUseCase) Get(request *models.DeliveryOrderRequest) (*model
 			SalesOrderID:  v.SalesOrderID,
 			WarehouseID:   v.WarehouseID,
 			OrderSourceID: v.OrderSourceID,
+			AgentName:     v.AgentName,
 			AgentID:       v.AgentID,
-			AgentName:     v.Agent.Name,
 			StoreID:       v.StoreID,
 			DoCode:        v.DoCode,
 			DoDate:        v.DoDate,
@@ -921,6 +922,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *mo
 	}
 
 	deliveryOrder.Agent = getAgentResult.Agent
+	deliveryOrder.AgentName = getAgentResult.Agent.Name
 
 	getStoreResultChan := make(chan *models.StoreChan)
 	go u.storeRepository.GetByID(deliveryOrder.StoreID, false, ctx, getStoreResultChan)

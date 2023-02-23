@@ -33,6 +33,7 @@ type DeliveryOrder struct {
 	OrderSource           *OrderSource           `json:"order_source,omitempty" bson:"order_source"`
 	OrderSourceName       NullString             `json:"order_source_name,omitempty" bson:"order_source_name"`
 	AgentID               int                    `json:"agent_id,omitempty" bson:"agent_id"`
+	AgentName             string                 `json:"agent_name,omitempty" bson:"agent_name"`
 	Agent                 *Agent                 `json:"agent,omitempty" bson:"agent"`
 	StoreID               int                    `json:"store_id,omitempty" bson:"store_id"`
 	Store                 *Store                 `json:"store,omitempty" bson:"store"`
