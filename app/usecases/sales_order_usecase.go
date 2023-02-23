@@ -37,6 +37,7 @@ type SalesOrderUseCaseInterface interface {
 	UpdateSODetailById(soId, id int, request *models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetail, *model.ErrorLog)
 	UpdateSODetailBySOId(SoId int, request []*models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) ([]*models.SalesOrder, *model.ErrorLog)
 	GetDetails(request *models.SalesOrderRequest) (*models.SalesOrderDetailsOpenSearchResponse, *model.ErrorLog)
+	DeleteById(id int, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
 }
 
 type salesOrderUseCase struct {
@@ -1418,6 +1419,82 @@ func (u *salesOrderUseCase) GetDetails(request *models.SalesOrderRequest) (*mode
 	return salesOrders, &model.ErrorLog{}
 }
 
+func (u *salesOrderUseCase) DeleteById(id int, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog) {
+	now := time.Now()
+
+	getSalesOrderByIDResultChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderRepository.GetByID(id, false, ctx, getSalesOrderByIDResultChan)
+	getSalesOrderByIDResult := <-getSalesOrderByIDResultChan
+
+	if getSalesOrderByIDResult.Error != nil {
+		return &models.SalesOrderResponse{}, getSalesOrderByIDResult.ErrorLog
+	}
+
+	getSalesOrderDetailsByIDResultChan := make(chan *models.SalesOrderDetailsChan)
+	go u.salesOrderDetailRepository.GetBySalesOrderID(getSalesOrderByIDResult.SalesOrder.ID, false, ctx, getSalesOrderDetailsByIDResultChan)
+	getSalesOrderDetailsByIDResult := <-getSalesOrderDetailsByIDResultChan
+
+	if getSalesOrderDetailsByIDResult.Error != nil {
+		return &models.SalesOrderResponse{}, getSalesOrderDetailsByIDResult.ErrorLog
+	}
+
+	getSalesOrderByIDResult.SalesOrder.SalesOrderDetails = getSalesOrderDetailsByIDResult.SalesOrderDetails
+
+	var soDetails []*models.SalesOrderDetail
+	for _, v := range getSalesOrderByIDResult.SalesOrder.SalesOrderDetails {
+		updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
+		go u.salesOrderDetailRepository.DeleteByID(v, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
+		updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
+
+		if updateSalesOrderDetailResult.Error != nil {
+			return &models.SalesOrderResponse{}, updateSalesOrderDetailResult.ErrorLog
+		}
+		soDetails = append(soDetails, updateSalesOrderDetailResult.SalesOrderDetail)
+	}
+
+	deleteSalesOrderResultChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderRepository.DeleteByID(getSalesOrderByIDResult.SalesOrder, sqlTransaction, ctx, deleteSalesOrderResultChan)
+	deleteSalesOrderResult := <-deleteSalesOrderResultChan
+	if deleteSalesOrderResult.Error != nil {
+		return &models.SalesOrderResponse{}, deleteSalesOrderResult.ErrorLog
+	}
+
+	getSalesOrderByIDResult.SalesOrder.SalesOrderDetails = soDetails
+	getSalesOrderByIDResult.SalesOrder.UpdateSalesOrderChanMap(deleteSalesOrderResult)
+
+	salesOrderLog := &models.SalesOrderLog{
+		RequestID: "",
+		SoCode:    getSalesOrderByIDResult.SalesOrder.SoCode,
+		Data:      getSalesOrderByIDResult.SalesOrder,
+		Action:    constants.LOG_ACTION_MONGO_DELETE,
+		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		CreatedAt: &now,
+	}
+	createSalesOrderLogResultChan := make(chan *models.SalesOrderLogChan)
+	go u.salesOrderLogRepository.Insert(salesOrderLog, ctx, createSalesOrderLogResultChan)
+	createSalesOrderLogResult := <-createSalesOrderLogResultChan
+
+	if createSalesOrderLogResult.Error != nil {
+		return &models.SalesOrderResponse{}, createSalesOrderLogResult.ErrorLog
+	}
+	keyKafka := []byte(getSalesOrderByIDResult.SalesOrder.SoCode)
+	messageKafka, _ := json.Marshal(
+		&models.SalesOrder{
+			ID:        id,
+			SoCode:    salesOrderLog.SoCode,
+			UpdatedAt: getSalesOrderByIDResult.SalesOrder.UpdatedAt,
+			DeletedAt: getSalesOrderByIDResult.SalesOrder.DeletedAt,
+		},
+	)
+	err := u.kafkaClient.WriteToTopic(constants.DELETE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		return &models.SalesOrderResponse{}, errorLogData
+	}
+
+	return &models.SalesOrderResponse{}, nil
+}
 
 func (u *salesOrderUseCase) SyncToOpenSearchFromDeleteEvent(salesOrder *models.SalesOrder, ctx context.Context) *model.ErrorLog {
 	now := time.Now()

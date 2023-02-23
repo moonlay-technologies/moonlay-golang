@@ -27,6 +27,7 @@ type SalesOrderControllerInterface interface {
 	UpdateSODetailByID(ctx *gin.Context)
 	UpdateSODetailBySOID(ctx *gin.Context)
 	GetDetails(ctx *gin.Context)
+	DeleteByID(ctx *gin.Context)
 }
 
 type salesOrderController struct {
@@ -1235,6 +1236,99 @@ func (c *salesOrderController) GetDetails(ctx *gin.Context) {
 
 	result.Data = salesOrders.SalesOrderDetails
 	result.Total = salesOrders.Total
+	result.StatusCode = http.StatusOK
+	ctx.JSON(http.StatusOK, result)
+	return
+}
+
+func (c *salesOrderController) DeleteByID(ctx *gin.Context) {
+	var result baseModel.Response
+	var id int
+
+	ctx.Set("full_path", ctx.FullPath())
+	ctx.Set("method", ctx.Request.Method)
+
+	sId := ctx.Param("so-id")
+	id, err := strconv.Atoi(sId)
+
+	if err != nil {
+		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		result.StatusCode = http.StatusBadRequest
+		result.Error = helper.WriteLog(err, result.StatusCode, nil)
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+	mustActiveField := []*models.MustActiveRequest{
+		{
+			Table:    "sales_orders",
+			ReqField: "id",
+			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", id),
+		},
+	}
+
+	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
+	if err != nil {
+		return
+	}
+	mustEmpties := []*models.MustEmptyValidationRequest{
+		{
+			Table:           "sales_orders",
+			TableJoin:       "order_statuses",
+			ForeignKey:      "order_status_id",
+			SelectedCollumn: "order_statuses.name",
+			Clause:          fmt.Sprintf("sales_orders.id = %d AND sales_orders.deleted_at IS NULL AND sales_orders.order_status_id NOT IN (5,6,9,10)", id),
+			MessageFormat:   "Status Sales Order <result>",
+		},
+		{
+			Table:           "delivery_orders",
+			TableJoin:       "sales_orders",
+			ForeignKey:      "sales_order_id",
+			SelectedCollumn: "delivery_orders.id",
+			Clause:          fmt.Sprintf("sales_orders.id = %d AND sales_orders.deleted_at IS NULL AND delivery_orders.deleted_at IS NULL", id),
+			MessageFormat:   "Sales Order Has Delivery Order <result>, Please Delete it First",
+		},
+	}
+	err = c.requestValidationMiddleware.MustEmptyValidation(ctx, mustEmpties)
+	if err != nil {
+		return
+	}
+
+	dbTransaction, err := c.db.BeginTx(ctx, nil)
+
+	if err != nil {
+		result.StatusCode = http.StatusInternalServerError
+		result.Error = helper.WriteLog(err, result.StatusCode, nil)
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+	salesOrder, errorLog := c.salesOrderUseCase.DeleteById(id, dbTransaction, ctx)
+
+	if errorLog != nil {
+		err = dbTransaction.Rollback()
+
+		if err != nil {
+			result.StatusCode = http.StatusInternalServerError
+			result.Error = helper.WriteLog(err, result.StatusCode, nil)
+			ctx.JSON(result.StatusCode, result)
+			return
+		}
+
+		result.StatusCode = errorLog.StatusCode
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	err = dbTransaction.Commit()
+
+	if err != nil {
+		result.StatusCode = http.StatusInternalServerError
+		result.Error = helper.WriteLog(err, result.StatusCode, "Ada kesalahan, silahkan coba lagi nanti")
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	result.Data = salesOrder
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
 	return

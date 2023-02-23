@@ -24,6 +24,7 @@ type SalesOrderRepositoryInterface interface {
 	Insert(request *models.SalesOrder, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderChan)
 	UpdateByID(id int, salesOrder *models.SalesOrder, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderChan)
 	RemoveCacheByID(id int, ctx context.Context, result chan *models.SalesOrderChan)
+	DeleteByID(salesOrder *models.SalesOrder, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderChan)
 }
 
 type salesOrder struct {
@@ -684,6 +685,50 @@ func (r *salesOrder) RemoveCacheByID(id int, ctx context.Context, resultChan cha
 	fmt.Println(result)
 
 	response.Error = nil
+	resultChan <- response
+	return
+}
+
+func (r *salesOrder) DeleteByID(request *models.SalesOrder, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.SalesOrderChan) {
+	now := time.Now()
+	request.DeletedAt = &now
+	request.UpdatedAt = &now
+	response := &models.SalesOrderChan{}
+	rawSqlQueries := []string{}
+
+	query := fmt.Sprintf("%s='%v'", "deleted_at", request.DeletedAt.Format("2006-01-02 15:04:05"))
+	rawSqlQueries = append(rawSqlQueries, query)
+
+	query = fmt.Sprintf("%s='%v'", "updated_at", request.UpdatedAt.Format("2006-01-02 15:04:05"))
+	rawSqlQueries = append(rawSqlQueries, query)
+
+	query = fmt.Sprintf("%s='%v'", "is_done_sync_to_es", 0)
+	rawSqlQueries = append(rawSqlQueries, query)
+
+	rawSqlQueriesJoin := strings.Join(rawSqlQueries, ",")
+	updateQuery := fmt.Sprintf("UPDATE "+constants.SALES_ORDERS_TABLE+" set %v WHERE id = ?", rawSqlQueriesJoin)
+	result, err := sqlTransaction.ExecContext(ctx, updateQuery, request.ID)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	salesOrderID, err := result.LastInsertId()
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	response.ID = salesOrderID
+	response.SalesOrder = request
 	resultChan <- response
 	return
 }

@@ -30,6 +30,24 @@ type MustActiveRequestChan struct {
 	ID            int64 `json:"id,omitempty" bson:"id,omitempty"`
 }
 
+type MustEmptyValidationRequest struct {
+	Table           string
+	TableJoin       string
+	ForeignKey      string
+	SelectedCollumn string
+	Clause          string
+	MessageFormat   string
+}
+
+type MustEmptyValidationRequestChan struct {
+	UniqueRequest *MustEmptyValidationRequest
+	Result        bool
+	Message       string
+	Error         error
+	ErrorLog      *model.ErrorLog
+	ID            int64 `json:"id,omitempty" bson:"id,omitempty"`
+}
+
 type DateInputRequest struct {
 	Field string
 	Value string

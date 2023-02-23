@@ -55,3 +55,7 @@ func NewSalesOrderDetailRepositoryInterface(t mockConstructorTestingTNewSalesOrd
 
 	return mock
 }
+
+func (_m *SalesOrderDetailRepositoryInterface) DeleteByID(request *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderDetailChan) {
+	_m.Called(request, sqlTransaction, ctx, result)
+}

@@ -60,3 +60,7 @@ func NewSalesOrderRepositoryInterface(t mockConstructorTestingTNewSalesOrderRepo
 
 	return mock
 }
+
+func (_m *SalesOrderRepositoryInterface) DeleteByID(salesOrder *models.SalesOrder, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderChan) {
+	_m.Called(salesOrder, sqlTransaction, ctx, result)
+}

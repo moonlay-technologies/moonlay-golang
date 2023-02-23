@@ -23,6 +23,7 @@ type SalesOrderDetailRepositoryInterface interface {
 	GetByID(salesOrderDetailID int, countOnly bool, ctx context.Context, result chan *models.SalesOrderDetailChan)
 	UpdateByID(id int, request *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderDetailChan)
 	RemoveCacheByID(id int, ctx context.Context, resultChan chan *models.SalesOrderDetailChan)
+	DeleteByID(request *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderDetailChan)
 }
 
 type salesOrderDetail struct {
@@ -415,6 +416,56 @@ func (r *salesOrderDetail) RemoveCacheByID(id int, ctx context.Context, resultCh
 	}
 
 	response.Error = nil
+	resultChan <- response
+	return
+}
+
+func (r *salesOrderDetail) DeleteByID(request *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.SalesOrderDetailChan) {
+	now := time.Now()
+	request.DeletedAt = &now
+	request.UpdatedAt = &now
+	response := &models.SalesOrderDetailChan{}
+	rawSqlQueries := []string{}
+
+	query := fmt.Sprintf("%s='%v'", "deleted_at", request.DeletedAt.Format("2006-01-02 15:04:05"))
+	rawSqlQueries = append(rawSqlQueries, query)
+
+	query = fmt.Sprintf("%s='%v'", "updated_at", request.UpdatedAt.Format("2006-01-02 15:04:05"))
+	rawSqlQueries = append(rawSqlQueries, query)
+
+	rawSqlQueriesJoin := strings.Join(rawSqlQueries, ",")
+
+	updateQuery := fmt.Sprintf("UPDATE sales_order_details set %v WHERE id = ?", rawSqlQueriesJoin)
+	result, err := sqlTransaction.ExecContext(ctx, updateQuery, request.ID)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	salesOrderDetailID, err := result.LastInsertId()
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	response.ID = salesOrderDetailID
+	response.SalesOrderDetail = request
 	resultChan <- response
 	return
 }

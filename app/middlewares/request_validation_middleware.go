@@ -21,6 +21,7 @@ type RequestValidationMiddlewareInterface interface {
 	UniqueValidation(ctx *gin.Context, value []*models.UniqueRequest) error
 	MustActiveValidation(ctx *gin.Context, value []*models.MustActiveRequest) error
 	DateInputValidation(ctx *gin.Context, value []*models.DateInputRequest) error
+	MustEmptyValidation(ctx *gin.Context, value []*models.MustEmptyValidationRequest) error
 }
 
 type requestValidationMiddleware struct {
@@ -164,6 +165,39 @@ func (u *requestValidationMiddleware) DateInputValidation(ctx *gin.Context, valu
 		result.Error = errorLog
 		ctx.JSON(result.StatusCode, result)
 		error = fmt.Errorf("Invalid date value!")
+	}
+
+	return error
+}
+
+func (u *requestValidationMiddleware) MustEmptyValidation(ctx *gin.Context, value []*models.MustEmptyValidationRequest) error {
+	var result baseModel.Response
+	messages := []string{}
+	systemMessages := []string{}
+	var error error
+
+	for _, v := range value {
+		mustContains := make(chan *models.MustEmptyValidationRequestChan)
+		go u.requestValidationRepository.MustEmptyValidation(v, mustContains)
+		mustContainsResult := <-mustContains
+		if !mustContainsResult.Result {
+			message := mustContainsResult.Message
+			messages = append(messages, message)
+			systemMessage := message
+			systemMessages = append(systemMessages, systemMessage)
+		}
+	}
+
+	if len(messages) > 0 {
+		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       messages,
+			SystemMessage: systemMessages,
+			StatusCode:    http.StatusBadRequest,
+		})
+		result.StatusCode = http.StatusNotAcceptable
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+		error = fmt.Errorf("Inactive value!")
 	}
 
 	return error
