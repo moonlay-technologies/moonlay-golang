@@ -1,8 +1,8 @@
 package constants
 
 const (
-	SALES_ORDER_TABLE_LOGS    = "sales_order_logs"
-	DELIVERY_ORDER_TABLE_LOGS = "delivery_order_logs"
+	SALES_ORDER_TABLE_LOGS    = "sales_order_event_logs"
+	DELIVERY_ORDER_TABLE_LOGS = "delivery_order_event_logs"
 
 	COLUMN_SALES_ORDER_CODE    = "so_code"
 	COLUMN_DELIVERY_ORDER_CODE = "do_code"

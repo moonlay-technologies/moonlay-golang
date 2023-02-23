@@ -32,6 +32,7 @@ type SalesOrderUseCaseInterface interface {
 	GetByOrderSourceID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
 	SyncToOpenSearchFromCreateEvent(salesOrder *models.SalesOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromUpdateEvent(salesOrder *models.SalesOrder, ctx context.Context) *model.ErrorLog
+	SyncToOpenSearchFromDeleteEvent(salesOrder *models.SalesOrder, ctx context.Context) *model.ErrorLog
 	UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
 	UpdateSODetailById(soId, id int, request *models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetail, *model.ErrorLog)
 	UpdateSODetailBySOId(SoId int, request []*models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) ([]*models.SalesOrder, *model.ErrorLog)
@@ -1415,4 +1416,35 @@ func (u *salesOrderUseCase) GetDetails(request *models.SalesOrderRequest) (*mode
 	}
 
 	return salesOrders, &model.ErrorLog{}
+}
+
+
+func (u *salesOrderUseCase) SyncToOpenSearchFromDeleteEvent(salesOrder *models.SalesOrder, ctx context.Context) *model.ErrorLog {
+	now := time.Now()
+	salesOrderRequest := &models.SalesOrderRequest{ID: salesOrder.ID}
+
+	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderOpenSearchRepository.GetByID(salesOrderRequest, getSalesOrderResultChan)
+	getSalesOrderResult := <-getSalesOrderResultChan
+
+	salesOrder.SalesOrderOpenSearchChanMap(getSalesOrderResult)
+
+	for k := range salesOrder.SalesOrderDetails {
+		salesOrder.SalesOrderDetails[k].IsDoneSyncToEs = "1"
+		salesOrder.SalesOrderDetails[k].EndDateSyncToEs = &now
+	}
+
+	salesOrder.UpdatedAt = &now
+	salesOrder.IsDoneSyncToEs = "1"
+	salesOrder.EndDateSyncToEs = &now
+
+	updateSalesOrderResultChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderOpenSearchRepository.Create(salesOrder, updateSalesOrderResultChan)
+	updateSalesOrderResult := <-updateSalesOrderResultChan
+
+	if updateSalesOrderResult.Error != nil {
+		return updateSalesOrderResult.ErrorLog
+	}
+
+	return &model.ErrorLog{}
 }
