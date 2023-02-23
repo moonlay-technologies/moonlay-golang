@@ -1411,7 +1411,7 @@ func (u *salesOrderUseCase) GetDetails(request *models.SalesOrderRequest) (*mode
 
 	salesOrders := &models.SalesOrderDetailsOpenSearchResponse{
 		SalesOrderDetails: salesOrderDetails,
-		Total:             getSalesOrdersResult.Total,
+		Total:             int64(len(salesOrderDetails)),
 	}
 
 	return salesOrders, &model.ErrorLog{}

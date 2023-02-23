@@ -187,24 +187,23 @@ type SalesOrderRequest struct {
 	BrandID           int    `json:"brand_id,omitempty"`
 	OrderSourceID     int    `json:"order_source_id,omitempty"`
 	OrderStatusID     int    `json:"order_status_id,omitempty"`
-	// SoCode            string `json:"so_code,omitempty"`
-	StartSoDate     string `json:"start_so_date,omitempty"`
-	EndSoDate       string `json:"end_so_date,omitempty"`
-	ProductID       int    `json:"product_id,omitempty"`
-	CategoryID      int    `json:"category_id,omitempty"`
-	SalesmanID      int    `json:"salesman_id,omitempty"`
-	ProvinceID      int    `json:"province_id,omitempty"`
-	CityID          int    `json:"city_id,omitempty"`
-	DistrictID      int    `json:"district_id,omitempty"`
-	VillageID       int    `json:"village_id,omitempty"`
-	StartCreatedAt  string `json:"start_created_at,omitempty"`
-	EndCreatedAt    string `json:"end_created_at,omitempty"`
-	Keyword         string `json:"keyword,omitempty"`
-	SoDate          string `json:"so_date,omitempty"`
-	StoreProvinceID int    `json:"store_province_id,omitempty"`
-	StoreCityID     int    `json:"store_city_id,omitempty"`
-	StoreDistrictID int    `json:"store_district_id,omitempty"`
-	StoreVillageID  int    `json:"store_village_id,omitempty"`
+	StartSoDate       string `json:"start_so_date,omitempty"`
+	EndSoDate         string `json:"end_so_date,omitempty"`
+	ProductID         int    `json:"product_id,omitempty"`
+	CategoryID        int    `json:"category_id,omitempty"`
+	SalesmanID        int    `json:"salesman_id,omitempty"`
+	ProvinceID        int    `json:"province_id,omitempty"`
+	CityID            int    `json:"city_id,omitempty"`
+	DistrictID        int    `json:"district_id,omitempty"`
+	VillageID         int    `json:"village_id,omitempty"`
+	StartCreatedAt    string `json:"start_created_at,omitempty"`
+	EndCreatedAt      string `json:"end_created_at,omitempty"`
+	Keyword           string `json:"keyword,omitempty"`
+	SoDate            string `json:"so_date,omitempty"`
+	StoreProvinceID   int    `json:"store_province_id,omitempty"`
+	StoreCityID       int    `json:"store_city_id,omitempty"`
+	StoreDistrictID   int    `json:"store_district_id,omitempty"`
+	StoreVillageID    int    `json:"store_village_id,omitempty"`
 }
 
 type SalesOrders struct {
