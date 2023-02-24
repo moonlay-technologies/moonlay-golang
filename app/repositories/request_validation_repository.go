@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"order-service/app/models"
 	"order-service/global/utils/helper"
+	"strings"
 
 	"github.com/bxcodec/dbresolver"
 )
@@ -11,6 +12,7 @@ import (
 type RequestValidationRepositoryInterface interface {
 	UniqueValidation(value *models.UniqueRequest, resultChan chan *models.UniqueRequestChan)
 	MustActiveValidation(value *models.MustActiveRequest, resultChan chan *models.MustActiveRequestChan)
+	MustEmptyValidation(value *models.MustEmptyValidationRequest, resultChan chan *models.MustEmptyValidationRequestChan)
 }
 
 type requestValidationRepository struct {
@@ -61,4 +63,31 @@ func (r *requestValidationRepository) MustActiveValidation(value *models.MustAct
 		resultChan <- response
 		return
 	}
+}
+
+func (r *requestValidationRepository) MustEmptyValidation(value *models.MustEmptyValidationRequest, resultChan chan *models.MustEmptyValidationRequestChan) {
+	response := &models.MustEmptyValidationRequestChan{}
+	query := fmt.Sprintf("SELECT %[4]s as resultQuery FROM %[1]s JOIN %[2]s ON %[2]s.id = %[1]s.%[3]s WHERE %[5]s", value.Table, value.TableJoin, value.ForeignKey, value.SelectedCollumn, value.Clause)
+	q, err := r.db.Query(query)
+	if err != nil {
+		response.Result = false
+		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		response.Error = err
+		response.ErrorLog = errorLogData
+	} else {
+		result := ""
+		var resultQuery string
+		for q.Next() {
+			q.Scan(&resultQuery)
+			result += resultQuery + ", "
+		}
+		if result == "" {
+			response.Result = true
+		} else {
+			response.Result = false
+			response.Message = strings.Replace(value.MessageFormat, "<result>", result, 1)
+		}
+	}
+	resultChan <- response
+	return
 }

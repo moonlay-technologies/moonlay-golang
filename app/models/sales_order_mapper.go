@@ -32,6 +32,248 @@ func (salesOrder *SalesOrder) SalesOrderRequestMap(request *SalesOrderStoreReque
 	return
 }
 
+func (salesOrder *SalesOrder) SalesOrderOpenSearchChanMap(request *SalesOrderChan) {
+	x := &SalesOrder{}
+	if salesOrder.ID == x.ID {
+		salesOrder.ID = request.SalesOrder.ID
+	}
+	if salesOrder.CartID == x.CartID {
+		salesOrder.CartID = request.SalesOrder.CartID
+	}
+	if salesOrder.AgentID == x.AgentID {
+		salesOrder.AgentID = request.SalesOrder.AgentID
+	}
+	if salesOrder.AgentName == x.AgentName {
+		salesOrder.AgentName = request.SalesOrder.AgentName
+	}
+	if salesOrder.AgentEmail == x.AgentEmail {
+		salesOrder.AgentEmail = request.SalesOrder.AgentEmail
+	}
+	if salesOrder.AgentProvinceID == x.AgentProvinceID {
+		salesOrder.AgentProvinceID = request.SalesOrder.AgentProvinceID
+	}
+	if salesOrder.AgentProvinceName == x.AgentProvinceName {
+		salesOrder.AgentProvinceName = request.SalesOrder.AgentProvinceName
+	}
+	if salesOrder.AgentCityID == x.AgentCityID {
+		salesOrder.AgentCityID = request.SalesOrder.AgentCityID
+	}
+	if salesOrder.AgentCityName == x.AgentCityName {
+		salesOrder.AgentCityName = request.SalesOrder.AgentCityName
+	}
+	if salesOrder.AgentDistrictID == x.AgentDistrictID {
+		salesOrder.AgentDistrictID = request.SalesOrder.AgentDistrictID
+	}
+	if salesOrder.AgentDistrictName == x.AgentDistrictName {
+		salesOrder.AgentDistrictName = request.SalesOrder.AgentDistrictName
+	}
+	if salesOrder.AgentVillageID == x.AgentVillageID {
+		salesOrder.AgentVillageID = request.SalesOrder.AgentVillageID
+	}
+	if salesOrder.AgentVillageName == x.AgentVillageName {
+		salesOrder.AgentVillageName = request.SalesOrder.AgentVillageName
+	}
+	if salesOrder.AgentAddress == x.AgentAddress {
+		salesOrder.AgentAddress = request.SalesOrder.AgentAddress
+	}
+	if salesOrder.AgentPhone == x.AgentPhone {
+		salesOrder.AgentPhone = request.SalesOrder.AgentPhone
+	}
+	if salesOrder.AgentMainMobilePhone == x.AgentMainMobilePhone {
+		salesOrder.AgentMainMobilePhone = request.SalesOrder.AgentMainMobilePhone
+	}
+	if salesOrder.Agent == x.Agent {
+		salesOrder.Agent = request.SalesOrder.Agent
+	}
+	if salesOrder.StoreID == x.StoreID {
+		salesOrder.StoreID = request.SalesOrder.StoreID
+	}
+	if salesOrder.StoreName == x.StoreName {
+		salesOrder.StoreName = request.SalesOrder.StoreName
+	}
+	if salesOrder.StoreCode == x.StoreCode {
+		salesOrder.StoreCode = request.SalesOrder.StoreCode
+	}
+	if salesOrder.StoreEmail == x.StoreEmail {
+		salesOrder.StoreEmail = request.SalesOrder.StoreEmail
+	}
+	if salesOrder.StoreProvinceID == x.StoreProvinceID {
+		salesOrder.StoreProvinceID = request.SalesOrder.StoreProvinceID
+	}
+	if salesOrder.StoreProvinceName == x.StoreProvinceName {
+		salesOrder.StoreProvinceName = request.SalesOrder.StoreProvinceName
+	}
+	if salesOrder.StoreCityID == x.StoreCityID {
+		salesOrder.StoreCityID = request.SalesOrder.StoreCityID
+	}
+	if salesOrder.StoreCityName == x.StoreCityName {
+		salesOrder.StoreCityName = request.SalesOrder.StoreCityName
+	}
+	if salesOrder.StoreDistrictID == x.StoreDistrictID {
+		salesOrder.StoreDistrictID = request.SalesOrder.StoreDistrictID
+	}
+	if salesOrder.StoreDistrictName == x.StoreDistrictName {
+		salesOrder.StoreDistrictName = request.SalesOrder.StoreDistrictName
+	}
+	if salesOrder.StoreVillageID == x.StoreVillageID {
+		salesOrder.StoreVillageID = request.SalesOrder.StoreVillageID
+	}
+	if salesOrder.StoreVillageName == x.StoreVillageName {
+		salesOrder.StoreVillageName = request.SalesOrder.StoreVillageName
+	}
+	if salesOrder.StoreAddress == x.StoreAddress {
+		salesOrder.StoreAddress = request.SalesOrder.StoreAddress
+	}
+	if salesOrder.StorePhone == x.StorePhone {
+		salesOrder.StorePhone = request.SalesOrder.StorePhone
+	}
+	if salesOrder.StoreMainMobilePhone == x.StoreMainMobilePhone {
+		salesOrder.StoreMainMobilePhone = request.SalesOrder.StoreMainMobilePhone
+	}
+	if salesOrder.Store == x.Store {
+		salesOrder.Store = request.SalesOrder.Store
+	}
+	if salesOrder.BrandID == x.BrandID {
+		salesOrder.BrandID = request.SalesOrder.BrandID
+	}
+	if salesOrder.BrandName == x.BrandName {
+		salesOrder.BrandName = request.SalesOrder.BrandName
+	}
+	if salesOrder.Brand == x.Brand {
+		salesOrder.Brand = request.SalesOrder.Brand
+	}
+	if salesOrder.UserID == x.UserID {
+		salesOrder.UserID = request.SalesOrder.UserID
+	}
+	if salesOrder.UserFirstName == x.UserFirstName {
+		salesOrder.UserFirstName = request.SalesOrder.UserFirstName
+	}
+	if salesOrder.UserLastName == x.UserLastName {
+		salesOrder.UserLastName = request.SalesOrder.UserLastName
+	}
+	if salesOrder.UserRoleID == x.UserRoleID {
+		salesOrder.UserRoleID = request.SalesOrder.UserRoleID
+	}
+	if salesOrder.UserEmail == x.UserEmail {
+		salesOrder.UserEmail = request.SalesOrder.UserEmail
+	}
+	if salesOrder.User == x.User {
+		salesOrder.User = request.SalesOrder.User
+	}
+	if salesOrder.Salesman == x.Salesman {
+		salesOrder.Salesman = request.SalesOrder.Salesman
+	}
+	if salesOrder.VisitationID == x.VisitationID {
+		salesOrder.VisitationID = request.SalesOrder.VisitationID
+	}
+	if salesOrder.OrderSourceID == x.OrderSourceID {
+		salesOrder.OrderSourceID = request.SalesOrder.OrderSourceID
+	}
+	if salesOrder.OrderSourceName == x.OrderSourceName {
+		salesOrder.OrderSourceName = request.SalesOrder.OrderSourceName
+	}
+	if salesOrder.OrderSource == x.OrderSource {
+		salesOrder.OrderSource = request.SalesOrder.OrderSource
+	}
+	if salesOrder.OrderStatusID == x.OrderStatusID {
+		salesOrder.OrderStatusID = request.SalesOrder.OrderStatusID
+	}
+	if salesOrder.OrderStatus == x.OrderStatus {
+		salesOrder.OrderStatus = request.SalesOrder.OrderStatus
+	}
+	if salesOrder.OrderStatusName == x.OrderStatusName {
+		salesOrder.OrderStatusName = request.SalesOrder.OrderStatusName
+	}
+	if salesOrder.SoCode == x.SoCode {
+		salesOrder.SoCode = request.SalesOrder.SoCode
+	}
+	if salesOrder.SoDate == x.SoDate {
+		salesOrder.SoDate = request.SalesOrder.SoDate
+	}
+	if salesOrder.SoRefCode == x.SoRefCode {
+		salesOrder.SoRefCode = request.SalesOrder.SoRefCode
+	}
+	if salesOrder.SoRefDate == x.SoRefDate {
+		salesOrder.SoRefDate = request.SalesOrder.SoRefDate
+	}
+	if salesOrder.ReferralCode == x.ReferralCode {
+		salesOrder.ReferralCode = request.SalesOrder.ReferralCode
+	}
+	if salesOrder.GLat == x.GLat {
+		salesOrder.GLat = request.SalesOrder.GLat
+	}
+	if salesOrder.GLong == x.GLong {
+		salesOrder.GLong = request.SalesOrder.GLong
+	}
+	if salesOrder.DeviceId == x.DeviceId {
+		salesOrder.DeviceId = request.SalesOrder.DeviceId
+	}
+	if salesOrder.Note == x.Note {
+		salesOrder.Note = request.SalesOrder.Note
+	}
+	if salesOrder.InternalComment == x.InternalComment {
+		salesOrder.InternalComment = request.SalesOrder.InternalComment
+	}
+	if salesOrder.TotalAmount == x.TotalAmount {
+		salesOrder.TotalAmount = request.SalesOrder.TotalAmount
+	}
+	if salesOrder.TotalTonase == x.TotalTonase {
+		salesOrder.TotalTonase = request.SalesOrder.TotalTonase
+	}
+	if salesOrder.IsDoneSyncToEs == x.IsDoneSyncToEs {
+		salesOrder.IsDoneSyncToEs = request.SalesOrder.IsDoneSyncToEs
+	}
+	if salesOrder.StartDateSyncToEs == x.StartDateSyncToEs {
+		salesOrder.StartDateSyncToEs = request.SalesOrder.StartDateSyncToEs
+	}
+	if salesOrder.EndDateSyncToEs == x.EndDateSyncToEs {
+		salesOrder.EndDateSyncToEs = request.SalesOrder.EndDateSyncToEs
+	}
+	if salesOrder.StartCreatedDate == x.StartCreatedDate {
+		salesOrder.StartCreatedDate = request.SalesOrder.StartCreatedDate
+	}
+	if salesOrder.EndCreatedDate == x.EndCreatedDate {
+		salesOrder.EndCreatedDate = request.SalesOrder.EndCreatedDate
+	}
+	if salesOrder.SalesOrderDetails == nil {
+		salesOrder.SalesOrderDetails = request.SalesOrder.SalesOrderDetails
+	}
+	if salesOrder.DeliveryOrders == nil {
+		salesOrder.DeliveryOrders = request.SalesOrder.DeliveryOrders
+	}
+	if salesOrder.SalesmanID == x.SalesmanID {
+		salesOrder.SalesmanID = request.SalesOrder.SalesmanID
+	}
+	if salesOrder.SalesmanName == x.SalesmanName {
+		salesOrder.SalesmanName = request.SalesOrder.SalesmanName
+	}
+	if salesOrder.SalesmanEmail == x.SalesmanEmail {
+		salesOrder.SalesmanEmail = request.SalesOrder.SalesmanEmail
+	}
+	if salesOrder.SalesOrderLogID == x.SalesOrderLogID {
+		salesOrder.SalesOrderLogID = request.SalesOrder.SalesOrderLogID
+	}
+	if salesOrder.CreatedBy == x.CreatedBy {
+		salesOrder.CreatedBy = request.SalesOrder.CreatedBy
+	}
+	if salesOrder.LatestUpdatedBy == x.LatestUpdatedBy {
+		salesOrder.LatestUpdatedBy = request.SalesOrder.LatestUpdatedBy
+	}
+	if salesOrder.CreatedAt == x.CreatedAt {
+		salesOrder.CreatedAt = request.SalesOrder.CreatedAt
+	}
+	if salesOrder.UpdatedAt == x.UpdatedAt {
+		salesOrder.UpdatedAt = request.SalesOrder.UpdatedAt
+	}
+	if salesOrder.DeletedAt == x.DeletedAt {
+		salesOrder.DeletedAt = request.SalesOrder.DeletedAt
+	}
+
+	for k, v := range request.SalesOrder.SalesOrderDetails {
+		salesOrder.SalesOrderDetails[k].ID = v.ID
+	}
+}
+
 func (salesOrder *SalesOrder) UpdateSalesOrderChanMap(request *SalesOrderChan) {
 	salesOrder.AgentID = request.SalesOrder.AgentID
 	salesOrder.StoreID = request.SalesOrder.StoreID
