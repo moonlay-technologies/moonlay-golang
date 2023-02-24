@@ -28,6 +28,7 @@ type DeliveryOrderUseCaseInterface interface {
 	UpdateDoDetailByDeliveryOrderID(deliveryOrderID int, request []*models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.DeliveryOrderDetails, *model.ErrorLog)
 	Get(request *models.DeliveryOrderRequest) (*models.DeliveryOrdersOpenSearchResponse, *model.ErrorLog)
 	GetByID(request *models.DeliveryOrderRequest, ctx context.Context) (*models.DeliveryOrder, *model.ErrorLog)
+	GetByIDWithDetail(request *models.DeliveryOrderRequest, ctx context.Context) (*models.DeliveryOrderOpenSearchResponse, *model.ErrorLog)
 	GetByAgentID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
 	GetByStoreID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
 	GetBySalesmanID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
@@ -714,6 +715,50 @@ func (u *deliveryOrderUseCase) GetByID(request *models.DeliveryOrderRequest, ctx
 	}
 
 	return getDeliveryOrderResult.DeliveryOrder, &model.ErrorLog{}
+}
+
+func (u *deliveryOrderUseCase) GetByIDWithDetail(request *models.DeliveryOrderRequest, ctx context.Context) (*models.DeliveryOrderOpenSearchResponse, *model.ErrorLog) {
+	getDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
+	go u.deliveryOrderOpenSearchRepository.GetByID(request, getDeliveryOrderResultChan)
+	getDeliveryOrderResult := <-getDeliveryOrderResultChan
+
+	if getDeliveryOrderResult.Error != nil {
+		return &models.DeliveryOrderOpenSearchResponse{}, getDeliveryOrderResult.ErrorLog
+	}
+
+	deliveryOrderResult := models.DeliveryOrderOpenSearchResponse{}
+	deliveryOrderResult.DeliveryOrderOpenSearchResponseMap(getDeliveryOrderResult.DeliveryOrder)
+
+	// deliveryOrderResult := models.DeliveryOrderOpenSearchResponse{
+	// 	ID:            getDeliveryOrderResult.DeliveryOrder.ID,
+	// 	SalesOrderID:  getDeliveryOrderResult.DeliveryOrder.SalesOrderID,
+	// 	WarehouseID:   getDeliveryOrderResult.DeliveryOrder.WarehouseID,
+	// 	OrderSourceID: getDeliveryOrderResult.DeliveryOrder.OrderSourceID,
+	// 	AgentName:     getDeliveryOrderResult.DeliveryOrder.AgentName,
+	// 	AgentID:       getDeliveryOrderResult.DeliveryOrder.AgentID,
+	// 	StoreID:       getDeliveryOrderResult.DeliveryOrder.StoreID,
+	// 	DoCode:        getDeliveryOrderResult.DeliveryOrder.DoCode,
+	// 	DoDate:        getDeliveryOrderResult.DeliveryOrder.DoDate,
+	// 	DoRefCode:     getDeliveryOrderResult.DeliveryOrder.DoRefCode,
+	// 	DoRefDate:     getDeliveryOrderResult.DeliveryOrder.DoRefDate,
+	// 	DriverName:    getDeliveryOrderResult.DeliveryOrder.DriverName,
+	// 	PlatNumber:    getDeliveryOrderResult.DeliveryOrder.PlatNumber,
+	// 	Note:          getDeliveryOrderResult.DeliveryOrder.Note,
+	// }
+
+	deliveryOrderDetails := []*models.DeliveryOrderDetailOpenSearchDetailResponse{}
+	for _, x := range getDeliveryOrderResult.DeliveryOrder.DeliveryOrderDetails {
+		deliveryOrderDetail := models.DeliveryOrderDetailOpenSearchDetailResponse{}
+		deliveryOrderDetail.DeliveryOrderDetailOpenSearchResponseMap(x)
+		// deliveryOrderDetail := models.DeliveryOrderDetailOpenSearchDetailResponse{
+		// 	SoDetailID: x.SoDetailID,
+		// 	Qty:        x.Qty,
+		// }
+		deliveryOrderDetails = append(deliveryOrderDetails, &deliveryOrderDetail)
+	}
+	deliveryOrderResult.DeliveryOrderDetail = deliveryOrderDetails
+
+	return &deliveryOrderResult, &model.ErrorLog{}
 }
 
 func (u *deliveryOrderUseCase) GetByAgentID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog) {

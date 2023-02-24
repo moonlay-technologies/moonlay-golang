@@ -64,3 +64,21 @@ func (deliveryOrderDetail *DeliveryOrderDetail) SalesOrderDetailChanMap(request 
 	deliveryOrderDetail.SoDetail = request.SalesOrderDetail
 	return
 }
+
+func (deliveryOrder *DeliveryOrderOpenSearchResponse) DeliveryOrderOpenSearchResponseMap(request *DeliveryOrder) {
+	deliveryOrder.ID = request.ID
+	deliveryOrder.SalesOrderID = request.SalesOrderID
+	deliveryOrder.WarehouseID = request.WarehouseID
+	deliveryOrder.OrderSourceID = request.OrderSourceID
+	deliveryOrder.AgentName = request.AgentName
+	deliveryOrder.AgentID = request.AgentID
+	deliveryOrder.StoreID = request.StoreID
+	deliveryOrder.DoCode = request.DoCode
+	deliveryOrder.DoDate = request.DoDate
+	deliveryOrder.DoRefCode = request.DoRefCode
+	deliveryOrder.DoRefDate = request.DoRefDate
+	deliveryOrder.DriverName = request.DriverName
+	deliveryOrder.PlatNumber = request.PlatNumber
+	deliveryOrder.Note = request.Note
+	return
+}

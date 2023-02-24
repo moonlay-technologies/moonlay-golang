@@ -1185,7 +1185,7 @@ func (c *deliveryOrderController) GetByID(ctx *gin.Context) {
 		ID: id,
 	}
 
-	deliveryOrder, errorLog := c.deliveryOrderUseCase.GetByID(deliveryOrderRequest, ctx)
+	deliveryOrder, errorLog := c.deliveryOrderUseCase.GetByIDWithDetail(deliveryOrderRequest, ctx)
 
 	if errorLog.Err != nil {
 		resultErrorLog = errorLog
