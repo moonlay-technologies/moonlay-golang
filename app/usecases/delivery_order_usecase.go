@@ -729,31 +729,11 @@ func (u *deliveryOrderUseCase) GetByIDWithDetail(request *models.DeliveryOrderRe
 	deliveryOrderResult := models.DeliveryOrderOpenSearchResponse{}
 	deliveryOrderResult.DeliveryOrderOpenSearchResponseMap(getDeliveryOrderResult.DeliveryOrder)
 
-	// deliveryOrderResult := models.DeliveryOrderOpenSearchResponse{
-	// 	ID:            getDeliveryOrderResult.DeliveryOrder.ID,
-	// 	SalesOrderID:  getDeliveryOrderResult.DeliveryOrder.SalesOrderID,
-	// 	WarehouseID:   getDeliveryOrderResult.DeliveryOrder.WarehouseID,
-	// 	OrderSourceID: getDeliveryOrderResult.DeliveryOrder.OrderSourceID,
-	// 	AgentName:     getDeliveryOrderResult.DeliveryOrder.AgentName,
-	// 	AgentID:       getDeliveryOrderResult.DeliveryOrder.AgentID,
-	// 	StoreID:       getDeliveryOrderResult.DeliveryOrder.StoreID,
-	// 	DoCode:        getDeliveryOrderResult.DeliveryOrder.DoCode,
-	// 	DoDate:        getDeliveryOrderResult.DeliveryOrder.DoDate,
-	// 	DoRefCode:     getDeliveryOrderResult.DeliveryOrder.DoRefCode,
-	// 	DoRefDate:     getDeliveryOrderResult.DeliveryOrder.DoRefDate,
-	// 	DriverName:    getDeliveryOrderResult.DeliveryOrder.DriverName,
-	// 	PlatNumber:    getDeliveryOrderResult.DeliveryOrder.PlatNumber,
-	// 	Note:          getDeliveryOrderResult.DeliveryOrder.Note,
-	// }
-
 	deliveryOrderDetails := []*models.DeliveryOrderDetailOpenSearchDetailResponse{}
 	for _, x := range getDeliveryOrderResult.DeliveryOrder.DeliveryOrderDetails {
 		deliveryOrderDetail := models.DeliveryOrderDetailOpenSearchDetailResponse{}
 		deliveryOrderDetail.DeliveryOrderDetailOpenSearchResponseMap(x)
-		// deliveryOrderDetail := models.DeliveryOrderDetailOpenSearchDetailResponse{
-		// 	SoDetailID: x.SoDetailID,
-		// 	Qty:        x.Qty,
-		// }
+
 		deliveryOrderDetails = append(deliveryOrderDetails, &deliveryOrderDetail)
 	}
 	deliveryOrderResult.DeliveryOrderDetail = deliveryOrderDetails
