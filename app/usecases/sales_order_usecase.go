@@ -33,6 +33,7 @@ type SalesOrderUseCaseInterface interface {
 	UpdateSODetailById(soId, id int, request *models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetail, *model.ErrorLog)
 	UpdateSODetailBySOId(SoId int, request []*models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) ([]*models.SalesOrder, *model.ErrorLog)
 	GetDetails(request *models.SalesOrderRequest) (*models.SalesOrderDetailsOpenSearchResponse, *model.ErrorLog)
+	GetDetailById(id int) (*models.SalesOrderDetailOpenSearchResponse, *model.ErrorLog)
 	DeleteById(id int, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
 }
 
@@ -1305,4 +1306,29 @@ func (u *salesOrderUseCase) DeleteById(id int, sqlTransaction *sql.Tx, ctx conte
 	}
 
 	return &models.SalesOrderResponse{}, nil
+}
+
+func (u *salesOrderUseCase) GetDetailById(id int) (*models.SalesOrderDetailOpenSearchResponse, *model.ErrorLog) {
+	result := &models.SalesOrderDetailOpenSearchResponse{}
+	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderOpenSearchRepository.GetDetailByID(id, getSalesOrderResultChan)
+	getSalesOrderResult := <-getSalesOrderResultChan
+
+	if getSalesOrderResult.Error != nil {
+		return &models.SalesOrderDetailOpenSearchResponse{}, getSalesOrderResult.ErrorLog
+	}
+
+	var salesOrder models.SalesOrderOpenSearchResponse
+	salesOrder.SalesOrderOpenSearchResponseMap(getSalesOrderResult.SalesOrder)
+
+	for _, x := range getSalesOrderResult.SalesOrder.SalesOrderDetails {
+		fmt.Println("id = ", x.ID, x.ID == id)
+		if x.ID == id {
+			result.SalesOrderDetailOpenSearchResponseMap(x)
+		}
+		fmt.Println("result = ", result.ID)
+	}
+	fmt.Println("result = ", result.ID)
+	return result, &model.ErrorLog{}
+
 }
