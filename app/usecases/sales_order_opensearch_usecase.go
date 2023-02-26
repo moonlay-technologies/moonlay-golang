@@ -21,6 +21,9 @@ type SalesOrderOpenSearchUseCaseInterface interface {
 	SyncToOpenSearchFromCreateEvent(salesOrder *models.SalesOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromUpdateEvent(salesOrder *models.SalesOrder, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromDeleteEvent(salesOrder *models.SalesOrder, ctx context.Context) *model.ErrorLog
+	SyncDetailToOpenSearchFromCreateEvent(salesOrderDetail *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
+	SyncDetailToOpenSearchFromUpdateEvent(salesOrderDetail *models.SalesOrderDetail, ctx context.Context) *model.ErrorLog
+	SyncDetailToOpenSearchFromDeleteEvent(salesOrderDetail *models.SalesOrderDetail, ctx context.Context) *model.ErrorLog
 }
 
 type SalesOrderOpenSearchUseCase struct {
@@ -275,6 +278,44 @@ func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromDeleteEvent(salesOrder
 
 	updateSalesOrderResultChan := make(chan *models.SalesOrderChan)
 	go u.salesOrderOpenSearchRepository.Create(salesOrder, updateSalesOrderResultChan)
+	updateSalesOrderResult := <-updateSalesOrderResultChan
+
+	if updateSalesOrderResult.Error != nil {
+		return updateSalesOrderResult.ErrorLog
+	}
+
+	return &model.ErrorLog{}
+}
+func (u *SalesOrderOpenSearchUseCase) SyncDetailToOpenSearchFromCreateEvent(salesOrderDetail *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
+	return &model.ErrorLog{}
+}
+
+func (u *SalesOrderOpenSearchUseCase) SyncDetailToOpenSearchFromUpdateEvent(salesOrderDetail *models.SalesOrderDetail, ctx context.Context) *model.ErrorLog {
+	return &model.ErrorLog{}
+}
+
+func (u *SalesOrderOpenSearchUseCase) SyncDetailToOpenSearchFromDeleteEvent(salesOrderDetail *models.SalesOrderDetail, ctx context.Context) *model.ErrorLog {
+	now := time.Now()
+	salesOrderRequest := &models.SalesOrderRequest{ID: salesOrderDetail.SalesOrderID}
+	x := models.SalesOrderDetailOpenSearch{}
+
+	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderOpenSearchRepository.GetByID(salesOrderRequest, getSalesOrderResultChan)
+	getSalesOrderResult := <-getSalesOrderResultChan
+	x.SalesOrderMap(getSalesOrderResult.SalesOrder)
+
+	for v, k := range getSalesOrderResult.SalesOrder.SalesOrderDetails {
+		if salesOrderDetail.ID == k.ID {
+			k.DeletedAt = &now
+			k.IsDoneSyncToEs = "1"
+			k.EndDateSyncToEs = &now
+			x.SalesOrderDetailMap(k)
+		}
+		getSalesOrderResult.SalesOrder.SalesOrderDetails[v] = k
+	}
+
+	updateSalesOrderResultChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderOpenSearchRepository.Create(getSalesOrderResult.SalesOrder, updateSalesOrderResultChan)
 	updateSalesOrderResult := <-updateSalesOrderResultChan
 
 	if updateSalesOrderResult.Error != nil {

@@ -65,3 +65,51 @@ func (_m *SalesOrderOpenSearchUseCaseInterface) SyncToOpenSearchFromDeleteEvent(
 
 	return r0
 }
+
+// SyncToOpenSearchFromCreateEvent provides a mock function with given fields: salesOrder, sqlTransaction, ctx
+func (_m *SalesOrderOpenSearchUseCaseInterface) SyncDetailToOpenSearchFromCreateEvent(salesOrderDetail *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
+	ret := _m.Called(salesOrderDetail, sqlTransaction, ctx)
+
+	var r0 *model.ErrorLog
+	if rf, ok := ret.Get(0).(func(*models.SalesOrderDetail, *sql.Tx, context.Context) *model.ErrorLog); ok {
+		r0 = rf(salesOrderDetail, sqlTransaction, ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.ErrorLog)
+		}
+	}
+
+	return r0
+}
+
+// SyncToOpenSearchFromUpdateEvent provides a mock function with given fields: salesOrder, ctx
+func (_m *SalesOrderOpenSearchUseCaseInterface) SyncDetailToOpenSearchFromUpdateEvent(salesOrderDetail *models.SalesOrderDetail, ctx context.Context) *model.ErrorLog {
+	ret := _m.Called(salesOrderDetail, ctx)
+
+	var r0 *model.ErrorLog
+	if rf, ok := ret.Get(0).(func(*models.SalesOrderDetail, context.Context) *model.ErrorLog); ok {
+		r0 = rf(salesOrderDetail, ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.ErrorLog)
+		}
+	}
+
+	return r0
+}
+
+// SyncToOpenSearchFromDeleteEvent provides a mock function with given fields: salesOrder, ctx
+func (_m *SalesOrderOpenSearchUseCaseInterface) SyncDetailToOpenSearchFromDeleteEvent(salesOrderDetail *models.SalesOrderDetail, ctx context.Context) *model.ErrorLog {
+	ret := _m.Called(salesOrderDetail, ctx)
+
+	var r0 *model.ErrorLog
+	if rf, ok := ret.Get(0).(func(*models.SalesOrderDetail, context.Context) *model.ErrorLog); ok {
+		r0 = rf(salesOrderDetail, ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.ErrorLog)
+		}
+	}
+
+	return r0
+}
