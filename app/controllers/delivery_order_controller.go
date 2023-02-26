@@ -518,6 +518,15 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 		sortField = "created_at"
 	}
 
+	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "created_at" && sortField != "updated_at" {
+		err = helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
 	globalSearchValue, isGlobalSearchValueExist := ctx.GetQuery("global_search_value")
 	if isGlobalSearchValueExist == false {
 		globalSearchValue = ""
