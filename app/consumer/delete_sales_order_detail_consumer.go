@@ -16,11 +16,11 @@ import (
 	"github.com/bxcodec/dbresolver"
 )
 
-type DeleteSalesOrderConsumerHandlerInterface interface {
+type DeleteSalesOrderDetailConsumerHandlerInterface interface {
 	ProcessMessage()
 }
 
-type DeleteSalesOrderConsumerHandler struct {
+type DeleteSalesOrderDetailConsumerHandler struct {
 	kafkaClient                 kafkadbo.KafkaClientInterface
 	salesOrderOpenSearchUseCase usecases.SalesOrderOpenSearchUseCaseInterface
 	ctx                         context.Context
@@ -29,8 +29,8 @@ type DeleteSalesOrderConsumerHandler struct {
 	salesOrderLogRepository     mongoRepositories.SalesOrderLogRepositoryInterface
 }
 
-func InitDeleteSalesOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface, salesOrderOpenSearchUseCase usecases.SalesOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) DeleteSalesOrderConsumerHandlerInterface {
-	return &DeleteSalesOrderConsumerHandler{
+func InitDeleteSalesOrderDetailConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface, salesOrderOpenSearchUseCase usecases.SalesOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) DeleteSalesOrderDetailConsumerHandlerInterface {
+	return &DeleteSalesOrderDetailConsumerHandler{
 		kafkaClient:                 kafkaClient,
 		salesOrderOpenSearchUseCase: salesOrderOpenSearchUseCase,
 		ctx:                         ctx,
@@ -40,7 +40,7 @@ func InitDeleteSalesOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClie
 	}
 }
 
-func (c *DeleteSalesOrderConsumerHandler) ProcessMessage() {
+func (c *DeleteSalesOrderDetailConsumerHandler) ProcessMessage() {
 	fmt.Println("process", constants.DELETE_SALES_ORDER_TOPIC)
 	now := time.Now()
 	topic := c.args[1].(string)
@@ -56,9 +56,9 @@ func (c *DeleteSalesOrderConsumerHandler) ProcessMessage() {
 
 		fmt.Printf("message at topic/partition/offset %v/%v/%v \n", m.Topic, m.Partition, m.Offset)
 
-		var salesOrder models.SalesOrder
+		var salesOrderDetail models.SalesOrderDetail
 		fmt.Println("value = ", string(m.Value))
-		err = json.Unmarshal(m.Value, &salesOrder)
+		err = json.Unmarshal(m.Value, &salesOrderDetail)
 
 		dbTransaction, err := c.db.BeginTx(c.ctx, nil)
 		salesOrderLog := &models.SalesOrderLog{
@@ -77,9 +77,9 @@ func (c *DeleteSalesOrderConsumerHandler) ProcessMessage() {
 			fmt.Println(errorLogData)
 			continue
 		}
-		fmt.Println("c = ", salesOrder.ID)
+		fmt.Println("c = ", salesOrderDetail.ID)
 
-		go c.salesOrderLogRepository.GetByCollumn(constants.COLUMN_SALES_ORDER_CODE, salesOrder.SoCode, false, c.ctx, salesOrderLogResultChan)
+		go c.salesOrderLogRepository.GetByCollumn(constants.COLUMN_SALES_ORDER_CODE, salesOrderDetail.SoDetailCode, false, c.ctx, salesOrderLogResultChan)
 		salesOrderDetailResult := <-salesOrderLogResultChan
 		if salesOrderDetailResult.Error != nil {
 			salesOrderLog.Error = salesOrderDetailResult.Error
@@ -91,7 +91,7 @@ func (c *DeleteSalesOrderConsumerHandler) ProcessMessage() {
 		salesOrderLog = salesOrderDetailResult.SalesOrderLog
 		salesOrderLog.Status = constants.LOG_STATUS_MONGO_ERROR
 		salesOrderLog.UpdatedAt = &now
-		errorLog := c.salesOrderOpenSearchUseCase.SyncToOpenSearchFromDeleteEvent(&salesOrder, c.ctx)
+		errorLog := c.salesOrderOpenSearchUseCase.SyncDetailToOpenSearchFromDeleteEvent(&salesOrderDetail, c.ctx)
 		if errorLog.Err != nil {
 			dbTransaction.Rollback()
 			errorLogData := helper.WriteLogConsumer(constants.UPDATE_SALES_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, nil)
