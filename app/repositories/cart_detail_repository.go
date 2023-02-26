@@ -17,7 +17,7 @@ import (
 )
 
 type CartDetailRepositoryInterface interface {
-	GetByCartID(cartID, countOnly bool, ctx context.Context, result chan *models.CartDetailsChan)
+	GetByCartID(cartID int, countOnly bool, ctx context.Context, result chan *models.CartDetailsChan)
 	Insert(request *models.CartDetail, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.CartDetailChan)
 }
 
@@ -33,7 +33,7 @@ func InitCartDetailRepository(db dbresolver.DB, redisdb redisdb.RedisInterface) 
 	}
 }
 
-func (r *cartDetail) GetByCartID(cartID, countOnly bool, ctx context.Context, resultChan chan *models.CartDetailsChan) {
+func (r *cartDetail) GetByCartID(cartID int, countOnly bool, ctx context.Context, resultChan chan *models.CartDetailsChan) {
 	response := &models.CartDetailsChan{}
 	var cartDetails []*models.CartDetail
 	var total int64
