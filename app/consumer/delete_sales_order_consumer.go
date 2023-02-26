@@ -21,22 +21,23 @@ type DeleteSalesOrderConsumerHandlerInterface interface {
 }
 
 type DeleteSalesOrderConsumerHandler struct {
-	kafkaClient             kafkadbo.KafkaClientInterface
-	salesOrderUseCase       usecases.SalesOrderUseCaseInterface
-	ctx                     context.Context
-	args                    []interface{}
-	db                      dbresolver.DB
-	salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface
+	kafkaClient                 kafkadbo.KafkaClientInterface
+	salesOrderUseCase           usecases.SalesOrderUseCaseInterface
+	salesOrderOpenSearchUseCase usecases.SalesOrderOpenSearchUseCaseInterface
+	ctx                         context.Context
+	args                        []interface{}
+	db                          dbresolver.DB
+	salesOrderLogRepository     mongoRepositories.SalesOrderLogRepositoryInterface
 }
 
-func InitDeleteSalesOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface, salesOrderUseCase usecases.SalesOrderUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) DeleteSalesOrderConsumerHandlerInterface {
+func InitDeleteSalesOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface, salesOrderOpenSearchUseCase usecases.SalesOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) DeleteSalesOrderConsumerHandlerInterface {
 	return &DeleteSalesOrderConsumerHandler{
-		kafkaClient:             kafkaClient,
-		salesOrderUseCase:       salesOrderUseCase,
-		ctx:                     ctx,
-		args:                    args,
-		db:                      db,
-		salesOrderLogRepository: salesOrderLogRepository,
+		kafkaClient:                 kafkaClient,
+		salesOrderOpenSearchUseCase: salesOrderOpenSearchUseCase,
+		ctx:                         ctx,
+		args:                        args,
+		db:                          db,
+		salesOrderLogRepository:     salesOrderLogRepository,
 	}
 }
 
@@ -91,7 +92,7 @@ func (c *DeleteSalesOrderConsumerHandler) ProcessMessage() {
 		salesOrderLog = salesOrderDetailResult.SalesOrderLog
 		salesOrderLog.Status = constants.LOG_STATUS_MONGO_ERROR
 		salesOrderLog.UpdatedAt = &now
-		errorLog := c.salesOrderUseCase.SyncToOpenSearchFromDeleteEvent(&salesOrder, c.ctx)
+		errorLog := c.salesOrderOpenSearchUseCase.SyncToOpenSearchFromDeleteEvent(&salesOrder, c.ctx)
 		if errorLog.Err != nil {
 			dbTransaction.Rollback()
 			errorLogData := helper.WriteLogConsumer(constants.UPDATE_SALES_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, nil)

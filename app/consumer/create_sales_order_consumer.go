@@ -21,22 +21,22 @@ type CreateSalesOrderConsumerHandlerInterface interface {
 }
 
 type createSalesOrderConsumerHandler struct {
-	kafkaClient             kafkadbo.KafkaClientInterface
-	salesOrderUseCase       usecases.SalesOrderUseCaseInterface
-	ctx                     context.Context
-	args                    []interface{}
-	db                      dbresolver.DB
-	salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface
+	kafkaClient                 kafkadbo.KafkaClientInterface
+	salesOrderOpenSearchUseCase usecases.SalesOrderOpenSearchUseCaseInterface
+	ctx                         context.Context
+	args                        []interface{}
+	db                          dbresolver.DB
+	salesOrderLogRepository     mongoRepositories.SalesOrderLogRepositoryInterface
 }
 
-func InitCreateSalesOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface, salesOrderUseCase usecases.SalesOrderUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) CreateSalesOrderConsumerHandlerInterface {
+func InitCreateSalesOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface, salesOrderOpenSearchUseCase usecases.SalesOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) CreateSalesOrderConsumerHandlerInterface {
 	return &createSalesOrderConsumerHandler{
-		kafkaClient:             kafkaClient,
-		salesOrderUseCase:       salesOrderUseCase,
-		ctx:                     ctx,
-		args:                    args,
-		db:                      db,
-		salesOrderLogRepository: salesOrderLogRepository,
+		kafkaClient:                 kafkaClient,
+		salesOrderOpenSearchUseCase: salesOrderOpenSearchUseCase,
+		ctx:                         ctx,
+		args:                        args,
+		db:                          db,
+		salesOrderLogRepository:     salesOrderLogRepository,
 	}
 }
 
@@ -86,7 +86,7 @@ func (c *createSalesOrderConsumerHandler) ProcessMessage() {
 		salesOrderLog = salesOrderDetailResult.SalesOrderLog
 		salesOrderLog.Status = constants.LOG_STATUS_MONGO_ERROR
 		salesOrderLog.UpdatedAt = &now
-		errorLog := c.salesOrderUseCase.SyncToOpenSearchFromCreateEvent(&salesOrder, dbTransaction, c.ctx)
+		errorLog := c.salesOrderOpenSearchUseCase.SyncToOpenSearchFromCreateEvent(&salesOrder, dbTransaction, c.ctx)
 		if errorLog.Err != nil {
 			dbTransaction.Rollback()
 			errorLogData := helper.WriteLogConsumer(constants.UPDATE_SALES_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, nil)

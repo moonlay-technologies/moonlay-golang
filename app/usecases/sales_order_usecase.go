@@ -14,7 +14,6 @@ import (
 	"order-service/global/utils/helper"
 	kafkadbo "order-service/global/utils/kafka"
 	"order-service/global/utils/model"
-	"strings"
 	"time"
 
 	"github.com/bxcodec/dbresolver"
@@ -30,9 +29,6 @@ type SalesOrderUseCaseInterface interface {
 	GetBySalesmanID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
 	GetByOrderStatusID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
 	GetByOrderSourceID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
-	SyncToOpenSearchFromCreateEvent(salesOrder *models.SalesOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
-	SyncToOpenSearchFromUpdateEvent(salesOrder *models.SalesOrder, ctx context.Context) *model.ErrorLog
-	SyncToOpenSearchFromDeleteEvent(salesOrder *models.SalesOrder, ctx context.Context) *model.ErrorLog
 	UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
 	UpdateSODetailById(soId, id int, request *models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetail, *model.ErrorLog)
 	UpdateSODetailBySOId(SoId int, request []*models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) ([]*models.SalesOrder, *model.ErrorLog)
@@ -611,191 +607,6 @@ func (u *salesOrderUseCase) GetByOrderSourceID(request *models.SalesOrderRequest
 	}
 
 	return salesOrders, &model.ErrorLog{}
-}
-
-func (u *salesOrderUseCase) SyncToOpenSearchFromCreateEvent(salesOrder *models.SalesOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
-	now := time.Now()
-
-	// deliveryOrdersRequest := &models.DeliveryOrderRequest{
-	// 	SalesOrderID: salesOrder.ID,
-	// }
-
-	// getDeliveryOrdersResultChan := make(chan *models.DeliveryOrdersChan)
-	// go u.deliveryOrderOpenSearchRepository.GetBySalesOrderID(deliveryOrdersRequest, getDeliveryOrdersResultChan)
-	// getDeliveryOrdersResult := <-getDeliveryOrdersResultChan
-	// deliveryOrdersFound := true
-
-	// if getDeliveryOrdersResult.Error != nil {
-	// 	deliveryOrdersFound = false
-	// 	if !strings.Contains(getDeliveryOrdersResult.Error.Error(), "not found") {
-	// 		errorLogData := helper.WriteLog(getDeliveryOrdersResult.Error, http.StatusInternalServerError, nil)
-	// 		return errorLogData
-	// 	}
-	// }
-
-	// if deliveryOrdersFound == true {
-	// 	salesOrder.DeliveryOrders = getDeliveryOrdersResult.DeliveryOrders
-	// }
-
-	for k, v := range salesOrder.SalesOrderDetails {
-		getProductResultChan := make(chan *models.ProductChan)
-		go u.productRepository.GetByID(v.ProductID, false, ctx, getProductResultChan)
-		getProductResult := <-getProductResultChan
-
-		if getProductResult.Error != nil {
-			errorLogData := helper.WriteLog(getProductResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-
-		salesOrder.SalesOrderDetails[k].Product = getProductResult.Product
-
-		getUomResultChan := make(chan *models.UomChan)
-		go u.uomRepository.GetByID(v.UomID, false, ctx, getUomResultChan)
-		getUomResult := <-getUomResultChan
-
-		if getUomResult.Error != nil {
-			errorLogData := helper.WriteLog(getUomResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-
-		salesOrder.SalesOrderDetails[k].Uom = getUomResult.Uom
-
-		getOrderStatusDetailResultChan := make(chan *models.OrderStatusChan)
-		go u.orderStatusRepository.GetByID(v.OrderStatusID, false, ctx, getOrderStatusDetailResultChan)
-		getOrderStatusDetailResult := <-getOrderStatusDetailResultChan
-
-		if getOrderStatusDetailResult.Error != nil {
-			errorLogData := helper.WriteLog(getOrderStatusDetailResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-
-		salesOrder.SalesOrderDetails[k].EndDateSyncToEs = &now
-		salesOrder.SalesOrderDetails[k].IsDoneSyncToEs = "1"
-		salesOrder.SalesOrderDetails[k].OrderStatus = getOrderStatusDetailResult.OrderStatus
-
-		salesOrderDetailUpdateData := &models.SalesOrderDetail{
-			UpdatedAt:       &now,
-			IsDoneSyncToEs:  "1",
-			EndDateSyncToEs: &now,
-		}
-
-		updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
-		go u.salesOrderDetailRepository.UpdateByID(v.ID, salesOrderDetailUpdateData, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
-		updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
-
-		if updateSalesOrderDetailResult.Error != nil {
-			errorLogData := helper.WriteLog(updateSalesOrderDetailResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-	}
-
-	salesOrder.IsDoneSyncToEs = "1"
-	salesOrder.EndDateSyncToEs = &now
-	salesOrder.UpdatedAt = &now
-	salesOrder.EndCreatedDate = &now
-
-	createSalesOrderResultChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderOpenSearchRepository.Create(salesOrder, createSalesOrderResultChan)
-	createSalesOrderResult := <-createSalesOrderResultChan
-
-	if createSalesOrderResult.Error != nil {
-		return createSalesOrderResult.ErrorLog
-	}
-
-	salesOrderUpdateData := &models.SalesOrder{
-		UpdatedAt:       &now,
-		IsDoneSyncToEs:  "1",
-		EndCreatedDate:  &now,
-		EndDateSyncToEs: &now,
-	}
-
-	updateSalesOrderResultChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.UpdateByID(salesOrder.ID, salesOrderUpdateData, sqlTransaction, ctx, updateSalesOrderResultChan)
-	updateSalesOrderResult := <-updateSalesOrderResultChan
-
-	if updateSalesOrderResult.Error != nil {
-		errorLogData := helper.WriteLog(updateSalesOrderResult.Error, http.StatusInternalServerError, nil)
-		return errorLogData
-	}
-
-	return &model.ErrorLog{}
-}
-
-func (u *salesOrderUseCase) SyncToOpenSearchFromUpdateEvent(salesOrder *models.SalesOrder, ctx context.Context) *model.ErrorLog {
-	now := time.Now()
-
-	deliveryOrdersRequest := &models.DeliveryOrderRequest{
-		SalesOrderID: salesOrder.ID,
-	}
-
-	getDeliveryOrdersResultChan := make(chan *models.DeliveryOrdersChan)
-	go u.deliveryOrderOpenSearchRepository.GetBySalesOrderID(deliveryOrdersRequest, getDeliveryOrdersResultChan)
-	getDeliveryOrdersResult := <-getDeliveryOrdersResultChan
-	deliveryOrdersFound := true
-
-	if getDeliveryOrdersResult.Error != nil {
-		deliveryOrdersFound = false
-		if !strings.Contains(getDeliveryOrdersResult.Error.Error(), "not found") {
-			errorLogData := helper.WriteLog(getDeliveryOrdersResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-	}
-
-	if deliveryOrdersFound == true {
-
-		for x := range getDeliveryOrdersResult.DeliveryOrders {
-			getDeliveryOrdersResult.DeliveryOrders[x].SalesOrder = nil
-		}
-
-		salesOrder.DeliveryOrders = getDeliveryOrdersResult.DeliveryOrders
-	}
-
-	for k, v := range salesOrder.SalesOrderDetails {
-		getProductResultChan := make(chan *models.ProductChan)
-		go u.productRepository.GetByID(v.ProductID, false, ctx, getProductResultChan)
-		getProductResult := <-getProductResultChan
-
-		if getProductResult.Error != nil {
-			errorLogData := helper.WriteLog(getProductResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-
-		salesOrder.SalesOrderDetails[k].Product = getProductResult.Product
-
-		getUomResultChan := make(chan *models.UomChan)
-		go u.uomRepository.GetByID(v.UomID, false, ctx, getUomResultChan)
-		getUomResult := <-getUomResultChan
-
-		if getUomResult.Error != nil {
-			errorLogData := helper.WriteLog(getUomResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-
-		salesOrder.SalesOrderDetails[k].Uom = getUomResult.Uom
-
-		getOrderStatusDetailResultChan := make(chan *models.OrderStatusChan)
-		go u.orderStatusRepository.GetByID(v.OrderStatusID, false, ctx, getOrderStatusDetailResultChan)
-		getOrderStatusDetailResult := <-getOrderStatusDetailResultChan
-
-		if getOrderStatusDetailResult.Error != nil {
-			errorLogData := helper.WriteLog(getOrderStatusDetailResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-
-		salesOrder.SalesOrderDetails[k].OrderStatus = getOrderStatusDetailResult.OrderStatus
-	}
-
-	salesOrder.UpdatedAt = &now
-
-	updateSalesOrderResultChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderOpenSearchRepository.Create(salesOrder, updateSalesOrderResultChan)
-	updateSalesOrderResult := <-updateSalesOrderResultChan
-
-	if updateSalesOrderResult.Error != nil {
-		return updateSalesOrderResult.ErrorLog
-	}
-
-	return &model.ErrorLog{}
 }
 
 func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog) {
@@ -1494,34 +1305,4 @@ func (u *salesOrderUseCase) DeleteById(id int, sqlTransaction *sql.Tx, ctx conte
 	}
 
 	return &models.SalesOrderResponse{}, nil
-}
-
-func (u *salesOrderUseCase) SyncToOpenSearchFromDeleteEvent(salesOrder *models.SalesOrder, ctx context.Context) *model.ErrorLog {
-	now := time.Now()
-	salesOrderRequest := &models.SalesOrderRequest{ID: salesOrder.ID}
-
-	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderOpenSearchRepository.GetByID(salesOrderRequest, getSalesOrderResultChan)
-	getSalesOrderResult := <-getSalesOrderResultChan
-
-	salesOrder.SalesOrderOpenSearchChanMap(getSalesOrderResult)
-
-	for k := range salesOrder.SalesOrderDetails {
-		salesOrder.SalesOrderDetails[k].IsDoneSyncToEs = "1"
-		salesOrder.SalesOrderDetails[k].EndDateSyncToEs = &now
-	}
-
-	salesOrder.UpdatedAt = &now
-	salesOrder.IsDoneSyncToEs = "1"
-	salesOrder.EndDateSyncToEs = &now
-
-	updateSalesOrderResultChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderOpenSearchRepository.Create(salesOrder, updateSalesOrderResultChan)
-	updateSalesOrderResult := <-updateSalesOrderResultChan
-
-	if updateSalesOrderResult.Error != nil {
-		return updateSalesOrderResult.ErrorLog
-	}
-
-	return &model.ErrorLog{}
 }

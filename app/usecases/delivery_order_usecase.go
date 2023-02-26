@@ -58,13 +58,14 @@ type deliveryOrderUseCase struct {
 	deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface
 	salesOrderOpenSearchRepository    openSearchRepositories.SalesOrderOpenSearchRepositoryInterface
 	salesOrderUseCase                 SalesOrderUseCaseInterface
+	SalesOrderOpenSearchUseCase       SalesOrderOpenSearchUseCaseInterface
 	kafkaClient                       kafkadbo.KafkaClientInterface
 	ValidationRepository              repositories.RequestValidationRepositoryInterface
 	db                                dbresolver.DB
 	ctx                               context.Context
 }
 
-func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, deliveryOrderDetailRepository repositories.DeliveryOrderDetailRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderUseCase SalesOrderUseCaseInterface, kafkaClient kafkadbo.KafkaClientInterface, ValidationRepository repositories.RequestValidationRepositoryInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderUseCaseInterface {
+func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, deliveryOrderDetailRepository repositories.DeliveryOrderDetailRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderUseCase SalesOrderUseCaseInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, kafkaClient kafkadbo.KafkaClientInterface, ValidationRepository repositories.RequestValidationRepositoryInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderUseCaseInterface {
 	return &deliveryOrderUseCase{
 		deliveryOrderRepository:           deliveryOrderRepository,
 		deliveryOrderDetailRepository:     deliveryOrderDetailRepository,
@@ -84,6 +85,7 @@ func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.Deli
 		deliveryOrderOpenSearchRepository: deliveryOrderOpenSearchRepository,
 		salesOrderOpenSearchRepository:    salesOrderOpenSearchRepository,
 		salesOrderUseCase:                 salesOrderUseCase,
+		SalesOrderOpenSearchUseCase:       salesOrderOpenSearchUseCase,
 		kafkaClient:                       kafkaClient,
 		ValidationRepository:              ValidationRepository,
 		db:                                db,
@@ -1260,7 +1262,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromDeleteEvent(deliveryOrderId *
 		v.ResidualQty += deliveryOrder.DeliveryOrderDetails[k].Qty
 	}
 	deleteDeliveryOrderResult.DeliveryOrder.SalesOrder = salesOrderWithDetail
-	deleteDeliveryOrderResult.ErrorLog = u.salesOrderUseCase.SyncToOpenSearchFromUpdateEvent(salesOrderWithDetail, ctx)
+	deleteDeliveryOrderResult.ErrorLog = u.SalesOrderOpenSearchUseCase.SyncToOpenSearchFromUpdateEvent(salesOrderWithDetail, ctx)
 
 	if deleteDeliveryOrderResult.ErrorLog != nil {
 		fmt.Println(deleteDeliveryOrderResult.ErrorLog.Err.Error())

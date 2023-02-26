@@ -56,3 +56,51 @@ func (salesOrderDetail *SalesOrderDetailOpenSearchResponse) SalesOrderDetailOpen
 	salesOrderDetail.OrderStatus.OrderStatusOpenSearchResponseMap(request.OrderStatus)
 	return
 }
+
+func (salesOrderDetail *SalesOrderDetailOpenSearch) SalesOrderDetailMap(request *SalesOrderDetail) {
+	salesOrderDetail.ID = request.ID
+	salesOrderDetail.SoDetailCode = request.SoDetailCode
+	salesOrderDetail.Qty = request.Qty
+	salesOrderDetail.SentQty = request.SentQty
+	salesOrderDetail.ResidualQty = request.ResidualQty
+	salesOrderDetail.Price = request.Price
+	salesOrderDetail.Note = request.Note
+	salesOrderDetail.OrderStatusID = request.OrderStatusID
+	salesOrderDetail.UomID = request.UomID
+	salesOrderDetail.IsDoneSyncToEs = request.IsDoneSyncToEs
+	salesOrderDetail.StartDateSyncToEs = request.StartDateSyncToEs
+	salesOrderDetail.EndDateSyncToEs = request.EndDateSyncToEs
+	salesOrderDetail.Subtotal = request.Subtotal
+	salesOrderDetail.CreatedAt = request.CreatedAt
+	salesOrderDetail.UpdatedAt = request.UpdatedAt
+	salesOrderDetail.DeletedAt = request.DeletedAt
+	salesOrderDetail.ProductID = request.ProductID
+	salesOrderDetail.Product = request.Product
+	salesOrderDetail.Uom = request.Uom
+	return
+}
+
+func (salesOrderDetail *SalesOrderDetailOpenSearch) SalesOrderMap(request *SalesOrder) {
+	salesOrderDetail.SalesOrderID = request.ID
+	salesOrderDetail.SoCode = request.SoCode
+	salesOrderDetail.SoDate = request.SoDate
+	salesOrderDetail.SoRefCode = request.ReferralCode.String
+	salesOrderDetail.SoRefDate = request.SoRefDate
+	salesOrderDetail.SoReferralCode = request.ReferralCode
+	salesOrderDetail.AgentId = request.AgentID
+	salesOrderDetail.Agent = request.Agent
+	salesOrderDetail.StoreID = request.StoreID
+	salesOrderDetail.Store = request.Store
+	salesOrderDetail.BrandID = request.BrandID
+	salesOrderDetail.BrandName = request.BrandName
+	salesOrderDetail.Brand = request.Brand
+	salesOrderDetail.UserID = request.UserID
+	salesOrderDetail.User = request.User
+	salesOrderDetail.SalesmanID = request.SalesmanID
+	salesOrderDetail.Salesman = request.Salesman
+	salesOrderDetail.OrderSourceID = request.OrderSourceID
+	salesOrderDetail.OrderSource = request.OrderSource
+	salesOrderDetail.OrderStatus = request.OrderStatus
+	salesOrderDetail.GLat = request.GLat
+	salesOrderDetail.GLong = request.GLong
+}
