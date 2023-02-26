@@ -97,6 +97,50 @@ type SalesOrderDetails struct {
 	Total             int64               `json:"total,omitempty"`
 }
 
+type SalesOrderDetailOpenSearch struct {
+	ID                int          `json:"id,omitempty" bson:"id,omitempty"`
+	SoDetailCode      string       `json:"so_detail_code,omitempty" bson:"so_detail_code,omitempty"`
+	Qty               int          `json:"qty,omitempty" bson:"qty,omitempty"`
+	SentQty           int          `json:"sent_qty,omitempty" bson:"sent_qty,omitempty"`
+	ResidualQty       int          `json:"residual_qty,omitempty" bson:"residual_qty,omitempty"`
+	Price             float64      `json:"price,omitempty" bson:"price,omitempty"`
+	Subtotal          float64      `json:"subtotal,omitempty" bson:"subtotal,omitempty"`
+	Note              NullString   `json:"note,omitempty" bson:"note,omitempty"`
+	SalesOrderID      int          `json:"sales_order_id,omitempty" bson:"sales_order_id,omitempty"`
+	SoCode            string       `json:"so_code,omitempty" bson:"so_code,omitempty"`
+	SoDate            string       `json:"so_date,omitempty" bson:"so_date,omitempty"`
+	SoRefCode         string       `json:"so_ref_code,omitempty" bson:"so_ref_code,omitempty"`
+	SoRefDate         NullString   `json:"so_ref_date,omitempty" bson:"so_ref_date,omitempty"`
+	SoReferralCode    NullString   `json:"so_referral_code,omitempty" bson:"so_referral_code,omitempty"`
+	AgentId           int          `json:"agent_id,omitempty" bson:"agent_id,omitempty"`
+	Agent             *Agent       `json:"agent,omitempty" bson:"agent,omitempty"`
+	StoreID           int          `json:"store_id,omitempty" bson:"store_id,omitempty"`
+	Store             *Store       `json:"store,omitempty" bson:"store,omitempty"`
+	BrandID           int          `json:"brand_id,omitempty" bson:"brand_id,omitempty"`
+	BrandName         string       `json:"brand_name,omitempty" bson:"brand_name,omitempty"`
+	Brand             *Brand       `json:"brand,omitempty" bson:"brand,omitempty"`
+	UserID            int          `json:"user_id,omitempty" bson:"user_id,omitempty"`
+	User              *User        `json:"user,omitempty" bson:"user,omitempty"`
+	SalesmanID        int          `json:"salesman_id,omitempty" bson:"salesman_id,omitempty"`
+	Salesman          *Salesman    `json:"salesman,omitempty" bson:"salesman,omitempty"`
+	OrderSourceID     int          `json:"order_source_id,omitempty" bson:"order_source_id,omitempty"`
+	OrderSource       *OrderSource `json:"order_source,omitempty" bson:"order_source,omitempty"`
+	OrderStatusID     int          `json:"order_status_id,omitempty" bson:"order_status_id,omitempty"`
+	OrderStatus       *OrderStatus `json:"order_status,omitempty" bson:"order_status,omitempty"`
+	GLat              NullFloat64  `json:"g_lat,omitempty" bson:"g_lat,omitempty"`
+	GLong             NullFloat64  `json:"g_long,omitempty" bson:"g_long,omitempty"`
+	ProductID         int          `json:"product_id,omitempty" bson:"product_id,omitempty" `
+	Product           *Product     `json:"product,omitempty" bson:"product,omitempty"`
+	UomID             int          `json:"uom_id,omitempty" bson:"uom_id,omitempty"`
+	Uom               *Uom         `json:"uom,omitempty" bson:"uom,omitempty"`
+	IsDoneSyncToEs    string       `json:"is_done_sync_to_es,omitempty" bson:"is_done_sync_to_es,omitempty"`
+	StartDateSyncToEs *time.Time   `json:"start_date_sync_to_es,omitempty" bson:"start_date_sync_to_es,omitempty"`
+	EndDateSyncToEs   *time.Time   `json:"end_date_sync_to_es,omitempty" bson:"end_date_sync_to_es,omitempty"`
+	CreatedAt         *time.Time   `json:"created_at,omitempty" bson:"created_at,omitempty"`
+	UpdatedAt         *time.Time   `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
+	DeletedAt         *time.Time   `json:"deleted_at,omitempty" bson:"deleted_at,omitempty"`
+}
+
 type SalesOrderDetailOpenSearchResponse struct {
 	ID            int                            `json:"id,omitempty" bson:"id,omitempty"`
 	SalesOrderID  int                            `json:"sales_order_id,omitempty" bson:"sales_order_id,omitempty"`

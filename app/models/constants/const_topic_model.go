@@ -5,6 +5,10 @@ const (
 	UPDATE_SALES_ORDER_TOPIC = "update-sales-order"
 	DELETE_SALES_ORDER_TOPIC = "delete-sales-order"
 
+	CREATE_SALES_ORDER_DETAIL_TOPIC = "create-sales-order-detail"
+	UPDATE_SALES_ORDER_DETAIL_TOPIC = "update-sales-order-detail"
+	DELETE_SALES_ORDER_DETAIL_TOPIC = "delete-sales-order-detail"
+
 	CREATE_DELIVERY_ORDER_TOPIC = "create-delivery-order"
 	UPDATE_DELIVERY_ORDER_TOPIC = "update-delivery-order"
 	DELETE_DELIVERY_ORDER_TOPIC = "delete-delivery-order"
