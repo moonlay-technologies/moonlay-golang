@@ -28,6 +28,7 @@ type SalesOrderControllerInterface interface {
 	UpdateSODetailBySOID(ctx *gin.Context)
 	GetDetails(ctx *gin.Context)
 	GetDetailsBySoId(ctx *gin.Context)
+	GetDetailsById(ctx *gin.Context)
 	DeleteByID(ctx *gin.Context)
 }
 
@@ -1661,6 +1662,37 @@ func (c *salesOrderController) GetDetailsBySoId(ctx *gin.Context) {
 
 	result.Data = salesOrders.SalesOrderDetails
 	result.Total = salesOrders.Total
+	result.StatusCode = http.StatusOK
+	ctx.JSON(http.StatusOK, result)
+	return
+}
+
+func (c *salesOrderController) GetDetailsById(ctx *gin.Context) {
+	var result baseModel.Response
+	var resultErrorLog *baseModel.ErrorLog
+
+	soDetailIds := ctx.Param("id")
+	soDetailId, err := strconv.Atoi(soDetailIds)
+
+	if err != nil {
+		err = helper.NewError("Parameter 'so-id' harus bernilai integer")
+		resultErrorLog.Message = err.Error()
+		result.StatusCode = http.StatusBadRequest
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	data, errorLog := c.salesOrderUseCase.GetDetailById(soDetailId)
+
+	if errorLog.Err != nil {
+		resultErrorLog = errorLog
+		result.StatusCode = resultErrorLog.StatusCode
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+	result.Data = data
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
 	return

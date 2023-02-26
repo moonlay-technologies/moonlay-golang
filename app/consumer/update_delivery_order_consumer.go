@@ -21,24 +21,26 @@ type UpdateDeliveryOrderConsumerHandlerInterface interface {
 }
 
 type UpdateDeliveryOrderConsumerHandler struct {
-	kafkaClient                kafkadbo.KafkaClientInterface
-	salesOrderUseCase          usecases.SalesOrderUseCaseInterface
-	deliveryOrderUseCase       usecases.DeliveryOrderUseCaseInterface
-	ctx                        context.Context
-	args                       []interface{}
-	db                         dbresolver.DB
-	deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface
+	kafkaClient                 kafkadbo.KafkaClientInterface
+	salesOrderUseCase           usecases.SalesOrderUseCaseInterface
+	salesOrderOpenSearchUseCase usecases.SalesOrderOpenSearchUseCaseInterface
+	deliveryOrderUseCase        usecases.DeliveryOrderUseCaseInterface
+	ctx                         context.Context
+	args                        []interface{}
+	db                          dbresolver.DB
+	deliveryOrderLogRepository  mongoRepositories.DeliveryOrderLogRepositoryInterface
 }
 
-func InitUpdateDeliveryOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, salesOrderUseCase usecases.SalesOrderUseCaseInterface, deliveryOrderUseCase usecases.DeliveryOrderUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UpdateDeliveryOrderConsumerHandlerInterface {
+func InitUpdateDeliveryOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, salesOrderUseCase usecases.SalesOrderUseCaseInterface, salesOrderOpenSearchUseCase usecases.SalesOrderOpenSearchUseCaseInterface, deliveryOrderUseCase usecases.DeliveryOrderUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UpdateDeliveryOrderConsumerHandlerInterface {
 	return &UpdateDeliveryOrderConsumerHandler{
-		kafkaClient:                kafkaClient,
-		salesOrderUseCase:          salesOrderUseCase,
-		deliveryOrderUseCase:       deliveryOrderUseCase,
-		ctx:                        ctx,
-		args:                       args,
-		db:                         db,
-		deliveryOrderLogRepository: deliveryOrderLogRepository,
+		kafkaClient:                 kafkaClient,
+		salesOrderUseCase:           salesOrderUseCase,
+		salesOrderOpenSearchUseCase: salesOrderOpenSearchUseCase,
+		deliveryOrderUseCase:        deliveryOrderUseCase,
+		ctx:                         ctx,
+		args:                        args,
+		db:                          db,
+		deliveryOrderLogRepository:  deliveryOrderLogRepository,
 	}
 }
 
@@ -119,7 +121,7 @@ func (c *UpdateDeliveryOrderConsumerHandler) ProcessMessage() {
 			continue
 		}
 
-		errorLog = c.salesOrderUseCase.SyncToOpenSearchFromUpdateEvent(salesOrderWithDetail, c.ctx)
+		errorLog = c.salesOrderOpenSearchUseCase.SyncToOpenSearchFromUpdateEvent(salesOrderWithDetail, c.ctx)
 
 		if errorLog.Err != nil {
 			go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
