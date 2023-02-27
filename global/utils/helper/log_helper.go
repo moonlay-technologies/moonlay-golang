@@ -85,10 +85,10 @@ func NewWriteLog(errorLog model.ErrorLog) *model.ErrorLog {
 
 		} else if errorLog.StatusCode == 422 {
 			output = &model.ErrorLog{
-				Message:    "Field Validation",
-				Err:        errorLog.Err,
-				StatusCode: errorLog.StatusCode,
-				Fields:     errorLog.Message,
+				Message:       errorLog.Message,
+				SystemMessage: errorLog.SystemMessage,
+				Err:           errorLog.Err,
+				StatusCode:    errorLog.StatusCode,
 			}
 		}
 
