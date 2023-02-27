@@ -50,3 +50,6 @@ func NewDeliveryOrderRepositoryInterface(t mockConstructorTestingTNewDeliveryOrd
 
 	return mock
 }
+func (_m *DeliveryOrderRepositoryInterface) DeleteByID(request *models.DeliveryOrder, ctx context.Context, resultChan chan *models.DeliveryOrderChan) {
+	_m.Called(request, ctx, resultChan)
+}

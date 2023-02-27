@@ -293,8 +293,8 @@ func NewSalesOrderUseCaseInterface(t mockConstructorTestingTNewSalesOrderUseCase
 	return mock
 }
 
-func (_m *SalesOrderUseCaseInterface) DeleteById(id int, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog) {
-	return nil, nil
+func (_m *SalesOrderUseCaseInterface) DeleteById(id int, sqlTransaction *sql.Tx) (*model.ErrorLog) {
+	return nil
 }
 
 func (_m *SalesOrderUseCaseInterface) GetDetailById(id int) (*models.SalesOrderDetailOpenSearchResponse, *model.ErrorLog) {
