@@ -185,7 +185,7 @@ func (u *requestValidationMiddleware) DateInputValidation(ctx *gin.Context, valu
 	for _, v := range value {
 		_, err := time.Parse("2006-01-02", v.Value)
 		if err != nil {
-			message := helper.GenerateUnprocessableErrorMessage(actionName, fmt.Sprintf("%s harus berformat yyyy-mm-dd"))
+			message := helper.GenerateUnprocessableErrorMessage(actionName, fmt.Sprintf("field %s harus memiliki format yyyy-mm-dd", v.Field))
 			messages = append(messages, message)
 			systemMessage := "Invalid Process"
 			systemMessages = append(systemMessages, systemMessage)
