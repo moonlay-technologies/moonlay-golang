@@ -231,7 +231,7 @@ func (u *requestValidationMiddleware) MustEmptyValidation(ctx *gin.Context, valu
 			SystemMessage: systemMessages,
 			StatusCode:    http.StatusBadRequest,
 		})
-		result.StatusCode = http.StatusNotAcceptable
+		result.StatusCode = http.StatusUnprocessableEntity
 		result.Error = errorLog
 		ctx.JSON(result.StatusCode, result)
 		error = fmt.Errorf("Inactive value!")

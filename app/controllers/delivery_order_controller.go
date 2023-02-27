@@ -26,6 +26,7 @@ type DeliveryOrderControllerInterface interface {
 	Get(ctx *gin.Context)
 	GetByID(ctx *gin.Context)
 	GetBySalesmanID(ctx *gin.Context)
+	DeleteByID(ctx *gin.Context)
 }
 
 type deliveryOrderController struct {
@@ -1208,4 +1209,46 @@ func (c *deliveryOrderController) GetByID(ctx *gin.Context) {
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
 	return
+}
+func (c *deliveryOrderController) DeleteByID(ctx *gin.Context) {
+	var result baseModel.Response
+	var id int
+
+	ctx.Set("full_path", ctx.FullPath())
+	ctx.Set("method", ctx.Request.Method)
+
+	sId := ctx.Param("id")
+	id, err := strconv.Atoi(sId)
+
+	if err != nil {
+		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		result.StatusCode = http.StatusBadRequest
+		result.Error = helper.WriteLog(err, result.StatusCode, nil)
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+	mustActiveField := []*models.MustActiveRequest{
+		{
+			Table:    "delivery_orders",
+			ReqField: "id",
+			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", id),
+		},
+	}
+
+	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
+	if err != nil {
+		return
+	}
+	errorLog := c.deliveryOrderUseCase.DeleteByID(id)
+
+	if errorLog != nil {
+
+		result.StatusCode = errorLog.StatusCode
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	result.StatusCode = http.StatusOK
+	ctx.JSON(http.StatusOK, result)
 }

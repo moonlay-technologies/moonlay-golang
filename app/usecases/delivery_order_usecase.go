@@ -35,6 +35,7 @@ type DeliveryOrderUseCaseInterface interface {
 	GetBySalesmansID(request *models.DeliveryOrderRequest) (*models.DeliveryOrdersOpenSearchResponses, *model.ErrorLog)
 	GetByOrderStatusID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
 	GetByOrderSourceID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
+	DeleteByID(deliveryOrderId int) *model.ErrorLog
 	SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, salesOrderUseCase SalesOrderUseCaseInterface, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromUpdateEvent(deliveryOrder *models.DeliveryOrder, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, ctx context.Context) *model.ErrorLog
@@ -1302,4 +1303,71 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromDeleteEvent(deliveryOrderId *
 	}
 
 	return &model.ErrorLog{}
+}
+func (u deliveryOrderUseCase) DeleteByID(id int) *model.ErrorLog {
+	getDeliveryOrderByIDResultChan := make(chan *models.DeliveryOrderChan)
+	go u.deliveryOrderRepository.GetByID(id, false, u.ctx, getDeliveryOrderByIDResultChan)
+	getDeliveryOrderByIDResult := <-getDeliveryOrderByIDResultChan
+
+	if getDeliveryOrderByIDResult.Error != nil {
+		return getDeliveryOrderByIDResult.ErrorLog
+	}
+
+	getDeliveryOrderDetailByIDResultChan := make(chan *models.DeliveryOrderDetailsChan)
+	go u.deliveryOrderDetailRepository.GetByDeliveryOrderID(id, false, u.ctx, getDeliveryOrderDetailByIDResultChan)
+	getDeliveryOrderDetailsByIDResult := <-getDeliveryOrderDetailByIDResultChan
+
+	if getDeliveryOrderDetailsByIDResult.Error != nil {
+		return getDeliveryOrderDetailsByIDResult.ErrorLog
+	}
+
+	getDeliveryOrderByIDResult.DeliveryOrder.DeliveryOrderDetails = getDeliveryOrderDetailsByIDResult.DeliveryOrderDetails
+
+	getSalesOrderByIDResultChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderRepository.GetByID(getDeliveryOrderByIDResult.DeliveryOrder.SalesOrderID, false, u.ctx, getSalesOrderByIDResultChan)
+	getSalesOrderByIDResult := <-getSalesOrderByIDResultChan
+
+	if getSalesOrderByIDResult.Error != nil {
+		return getSalesOrderByIDResult.ErrorLog
+	}
+
+	totalSentQty := 0
+
+	for _, v := range getDeliveryOrderDetailsByIDResult.DeliveryOrderDetails {
+
+		getSalesOrderDetailByIDResultChan := make(chan *models.SalesOrderDetailChan)
+		go u.salesOrderDetailRepository.GetByID(getSalesOrderByIDResult.SalesOrder.ID, false, u.ctx, getSalesOrderDetailByIDResultChan)
+		getSalesOrderDetailsByIDResult := <-getSalesOrderDetailByIDResultChan
+
+		if getSalesOrderDetailsByIDResult.Error != nil {
+			return getSalesOrderDetailsByIDResult.ErrorLog
+		}
+
+		getSalesOrderDetailsByIDResult.SalesOrderDetail.SentQty -= v.Qty
+		getSalesOrderDetailsByIDResult.SalesOrderDetail.ResidualQty += v.Qty
+
+		totalSentQty += getSalesOrderDetailsByIDResult.SalesOrderDetail.SentQty
+
+		deleteDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
+		go u.deliveryOrderDetailRepository.DeleteByID(v, u.ctx, deleteDeliveryOrderDetailResultChan)
+		deleteDeliveryOrderDetailResult := <-deleteDeliveryOrderDetailResultChan
+
+		if deleteDeliveryOrderDetailResult.ErrorLog != nil {
+			return deleteDeliveryOrderDetailResult.ErrorLog
+		}
+
+		getSalesOrderByIDResult.SalesOrder.SalesOrderDetails = append(getSalesOrderByIDResult.SalesOrder.SalesOrderDetails, getSalesOrderDetailsByIDResult.SalesOrderDetail)
+	}
+
+	deleteDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
+	go u.deliveryOrderRepository.DeleteByID(getDeliveryOrderByIDResult.DeliveryOrder, u.ctx, deleteDeliveryOrderResultChan)
+	deleteDeliveryOrderResult := <-deleteDeliveryOrderResultChan
+
+	if deleteDeliveryOrderResult.ErrorLog != nil {
+		return deleteDeliveryOrderResult.ErrorLog
+	}
+	if totalSentQty > 0 {
+		getSalesOrderByIDResult.SalesOrder.OrderStatus.ID = 7
+	}
+	return nil
 }
