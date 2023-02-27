@@ -37,30 +37,36 @@ type SalesOrderDetail struct {
 }
 
 type SalesOrderDetailTemplate struct {
-	ProductID   int    `json:"product_id,omitempty" binding:"required"`
-	UomID       int    `json:"uom_id,omitempty" binding:"required"`
-	Qty         int    `json:"qty,omitempty" binding:"required"`
-	SentQty     int    `json:"sent_qty,omitempty"`
-	ResidualQty int    `json:"residual_qty,omitempty"`
-	Note        string `json:"note,omitempty"`
+	ProductID int    `json:"product_id,omitempty" binding:"required"`
+	UomID     int    `json:"uom_id,omitempty" binding:"required"`
+	Qty       int    `json:"qty,omitempty" binding:"required"`
+	Note      string `json:"note,omitempty"`
 }
 
 type SalesOrderDetailStoreRequest struct {
 	SalesOrderDetailTemplate
-	SalesOrderId  int     `json:"sales_order_id,omitempty"`
-	OrderStatusId int     `json:"order_status_id,omitempty"`
-	SoDetailCode  string  `json:"so_detail_code,omitempty"`
-	Price         float64 `json:"price,omitempty" binding:"required"`
+	BrandID int     `json:"brand_id,omitempty" bson:"brand_id,omitempty" binding:"required"`
+	Price   float64 `json:"price,omitempty" binding:"required"`
 }
 
 type SalesOrderDetailStoreResponse struct {
 	ID int `json:"id,omitempty" bson:"id,omitempty"`
 	SalesOrderDetailStoreRequest
-	ProductSKU   string     `json:"product_sku,omitempty"`
-	ProductName  string     `json:"product_name,omitempty"`
-	CategoryName string     `json:"category_name,omitempty"`
-	UomCode      string     `json:"uom_code,omitempty"`
-	CreatedAt    *time.Time `json:"created_at,omitempty" bson:"created_at,omitempty"`
+	SentQty               NullInt64  `json:"sent_qty,omitempty"`
+	ResidualQty           NullInt64  `json:"residual_qty,omitempty"`
+	SalesOrderId          int        `json:"sales_order_id,omitempty"`
+	OrderStatusId         int        `json:"order_status_id,omitempty"`
+	OrderStatusName       string     `json:"order_status_name,omitempty"`
+	SoDetailCode          string     `json:"so_detail_code,omitempty"`
+	ProductSKU            string     `json:"product_sku,omitempty"`
+	ProductName           string     `json:"product_name,omitempty"`
+	CategoryId            int        `json:"category_id,omitempty"`
+	CategoryName          string     `json:"category_name,omitempty"`
+	UnitMeasurementSmall  NullString `json:"unit_measurement_small,omitempty" bson:"unit_measurement_small,omitempty"`
+	UnitMeasurementMedium NullString `json:"unit_measurement_medium,omitempty" bson:"unit_measurement_medium,omitempty"`
+	UnitMeasurementBig    NullString `json:"unit_measurement_big,omitempty" bson:"unit_measurement_big,omitempty"`
+	UomCode               string     `json:"uom_code,omitempty"`
+	CreatedAt             *time.Time `json:"created_at,omitempty" bson:"created_at,omitempty"`
 }
 
 type SalesOrderDetailUpdateRequest struct {

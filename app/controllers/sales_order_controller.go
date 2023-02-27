@@ -13,7 +13,6 @@ import (
 	"order-service/global/utils/helper"
 	baseModel "order-service/global/utils/model"
 	"strconv"
-	"time"
 
 	"github.com/bxcodec/dbresolver"
 	"github.com/gin-gonic/gin"
@@ -457,34 +456,14 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 			Value: insertRequest.SoRefDate,
 		},
 	}
-	err = c.requestValidationMiddleware.DateInputValidation(ctx, dateField)
+	err = c.requestValidationMiddleware.DateInputValidation(ctx, dateField, constants.ERROR_ACTION_NAME_CREATE)
 	if err != nil {
-		return
-	}
-
-	parseSoDate, err := time.Parse("2006-01-02", insertRequest.SoDate)
-	parseSoRefDate, err := time.Parse("2006-01-02", insertRequest.SoRefDate)
-	now := time.Now()
-
-	if !(parseSoDate.Add(1*time.Hour).After(parseSoRefDate) && parseSoRefDate.Before(time.Now()) && parseSoRefDate.Month() == now.Month() && parseSoRefDate.Year() == now.Year()) {
-
-		errorLog := helper.WriteLog(fmt.Errorf("so_date and so_ref_date must equal less than today and must be in the current month"), http.StatusBadRequest, "so_date dan so_ref_date harus sama dengan kurang dari hari ini dan harus di bulan berjalan")
-		resultErrorLog = errorLog
-		result.StatusCode = http.StatusBadRequest
-		result.Error = resultErrorLog
-		ctx.JSON(result.StatusCode, result)
-
 		return
 	}
 
 	mustActiveField := []*models.MustActiveRequest{
 		helper.GenerateMustActive("agents", "agent_id", insertRequest.AgentID, "active"),
 		helper.GenerateMustActive("stores", "store_id", insertRequest.StoreID, "active"),
-		{
-			Table:    "brands",
-			ReqField: "brand_id",
-			Clause:   fmt.Sprintf("id = %d AND status_active = %d", insertRequest.BrandID, 1),
-		},
 		helper.GenerateMustActive("users", "user_id", insertRequest.UserID, "ACTIVE"),
 	}
 	for i, v := range insertRequest.SalesOrderDetails {
@@ -497,6 +476,11 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 			Table:    "uoms",
 			ReqField: fmt.Sprintf("sales_order_details[%d].uom_id", i),
 			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", v.UomID),
+		})
+		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+			Table:    "brands",
+			ReqField: fmt.Sprintf("sales_order_details[%d].brand_id", i),
+			Clause:   fmt.Sprintf("id = %d AND status_active = %d", v.BrandID, 1),
 		})
 	}
 	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)

@@ -29,7 +29,7 @@ func (r *requestValidationRepository) UniqueValidation(value *models.UniqueReque
 	response := &models.UniqueRequestChan{}
 	var total int64
 
-	query := fmt.Sprintf("SELECT COUNT(*) as total FROM %s WHERE %s = ?", value.Table, value.Field)
+	query := fmt.Sprintf("SELECT COUNT(*) as total FROM %s WHERE %s = ? AND deleted_at IS NULL", value.Table, value.Field)
 	err := r.db.QueryRow(query, value.Value).Scan(&total)
 
 	if err != nil {

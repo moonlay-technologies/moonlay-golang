@@ -62,9 +62,9 @@ func (r *product) GetByID(ID int, countOnly bool, ctx context.Context, resultCha
 		if countOnly == false {
 			product = models.Product{}
 			err = r.db.QueryRow(""+
-				"SELECT id, SKU, productName, category_id, unitMeasurementSmall, unitMeasurementMedium, isActive, nettWeight  from products as p "+
+				"SELECT id, SKU, productName, category_id, unitMeasurementSmall, unitMeasurementMedium, unitMeasurementBig,  isActive, nettWeight  from products as p "+
 				"WHERE p.deleted_at IS NULL AND p.id = ?", ID).
-				Scan(&product.ID, &product.Sku, &product.ProductName, &product.CategoryID, &product.UnitMeasurementSmall, &product.UnitMeasurementMedium, &product.IsActive, &product.NettWeight)
+				Scan(&product.ID, &product.Sku, &product.ProductName, &product.CategoryID, &product.UnitMeasurementSmall, &product.UnitMeasurementMedium, &product.UnitMeasurementBig, &product.IsActive, &product.NettWeight)
 
 			if err != nil {
 				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
