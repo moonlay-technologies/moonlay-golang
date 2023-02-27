@@ -154,10 +154,15 @@ func (u *requestValidationMiddleware) MustActiveValidation(ctx *gin.Context, val
 		mustActiveResult := <-mustActive
 
 		if mustActiveResult.Total < 1 {
-			message := fmt.Sprintf("Data %s tidak ditemukan", v.ReqField)
-			messages = append(messages, message)
-			systemMessage := fmt.Sprintf("%s Not Found", v.ReqField)
-			systemMessages = append(systemMessages, systemMessage)
+			if v.CustomMessage != "" {
+				messages = append(messages, v.CustomMessage)
+				systemMessages = append(systemMessages, v.CustomMessage)
+			} else {
+				message := fmt.Sprintf("Data %s tidak ditemukan", v.ReqField)
+				messages = append(messages, message)
+				systemMessage := fmt.Sprintf("%s Not Found", v.ReqField)
+				systemMessages = append(systemMessages, systemMessage)
+			}
 		}
 	}
 
@@ -167,7 +172,7 @@ func (u *requestValidationMiddleware) MustActiveValidation(ctx *gin.Context, val
 			SystemMessage: systemMessages,
 			StatusCode:    http.StatusBadRequest,
 		})
-		result.StatusCode = http.StatusExpectationFailed
+		result.StatusCode = http.StatusUnprocessableEntity
 		result.Error = errorLog
 		ctx.JSON(result.StatusCode, result)
 		error = fmt.Errorf("Inactive value!")

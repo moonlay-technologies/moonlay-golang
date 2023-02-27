@@ -23,7 +23,7 @@ type DeliveryOrderDetailRepositoryInterface interface {
 	GetBySalesOrderID(salesOrderID int, countOnly bool, ctx context.Context, result chan *models.SalesOrderDetailsChan)
 	Insert(request *models.DeliveryOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.DeliveryOrderDetailChan)
 	UpdateByID(id int, deliveryOrderDetail *models.DeliveryOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.DeliveryOrderDetailChan)
-	DeleteByID(request *models.DeliveryOrderDetail, ctx context.Context, resultChan chan *models.DeliveryOrderDetailChan)
+	DeleteByID(request *models.DeliveryOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.DeliveryOrderDetailChan)
 }
 
 type deliveryOrderDetail struct {
@@ -507,7 +507,7 @@ func (r *deliveryOrderDetail) UpdateByID(id int, request *models.DeliveryOrderDe
 	resultChan <- response
 	return
 }
-func (r *deliveryOrderDetail) DeleteByID(request *models.DeliveryOrderDetail, ctx context.Context, resultChan chan *models.DeliveryOrderDetailChan) {
+func (r *deliveryOrderDetail) DeleteByID(request *models.DeliveryOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.DeliveryOrderDetailChan) {
 	now := time.Now()
 	request.DeletedAt = &now
 	request.UpdatedAt = &now
@@ -525,8 +525,6 @@ func (r *deliveryOrderDetail) DeleteByID(request *models.DeliveryOrderDetail, ct
 
 	rawSqlQueriesJoin := strings.Join(rawSqlQueries, ",")
 	updateQuery := fmt.Sprintf("UPDATE "+constants.SALES_ORDERS_TABLE+" set %v WHERE id = ?", rawSqlQueriesJoin)
-
-	sqlTransaction, err := r.db.BeginTx(ctx, nil)
 	result, err := sqlTransaction.ExecContext(ctx, updateQuery, request.ID)
 
 	if err != nil {
@@ -542,14 +540,6 @@ func (r *deliveryOrderDetail) DeleteByID(request *models.DeliveryOrderDetail, ct
 
 	if err != nil {
 		sqlTransaction.Rollback()
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-		response.Error = err
-		response.ErrorLog = errorLogData
-		resultChan <- response
-		return
-	}
-	err = sqlTransaction.Commit()
-	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData

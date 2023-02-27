@@ -521,7 +521,7 @@ func (r *deliveryOrder) DeleteByID(request *models.DeliveryOrder, ctx context.Co
 	rawSqlQueries = append(rawSqlQueries, query)
 
 	rawSqlQueriesJoin := strings.Join(rawSqlQueries, ",")
-	updateQuery := fmt.Sprintf("UPDATE "+constants.SALES_ORDERS_TABLE+" set %v WHERE id = ?", rawSqlQueriesJoin)
+	updateQuery := fmt.Sprintf("UPDATE "+constants.DELIVERY_ORDERS_TABLE+" set %v WHERE id = ?", rawSqlQueriesJoin)
 
 	sqlTransaction, err := r.db.BeginTx(ctx, nil)
 	result, err := sqlTransaction.ExecContext(ctx, updateQuery, request.ID)

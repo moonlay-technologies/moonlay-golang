@@ -80,6 +80,103 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		return
 	}
 
+	mustActiveField := []*models.MustActiveRequest{
+		{
+			Table:    "warehouses a JOIN agents b ON a.owner_id = b.id",
+			ReqField: "a.owner_id",
+			Clause:   fmt.Sprintf("a.id = %d AND b.deleted_at IS NULL AND a.`status` = 1", insertRequest.WarehouseID),
+		},
+		{
+			Table:    "stores a JOIN sales_orders b ON b.store_id = a.id",
+			ReqField: "a.id",
+			Clause:   fmt.Sprintf("b.id = %d AND a.deleted_at IS NULL AND b.deleted_at IS NULL", insertRequest.SalesOrderID),
+		},
+		{
+			Table:    "brands a JOIN sales_orders b ON b.brand_id = a.id",
+			ReqField: "a.id",
+			Clause:   fmt.Sprintf("b.id = %d AND a.status_active = 1 AND b.deleted_at IS NULL", insertRequest.SalesOrderID),
+		},
+	}
+	mustEmpties := []*models.MustEmptyValidationRequest{
+		{
+			Table:           "sales_orders",
+			TableJoin:       "order_statuses",
+			ForeignKey:      "order_status_id",
+			SelectedCollumn: "order_statuses.name",
+			Clause:          fmt.Sprintf("sales_orders.id = %d AND sales_orders.order_status_id NOT IN (5,7)", insertRequest.SalesOrderID),
+			MessageFormat:   "Status Sales Order <result>",
+		},
+	}
+
+	sDoDate := "NOW()"
+	sDoDateEqualMonth := fmt.Sprintf("MONTH(so_date) = MONTH('%s') AND MONTH(so_date) = MONTH(%s)", insertRequest.DoRefDate, sDoDate)
+	sDoDateHigherOrEqualSoDate := fmt.Sprintf("DAY(so_date) <= DAY('%s') AND DAY(so_date) <= DAY(%s)", insertRequest.DoRefDate, sDoDate)
+	sDoDateLowerOrEqualSoRefDate := fmt.Sprintf("DAY(so_ref_date) >= DAY('%s') AND DAY(so_ref_date) >= DAY(%s)", insertRequest.DoRefDate, sDoDate)
+	sDoDateLowerOrEqualToday := fmt.Sprintf("DAY('%s') <= DAY(%s)", insertRequest.DoRefDate, sDoDate)
+	sSoDateEqualDoDate := fmt.Sprintf("IF(DAY(so_date) = DAY(%[2]s), IF(DAY(%[2]s) = DAY('%[1]s'), TRUE, FALSE), TRUE)", insertRequest.DoRefDate, sDoDate)
+	mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+		Table:         "sales_orders",
+		ReqField:      "so_date",
+		Clause:        fmt.Sprintf("id = %d AND %s AND %s AND %s AND %s AND %s", insertRequest.SalesOrderID, sDoDateEqualMonth, sDoDateHigherOrEqualSoDate, sDoDateLowerOrEqualSoRefDate, sDoDateLowerOrEqualToday, sSoDateEqualDoDate),
+		CustomMessage: "do_date and do_ref_date must be equal less than today, must be equal more than so_date and must be in the current month",
+	})
+	totalQty := 0
+	for _, x := range insertRequest.DeliveryOrderDetails {
+		if x.Qty < 0 {
+			errorLog := helper.WriteLog(err, http.StatusBadRequest, fmt.Sprintf("qty sales order detail %d must equal or higher than 0", x.SoDetailID))
+			resultErrorLog = errorLog
+			result.StatusCode = http.StatusUnprocessableEntity
+			result.Error = resultErrorLog
+			ctx.JSON(result.StatusCode, result)
+			return
+		}
+
+		totalQty += x.Qty
+		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+			Table:    "products a JOIN sales_order_details b ON b.product_id = a.id",
+			ReqField: "a.id",
+			Clause:   fmt.Sprintf("b.id = %d AND a.deleted_at IS NULL AND b.deleted_at IS NULL", x.SoDetailID),
+		})
+		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+			Table:    "uoms a JOIN sales_order_details b ON b.uom_id = a.id",
+			ReqField: "a.id",
+			Clause:   fmt.Sprintf("b.id = %d AND a.deleted_at IS NULL AND b.deleted_at IS NULL", x.SoDetailID),
+		})
+		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+			Table:         "sales_order_details",
+			ReqField:      "residual_qty",
+			Clause:        fmt.Sprintf("id = %d AND deleted_at IS NULL AND residual_qty >= %d", x.SoDetailID, x.Qty),
+			CustomMessage: fmt.Sprintf("Residual Qty SO Detail %d must be higher than or equal delivery order qty", x.SoDetailID),
+		})
+		mustEmpties = append(mustEmpties, &models.MustEmptyValidationRequest{
+			Table:           "sales_order_details",
+			TableJoin:       "order_statuses",
+			ForeignKey:      "order_status_id",
+			SelectedCollumn: "order_statuses.name",
+			Clause:          fmt.Sprintf("sales_order_details.id = %d AND sales_order_details.order_status_id NOT IN (11, 13)", x.SoDetailID),
+			MessageFormat:   fmt.Sprintf("Status Sales Order Detail %d <result>", x.SoDetailID),
+		})
+	}
+
+	err = c.requestValidationMiddleware.MustEmptyValidation(ctx, mustEmpties)
+	if err != nil {
+		return
+	}
+
+	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
+	if err != nil {
+		return
+	}
+
+	if totalQty <= 0 {
+		errorLog := helper.WriteLog(err, http.StatusBadRequest, "total qty must higher than 0")
+		resultErrorLog = errorLog
+		result.StatusCode = http.StatusUnprocessableEntity
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
 	dbTransaction, err := c.db.BeginTx(ctx, nil)
 
 	if err != nil {

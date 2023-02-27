@@ -186,31 +186,6 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		return &models.DeliveryOrder{}, getSalesmanResult.ErrorLog
 	}
 
-	mustActiveField := []*models.MustActiveRequest{
-		{
-			Table:    "agents",
-			ReqField: "agent_id",
-			Clause:   fmt.Sprintf("id = %d AND status = '%s'", getAgentResult.Agent.ID, "active"),
-		},
-		{
-			Table:    "stores",
-			ReqField: "store_id",
-			Clause:   fmt.Sprintf("id = %d AND status = '%s'", getStoreResult.Store.ID, "active"),
-		},
-	}
-
-	for _, value := range mustActiveField {
-		mustActiveValidationChan := make(chan *models.MustActiveRequestChan)
-		go u.ValidationRepository.MustActiveValidation(value, mustActiveValidationChan)
-		mustActiveResult := <-mustActiveValidationChan
-
-		if mustActiveResult.Error != nil {
-			return &models.DeliveryOrder{}, mustActiveResult.ErrorLog
-		}
-	}
-
-	doCode := helper.GenerateDOCode(getAgentResult.Agent.ID, getOrderSourceResult.OrderSource.Code)
-	doDate := now.Format("2006-01-02")
 	deliveryOrder := &models.DeliveryOrder{}
 
 	deliveryOrder.DeliveryOrderStoreRequestMap(request, now)
@@ -224,21 +199,12 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	deliveryOrder.AgentName = getAgentResult.Agent.Name
 	deliveryOrder.Store = getStoreResult.Store
 	deliveryOrder.StoreID = getStoreResult.Store.ID
-	deliveryOrder.DoCode = doCode
-	deliveryOrder.DoDate = doDate
+	deliveryOrder.DoCode = helper.GenerateDOCode(getAgentResult.Agent.ID, getOrderSourceResult.OrderSource.Code)
+	deliveryOrder.DoDate = now.Format("2006-01-02")
 	deliveryOrder.CreatedBy = getUserResult.User.ID
 	deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
 	deliveryOrder.Brand = getBrandResult.Brand
 	deliveryOrder.Salesman = getSalesmanResult.Salesman
-
-	doDates, _ := time.Parse("2006-01-02", deliveryOrder.DoDate)
-	doRefDate, _ := time.Parse("2006-01-02", deliveryOrder.DoRefDate.String)
-	createdDO := deliveryOrder.CreatedAt
-	soDate, _ := time.Parse("2006-01-02", deliveryOrder.SalesOrder.SoDate)
-	if doDates.Day() < soDate.Day() || doRefDate.Day() < soDate.Day() || doDates.Day() > createdDO.Day() || doRefDate.Day() > createdDO.Day() || doDates.Month() != now.Month() || doRefDate.Month() != now.Month() || doRefDate.Year() != now.Year() || doDates.Year() != now.Year() {
-		errorLogData := helper.WriteLog(fmt.Errorf("do_date and do_ref_date must be equal less than today, must be equal more than so_date and must be in the current month"), http.StatusBadRequest, "Ada kesalahan, silahkan coba lagi nanti")
-		return &models.DeliveryOrder{}, errorLogData
-	}
 
 	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
 	go u.deliveryOrderRepository.Insert(deliveryOrder, sqlTransaction, ctx, createDeliveryOrderResultChan)
@@ -249,6 +215,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	}
 
 	deliveryOrderDetails := []*models.DeliveryOrderDetail{}
+	totalResidualQty := 0
 	for _, doDetail := range request.DeliveryOrderDetails {
 		getSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
 		go u.salesOrderDetailRepository.GetByID(doDetail.SoDetailID, false, ctx, getSalesOrderDetailResultChan)
@@ -282,34 +249,6 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 			return &models.DeliveryOrder{}, getUomDetailResult.ErrorLog
 		}
 
-		mustActiveFieldDetail := []*models.MustActiveRequest{
-			{
-				Table:    "brands",
-				ReqField: "brand_id",
-				Clause:   fmt.Sprintf("id = %d AND status_active = %d", getBrandResult.Brand.ID, 1),
-			},
-			{
-				Table:    "products",
-				ReqField: "product_id",
-				Clause:   fmt.Sprintf("id = %d AND isActive = %d", getProductDetailResult.Product.ID, 1),
-			},
-			{
-				Table:    "uoms",
-				ReqField: "uom_id",
-				Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", getUomDetailResult.Uom.ID),
-			},
-		}
-
-		for _, value := range mustActiveFieldDetail {
-			mustActiveValidationDetailChan := make(chan *models.MustActiveRequestChan)
-			go u.ValidationRepository.MustActiveValidation(value, mustActiveValidationDetailChan)
-			mustActiveDetailResult := <-mustActiveValidationDetailChan
-
-			if mustActiveDetailResult.Error != nil {
-				return &models.DeliveryOrder{}, mustActiveDetailResult.ErrorLog
-			}
-		}
-
 		doDetailCode, _ := helper.GenerateDODetailCode(createDeliveryOrderResult.DeliveryOrder.ID, getAgentResult.Agent.ID, getProductDetailResult.Product.ID, getUomDetailResult.Uom.ID)
 
 		deliveryOrderDetail := &models.DeliveryOrderDetail{}
@@ -323,13 +262,6 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		deliveryOrderDetail.ProductChanMap(getProductDetailResult)
 		deliveryOrderDetail.SalesOrderDetailChanMap(getSalesOrderDetailResult)
 
-		salesOrderResidualQty := getSalesOrderDetailResult.SalesOrderDetail.ResidualQty
-		deliveryOrderQty := doDetail.Qty
-		if deliveryOrderQty > salesOrderResidualQty {
-			errorLogData := helper.WriteLog(fmt.Errorf("Residual Qty must be higher than delivery order qty"), http.StatusBadRequest, "Ada kesalahan, silahkan coba lagi nanti")
-			return &models.DeliveryOrder{}, errorLogData
-		}
-
 		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
 		go u.deliveryOrderDetailRepository.Insert(deliveryOrderDetail, sqlTransaction, ctx, createDeliveryOrderDetailResultChan)
 		createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
@@ -339,18 +271,20 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		}
 
 		salesOrderSentQty := getSalesOrderDetailResult.SalesOrderDetail.SentQty
-		updateSalesOrderResidualQty := salesOrderResidualQty - deliveryOrderQty
-		updateSentQty := salesOrderSentQty + deliveryOrderQty
-		salesOrderDetail := &models.SalesOrderDetail{}
-		salesOrderDetail.ID = getSalesOrderDetailResult.SalesOrderDetail.ID
-		salesOrderDetail.ProductID = getSalesOrderDetailResult.SalesOrderDetail.ProductID
-		salesOrderDetail.UomID = getSalesOrderDetailResult.SalesOrderDetail.UomID
-		salesOrderDetail.UpdatedAt = &now
-		salesOrderDetail.SentQty = updateSentQty
-		salesOrderDetail.ResidualQty = updateSalesOrderResidualQty
+		updateResidualQty := getSalesOrderDetailResult.SalesOrderDetail.ResidualQty - doDetail.Qty
+		updateSentQty := salesOrderSentQty + doDetail.Qty
+		getSalesOrderDetailResult.SalesOrderDetail.UpdatedAt = &now
+		getSalesOrderDetailResult.SalesOrderDetail.SentQty = updateSentQty
+		getSalesOrderDetailResult.SalesOrderDetail.ResidualQty = updateResidualQty
+		totalResidualQty += updateResidualQty
+		if updateResidualQty == 0 {
+			getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID = 14
+		} else {
+			getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID = 13
+		}
 
 		updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
-		go u.salesOrderDetailRepository.UpdateByID(getSalesOrderDetailResult.SalesOrderDetail.ID, salesOrderDetail, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
+		go u.salesOrderDetailRepository.UpdateByID(getSalesOrderDetailResult.SalesOrderDetail.ID, getSalesOrderDetailResult.SalesOrderDetail, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
 		updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
 
 		if updateSalesOrderDetailResult.Error != nil {
@@ -362,10 +296,15 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	}
 
 	deliveryOrder.DeliveryOrderDetails = deliveryOrderDetails
+	if totalResidualQty == 0 {
+		getSalesOrderResult.SalesOrder.OrderStatusID = 8
+	} else {
+		getSalesOrderResult.SalesOrder.OrderStatusID = 7
+	}
 
 	deliveryOrderLog := &models.DeliveryOrderLog{
 		RequestID: request.RequestID,
-		DoCode:    doCode,
+		DoCode:    deliveryOrder.DoCode,
 		Data:      deliveryOrder,
 		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
 		Action:    constants.LOG_ACTION_MONGO_INSERT,
@@ -1330,9 +1269,12 @@ func (u deliveryOrderUseCase) DeleteByID(id int) *model.ErrorLog {
 	if getSalesOrderByIDResult.Error != nil {
 		return getSalesOrderByIDResult.ErrorLog
 	}
-
 	totalSentQty := 0
-
+	sqlTransaction, err := u.db.Begin()
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		return errorLogData
+	}
 	for _, v := range getDeliveryOrderDetailsByIDResult.DeliveryOrderDetails {
 
 		getSalesOrderDetailByIDResultChan := make(chan *models.SalesOrderDetailChan)
@@ -1349,14 +1291,20 @@ func (u deliveryOrderUseCase) DeleteByID(id int) *model.ErrorLog {
 		totalSentQty += getSalesOrderDetailsByIDResult.SalesOrderDetail.SentQty
 
 		deleteDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
-		go u.deliveryOrderDetailRepository.DeleteByID(v, u.ctx, deleteDeliveryOrderDetailResultChan)
+		go u.deliveryOrderDetailRepository.DeleteByID(v, sqlTransaction, u.ctx, deleteDeliveryOrderDetailResultChan)
 		deleteDeliveryOrderDetailResult := <-deleteDeliveryOrderDetailResultChan
 
 		if deleteDeliveryOrderDetailResult.ErrorLog != nil {
 			return deleteDeliveryOrderDetailResult.ErrorLog
 		}
 
-		getSalesOrderByIDResult.SalesOrder.SalesOrderDetails = append(getSalesOrderByIDResult.SalesOrder.SalesOrderDetails, getSalesOrderDetailsByIDResult.SalesOrderDetail)
+		updateSalesOrderDetailChan := make(chan *models.SalesOrderDetailChan)
+		go u.salesOrderDetailRepository.UpdateByID(getSalesOrderDetailsByIDResult.SalesOrderDetail.ID, getSalesOrderDetailsByIDResult.SalesOrderDetail, sqlTransaction, u.ctx, updateSalesOrderDetailChan)
+		updateSalesOrderDetailResult := <-updateSalesOrderDetailChan
+
+		if updateSalesOrderDetailResult.ErrorLog != nil {
+			return updateSalesOrderDetailResult.ErrorLog
+		}
 	}
 
 	deleteDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
@@ -1366,8 +1314,26 @@ func (u deliveryOrderUseCase) DeleteByID(id int) *model.ErrorLog {
 	if deleteDeliveryOrderResult.ErrorLog != nil {
 		return deleteDeliveryOrderResult.ErrorLog
 	}
+	fmt.Println(getSalesOrderByIDResult.SalesOrder.OrderStatusID)
 	if totalSentQty > 0 {
-		getSalesOrderByIDResult.SalesOrder.OrderStatus.ID = 7
+		getSalesOrderByIDResult.SalesOrder.OrderStatusID = 7
+	} else {
+		getSalesOrderByIDResult.SalesOrder.OrderStatusID = 5
 	}
+	updateSalesOrderChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderRepository.UpdateByID(getSalesOrderByIDResult.SalesOrder.ID, getSalesOrderByIDResult.SalesOrder, sqlTransaction, u.ctx, updateSalesOrderChan)
+	updateSalesOrderResult := <-updateSalesOrderChan
+
+	if updateSalesOrderResult.ErrorLog != nil {
+		return updateSalesOrderResult.ErrorLog
+	}
+
+	err = sqlTransaction.Commit()
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		return errorLogData
+	}
+
 	return nil
 }

@@ -1262,7 +1262,7 @@ func (c *salesOrderController) DeleteByID(ctx *gin.Context) {
 			TableJoin:       "order_statuses",
 			ForeignKey:      "order_status_id",
 			SelectedCollumn: "order_statuses.name",
-			Clause:          fmt.Sprintf("sales_orders.id = %d AND sales_orders.deleted_at IS NULL AND sales_orders.order_status_id NOT IN (5,6,9,10)", id),
+			Clause:          fmt.Sprintf("sales_orders.id = %d AND sales_orders.order_status_id NOT IN (5,6,9,10)", id),
 			MessageFormat:   "Status Sales Order <result>",
 		},
 		{
@@ -1270,7 +1270,7 @@ func (c *salesOrderController) DeleteByID(ctx *gin.Context) {
 			TableJoin:       "sales_orders",
 			ForeignKey:      "sales_order_id",
 			SelectedCollumn: "delivery_orders.id",
-			Clause:          fmt.Sprintf("sales_orders.id = %d AND sales_orders.deleted_at IS NULL AND delivery_orders.deleted_at IS NULL", id),
+			Clause:          fmt.Sprintf("sales_orders.id = %d AND delivery_orders.deleted_at IS NULL", id),
 			MessageFormat:   "Sales Order Has Delivery Order <result>, Please Delete it First",
 		},
 	}
