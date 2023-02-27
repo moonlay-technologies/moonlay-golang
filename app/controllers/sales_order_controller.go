@@ -1287,7 +1287,7 @@ func (c *salesOrderController) DeleteByID(ctx *gin.Context) {
 		ctx.JSON(result.StatusCode, result)
 		return
 	}
-	_, errorLog := c.salesOrderUseCase.DeleteById(id, dbTransaction, ctx)
+	errorLog := c.salesOrderUseCase.DeleteById(id, dbTransaction)
 
 	if errorLog != nil {
 		err = dbTransaction.Rollback()
