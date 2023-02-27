@@ -19,10 +19,10 @@ type SalesOrderUseCaseInterface struct {
 }
 
 // Create provides a mock function with given fields: request, sqlTransaction, ctx
-func (_m *SalesOrderUseCaseInterface) Create(request *models.SalesOrderStoreRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog) {
+func (_m *SalesOrderUseCaseInterface) Create(request *models.SalesOrderStoreRequest, sqlTransaction *sql.Tx, ctx context.Context) ([]*models.SalesOrderResponse, *model.ErrorLog) {
 	ret := _m.Called(request, sqlTransaction, ctx)
 
-	var r0 *models.SalesOrderResponse
+	var r0 []*models.SalesOrderResponse
 	// if rf, ok := ret.Get(0).(func(*models.SalesOrderStoreRequest, *sql.Tx, context.Context) []*models.SalesOrder); ok {
 	// 	r0 = rf(request, sqlTransaction, ctx)
 	// } else {

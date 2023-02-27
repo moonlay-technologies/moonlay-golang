@@ -18,14 +18,16 @@ import (
 type RequestValidationMiddlewareInterface interface {
 	DataTypeValidation(ctx *gin.Context, err error, unmarshalTypeError *json.UnmarshalTypeError)
 	MandatoryValidation(ctx *gin.Context, err error)
+	OrderSourceValidation(ctx *gin.Context, orderSourceId int, actionName string) error
 	UniqueValidation(ctx *gin.Context, value []*models.UniqueRequest) error
 	MustActiveValidation(ctx *gin.Context, value []*models.MustActiveRequest) error
-	DateInputValidation(ctx *gin.Context, value []*models.DateInputRequest) error
+	DateInputValidation(ctx *gin.Context, value []*models.DateInputRequest, actionName string) error
 	MustEmptyValidation(ctx *gin.Context, value []*models.MustEmptyValidationRequest) error
 }
 
 type requestValidationMiddleware struct {
 	requestValidationRepository repositories.RequestValidationRepositoryInterface
+	orderSourceRepository       repositories.OrderSourceRepositoryInterface
 }
 
 func InitRequestValidationMiddlewareInterface(requestValidationRepository repositories.RequestValidationRepositoryInterface) RequestValidationMiddlewareInterface {
@@ -69,6 +71,41 @@ func (u *requestValidationMiddleware) MandatoryValidation(ctx *gin.Context, err 
 	result.Error = errorLog
 	ctx.JSON(result.StatusCode, result)
 	return
+}
+
+func (u *requestValidationMiddleware) OrderSourceValidation(ctx *gin.Context, orderSourceId int, actionName string) error {
+	var result baseModel.Response
+	messages := []string{}
+	systemMessages := []string{}
+	var error error
+
+	getOrderSourceResultChan := make(chan *models.OrderSourceChan)
+	go u.orderSourceRepository.GetByID(orderSourceId, false, ctx, getOrderSourceResultChan)
+	getOrderSourceResult := <-getOrderSourceResultChan
+
+	if getOrderSourceResult.Error != nil {
+
+		message := helper.GenerateUnprocessableErrorMessage(actionName, "order_sourde_id tidak terdaftar!")
+		messages = append(messages, message)
+		systemMessages = []string{"Invalid Process"}
+
+	} else {
+
+	}
+
+	if len(messages) > 0 {
+		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       messages,
+			SystemMessage: systemMessages,
+			StatusCode:    http.StatusBadRequest,
+		})
+		result.StatusCode = http.StatusConflict
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+		error = fmt.Errorf("Invalid Process")
+	}
+
+	return error
 }
 
 func (u *requestValidationMiddleware) UniqueValidation(ctx *gin.Context, value []*models.UniqueRequest) error {
@@ -139,7 +176,7 @@ func (u *requestValidationMiddleware) MustActiveValidation(ctx *gin.Context, val
 	return error
 }
 
-func (u *requestValidationMiddleware) DateInputValidation(ctx *gin.Context, value []*models.DateInputRequest) error {
+func (u *requestValidationMiddleware) DateInputValidation(ctx *gin.Context, value []*models.DateInputRequest, actionName string) error {
 	var result baseModel.Response
 	messages := []string{}
 	systemMessages := []string{}
@@ -148,9 +185,9 @@ func (u *requestValidationMiddleware) DateInputValidation(ctx *gin.Context, valu
 	for _, v := range value {
 		_, err := time.Parse("2006-01-02", v.Value)
 		if err != nil {
-			message := fmt.Sprintf("Data %s harus berformat yyyy-mm-dd", v.Field)
+			message := helper.GenerateUnprocessableErrorMessage(actionName, fmt.Sprintf("%s harus berformat yyyy-mm-dd"))
 			messages = append(messages, message)
-			systemMessage := fmt.Sprintf("%s have to in yyyy-mm-dd format", v.Field)
+			systemMessage := "Invalid Process"
 			systemMessages = append(systemMessages, systemMessage)
 		}
 	}
@@ -164,7 +201,7 @@ func (u *requestValidationMiddleware) DateInputValidation(ctx *gin.Context, valu
 		result.StatusCode = http.StatusExpectationFailed
 		result.Error = errorLog
 		ctx.JSON(result.StatusCode, result)
-		error = fmt.Errorf("Invalid date value!")
+		error = fmt.Errorf("Invalid Process")
 	}
 
 	return error

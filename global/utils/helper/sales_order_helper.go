@@ -49,3 +49,7 @@ func GenerateSODetailCode(soID int, agentID int, productID int, uomID int) (stri
 
 	return result, nil
 }
+
+func GenerateUnprocessableErrorMessage(action_name, reason string) string {
+	return fmt.Sprintf("Proses %s tidak dapat dilakukan karena %s", action_name, reason)
+}

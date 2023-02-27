@@ -8,10 +8,9 @@ import (
 func (v *SalesOrderDetail) SalesOrderDetailStoreRequestMap(soDetail *SalesOrderDetailStoreRequest, now time.Time) {
 	v.ProductID = soDetail.ProductID
 	v.UomID = soDetail.UomID
-	v.OrderStatusID = soDetail.OrderStatusId
 	v.Qty = soDetail.Qty
-	v.SentQty = soDetail.SentQty
-	v.ResidualQty = soDetail.ResidualQty
+	v.SentQty = 0
+	v.ResidualQty = 0
 	v.Price = soDetail.Price
 	v.Note = NullString{NullString: sql.NullString{String: soDetail.Note, Valid: true}}
 	v.IsDoneSyncToEs = "0"
@@ -21,18 +20,33 @@ func (v *SalesOrderDetail) SalesOrderDetailStoreRequestMap(soDetail *SalesOrderD
 	return
 }
 
-func (v *SalesOrderDetail) SalesOrderDetailUpdateRequestMap(soDetail *SalesOrderDetailUpdateRequest, now time.Time) {
-	v.ID = soDetail.ID
+func (v *SalesOrderDetailStoreResponse) SalesOrderDetailStoreResponseMap(soDetail *SalesOrderDetail) {
+	v.SalesOrderId = soDetail.SalesOrderID
 	v.ProductID = soDetail.ProductID
 	v.UomID = soDetail.UomID
+	v.OrderStatusId = soDetail.OrderStatusID
+	v.OrderStatusName = soDetail.OrderStatusName
+	v.SoDetailCode = soDetail.SoDetailCode
 	v.Qty = soDetail.Qty
-	v.SentQty = soDetail.SentQty
-	v.ResidualQty = soDetail.ResidualQty
+	v.SentQty = NullInt64{NullInt64: sql.NullInt64{Int64: int64(soDetail.SentQty), Valid: true}}
+	v.ResidualQty = NullInt64{NullInt64: sql.NullInt64{Int64: int64(soDetail.ResidualQty), Valid: true}}
 	v.Price = soDetail.Price
-	v.Note = NullString{NullString: sql.NullString{String: soDetail.Note, Valid: true}}
-	v.UpdatedAt = &now
+	v.Note = soDetail.Note.String
 	return
 }
+
+// func (v *SalesOrderDetail) SalesOrderDetailUpdateRequestMap(soDetail *SalesOrderDetailUpdateRequest, now time.Time) {
+// 	v.ID = soDetail.ID
+// 	v.ProductID = soDetail.ProductID
+// 	v.UomID = soDetail.UomID
+// 	v.Qty = soDetail.Qty
+// 	v.SentQty = soDetail.SentQty
+// 	v.ResidualQty = soDetail.ResidualQty
+// 	v.Price = soDetail.Price
+// 	v.Note = NullString{NullString: sql.NullString{String: soDetail.Note, Valid: true}}
+// 	v.UpdatedAt = &now
+// 	return
+// }
 
 func (salesOrderDetail *SalesOrderDetailOpenSearchResponse) SalesOrderDetailOpenSearchResponseMap(request *SalesOrderDetail) {
 	salesOrderDetail.ID = request.ID

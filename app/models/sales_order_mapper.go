@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"strconv"
 	"time"
 )
 
@@ -9,7 +10,6 @@ func (salesOrder *SalesOrder) SalesOrderRequestMap(request *SalesOrderStoreReque
 	salesOrder.CartID = request.CartID
 	salesOrder.AgentID = request.AgentID
 	salesOrder.StoreID = request.StoreID
-	salesOrder.BrandID = request.BrandID
 	salesOrder.UserID = request.UserID
 	salesOrder.VisitationID = request.VisitationID
 	salesOrder.OrderSourceID = request.OrderSourceID
@@ -296,13 +296,6 @@ func (salesOrder *SalesOrder) UpdateSalesOrderChanMap(request *SalesOrderChan) {
 	return
 }
 
-func (salesOrder *SalesOrder) OrderStatusChanMap(request *OrderStatusChan) {
-	salesOrder.OrderStatus = request.OrderStatus
-	salesOrder.OrderStatusID = request.OrderStatus.ID
-	salesOrder.OrderStatusName = request.OrderStatus.Name
-	return
-}
-
 func (salesOrder *SalesOrder) OrderSourceChanMap(request *OrderSourceChan) {
 	salesOrder.OrderSource = request.OrderSource
 	salesOrder.OrderSourceName = request.OrderSource.SourceName
@@ -360,14 +353,43 @@ func (salesOrder *SalesOrder) SalesmanChanMap(request *SalesmanChan) {
 }
 
 func (result *SalesOrderResponse) CreateSoResponseMap(request *SalesOrder) {
-	result.SoCode = request.SoCode
+	result.CartID = request.CartID
+	result.AgentID = request.AgentID
+	result.StoreID = request.StoreID
 	result.StoreCode = request.StoreCode.String
 	result.StoreName = request.StoreName.String
-	result.StoreAddress = request.StoreAddress.String
-	result.StoreCityName = request.StoreCityName.String
+	result.StoreStatus = request.Store.Status.String
+	result.StorePhone = request.StorePhone
+	result.StoreOwner = request.AgentName.String
+	result.StoreProvinceId, _ = strconv.Atoi(request.Store.ProvinceID.String)
 	result.StoreProvinceName = request.StoreProvinceName.String
+	result.StoreCityId, _ = strconv.Atoi(request.Store.CityID.String)
+	result.StoreCityName = request.StoreCityName.String
+	result.StoreDistrictId, _ = strconv.Atoi(request.Store.DistrictID.String)
+	result.StoreDistrictName = request.StoreDistrictName.String
+	result.StoreAddress = request.StoreAddress.String
+	result.BrandID = request.BrandID
 	result.BrandName = request.BrandName
+	result.UserID = request.UserID
+	result.SalesmanID = request.Salesman.ID
 	result.SalesmanName = request.SalesmanName.String
+	result.VisitationID = request.VisitationID
+	result.OrderSourceID = request.OrderSourceID
+	result.OrderSourceName = request.OrderSource.SourceName
+	result.OrderStatusID = request.OrderStatusID
+	result.OrderStatusName = request.OrderStatus.Name
+	result.SoCode = request.SoCode
+	result.SoDate = request.SoDate
+	result.SoRefCode = request.SoRefCode.String
+	result.SoRefDate = request.SoRefDate.String
+	result.GLong = request.GLong.Float64
+	result.GLat = request.GLat.Float64
+	result.Note = request.Note.String
+	result.InternalComment = request.InternalComment.String
+	result.TotalAmount = request.TotalAmount
+	result.TotalTonase = request.TotalTonase
+	result.DeviceId = request.DeviceId.String
+	result.ReferralCode = request.ReferralCode.String
 	return
 }
 
@@ -392,7 +414,7 @@ func (result *SalesOrderResponse) SoUpdateByIdResponseMap(request *SalesOrder) {
 	result.StoreDistrictName = request.StoreDistrictName.String
 	result.StoreVillageName = request.StoreVillageName.String
 	result.StoreAddress = request.StoreAddress.String
-	result.StorePhone = request.StorePhone.String
+	result.StorePhone = request.StorePhone
 	result.StoreMainMobilePhone = request.StoreMainMobilePhone.String
 	result.BrandID = request.BrandID
 	result.BrandName = request.BrandName
