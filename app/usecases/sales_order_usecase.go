@@ -379,7 +379,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 
 		salesOrderLog := &models.SalesOrderLog{
 			RequestID: request.RequestID,
-			SoCode:    salesOrderResponse.SoCode,
+			SoCode:    v.SoCode,
 			Data:      v,
 			Status:    constants.LOG_STATUS_MONGO_DEFAULT,
 			Action:    constants.LOG_ACTION_MONGO_INSERT,

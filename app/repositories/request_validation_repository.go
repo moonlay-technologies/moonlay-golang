@@ -53,7 +53,7 @@ func (r *requestValidationRepository) MustActiveValidation(value *models.MustAct
 	response := &models.MustActiveRequestChan{}
 	var total int64
 
-	query := fmt.Sprintf("SELECT COUNT(%s) as total FROM %s WHERE %s ", value.ReqField, value.Table, value.Clause)
+	query := fmt.Sprintf("SELECT COUNT(*) as total FROM %s WHERE %s ", value.Table, value.Clause)
 	fmt.Println(query)
 	err := r.db.QueryRow(query).Scan(&total)
 
@@ -73,7 +73,6 @@ func (r *requestValidationRepository) MustActiveValidation(value *models.MustAct
 func (r *requestValidationRepository) MustEmptyValidation(value *models.MustEmptyValidationRequest, resultChan chan *models.MustEmptyValidationRequestChan) {
 	response := &models.MustEmptyValidationRequestChan{}
 	query := fmt.Sprintf("SELECT %[4]s as resultQuery FROM %[1]s JOIN %[2]s ON %[2]s.id = %[1]s.%[3]s WHERE %[5]s", value.Table, value.TableJoin, value.ForeignKey, value.SelectedCollumn, value.Clause)
-	fmt.Println(query)
 	q, err := r.db.Query(query)
 	if err != nil {
 		response.Result = false
