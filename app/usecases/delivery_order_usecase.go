@@ -35,7 +35,7 @@ type DeliveryOrderUseCaseInterface interface {
 	GetBySalesmansID(request *models.DeliveryOrderRequest) (*models.DeliveryOrdersOpenSearchResponses, *model.ErrorLog)
 	GetByOrderStatusID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
 	GetByOrderSourceID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
-	DeleteByID(deliveryOrderId int) *model.ErrorLog
+	DeleteByID(deliveryOrderId int, sqlTransaction *sql.Tx) *model.ErrorLog
 	SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, salesOrderUseCase SalesOrderUseCaseInterface, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromUpdateEvent(deliveryOrder *models.DeliveryOrder, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, ctx context.Context) *model.ErrorLog
@@ -1284,7 +1284,7 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromDeleteEvent(deliveryOrderId *
 	return &model.ErrorLog{}
 }
 
-func (u deliveryOrderUseCase) DeleteByID(id int) *model.ErrorLog {
+func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.ErrorLog {
 	now := time.Now()
 	getDeliveryOrderByIDResultChan := make(chan *models.DeliveryOrderChan)
 	go u.deliveryOrderRepository.GetByID(id, false, u.ctx, getDeliveryOrderByIDResultChan)
@@ -1312,11 +1312,6 @@ func (u deliveryOrderUseCase) DeleteByID(id int) *model.ErrorLog {
 		return getSalesOrderByIDResult.ErrorLog
 	}
 	totalSentQty := 0
-	sqlTransaction, err := u.db.Begin()
-	if err != nil {
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-		return errorLogData
-	}
 	for _, v := range getDeliveryOrderDetailsByIDResult.DeliveryOrderDetails {
 
 		getSalesOrderDetailByIDResultChan := make(chan *models.SalesOrderDetailChan)
@@ -1338,11 +1333,6 @@ func (u deliveryOrderUseCase) DeleteByID(id int) *model.ErrorLog {
 		deleteDeliveryOrderDetailResult := <-deleteDeliveryOrderDetailResultChan
 
 		if deleteDeliveryOrderDetailResult.ErrorLog != nil {
-			err = sqlTransaction.Rollback()
-			if err != nil {
-				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-				return errorLogData
-			}
 			return deleteDeliveryOrderDetailResult.ErrorLog
 		}
 
@@ -1351,11 +1341,6 @@ func (u deliveryOrderUseCase) DeleteByID(id int) *model.ErrorLog {
 		updateSalesOrderDetailResult := <-updateSalesOrderDetailChan
 
 		if updateSalesOrderDetailResult.ErrorLog != nil {
-			err = sqlTransaction.Rollback()
-			if err != nil {
-				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-				return errorLogData
-			}
 			return updateSalesOrderDetailResult.ErrorLog
 		}
 	}
@@ -1365,11 +1350,6 @@ func (u deliveryOrderUseCase) DeleteByID(id int) *model.ErrorLog {
 	deleteDeliveryOrderResult := <-deleteDeliveryOrderResultChan
 
 	if deleteDeliveryOrderResult.ErrorLog != nil {
-		err = sqlTransaction.Rollback()
-		if err != nil {
-			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
 		return deleteDeliveryOrderResult.ErrorLog
 	}
 	fmt.Println(getSalesOrderByIDResult.SalesOrder.OrderStatusID)
@@ -1382,25 +1362,39 @@ func (u deliveryOrderUseCase) DeleteByID(id int) *model.ErrorLog {
 	go u.salesOrderRepository.UpdateByID(getSalesOrderByIDResult.SalesOrder.ID, getSalesOrderByIDResult.SalesOrder, sqlTransaction, u.ctx, updateSalesOrderChan)
 	updateSalesOrderResult := <-updateSalesOrderChan
 
-	if updateSalesOrderResult.ErrorLog != nil {
-		err = sqlTransaction.Rollback()
-		if err != nil {
-			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-		return updateSalesOrderResult.ErrorLog
+	salesOrderLog := &models.DeliveryOrderLog{
+		RequestID: "",
+		DoCode:    getDeliveryOrderByIDResult.DeliveryOrder.DoCode,
+		Data:      getDeliveryOrderByIDResult.DeliveryOrder,
+		Action:    constants.LOG_ACTION_MONGO_DELETE,
+		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		CreatedAt: &now,
 	}
+	createDeliveryOrderLogResultChan := make(chan *models.DeliveryOrderLogChan)
+	go u.deliveryOrderLogRepository.Insert(salesOrderLog, u.ctx, createDeliveryOrderLogResultChan)
+	createDeliveryOrderLogResult := <-createDeliveryOrderLogResultChan
 
-	err = sqlTransaction.Commit()
+	if createDeliveryOrderLogResult.Error != nil {
+		return createDeliveryOrderLogResult.ErrorLog
+	}
+	keyKafka := []byte(getSalesOrderByIDResult.SalesOrder.SoCode)
+	messageKafka, _ := json.Marshal(
+		&models.DeliveryOrder{
+			ID:        id,
+			DoCode:    salesOrderLog.DoCode,
+			UpdatedAt: getSalesOrderByIDResult.SalesOrder.UpdatedAt,
+			DeletedAt: getSalesOrderByIDResult.SalesOrder.DeletedAt,
+		},
+	)
+	err := u.kafkaClient.WriteToTopic(constants.DELETE_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
 
 	if err != nil {
-		sqlTransaction.Rollback()
-		if err != nil {
-			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		return errorLogData
+	}
+
+	if updateSalesOrderResult.ErrorLog != nil {
+		return updateSalesOrderResult.ErrorLog
 	}
 
 	return nil

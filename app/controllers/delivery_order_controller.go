@@ -1339,9 +1339,27 @@ func (c *deliveryOrderController) DeleteByID(ctx *gin.Context) {
 	if err != nil {
 		return
 	}
-	errorLog := c.deliveryOrderUseCase.DeleteByID(id)
+
+	dbTransaction, err := c.db.BeginTx(ctx, nil)
+
+	if err != nil {
+		result.StatusCode = http.StatusInternalServerError
+		result.Error = helper.WriteLog(err, result.StatusCode, nil)
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	errorLog := c.deliveryOrderUseCase.DeleteByID(id, dbTransaction)
 
 	if errorLog != nil {
+		err = dbTransaction.Rollback()
+
+		if err != nil {
+			result.StatusCode = http.StatusInternalServerError
+			result.Error = helper.WriteLog(err, result.StatusCode, nil)
+			ctx.JSON(result.StatusCode, result)
+			return
+		}
 
 		result.StatusCode = errorLog.StatusCode
 		result.Error = errorLog
