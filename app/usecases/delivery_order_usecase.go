@@ -269,15 +269,11 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		if createDeliveryOrderDetailResult.Error != nil {
 			return &models.DeliveryOrder{}, createDeliveryOrderDetailResult.ErrorLog
 		}
-
-		salesOrderSentQty := getSalesOrderDetailResult.SalesOrderDetail.SentQty
-		updateResidualQty := getSalesOrderDetailResult.SalesOrderDetail.ResidualQty - doDetail.Qty
-		updateSentQty := salesOrderSentQty + doDetail.Qty
 		getSalesOrderDetailResult.SalesOrderDetail.UpdatedAt = &now
-		getSalesOrderDetailResult.SalesOrderDetail.SentQty = updateSentQty
-		getSalesOrderDetailResult.SalesOrderDetail.ResidualQty = updateResidualQty
-		totalResidualQty += updateResidualQty
-		if updateResidualQty == 0 {
+		getSalesOrderDetailResult.SalesOrderDetail.SentQty += doDetail.Qty
+		getSalesOrderDetailResult.SalesOrderDetail.ResidualQty -= doDetail.Qty
+		totalResidualQty += getSalesOrderDetailResult.SalesOrderDetail.ResidualQty
+		if getSalesOrderDetailResult.SalesOrderDetail.ResidualQty == 0 {
 			getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID = 14
 		} else {
 			getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID = 13
@@ -300,6 +296,22 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		getSalesOrderResult.SalesOrder.OrderStatusID = 8
 	} else {
 		getSalesOrderResult.SalesOrder.OrderStatusID = 7
+	}
+	getSalesOrderResult.SalesOrder.SoDate = ""
+	getSalesOrderResult.SalesOrder.SoRefDate = models.NullString{}
+	getSalesOrderResult.SalesOrder.UpdatedAt = &now
+
+	updateSalesOrderChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderRepository.UpdateByID(getSalesOrderResult.SalesOrder.ID, getSalesOrderResult.SalesOrder, sqlTransaction, u.ctx, updateSalesOrderChan)
+	updateSalesOrderResult := <-updateSalesOrderChan
+
+	if updateSalesOrderResult.ErrorLog != nil {
+		err := sqlTransaction.Rollback()
+		if err != nil {
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			return &models.DeliveryOrder{}, errorLogData
+		}
+		return &models.DeliveryOrder{}, updateSalesOrderResult.ErrorLog
 	}
 
 	deliveryOrderLog := &models.DeliveryOrderLog{
@@ -1243,7 +1255,9 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromDeleteEvent(deliveryOrderId *
 
 	return &model.ErrorLog{}
 }
+
 func (u deliveryOrderUseCase) DeleteByID(id int) *model.ErrorLog {
+	now := time.Now()
 	getDeliveryOrderByIDResultChan := make(chan *models.DeliveryOrderChan)
 	go u.deliveryOrderRepository.GetByID(id, false, u.ctx, getDeliveryOrderByIDResultChan)
 	getDeliveryOrderByIDResult := <-getDeliveryOrderByIDResultChan
@@ -1287,6 +1301,7 @@ func (u deliveryOrderUseCase) DeleteByID(id int) *model.ErrorLog {
 
 		getSalesOrderDetailsByIDResult.SalesOrderDetail.SentQty -= v.Qty
 		getSalesOrderDetailsByIDResult.SalesOrderDetail.ResidualQty += v.Qty
+		getSalesOrderDetailsByIDResult.SalesOrderDetail.UpdatedAt = &now
 
 		totalSentQty += getSalesOrderDetailsByIDResult.SalesOrderDetail.SentQty
 
@@ -1295,14 +1310,24 @@ func (u deliveryOrderUseCase) DeleteByID(id int) *model.ErrorLog {
 		deleteDeliveryOrderDetailResult := <-deleteDeliveryOrderDetailResultChan
 
 		if deleteDeliveryOrderDetailResult.ErrorLog != nil {
+			err = sqlTransaction.Rollback()
+			if err != nil {
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+				return errorLogData
+			}
 			return deleteDeliveryOrderDetailResult.ErrorLog
 		}
 
 		updateSalesOrderDetailChan := make(chan *models.SalesOrderDetailChan)
-		go u.salesOrderDetailRepository.UpdateByID(getSalesOrderDetailsByIDResult.SalesOrderDetail.ID, getSalesOrderDetailsByIDResult.SalesOrderDetail, sqlTransaction, u.ctx, updateSalesOrderDetailChan)
+		go u.salesOrderDetailRepository.UpdateByID(v.SoDetailID, getSalesOrderDetailsByIDResult.SalesOrderDetail, sqlTransaction, u.ctx, updateSalesOrderDetailChan)
 		updateSalesOrderDetailResult := <-updateSalesOrderDetailChan
 
 		if updateSalesOrderDetailResult.ErrorLog != nil {
+			err = sqlTransaction.Rollback()
+			if err != nil {
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+				return errorLogData
+			}
 			return updateSalesOrderDetailResult.ErrorLog
 		}
 	}
@@ -1312,6 +1337,11 @@ func (u deliveryOrderUseCase) DeleteByID(id int) *model.ErrorLog {
 	deleteDeliveryOrderResult := <-deleteDeliveryOrderResultChan
 
 	if deleteDeliveryOrderResult.ErrorLog != nil {
+		err = sqlTransaction.Rollback()
+		if err != nil {
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			return errorLogData
+		}
 		return deleteDeliveryOrderResult.ErrorLog
 	}
 	fmt.Println(getSalesOrderByIDResult.SalesOrder.OrderStatusID)
@@ -1325,12 +1355,22 @@ func (u deliveryOrderUseCase) DeleteByID(id int) *model.ErrorLog {
 	updateSalesOrderResult := <-updateSalesOrderChan
 
 	if updateSalesOrderResult.ErrorLog != nil {
+		err = sqlTransaction.Rollback()
+		if err != nil {
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			return errorLogData
+		}
 		return updateSalesOrderResult.ErrorLog
 	}
 
 	err = sqlTransaction.Commit()
 
 	if err != nil {
+		sqlTransaction.Rollback()
+		if err != nil {
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			return errorLogData
+		}
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		return errorLogData
 	}
