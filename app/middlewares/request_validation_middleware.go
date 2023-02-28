@@ -181,7 +181,8 @@ func (u *requestValidationMiddleware) MustActiveValidation(ctx *gin.Context, val
 			SystemMessage: systemMessages,
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
-		result.StatusCode = http.StatusUnprocessableEntity
+
+		result.StatusCode = http.StatusExpectationFailed
 		result.Error = errorLog
 		ctx.JSON(result.StatusCode, result)
 		error = fmt.Errorf("Inactive value!")

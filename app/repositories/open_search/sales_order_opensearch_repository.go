@@ -413,8 +413,6 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 	openSearchQuery["query"] = openSearchDetailQuery
 	openSearchQueryJson, _ := json.Marshal(openSearchQuery)
 
-	fmt.Println("query = ", string(openSearchQueryJson))
-
 	return openSearchQueryJson
 }
 

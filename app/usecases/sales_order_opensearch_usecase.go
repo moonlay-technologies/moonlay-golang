@@ -27,48 +27,50 @@ type SalesOrderOpenSearchUseCaseInterface interface {
 }
 
 type SalesOrderOpenSearchUseCase struct {
-	salesOrderRepository              repositories.SalesOrderRepositoryInterface
-	salesOrderDetailRepository        repositories.SalesOrderDetailRepositoryInterface
-	orderStatusRepository             repositories.OrderStatusRepositoryInterface
-	orderSourceRepository             repositories.OrderSourceRepositoryInterface
-	agentRepository                   repositories.AgentRepositoryInterface
-	brandRepository                   repositories.BrandRepositoryInterface
-	storeRepository                   repositories.StoreRepositoryInterface
-	productRepository                 repositories.ProductRepositoryInterface
-	uomRepository                     repositories.UomRepositoryInterface
-	deliveryOrderRepository           repositories.DeliveryOrderRepositoryInterface
-	salesOrderLogRepository           mongoRepositories.SalesOrderLogRepositoryInterface
-	userRepository                    repositories.UserRepositoryInterface
-	salesmanRepository                repositories.SalesmanRepositoryInterface
-	categoryRepository                repositories.CategoryRepositoryInterface
-	salesOrderOpenSearchRepository    openSearchRepositories.SalesOrderOpenSearchRepositoryInterface
-	deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface
-	kafkaClient                       kafkadbo.KafkaClientInterface
-	db                                dbresolver.DB
-	ctx                               context.Context
+	salesOrderRepository                 repositories.SalesOrderRepositoryInterface
+	salesOrderDetailRepository           repositories.SalesOrderDetailRepositoryInterface
+	orderStatusRepository                repositories.OrderStatusRepositoryInterface
+	orderSourceRepository                repositories.OrderSourceRepositoryInterface
+	agentRepository                      repositories.AgentRepositoryInterface
+	brandRepository                      repositories.BrandRepositoryInterface
+	storeRepository                      repositories.StoreRepositoryInterface
+	productRepository                    repositories.ProductRepositoryInterface
+	uomRepository                        repositories.UomRepositoryInterface
+	deliveryOrderRepository              repositories.DeliveryOrderRepositoryInterface
+	salesOrderLogRepository              mongoRepositories.SalesOrderLogRepositoryInterface
+	userRepository                       repositories.UserRepositoryInterface
+	salesmanRepository                   repositories.SalesmanRepositoryInterface
+	categoryRepository                   repositories.CategoryRepositoryInterface
+	salesOrderOpenSearchRepository       openSearchRepositories.SalesOrderOpenSearchRepositoryInterface
+	salesOrderDetailOpenSearchRepository openSearchRepositories.SalesOrderDetailOpenSearchRepositoryInterface
+	deliveryOrderOpenSearchRepository    openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface
+	kafkaClient                          kafkadbo.KafkaClientInterface
+	db                                   dbresolver.DB
+	ctx                                  context.Context
 }
 
-func InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, uomRepository repositories.UomRepositoryInterface, deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, categoryRepository repositories.CategoryRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context) SalesOrderOpenSearchUseCaseInterface {
+func InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, uomRepository repositories.UomRepositoryInterface, deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, categoryRepository repositories.CategoryRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderDetailOpenSearchRepository openSearchRepositories.SalesOrderDetailOpenSearchRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context) SalesOrderOpenSearchUseCaseInterface {
 	return &SalesOrderOpenSearchUseCase{
-		salesOrderRepository:              salesOrderRepository,
-		salesOrderDetailRepository:        salesOrderDetailRepository,
-		orderStatusRepository:             orderStatusRepository,
-		orderSourceRepository:             orderSourceRepository,
-		agentRepository:                   agentRepository,
-		brandRepository:                   brandRepository,
-		storeRepository:                   storeRepository,
-		productRepository:                 productRepository,
-		uomRepository:                     uomRepository,
-		deliveryOrderRepository:           deliveryOrderRepository,
-		salesOrderLogRepository:           salesOrderLogRepository,
-		userRepository:                    userRepository,
-		salesmanRepository:                salesmanRepository,
-		categoryRepository:                categoryRepository,
-		salesOrderOpenSearchRepository:    salesOrderOpenSearchRepository,
-		deliveryOrderOpenSearchRepository: deliveryOrderOpenSearchRepository,
-		kafkaClient:                       kafkaClient,
-		db:                                db,
-		ctx:                               ctx,
+		salesOrderRepository:                 salesOrderRepository,
+		salesOrderDetailRepository:           salesOrderDetailRepository,
+		orderStatusRepository:                orderStatusRepository,
+		orderSourceRepository:                orderSourceRepository,
+		agentRepository:                      agentRepository,
+		brandRepository:                      brandRepository,
+		storeRepository:                      storeRepository,
+		productRepository:                    productRepository,
+		uomRepository:                        uomRepository,
+		deliveryOrderRepository:              deliveryOrderRepository,
+		salesOrderLogRepository:              salesOrderLogRepository,
+		userRepository:                       userRepository,
+		salesmanRepository:                   salesmanRepository,
+		categoryRepository:                   categoryRepository,
+		salesOrderOpenSearchRepository:       salesOrderOpenSearchRepository,
+		salesOrderDetailOpenSearchRepository: salesOrderDetailOpenSearchRepository,
+		deliveryOrderOpenSearchRepository:    deliveryOrderOpenSearchRepository,
+		kafkaClient:                          kafkaClient,
+		db:                                   db,
+		ctx:                                  ctx,
 	}
 }
 
@@ -146,6 +148,18 @@ func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(salesOrder
 			errorLogData := helper.WriteLog(updateSalesOrderDetailResult.Error, http.StatusInternalServerError, nil)
 			return errorLogData
 		}
+
+		salesOrderDetail := &models.SalesOrderDetailOpenSearch{}
+		salesOrderDetail.SalesOrderDetailOpenSearchMap(salesOrder, v)
+
+		createSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailOpenSearchChan)
+		go u.salesOrderDetailOpenSearchRepository.Create(salesOrderDetail, createSalesOrderDetailResultChan)
+		createSalesOrderDetailResult := <-createSalesOrderDetailResultChan
+
+		if createSalesOrderDetailResult.Error != nil {
+			return createSalesOrderDetailResult.ErrorLog
+		}
+
 	}
 
 	salesOrder.IsDoneSyncToEs = "1"

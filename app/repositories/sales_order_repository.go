@@ -659,7 +659,7 @@ func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, sqlTransacti
 func (r *salesOrder) RemoveCacheByID(id int, ctx context.Context, resultChan chan *models.SalesOrderChan) {
 	response := &models.SalesOrderChan{}
 	salesOrderRedisKey := fmt.Sprintf("%s:%d", constants.SALES_ORDER, id)
-	result, err := r.redisdb.Client().Del(ctx, salesOrderRedisKey).Result()
+	_, err := r.redisdb.Client().Del(ctx, salesOrderRedisKey).Result()
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -668,11 +668,9 @@ func (r *salesOrder) RemoveCacheByID(id int, ctx context.Context, resultChan cha
 		resultChan <- response
 		return
 	}
-
-	fmt.Println(result)
 
 	salesOrderDetailRedisKey := fmt.Sprintf("%s:%d", constants.SALES_ORDER_DETAIL_BY_SALES_ORDER_ID, id)
-	result, err = r.redisdb.Client().Del(ctx, salesOrderDetailRedisKey).Result()
+	_, err = r.redisdb.Client().Del(ctx, salesOrderDetailRedisKey).Result()
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -681,8 +679,6 @@ func (r *salesOrder) RemoveCacheByID(id int, ctx context.Context, resultChan cha
 		resultChan <- response
 		return
 	}
-
-	fmt.Println(result)
 
 	response.Error = nil
 	resultChan <- response

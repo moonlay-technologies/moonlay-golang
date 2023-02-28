@@ -61,6 +61,7 @@ func WriteLog(err error, errorCode int, message interface{}) *model.ErrorLog {
 
 func NewWriteLog(errorLog model.ErrorLog) *model.ErrorLog {
 	if pc, file, line, ok := runtime.Caller(1); ok {
+
 		file = file[strings.LastIndex(file, "/")+1:]
 		funcName := runtime.FuncForPC(pc).Name()
 		var output *model.ErrorLog
@@ -75,7 +76,7 @@ func NewWriteLog(errorLog model.ErrorLog) *model.ErrorLog {
 				Err:           errorLog.Err,
 				StatusCode:    errorLog.StatusCode,
 			}
-		} else if errorLog.StatusCode == 401 || errorLog.StatusCode == 403 || errorLog.StatusCode == 404 || errorLog.StatusCode == 409 || errorLog.StatusCode == 400 {
+		} else if errorLog.StatusCode == http.StatusUnauthorized || errorLog.StatusCode == http.StatusForbidden || errorLog.StatusCode == http.StatusNotFound || errorLog.StatusCode == http.StatusConflict || errorLog.StatusCode == http.StatusBadRequest || errorLog.StatusCode == http.StatusUnprocessableEntity || errorLog.StatusCode == http.StatusExpectationFailed {
 			output = &model.ErrorLog{
 				Message:       errorLog.Message,
 				SystemMessage: errorLog.SystemMessage,
@@ -83,10 +84,10 @@ func NewWriteLog(errorLog model.ErrorLog) *model.ErrorLog {
 				StatusCode:    errorLog.StatusCode,
 			}
 
-		} else if errorLog.StatusCode == 422 {
+		} else {
 			output = &model.ErrorLog{
-				Message:       errorLog.Message,
-				SystemMessage: errorLog.SystemMessage,
+				Message:       []string{"Error tidak dikenali"},
+				SystemMessage: []string{"Undefined error"},
 				Err:           errorLog.Err,
 				StatusCode:    errorLog.StatusCode,
 			}

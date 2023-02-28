@@ -347,6 +347,7 @@ func (salesOrder *SalesOrder) UserChanMap(request *UserChan) {
 
 func (salesOrder *SalesOrder) SalesmanChanMap(request *SalesmanChan) {
 	salesOrder.Salesman = request.Salesman
+	salesOrder.SalesmanID = NullInt64{sql.NullInt64{Int64: int64(request.Salesman.ID), Valid: true}}
 	salesOrder.SalesmanName = NullString{sql.NullString{String: request.Salesman.Name, Valid: true}}
 	salesOrder.SalesmanEmail = request.Salesman.Email
 	return
@@ -371,7 +372,7 @@ func (result *SalesOrderResponse) CreateSoResponseMap(request *SalesOrder) {
 	result.BrandID = request.BrandID
 	result.BrandName = request.BrandName
 	result.UserID = request.UserID
-	result.SalesmanID = request.SalesmanID
+	result.SalesmanID = int(request.SalesmanID.Int64)
 	result.SalesmanName = request.SalesmanName.String
 	result.VisitationID = request.VisitationID
 	result.OrderSourceID = request.OrderSourceID
@@ -393,7 +394,7 @@ func (result *SalesOrderResponse) CreateSoResponseMap(request *SalesOrder) {
 	return
 }
 
-func (result *SalesOrderResponse) SoUpdateByIdResponseMap(request *SalesOrder) {
+func (result *SalesOrderResponse) UpdateSoResponseMap(request *SalesOrder) {
 	result.ID = request.ID
 	result.AgentID = request.AgentID
 	result.AgentName = request.AgentName.String
@@ -423,15 +424,15 @@ func (result *SalesOrderResponse) SoUpdateByIdResponseMap(request *SalesOrder) {
 	result.UserLastName = request.UserLastName.String
 	result.UserEmail = request.UserEmail.String
 	result.OrderSourceID = request.OrderSourceID
-	result.OrderSourceName = request.OrderSourceName
+	result.OrderSourceName = request.OrderSource.SourceName
 	result.OrderStatusID = request.OrderStatusID
-	result.OrderStatusName = request.OrderStatusName
+	result.OrderStatusName = request.OrderStatus.Name
 	result.SoCode = request.SoCode
 	result.SoDate = request.SoDate
 	result.SoRefCode = request.SoRefCode.String
 	result.SoRefDate = request.SoRefDate.String
-	result.GLat = request.GLat.Float64
 	result.GLong = request.GLong.Float64
+	result.GLat = request.GLat.Float64
 	result.Note = request.Note.String
 	result.InternalComment = request.InternalComment.String
 	result.TotalAmount = request.TotalAmount
