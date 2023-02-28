@@ -35,18 +35,21 @@ func (v *SalesOrderDetailStoreResponse) SalesOrderDetailStoreResponseMap(soDetai
 	return
 }
 
-// func (v *SalesOrderDetail) SalesOrderDetailUpdateRequestMap(soDetail *SalesOrderDetailUpdateRequest, now time.Time) {
-// 	v.ID = soDetail.ID
-// 	v.ProductID = soDetail.ProductID
-// 	v.UomID = soDetail.UomID
-// 	v.Qty = soDetail.Qty
-// 	v.SentQty = soDetail.SentQty
-// 	v.ResidualQty = soDetail.ResidualQty
-// 	v.Price = soDetail.Price
-// 	v.Note = NullString{NullString: sql.NullString{String: soDetail.Note, Valid: true}}
-// 	v.UpdatedAt = &now
-// 	return
-// }
+func (v *SalesOrderDetailStoreResponse) UpdateSoDetailResponseMap(soDetail *SalesOrderDetail) {
+	v.ID = soDetail.ID
+	v.SalesOrderId = soDetail.SalesOrderID
+	v.ProductID = soDetail.ProductID
+	v.UomID = soDetail.UomID
+	v.OrderStatusId = soDetail.OrderStatusID
+	v.SoDetailCode = soDetail.SoDetailCode
+	v.Qty = soDetail.Qty
+	v.Price = soDetail.Price
+	v.SentQty = NullInt64{NullInt64: sql.NullInt64{Int64: int64(soDetail.SentQty), Valid: true}}
+	v.ResidualQty = NullInt64{NullInt64: sql.NullInt64{Int64: int64(soDetail.ResidualQty), Valid: true}}
+	v.Note = soDetail.Note.String
+	v.CreatedAt = soDetail.CreatedAt
+	return
+}
 
 func (salesOrderDetail *SalesOrderDetailOpenSearchResponse) SalesOrderDetailOpenSearchResponseMap(request *SalesOrderDetail) {
 	salesOrderDetail.ID = request.ID
@@ -110,11 +113,91 @@ func (salesOrderDetail *SalesOrderDetailOpenSearch) SalesOrderMap(request *Sales
 	salesOrderDetail.Brand = request.Brand
 	salesOrderDetail.UserID = request.UserID
 	salesOrderDetail.User = request.User
-	salesOrderDetail.SalesmanID = request.SalesmanID
+	salesOrderDetail.SalesmanID = int(request.SalesmanID.Int64)
 	salesOrderDetail.Salesman = request.Salesman
 	salesOrderDetail.OrderSourceID = request.OrderSourceID
 	salesOrderDetail.OrderSource = request.OrderSource
 	salesOrderDetail.OrderStatus = request.OrderStatus
 	salesOrderDetail.GLat = request.GLat
 	salesOrderDetail.GLong = request.GLong
+}
+
+func (salesOrderDetail *SalesOrderDetailOpenSearch) SalesOrderDetailOpenSearchMap(requestSalesOrder *SalesOrder, requestSalesOrderDetail *SalesOrderDetail) {
+	salesOrderDetail.ID = requestSalesOrderDetail.ID
+	salesOrderDetail.SoDetailCode = requestSalesOrderDetail.SoDetailCode
+	salesOrderDetail.SoID = requestSalesOrder.ID
+	salesOrderDetail.SoCode = requestSalesOrder.SoCode
+	salesOrderDetail.SoDate = requestSalesOrder.SoDate
+	salesOrderDetail.SoRefCode = requestSalesOrder.SoRefCode.String
+	salesOrderDetail.SoRefDate = requestSalesOrder.SoRefDate
+	salesOrderDetail.ReferralCode = requestSalesOrder.ReferralCode
+
+	salesOrderDetail.AgentId = requestSalesOrder.AgentID
+	salesOrderDetail.AgentName = requestSalesOrder.AgentName.String
+	salesOrderDetail.AgentProvinceID = requestSalesOrder.AgentProvinceID
+	salesOrderDetail.AgentProvinceName = requestSalesOrder.AgentProvinceName.String
+	salesOrderDetail.AgentCityID = requestSalesOrder.AgentCityID
+	salesOrderDetail.AgentCityName = requestSalesOrder.AgentCityName.String
+	salesOrderDetail.AgentDistrictID = requestSalesOrder.AgentDistrictID
+	salesOrderDetail.AgentDistrictName = requestSalesOrder.AgentDistrictName.String
+	salesOrderDetail.AgentVillageID = requestSalesOrder.AgentVillageID
+	salesOrderDetail.AgentVillageName = requestSalesOrder.AgentVillageName.String
+	salesOrderDetail.AgentPhone = requestSalesOrder.AgentPhone.String
+	salesOrderDetail.AgentAddress = requestSalesOrder.AgentAddress.String
+
+	salesOrderDetail.StoreID = requestSalesOrder.StoreID
+	salesOrderDetail.StoreCode = requestSalesOrder.StoreCode.String
+	salesOrderDetail.StoreName = requestSalesOrder.StoreName.String
+	salesOrderDetail.StoreProvinceID = requestSalesOrder.StoreProvinceID
+	salesOrderDetail.StoreProvinceName = requestSalesOrder.StoreProvinceName.String
+	salesOrderDetail.StoreCityID = requestSalesOrder.StoreCityID
+	salesOrderDetail.StoreCityName = requestSalesOrder.StoreCityName.String
+	salesOrderDetail.StoreDistrictID = requestSalesOrder.StoreDistrictID
+	salesOrderDetail.StoreDistrictName = requestSalesOrder.StoreDistrictName.String
+	salesOrderDetail.StoreVillageID = requestSalesOrder.StoreVillageID
+	salesOrderDetail.StoreVillageName = requestSalesOrder.StoreVillageName.String
+	salesOrderDetail.StoreAddress = requestSalesOrder.StoreAddress.String
+	salesOrderDetail.StorePhone = requestSalesOrder.StorePhone.String
+	salesOrderDetail.StoreMainMobilePhone = requestSalesOrder.StoreMainMobilePhone.String
+
+	salesOrderDetail.BrandID = requestSalesOrder.BrandID
+	salesOrderDetail.BrandName = requestSalesOrder.BrandName
+
+	salesOrderDetail.UserID = requestSalesOrder.UserID
+	salesOrderDetail.UserFirstName = requestSalesOrder.UserFirstName.String
+	salesOrderDetail.UserLastName = requestSalesOrder.UserLastName.String
+	salesOrderDetail.UserRoleID = requestSalesOrder.UserRoleID
+	salesOrderDetail.UserEmail = requestSalesOrder.UserEmail.String
+
+	salesOrderDetail.SalesmanID = int(requestSalesOrder.SalesmanID.Int64)
+	salesOrderDetail.SalesmanName = requestSalesOrder.SalesmanName.String
+	salesOrderDetail.SalesmanEmail = requestSalesOrder.SalesmanEmail.String
+
+	salesOrderDetail.OrderSourceID = requestSalesOrder.OrderSourceID
+	salesOrderDetail.OrderSourceName = requestSalesOrder.OrderSourceName
+	salesOrderDetail.OrderStatusID = requestSalesOrder.OrderStatusID
+	salesOrderDetail.OrderStatusName = requestSalesOrder.OrderStatusName
+
+	salesOrderDetail.GLat = requestSalesOrder.GLat
+	salesOrderDetail.GLong = requestSalesOrder.GLong
+
+	salesOrderDetail.ProductID = requestSalesOrderDetail.ProductID
+	salesOrderDetail.ProductSKU = requestSalesOrderDetail.Product.Sku.String
+	salesOrderDetail.ProductName = requestSalesOrderDetail.Product.ProductName.String
+	salesOrderDetail.ProductDescription = requestSalesOrderDetail.Product.Description.String
+	salesOrderDetail.CategoryID = requestSalesOrderDetail.Product.CategoryID
+
+	salesOrderDetail.UomID = requestSalesOrderDetail.UomID
+	salesOrderDetail.UomCode = requestSalesOrderDetail.Uom.Code.String
+	salesOrderDetail.UomName = requestSalesOrderDetail.Uom.Name.String
+
+	salesOrderDetail.Qty = requestSalesOrderDetail.Qty
+	salesOrderDetail.SentQty = requestSalesOrderDetail.SentQty
+	salesOrderDetail.ResidualQty = requestSalesOrderDetail.ResidualQty
+	salesOrderDetail.Price = requestSalesOrderDetail.Price
+	salesOrderDetail.Note = requestSalesOrderDetail.Note
+
+	salesOrderDetail.CreatedAt = requestSalesOrderDetail.CreatedAt
+	salesOrderDetail.UpdatedAt = requestSalesOrderDetail.UpdatedAt
+	salesOrderDetail.DeletedAt = requestSalesOrderDetail.DeletedAt
 }
