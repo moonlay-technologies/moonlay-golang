@@ -42,11 +42,9 @@ func InitDeleteSalesOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClie
 
 func (c *DeleteSalesOrderConsumerHandler) ProcessMessage() {
 	fmt.Println("process", constants.DELETE_SALES_ORDER_TOPIC)
-	now := time.Now()
 	topic := c.args[1].(string)
 	groupID := c.args[2].(string)
 	reader := c.kafkaClient.SetConsumerGroupReader(topic, groupID)
-	salesOrderLogResultChan := make(chan *models.SalesOrderLogChan)
 
 	for {
 		m, err := reader.ReadMessage(c.ctx)
@@ -59,6 +57,8 @@ func (c *DeleteSalesOrderConsumerHandler) ProcessMessage() {
 		var salesOrder models.SalesOrder
 		fmt.Println("value = ", string(m.Value))
 		err = json.Unmarshal(m.Value, &salesOrder)
+		now := time.Now()
+		salesOrderLogResultChan := make(chan *models.SalesOrderLogChan)
 
 		dbTransaction, err := c.db.BeginTx(c.ctx, nil)
 		salesOrderLog := &models.SalesOrderLog{

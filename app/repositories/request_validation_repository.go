@@ -54,6 +54,7 @@ func (r *requestValidationRepository) MustActiveValidation(value *models.MustAct
 	var total int64
 
 	query := fmt.Sprintf("SELECT COUNT(*) as total FROM %s WHERE %s ", value.Table, value.Clause)
+	fmt.Println(query)
 	err := r.db.QueryRow(query).Scan(&total)
 
 	if err != nil {
