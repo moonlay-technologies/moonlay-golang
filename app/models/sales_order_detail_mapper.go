@@ -10,7 +10,7 @@ func (v *SalesOrderDetail) SalesOrderDetailStoreRequestMap(soDetail *SalesOrderD
 	v.UomID = soDetail.UomID
 	v.Qty = soDetail.Qty
 	v.SentQty = 0
-	v.ResidualQty = 0
+	v.ResidualQty = soDetail.Qty
 	v.Price = soDetail.Price
 	v.Note = NullString{NullString: sql.NullString{String: soDetail.Note, Valid: true}}
 	v.IsDoneSyncToEs = "0"

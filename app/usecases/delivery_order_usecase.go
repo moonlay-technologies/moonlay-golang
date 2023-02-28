@@ -183,7 +183,10 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	getSalesmanResult := <-getSalesmanResultChan
 
 	if getSalesmanResult.Error != nil {
-		return &models.DeliveryOrder{}, getSalesmanResult.ErrorLog
+		// ignore null salesman
+		if getSalesmanResult.Error.Error() != "salesman data not found" {
+			return &models.DeliveryOrder{}, getSalesmanResult.ErrorLog
+		}
 	}
 
 	deliveryOrder := &models.DeliveryOrder{}
@@ -204,7 +207,9 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	deliveryOrder.CreatedBy = getUserResult.User.ID
 	deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
 	deliveryOrder.Brand = getBrandResult.Brand
-	deliveryOrder.Salesman = getSalesmanResult.Salesman
+	if getSalesmanResult.Salesman != nil {
+		deliveryOrder.Salesman = getSalesmanResult.Salesman
+	}
 
 	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
 	go u.deliveryOrderRepository.Insert(deliveryOrder, sqlTransaction, ctx, createDeliveryOrderResultChan)
@@ -233,6 +238,27 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 			return &models.DeliveryOrder{}, getOrderStatusDetailResult.ErrorLog
 		}
 
+		getSalesOrderDetailResult.SalesOrderDetail.UpdatedAt = &now
+		getSalesOrderDetailResult.SalesOrderDetail.SentQty += doDetail.Qty
+		getSalesOrderDetailResult.SalesOrderDetail.ResidualQty -= doDetail.Qty
+		totalResidualQty += getSalesOrderDetailResult.SalesOrderDetail.ResidualQty
+
+		if getSalesOrderDetailResult.SalesOrderDetail.ResidualQty == 0 {
+			getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID = 14
+		} else {
+			getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID = 13
+		}
+
+		getOrderStatusSODetailResultChan := make(chan *models.OrderStatusChan)
+		go u.orderStatusRepository.GetByID(getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID, false, ctx, getOrderStatusSODetailResultChan)
+		getOrderStatusSODetailResult := <-getOrderStatusSODetailResultChan
+
+		if getOrderStatusSODetailResult.Error != nil {
+			return &models.DeliveryOrder{}, getOrderStatusSODetailResult.ErrorLog
+		}
+		getSalesOrderDetailResult.SalesOrderDetail.OrderStatusName = getOrderStatusSODetailResult.OrderStatus.Name
+		getSalesOrderDetailResult.SalesOrderDetail.OrderStatus = getOrderStatusSODetailResult.OrderStatus
+
 		getProductDetailResultChan := make(chan *models.ProductChan)
 		go u.productRepository.GetByID(getSalesOrderDetailResult.SalesOrderDetail.ProductID, false, ctx, getProductDetailResultChan)
 		getProductDetailResult := <-getProductDetailResultChan
@@ -254,13 +280,15 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		deliveryOrderDetail := &models.DeliveryOrderDetail{}
 		deliveryOrderDetail.DeliveryOrderDetailStoreRequestMap(doDetail, now)
 		deliveryOrderDetail.DeliveryOrderID = int(createDeliveryOrderResult.ID)
-		deliveryOrderDetail.OrderStatus = getOrderStatusDetailResult.OrderStatus
 		deliveryOrderDetail.BrandID = getBrandResult.Brand.ID
 		deliveryOrderDetail.DoDetailCode = doDetailCode
 		deliveryOrderDetail.Note = models.NullString{NullString: sql.NullString{String: doDetail.Note, Valid: true}}
 		deliveryOrderDetail.Uom = getUomDetailResult.Uom
 		deliveryOrderDetail.ProductChanMap(getProductDetailResult)
 		deliveryOrderDetail.SalesOrderDetailChanMap(getSalesOrderDetailResult)
+		deliveryOrderDetail.OrderStatusID = getOrderStatusDetailResult.OrderStatus.ID
+		deliveryOrderDetail.OrderStatusName = getOrderStatusDetailResult.OrderStatus.Name
+		deliveryOrderDetail.OrderStatus = getOrderStatusDetailResult.OrderStatus
 
 		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
 		go u.deliveryOrderDetailRepository.Insert(deliveryOrderDetail, sqlTransaction, ctx, createDeliveryOrderDetailResultChan)
@@ -268,15 +296,6 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 
 		if createDeliveryOrderDetailResult.Error != nil {
 			return &models.DeliveryOrder{}, createDeliveryOrderDetailResult.ErrorLog
-		}
-		getSalesOrderDetailResult.SalesOrderDetail.UpdatedAt = &now
-		getSalesOrderDetailResult.SalesOrderDetail.SentQty += doDetail.Qty
-		getSalesOrderDetailResult.SalesOrderDetail.ResidualQty -= doDetail.Qty
-		totalResidualQty += getSalesOrderDetailResult.SalesOrderDetail.ResidualQty
-		if getSalesOrderDetailResult.SalesOrderDetail.ResidualQty == 0 {
-			getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID = 14
-		} else {
-			getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID = 13
 		}
 
 		updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
@@ -297,6 +316,15 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	} else {
 		getSalesOrderResult.SalesOrder.OrderStatusID = 7
 	}
+
+	getOrderStatusSOResultChan := make(chan *models.OrderStatusChan)
+	go u.orderStatusRepository.GetByID(getSalesOrderResult.SalesOrder.OrderStatusID, false, ctx, getOrderStatusSOResultChan)
+	getOrderStatusSODetailResult := <-getOrderStatusSOResultChan
+
+	if getOrderStatusSODetailResult.Error != nil {
+		return &models.DeliveryOrder{}, getOrderStatusSODetailResult.ErrorLog
+	}
+	getSalesOrderResult.SalesOrder.OrderStatus = getOrderStatusSODetailResult.OrderStatus
 	getSalesOrderResult.SalesOrder.SoDate = ""
 	getSalesOrderResult.SalesOrder.SoRefDate = models.NullString{}
 	getSalesOrderResult.SalesOrder.UpdatedAt = &now

@@ -9,11 +9,16 @@ type SalesOrderDetail struct {
 	ID                int          `json:"id,omitempty" bson:"id,omitempty"`
 	SalesOrderID      int          `json:"sales_order_id,omitempty" bson:"sales_order_id,omitempty"`
 	ProductID         int          `json:"product_id,omitempty" bson:"product_id,omitempty" `
-	BrandID           int          `json:"brand_id,omitempty" bson:"brand_id,omitempty" `
+	ProductSKU        string       `json:"product_sku,omitempty" bson:"product_sku,omitempty"`
+	ProductName       string       `json:"product_name,omitempty" bson:"product_name,omitempty"`
 	Product           *Product     `json:"product,omitempty" bson:"product,omitempty"`
+	BrandID           int          `json:"brand_id,omitempty" bson:"brand_id,omitempty" `
 	UomID             int          `json:"uom_id,omitempty" bson:"uom_id,omitempty"`
+	UomCode           string       `json:"uom_code,omitempty" bson:"uom_code,omitempty"`
+	UomName           string       `json:"uom_name,omitempty" bson:"uom_name,omitempty"`
 	Uom               *Uom         `json:"uom,omitempty" bson:"uom,omitempty"`
 	OrderStatusID     int          `json:"order_status_id,omitempty" bson:"order_status_id,omitempty"`
+	OrderStatusName   string       `json:"order_status_name,omitempty" bson:"order_status_name,omitempty"`
 	OrderStatus       *OrderStatus `json:"order_status,omitempty" bson:"order_status,omitempty"`
 	SoDetailCode      string       `json:"so_detail_code,omitempty" bson:"so_detail_code,omitempty"`
 	Qty               int          `json:"qty,omitempty" bson:"qty,omitempty"`
@@ -24,13 +29,8 @@ type SalesOrderDetail struct {
 	IsDoneSyncToEs    string       `json:"is_done_sync_to_es,omitempty" bson:"is_done_sync_to_es,omitempty"`
 	StartDateSyncToEs *time.Time   `json:"start_date_sync_to_es,omitempty" bson:"start_date_sync_to_es,omitempty"`
 	EndDateSyncToEs   *time.Time   `json:"end_date_sync_to_es,omitempty" bson:"end_date_sync_to_es,omitempty"`
-	ProductSKU        string       `json:"product_sku,omitempty" bson:"product_sku,omitempty"`
-	ProductName       string       `json:"product_name,omitempty" bson:"product_name,omitempty"`
-	UomCode           string       `json:"uom_code,omitempty" bson:"uom_code,omitempty"`
-	UomName           string       `json:"uom_name,omitempty" bson:"uom_name,omitempty"`
 	UomType           string       `json:"uom_type,omitempty" bson:"uom_type,omitempty"`
 	Subtotal          float64      `json:"subtotal,omitempty" bson:"subtotal,omitempty"`
-	OrderStatusName   string       `json:"order_status_name,omitempty" bson:"order_status_name,omitempty"`
 	CreatedAt         *time.Time   `json:"created_at,omitempty" bson:"created_at,omitempty"`
 	UpdatedAt         *time.Time   `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
 	DeletedAt         *time.Time   `json:"deleted_at,omitempty" bson:"deleted_at,omitempty"`

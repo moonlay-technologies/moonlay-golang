@@ -60,7 +60,6 @@ func (deliveryOrderDetail *DeliveryOrderDetail) ProductChanMap(request *ProductC
 func (deliveryOrderDetail *DeliveryOrderDetail) SalesOrderDetailChanMap(request *SalesOrderDetailChan) {
 	deliveryOrderDetail.ProductID = request.SalesOrderDetail.ProductID
 	deliveryOrderDetail.UomID = request.SalesOrderDetail.UomID
-	deliveryOrderDetail.OrderStatusID = request.SalesOrderDetail.OrderStatusID
 	deliveryOrderDetail.SoDetail = request.SalesOrderDetail
 	return
 }

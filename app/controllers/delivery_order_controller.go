@@ -83,17 +83,17 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 	mustActiveField := []*models.MustActiveRequest{
 		{
 			Table:    "warehouses a JOIN agents b ON a.owner_id = b.id",
-			ReqField: "a.owner_id",
+			ReqField: "warehouse_owner_id",
 			Clause:   fmt.Sprintf("a.id = %d AND b.deleted_at IS NULL AND a.`status` = 1", insertRequest.WarehouseID),
 		},
 		{
 			Table:    "stores a JOIN sales_orders b ON b.store_id = a.id",
-			ReqField: "a.id",
+			ReqField: "stores_id",
 			Clause:   fmt.Sprintf("b.id = %d AND a.deleted_at IS NULL AND b.deleted_at IS NULL", insertRequest.SalesOrderID),
 		},
 		{
 			Table:    "brands a JOIN sales_orders b ON b.brand_id = a.id",
-			ReqField: "a.id",
+			ReqField: "brands_id",
 			Clause:   fmt.Sprintf("b.id = %d AND a.status_active = 1 AND b.deleted_at IS NULL", insertRequest.SalesOrderID),
 		},
 	}
@@ -134,12 +134,12 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		totalQty += x.Qty
 		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
 			Table:    "products a JOIN sales_order_details b ON b.product_id = a.id",
-			ReqField: "a.id",
+			ReqField: "product_id",
 			Clause:   fmt.Sprintf("b.id = %d AND a.deleted_at IS NULL AND b.deleted_at IS NULL", x.SoDetailID),
 		})
 		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
 			Table:    "uoms a JOIN sales_order_details b ON b.uom_id = a.id",
-			ReqField: "a.id",
+			ReqField: "uoms_id",
 			Clause:   fmt.Sprintf("b.id = %d AND a.deleted_at IS NULL AND b.deleted_at IS NULL", x.SoDetailID),
 		})
 		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
@@ -248,8 +248,6 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		SalesOrderReferralCode:    deliveryOrder.SalesOrder.SoRefCode.String,
 		SalesOrderNote:            deliveryOrder.SalesOrder.Note.String,
 		SalesOrderInternalComment: deliveryOrder.SalesOrder.InternalComment.String,
-		SalesmanID:                deliveryOrder.Salesman.ID,
-		SalesmanName:              deliveryOrder.Salesman.Name,
 		StoreName:                 deliveryOrder.Store.Name.String,
 		StoreProvinceID:           storeProvinceID,
 		StoreProvince:             deliveryOrder.Store.ProvinceName.String,
@@ -272,6 +270,11 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		Note:                      deliveryOrder.Note.String,
 		InternalComment:           deliveryOrder.SalesOrder.InternalComment.String,
 		DeliveryOrderDetails:      deliveryOrderDetailResults,
+	}
+	if deliveryOrder.Salesman != nil {
+
+		deliveryOrderResult.SalesmanID = deliveryOrder.Salesman.ID
+		deliveryOrderResult.SalesmanName = deliveryOrder.Salesman.Name
 	}
 
 	result.Data = deliveryOrderResult
