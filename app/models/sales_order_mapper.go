@@ -347,6 +347,7 @@ func (salesOrder *SalesOrder) UserChanMap(request *UserChan) {
 
 func (salesOrder *SalesOrder) SalesmanChanMap(request *SalesmanChan) {
 	salesOrder.Salesman = request.Salesman
+	salesOrder.SalesmanID = NullInt64{sql.NullInt64{Int64: int64(request.Salesman.ID), Valid: true}}
 	salesOrder.SalesmanName = NullString{sql.NullString{String: request.Salesman.Name, Valid: true}}
 	salesOrder.SalesmanEmail = request.Salesman.Email
 	return
