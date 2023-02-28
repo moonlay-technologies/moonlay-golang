@@ -13,6 +13,10 @@ type RequestValidationRepositoryInterface interface {
 	UniqueValidation(value *models.UniqueRequest, resultChan chan *models.UniqueRequestChan)
 	MustActiveValidation(value *models.MustActiveRequest, resultChan chan *models.MustActiveRequestChan)
 	MustEmptyValidation(value *models.MustEmptyValidationRequest, resultChan chan *models.MustEmptyValidationRequestChan)
+	AgentIdValidation(agentId, userId int, resultChan chan *models.RequestIdValidationChan)
+	StoreIdValidation(storeId, agentId int, resultChan chan *models.RequestIdValidationChan)
+	SalesmanIdValidation(salesmanId, agentId int, resultChan chan *models.RequestIdValidationChan)
+	BrandIdValidation(brandId, agentId int, resultChan chan *models.RequestIdValidationChan)
 }
 
 type requestValidationRepository struct {
@@ -92,4 +96,84 @@ func (r *requestValidationRepository) MustEmptyValidation(value *models.MustEmpt
 	}
 	resultChan <- response
 	return
+}
+
+func (r *requestValidationRepository) AgentIdValidation(agentId, userId int, resultChan chan *models.RequestIdValidationChan) {
+	response := &models.RequestIdValidationChan{}
+	var total int64
+
+	query := fmt.Sprintf("SELECT COUNT(*) as total FROM agents WHERE id = %d AND user_id_updated = %d AND deleted_at IS NULL", agentId, userId)
+	err := r.db.QueryRow(query).Scan(&total)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	} else {
+		response.Total = total
+		resultChan <- response
+		return
+	}
+}
+
+func (r *requestValidationRepository) StoreIdValidation(storeId, agentId int, resultChan chan *models.RequestIdValidationChan) {
+	response := &models.RequestIdValidationChan{}
+	var total int64
+
+	query := fmt.Sprintf("SELECT COUNT(*) AS total FROM stores JOIN agent_store ON stores.id = agent_store.store_id JOIN agents ON agent_store.agent_id = agents.id WHERE stores.id = %d AND agents.id = %d AND stores.deleted_at IS NULL", storeId, agentId)
+	err := r.db.QueryRow(query).Scan(&total)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	} else {
+		response.Total = total
+		resultChan <- response
+		return
+	}
+}
+
+func (r *requestValidationRepository) SalesmanIdValidation(salesmanId, agentId int, resultChan chan *models.RequestIdValidationChan) {
+	response := &models.RequestIdValidationChan{}
+	var total int64
+
+	query := fmt.Sprintf("SELECT COUNT(*) AS total FROM salesmans JOIN brand_salesman ON salesmans.id = brand_salesman.salesman_id JOIN agents ON brand_salesman.agent_id = agents.id WHERE salesmans.id = %d AND agents.id = %d AND salesmans.deleted_at IS NULL", salesmanId, agentId)
+	err := r.db.QueryRow(query).Scan(&total)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	} else {
+		response.Total = total
+		resultChan <- response
+		return
+	}
+}
+
+func (r *requestValidationRepository) BrandIdValidation(brandId, agentId int, resultChan chan *models.RequestIdValidationChan) {
+	response := &models.RequestIdValidationChan{}
+	var total int64
+
+	query := fmt.Sprintf("SELECT COUNT(*) AS total FROM brands JOIN brand_salesman ON brands.id = brand_salesman.brand_id JOIN agents ON brand_salesman.agent_id = agents.id WHERE brands.id = %d AND agents.id = %d AND brands.deleted_at IS NULL", brandId, agentId)
+	err := r.db.QueryRow(query).Scan(&total)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	} else {
+		response.Total = total
+		resultChan <- response
+		return
+	}
 }

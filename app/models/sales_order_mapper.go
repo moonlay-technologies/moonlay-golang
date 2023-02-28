@@ -371,7 +371,7 @@ func (result *SalesOrderResponse) CreateSoResponseMap(request *SalesOrder) {
 	result.BrandID = request.BrandID
 	result.BrandName = request.BrandName
 	result.UserID = request.UserID
-	result.SalesmanID = request.Salesman.ID
+	result.SalesmanID = request.SalesmanID
 	result.SalesmanName = request.SalesmanName.String
 	result.VisitationID = request.VisitationID
 	result.OrderSourceID = request.OrderSourceID

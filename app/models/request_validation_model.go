@@ -61,3 +61,10 @@ type DateInputRequestChan struct {
 	ErrorLog      *model.ErrorLog
 	ID            int64 `json:"id,omitempty" bson:"id,omitempty"`
 }
+
+type RequestIdValidationChan struct {
+	Total    int64
+	Error    error
+	ErrorLog *model.ErrorLog
+	ID       int64 `json:"id,omitempty" bson:"id,omitempty"`
+}
