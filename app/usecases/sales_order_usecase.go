@@ -179,14 +179,17 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		return []*models.SalesOrderResponse{}, errorLogData
 	}
 
-	// Check Salesman By Email
-	getSalesmanResultChan := make(chan *models.SalesmanChan)
-	go u.salesmanRepository.GetByEmail(getUserResult.User.Email, false, ctx, getSalesmanResultChan)
-	getSalesmanResult := <-getSalesmanResultChan
+	// Check Salesman By Id
+	getSalesmanResult := &models.SalesmanChan{}
+	if request.SalesmanID > 0 {
+		getSalesmanResultChan := make(chan *models.SalesmanChan)
+		go u.salesmanRepository.GetByID(request.SalesmanID, false, ctx, getSalesmanResultChan)
+		getSalesmanResult = <-getSalesmanResultChan
 
-	if getSalesmanResult.Error != nil {
-		errorLogData := helper.WriteLog(getSalesmanResult.Error, http.StatusInternalServerError, nil)
-		return []*models.SalesOrderResponse{}, errorLogData
+		if getSalesmanResult.Error != nil {
+			errorLogData := helper.WriteLog(getSalesmanResult.Error, http.StatusInternalServerError, nil)
+			return []*models.SalesOrderResponse{}, errorLogData
+		}
 	}
 
 	brandIds := []int{}
@@ -240,7 +243,9 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 
 			salesOrder.UserChanMap(getUserResult)
 
-			salesOrder.SalesmanChanMap(getSalesmanResult)
+			if request.SalesmanID > 0 {
+				salesOrder.SalesmanChanMap(getSalesmanResult)
+			}
 
 			salesOrder.SoCode = soCode
 			salesOrder.BrandID = v.BrandID
