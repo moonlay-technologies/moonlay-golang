@@ -13,7 +13,6 @@ import (
 	"order-service/global/utils/helper"
 	baseModel "order-service/global/utils/model"
 	"strconv"
-	"time"
 
 	"github.com/bxcodec/dbresolver"
 	"github.com/gin-gonic/gin"
@@ -457,34 +456,15 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 			Value: insertRequest.SoRefDate,
 		},
 	}
-	err = c.requestValidationMiddleware.DateInputValidation(ctx, dateField)
+	err = c.requestValidationMiddleware.DateInputValidation(ctx, dateField, constants.ERROR_ACTION_NAME_CREATE)
 	if err != nil {
 		return
 	}
 
-	parseSoDate, err := time.Parse("2006-01-02", insertRequest.SoDate)
-	parseSoRefDate, err := time.Parse("2006-01-02", insertRequest.SoRefDate)
-	now := time.Now()
-
-	if !(parseSoDate.Add(1*time.Hour).After(parseSoRefDate) && parseSoRefDate.Before(time.Now()) && parseSoRefDate.Month() == now.Month() && parseSoRefDate.Year() == now.Year()) {
-
-		errorLog := helper.WriteLog(fmt.Errorf("so_date and so_ref_date must equal less than today and must be in the current month"), http.StatusBadRequest, "so_date dan so_ref_date harus sama dengan kurang dari hari ini dan harus di bulan berjalan")
-		resultErrorLog = errorLog
-		result.StatusCode = http.StatusBadRequest
-		result.Error = resultErrorLog
-		ctx.JSON(result.StatusCode, result)
-
-		return
-	}
-
+	brandIds := []int{}
 	mustActiveField := []*models.MustActiveRequest{
 		helper.GenerateMustActive("agents", "agent_id", insertRequest.AgentID, "active"),
 		helper.GenerateMustActive("stores", "store_id", insertRequest.StoreID, "active"),
-		{
-			Table:    "brands",
-			ReqField: "brand_id",
-			Clause:   fmt.Sprintf("id = %d AND status_active = %d", insertRequest.BrandID, 1),
-		},
 		helper.GenerateMustActive("users", "user_id", insertRequest.UserID, "ACTIVE"),
 	}
 	for i, v := range insertRequest.SalesOrderDetails {
@@ -498,18 +478,58 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 			ReqField: fmt.Sprintf("sales_order_details[%d].uom_id", i),
 			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", v.UomID),
 		})
+		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+			Table:    "brands",
+			ReqField: fmt.Sprintf("sales_order_details[%d].brand_id", i),
+			Clause:   fmt.Sprintf("id = %d AND status_active = %d", v.BrandID, 1),
+		})
+
+		brandIds = append(brandIds, v.BrandID)
 	}
 	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
 	if err != nil {
 		return
 	}
 
-	uniqueField := []*models.UniqueRequest{{
-		Table: constants.SALES_ORDERS_TABLE,
-		Field: "so_ref_code",
-		Value: insertRequest.SoRefCode,
-	}}
-	err = c.requestValidationMiddleware.UniqueValidation(ctx, uniqueField)
+	uniqueField := []*models.UniqueRequest{}
+	if len(insertRequest.SoRefCode) > 0 {
+		err = c.requestValidationMiddleware.OrderSourceValidation(ctx, insertRequest.OrderSourceID, insertRequest.SoRefCode, constants.ERROR_ACTION_NAME_CREATE)
+		if err != nil {
+			return
+		}
+
+		uniqueField = append(uniqueField, &models.UniqueRequest{
+			Table: constants.SALES_ORDERS_TABLE,
+			Field: "so_ref_code",
+			Value: insertRequest.SoRefCode,
+		})
+	}
+
+	if len(uniqueField) > 0 {
+		err = c.requestValidationMiddleware.UniqueValidation(ctx, uniqueField)
+		if err != nil {
+			return
+		}
+	}
+
+	err = c.requestValidationMiddleware.AgentIdValidation(ctx, insertRequest.AgentID, insertRequest.UserID, constants.ERROR_ACTION_NAME_CREATE)
+	if err != nil {
+		return
+	}
+
+	err = c.requestValidationMiddleware.StoreIdValidation(ctx, insertRequest.StoreID, insertRequest.AgentID, constants.ERROR_ACTION_NAME_CREATE)
+	if err != nil {
+		return
+	}
+
+	if insertRequest.SalesmanID > 0 {
+		err = c.requestValidationMiddleware.SalesmanIdValidation(ctx, insertRequest.SalesmanID, insertRequest.AgentID, constants.ERROR_ACTION_NAME_CREATE)
+		if err != nil {
+			return
+		}
+	}
+
+	err = c.requestValidationMiddleware.BrandIdValidation(ctx, brandIds, insertRequest.AgentID, constants.ERROR_ACTION_NAME_CREATE)
 	if err != nil {
 		return
 	}
@@ -1278,7 +1298,7 @@ func (c *salesOrderController) DeleteByID(ctx *gin.Context) {
 			TableJoin:       "order_statuses",
 			ForeignKey:      "order_status_id",
 			SelectedCollumn: "order_statuses.name",
-			Clause:          fmt.Sprintf("sales_orders.id = %d AND sales_orders.deleted_at IS NULL AND sales_orders.order_status_id NOT IN (5,6,9,10)", id),
+			Clause:          fmt.Sprintf("sales_orders.id = %d AND sales_orders.order_status_id NOT IN (5,6,9,10)", id),
 			MessageFormat:   "Status Sales Order <result>",
 		},
 		{
@@ -1286,7 +1306,7 @@ func (c *salesOrderController) DeleteByID(ctx *gin.Context) {
 			TableJoin:       "sales_orders",
 			ForeignKey:      "sales_order_id",
 			SelectedCollumn: "delivery_orders.id",
-			Clause:          fmt.Sprintf("sales_orders.id = %d AND sales_orders.deleted_at IS NULL AND delivery_orders.deleted_at IS NULL", id),
+			Clause:          fmt.Sprintf("sales_orders.id = %d AND delivery_orders.deleted_at IS NULL", id),
 			MessageFormat:   "Sales Order Has Delivery Order <result>, Please Delete it First",
 		},
 	}
@@ -1303,7 +1323,7 @@ func (c *salesOrderController) DeleteByID(ctx *gin.Context) {
 		ctx.JSON(result.StatusCode, result)
 		return
 	}
-	_, errorLog := c.salesOrderUseCase.DeleteById(id, dbTransaction, ctx)
+	errorLog := c.salesOrderUseCase.DeleteById(id, dbTransaction)
 
 	if errorLog != nil {
 		err = dbTransaction.Rollback()

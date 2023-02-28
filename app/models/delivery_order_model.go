@@ -63,8 +63,8 @@ type DeliveryOrderStoreRequest struct {
 	WarehouseID          int                                `json:"warehouse_id,omitempty" bson:"warehouse_id,omitempty" binding:"required"`
 	DoRefCode            string                             `json:"do_ref_code,omitempty" bson:"do_ref_code,omitempty" binding:"required"`
 	DoRefDate            string                             `json:"do_ref_date,omitempty" bson:"do_ref_date,omitempty" binding:"required"`
-	DriverName           string                             `json:"driver_name,omitempty" bson:"driver_name,omitempty"`
-	PlatNumber           string                             `json:"plat_number,omitempty" bson:"plat_number,omitempty"`
+	DriverName           string                             `json:"driver_name,omitempty" bson:"driver_name,omitempty" binding:"required"`
+	PlatNumber           string                             `json:"plat_number,omitempty" bson:"plat_number,omitempty" binding:"required"`
 	Note                 string                             `json:"note,omitempty" bson:"note,omitempty"`
 	DeliveryOrderDetails []*DeliveryOrderDetailStoreRequest `json:"delivery_order_details,omitempty" bson:"delivery_order_details,omitempty" binding:"required,dive,required"`
 }

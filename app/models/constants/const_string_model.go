@@ -1,7 +1,7 @@
 package constants
 
 const (
-	SALES_ORDER_CONSUMER        = "sales-order-consumer"
+	CREATE_SALES_ORDER_CONSUMER        = "sales-order-consumer"
 	UPDATE_SALES_ORDER_CONSUMER = "update-sales-order-consumer"
 	DELETE_SALES_ORDER_CONSUMER = "delete-sales-order-consumer"
 

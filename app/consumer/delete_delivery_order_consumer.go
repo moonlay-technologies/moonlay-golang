@@ -44,11 +44,9 @@ func InitDeleteDeliveryOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaC
 
 func (c *DeleteDeliveryOrderConsumerHandler) ProcessMessage() {
 	fmt.Println("process ", constants.UPDATE_DELIVERY_ORDER_TOPIC)
-	now := time.Now()
 	topic := c.args[1].(string)
 	groupID := c.args[2].(string)
 	reader := c.kafkaClient.SetConsumerGroupReader(topic, groupID)
-	deliveryOrderLogResultChan := make(chan *models.DeliveryOrderLogChan)
 
 	for {
 		m, err := reader.ReadMessage(c.ctx)
@@ -60,6 +58,8 @@ func (c *DeleteDeliveryOrderConsumerHandler) ProcessMessage() {
 
 		var deliveryOrder models.DeliveryOrder
 		err = json.Unmarshal(m.Value, &deliveryOrder)
+		now := time.Now()
+		deliveryOrderLogResultChan := make(chan *models.DeliveryOrderLogChan)
 
 		dbTransaction, err := c.db.BeginTx(c.ctx, nil)
 		deliveryOrderLog := &models.DeliveryOrderLog{
