@@ -42,11 +42,9 @@ func InitCreateSalesOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClie
 
 func (c *createSalesOrderConsumerHandler) ProcessMessage() {
 	fmt.Println("process ", constants.CREATE_SALES_ORDER_TOPIC)
-	now := time.Now()
 	topic := c.args[1].(string)
 	groupID := c.args[2].(string)
 	reader := c.kafkaClient.SetConsumerGroupReader(topic, groupID)
-	salesOrderLogResultChan := make(chan *models.SalesOrderLogChan)
 
 	for {
 		m, err := reader.ReadMessage(c.ctx)
@@ -58,6 +56,8 @@ func (c *createSalesOrderConsumerHandler) ProcessMessage() {
 
 		var salesOrder models.SalesOrder
 		err = json.Unmarshal(m.Value, &salesOrder)
+		now := time.Now()
+		salesOrderLogResultChan := make(chan *models.SalesOrderLogChan)
 
 		dbTransaction, err := c.db.BeginTx(c.ctx, nil)
 		salesOrderLog := &models.SalesOrderLog{
@@ -70,12 +70,12 @@ func (c *createSalesOrderConsumerHandler) ProcessMessage() {
 		}
 
 		if err != nil {
-			errorLogData := helper.WriteLogConsumer(constants.UPDATE_SALES_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
+			errorLogData := helper.WriteLogConsumer(constants.CREATE_SALES_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
 			go c.salesOrderLogRepository.Insert(salesOrderLog, c.ctx, salesOrderLogResultChan)
 			fmt.Println(errorLogData)
 			continue
 		}
-
+		fmt.Println(salesOrder.SoCode)
 		go c.salesOrderLogRepository.GetByCollumn(constants.COLUMN_SALES_ORDER_CODE, salesOrder.SoCode, false, c.ctx, salesOrderLogResultChan)
 		salesOrderDetailResult := <-salesOrderLogResultChan
 		if salesOrderDetailResult.Error != nil {
@@ -83,13 +83,14 @@ func (c *createSalesOrderConsumerHandler) ProcessMessage() {
 			fmt.Println(salesOrderDetailResult.Error)
 			continue
 		}
+		fmt.Println("code = ", salesOrderDetailResult.SalesOrderLog.SoCode)
 		salesOrderLog = salesOrderDetailResult.SalesOrderLog
 		salesOrderLog.Status = constants.LOG_STATUS_MONGO_ERROR
 		salesOrderLog.UpdatedAt = &now
 		errorLog := c.salesOrderOpenSearchUseCase.SyncToOpenSearchFromCreateEvent(&salesOrder, dbTransaction, c.ctx)
 		if errorLog.Err != nil {
 			dbTransaction.Rollback()
-			errorLogData := helper.WriteLogConsumer(constants.UPDATE_SALES_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, nil)
+			errorLogData := helper.WriteLogConsumer(constants.CREATE_SALES_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, nil)
 			go c.salesOrderLogRepository.UpdateByID(salesOrderDetailResult.ID.Hex(), salesOrderLog, c.ctx, salesOrderLogResultChan)
 			fmt.Println(errorLogData)
 			continue
@@ -97,7 +98,7 @@ func (c *createSalesOrderConsumerHandler) ProcessMessage() {
 
 		err = dbTransaction.Commit()
 		if err != nil {
-			errorLogData := helper.WriteLogConsumer(constants.UPDATE_SALES_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
+			errorLogData := helper.WriteLogConsumer(constants.CREATE_SALES_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
 			go c.salesOrderLogRepository.Insert(salesOrderLog, c.ctx, salesOrderLogResultChan)
 			fmt.Println(errorLogData)
 			continue

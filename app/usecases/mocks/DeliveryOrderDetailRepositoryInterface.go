@@ -55,3 +55,8 @@ func NewDeliveryOrderDetailRepositoryInterface(t mockConstructorTestingTNewDeliv
 
 	return mock
 }
+
+// UpdateByID provides a mock function with given fields: id, deliveryOrderDetail, sqlTransaction, ctx, result
+func (_m *DeliveryOrderDetailRepositoryInterface) DeleteByID(request *models.DeliveryOrderDetail,sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.DeliveryOrderDetailChan) {
+	_m.Called(request, ctx, resultChan)
+}
