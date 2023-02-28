@@ -75,7 +75,7 @@ type SalesOrder struct {
 	EndCreatedDate       *time.Time          `json:"end_created_date,omitempty" bson:"end_created_date,omitempty"`
 	SalesOrderDetails    []*SalesOrderDetail `json:"sales_order_details,omitempty" bson:"sales_order_details,omitempty"`
 	DeliveryOrders       []*DeliveryOrder    `json:"delivery_orders,omitempty" bson:"delivery_orders,omitempty"`
-	SalesmanID           int                 `json:"salesman_id,omitempty" bson:"salesman_id,omitempty"`
+	SalesmanID           NullInt64           `json:"salesman_id,omitempty" bson:"salesman_id,omitempty"`
 	SalesmanName         NullString          `json:"salesman_name,omitempty" bson:"salesman_name,omitempty"`
 	SalesmanEmail        NullString          `json:"salesman_email,omitempty" bson:"salesman_email,omitempty"`
 	SalesOrderLogID      string              `json:"sales_order_log_id,omitempty" bson:"sales_order_log_id,omitempty"`
@@ -159,11 +159,9 @@ type SalesOrderResponse struct {
 }
 
 type SalesOrderUpdateRequest struct {
-	SalesOrderTemplate
-	SoDate            string                           `json:"so_date,omitempty" bson:"so_date,omitempty"`
-	SoRefDate         string                           `json:"so_ref_date,omitempty" bson:"so_ref_date,omitempty" `
+	Status            string                           `json:"status,omitempty" bson:"status,omitempty" binding:"required"`
+	Reason            string                           `json:"reason,omitempty" bson:"reason,omitempty"`
 	SalesOrderDetails []*SalesOrderDetailUpdateRequest `json:"sales_order_details" bson:"sales_order_details" binding:"required,dive,required"`
-	RequestID         string                           `json:"request_id,omitempty" bson:"request_id,omitempty"`
 }
 
 type SalesOrderChan struct {

@@ -35,18 +35,21 @@ func (v *SalesOrderDetailStoreResponse) SalesOrderDetailStoreResponseMap(soDetai
 	return
 }
 
-// func (v *SalesOrderDetail) SalesOrderDetailUpdateRequestMap(soDetail *SalesOrderDetailUpdateRequest, now time.Time) {
-// 	v.ID = soDetail.ID
-// 	v.ProductID = soDetail.ProductID
-// 	v.UomID = soDetail.UomID
-// 	v.Qty = soDetail.Qty
-// 	v.SentQty = soDetail.SentQty
-// 	v.ResidualQty = soDetail.ResidualQty
-// 	v.Price = soDetail.Price
-// 	v.Note = NullString{NullString: sql.NullString{String: soDetail.Note, Valid: true}}
-// 	v.UpdatedAt = &now
-// 	return
-// }
+func (v *SalesOrderDetailStoreResponse) UpdateSoDetailResponseMap(soDetail *SalesOrderDetail) {
+	v.ID = soDetail.ID
+	v.SalesOrderId = soDetail.SalesOrderID
+	v.ProductID = soDetail.ProductID
+	v.UomID = soDetail.UomID
+	v.OrderStatusId = soDetail.OrderStatusID
+	v.SoDetailCode = soDetail.SoDetailCode
+	v.Qty = soDetail.Qty
+	v.Price = soDetail.Price
+	v.SentQty = NullInt64{NullInt64: sql.NullInt64{Int64: int64(soDetail.SentQty), Valid: true}}
+	v.ResidualQty = NullInt64{NullInt64: sql.NullInt64{Int64: int64(soDetail.ResidualQty), Valid: true}}
+	v.Note = soDetail.Note.String
+	v.CreatedAt = soDetail.CreatedAt
+	return
+}
 
 func (salesOrderDetail *SalesOrderDetailOpenSearchResponse) SalesOrderDetailOpenSearchResponseMap(request *SalesOrderDetail) {
 	salesOrderDetail.ID = request.ID
@@ -110,7 +113,7 @@ func (salesOrderDetail *SalesOrderDetailOpenSearch) SalesOrderMap(request *Sales
 	salesOrderDetail.Brand = request.Brand
 	salesOrderDetail.UserID = request.UserID
 	salesOrderDetail.User = request.User
-	salesOrderDetail.SalesmanID = request.SalesmanID
+	salesOrderDetail.SalesmanID = int(request.SalesmanID.Int64)
 	salesOrderDetail.Salesman = request.Salesman
 	salesOrderDetail.OrderSourceID = request.OrderSourceID
 	salesOrderDetail.OrderSource = request.OrderSource
