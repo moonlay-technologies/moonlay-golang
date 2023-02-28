@@ -23,6 +23,7 @@ type DeliveryOrderRepositoryInterface interface {
 	GetByID(id int, countOnly bool, ctx context.Context, result chan *models.DeliveryOrderChan)
 	//GetByAgentID(id int, countOnly bool, ctx context.Context, result chan *models.DeliveryOrderChan)
 	UpdateByID(id int, deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.DeliveryOrderChan)
+	DeleteByID(request *models.DeliveryOrder, ctx context.Context, resultChan chan *models.DeliveryOrderChan)
 }
 
 type deliveryOrder struct {
@@ -499,6 +500,61 @@ func (r *deliveryOrder) UpdateByID(id int, request *models.DeliveryOrder, sqlTra
 
 	response.ID = salesOrderID
 	request.ID = int(salesOrderID)
+	response.DeliveryOrder = request
+	resultChan <- response
+	return
+}
+func (r *deliveryOrder) DeleteByID(request *models.DeliveryOrder, ctx context.Context, resultChan chan *models.DeliveryOrderChan) {
+	now := time.Now()
+	request.DeletedAt = &now
+	request.UpdatedAt = &now
+	response := &models.DeliveryOrderChan{}
+	rawSqlQueries := []string{}
+
+	query := fmt.Sprintf("%s='%v'", "deleted_at", request.DeletedAt.Format("2006-01-02 15:04:05"))
+	rawSqlQueries = append(rawSqlQueries, query)
+
+	query = fmt.Sprintf("%s='%v'", "updated_at", request.UpdatedAt.Format("2006-01-02 15:04:05"))
+	rawSqlQueries = append(rawSqlQueries, query)
+
+	query = fmt.Sprintf("%s='%v'", "is_done_sync_to_es", 0)
+	rawSqlQueries = append(rawSqlQueries, query)
+
+	rawSqlQueriesJoin := strings.Join(rawSqlQueries, ",")
+	updateQuery := fmt.Sprintf("UPDATE "+constants.DELIVERY_ORDERS_TABLE+" set %v WHERE id = ?", rawSqlQueriesJoin)
+
+	sqlTransaction, err := r.db.BeginTx(ctx, nil)
+	result, err := sqlTransaction.ExecContext(ctx, updateQuery, request.ID)
+
+	if err != nil {
+		sqlTransaction.Rollback()
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	deliveryOrderID, err := result.LastInsertId()
+
+	if err != nil {
+		sqlTransaction.Rollback()
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+	err = sqlTransaction.Commit()
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	response.ID = deliveryOrderID
 	response.DeliveryOrder = request
 	resultChan <- response
 	return

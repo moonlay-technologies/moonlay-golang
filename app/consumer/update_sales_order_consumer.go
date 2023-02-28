@@ -42,11 +42,9 @@ func InitUpdateSalesOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClie
 
 func (c *updateSalesOrderConsumerHandler) ProcessMessage() {
 	fmt.Println("process", constants.UPDATE_SALES_ORDER_TOPIC)
-	now := time.Now()
 	topic := c.args[1].(string)
 	groupID := c.args[2].(string)
 	reader := c.kafkaClient.SetConsumerGroupReader(topic, groupID)
-	salesOrderLogResultChan := make(chan *models.SalesOrderLogChan)
 
 	for {
 		m, err := reader.ReadMessage(c.ctx)
@@ -58,6 +56,8 @@ func (c *updateSalesOrderConsumerHandler) ProcessMessage() {
 
 		var salesOrder models.SalesOrder
 		err = json.Unmarshal(m.Value, &salesOrder)
+		now := time.Now()
+		salesOrderLogResultChan := make(chan *models.SalesOrderLogChan)
 
 		dbTransaction, err := c.db.BeginTx(c.ctx, nil)
 		salesOrderLog := &models.SalesOrderLog{
