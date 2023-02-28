@@ -250,7 +250,7 @@ func (_m *SalesOrderUseCaseInterface) UpdateSODetailById(soId, id int, request *
 	return nil, nil
 }
 
-func (_m *SalesOrderUseCaseInterface) UpdateSODetailBySOId(SoId int, request []*models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) ([]*models.SalesOrder, *model.ErrorLog) {
+func (_m *SalesOrderUseCaseInterface) UpdateSODetailBySOId(soId int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog) {
 	return nil, nil
 }
 
