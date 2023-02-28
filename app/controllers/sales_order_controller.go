@@ -23,8 +23,8 @@ type SalesOrderControllerInterface interface {
 	Create(ctx *gin.Context)
 	Get(ctx *gin.Context)
 	UpdateByID(ctx *gin.Context)
-	UpdateSODetailByID(ctx *gin.Context)
-	UpdateSODetailBySOID(ctx *gin.Context)
+	// UpdateSODetailByID(ctx *gin.Context)
+	// UpdateSODetailBySOID(ctx *gin.Context)
 	GetDetails(ctx *gin.Context)
 	GetDetailsBySoId(ctx *gin.Context)
 	GetDetailsById(ctx *gin.Context)
@@ -617,45 +617,6 @@ func (c *salesOrderController) UpdateByID(ctx *gin.Context) {
 		}
 	}
 
-	mustActiveField := []*models.MustActiveRequest{
-		{
-			Table:    "agents",
-			ReqField: "agent_id",
-			Clause:   fmt.Sprintf("id = %d AND status = '%s'", updateRequest.AgentID, "active"),
-		},
-		{
-			Table:    "stores",
-			ReqField: "store_id",
-			Clause:   fmt.Sprintf("id = %d AND status = '%s'", updateRequest.StoreID, "active"),
-		},
-		{
-			Table:    "users",
-			ReqField: "user_id",
-			Clause:   fmt.Sprintf("id = %d AND status = '%s'", updateRequest.UserID, "ACTIVE"),
-		},
-	}
-	for i, v := range updateRequest.SalesOrderDetails {
-		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
-			Table:    "products",
-			ReqField: fmt.Sprintf("sales_order_details[%d].product_id", i),
-			Clause:   fmt.Sprintf("id = %d AND isActive = %d", v.ProductID, 1),
-		})
-		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
-			Table:    "uoms",
-			ReqField: fmt.Sprintf("sales_order_details[%d].uom_id", i),
-			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", v.UomID),
-		})
-		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
-			Table:    "brands",
-			ReqField: fmt.Sprintf("sales_order_details[%d].brand_id", i),
-			Clause:   fmt.Sprintf("id = %d AND status_active = %d", v.BrandID, 1),
-		})
-	}
-	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
-	if err != nil {
-		return
-	}
-
 	dbTransaction, err := c.db.BeginTx(ctx, nil)
 
 	if err != nil {
@@ -704,229 +665,229 @@ func (c *salesOrderController) UpdateByID(ctx *gin.Context) {
 	return
 }
 
-func (c *salesOrderController) UpdateSODetailByID(ctx *gin.Context) {
-	var result baseModel.Response
-	var resultErrorLog *baseModel.ErrorLog
-	updateRequest := &models.SalesOrderDetailUpdateRequest{}
+// func (c *salesOrderController) UpdateSODetailByID(ctx *gin.Context) {
+// 	var result baseModel.Response
+// 	var resultErrorLog *baseModel.ErrorLog
+// 	updateRequest := &models.SalesOrderDetailUpdateRequest{}
 
-	ctx.Set("full_path", ctx.FullPath())
-	ctx.Set("method", ctx.Request.Method)
+// 	ctx.Set("full_path", ctx.FullPath())
+// 	ctx.Set("method", ctx.Request.Method)
 
-	soIds := ctx.Param("so-id")
-	soId, err := strconv.Atoi(soIds)
+// 	soIds := ctx.Param("so-id")
+// 	soId, err := strconv.Atoi(soIds)
 
-	if err != nil {
-		err = helper.NewError("Parameter 'so-id' harus bernilai integer")
-		resultErrorLog.Message = err.Error()
-		result.StatusCode = http.StatusBadRequest
-		result.Error = resultErrorLog
-		ctx.JSON(result.StatusCode, result)
-		return
-	}
+// 	if err != nil {
+// 		err = helper.NewError("Parameter 'so-id' harus bernilai integer")
+// 		resultErrorLog.Message = err.Error()
+// 		result.StatusCode = http.StatusBadRequest
+// 		result.Error = resultErrorLog
+// 		ctx.JSON(result.StatusCode, result)
+// 		return
+// 	}
 
-	ids := ctx.Param("id")
-	id, err := strconv.Atoi(ids)
+// 	ids := ctx.Param("id")
+// 	id, err := strconv.Atoi(ids)
 
-	if err != nil {
-		err = helper.NewError("Parameter 'id' harus bernilai integer")
-		resultErrorLog.Message = err.Error()
-		result.StatusCode = http.StatusBadRequest
-		result.Error = resultErrorLog
-		ctx.JSON(result.StatusCode, result)
-		return
-	}
+// 	if err != nil {
+// 		err = helper.NewError("Parameter 'id' harus bernilai integer")
+// 		resultErrorLog.Message = err.Error()
+// 		result.StatusCode = http.StatusBadRequest
+// 		result.Error = resultErrorLog
+// 		ctx.JSON(result.StatusCode, result)
+// 		return
+// 	}
 
-	err = ctx.BindJSON(updateRequest)
+// 	err = ctx.BindJSON(updateRequest)
 
-	if err != nil {
-		var unmarshalTypeError *json.UnmarshalTypeError
+// 	if err != nil {
+// 		var unmarshalTypeError *json.UnmarshalTypeError
 
-		if errors.As(err, &unmarshalTypeError) {
-			c.requestValidationMiddleware.DataTypeValidation(ctx, err, unmarshalTypeError)
-			return
-		} else {
-			c.requestValidationMiddleware.MandatoryValidation(ctx, err)
-			return
-		}
-	}
+// 		if errors.As(err, &unmarshalTypeError) {
+// 			c.requestValidationMiddleware.DataTypeValidation(ctx, err, unmarshalTypeError)
+// 			return
+// 		} else {
+// 			c.requestValidationMiddleware.MandatoryValidation(ctx, err)
+// 			return
+// 		}
+// 	}
 
-	mustActiveField := []*models.MustActiveRequest{
-		{
-			Table:    "products",
-			ReqField: "product_id",
-			Clause:   fmt.Sprintf("id = %d AND isActive = %d", updateRequest.ProductID, 1),
-		},
-		{
-			Table:    "uoms",
-			ReqField: "uom_id",
-			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", updateRequest.UomID),
-		},
-		{
-			Table:    "brands",
-			ReqField: "brand_id",
-			Clause:   fmt.Sprintf("id = %d AND status_active = %d", updateRequest.BrandID, 1),
-		},
-	}
+// 	mustActiveField := []*models.MustActiveRequest{
+// 		{
+// 			Table:    "products",
+// 			ReqField: "product_id",
+// 			Clause:   fmt.Sprintf("id = %d AND isActive = %d", updateRequest.ProductID, 1),
+// 		},
+// 		{
+// 			Table:    "uoms",
+// 			ReqField: "uom_id",
+// 			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", updateRequest.UomID),
+// 		},
+// 		{
+// 			Table:    "brands",
+// 			ReqField: "brand_id",
+// 			Clause:   fmt.Sprintf("id = %d AND status_active = %d", updateRequest.BrandID, 1),
+// 		},
+// 	}
 
-	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
-	if err != nil {
-		return
-	}
+// 	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
+// 	if err != nil {
+// 		return
+// 	}
 
-	dbTransaction, err := c.db.BeginTx(ctx, nil)
+// 	dbTransaction, err := c.db.BeginTx(ctx, nil)
 
-	if err != nil {
-		errorLog := helper.WriteLog(err, http.StatusInternalServerError, nil)
-		resultErrorLog = errorLog
-		result.StatusCode = http.StatusInternalServerError
-		result.Error = resultErrorLog
-		ctx.JSON(result.StatusCode, result)
-		return
-	}
+// 	if err != nil {
+// 		errorLog := helper.WriteLog(err, http.StatusInternalServerError, nil)
+// 		resultErrorLog = errorLog
+// 		result.StatusCode = http.StatusInternalServerError
+// 		result.Error = resultErrorLog
+// 		ctx.JSON(result.StatusCode, result)
+// 		return
+// 	}
 
-	salesOrderDetail, errorLog := c.salesOrderUseCase.UpdateSODetailById(soId, id, updateRequest, dbTransaction, ctx)
+// 	salesOrderDetail, errorLog := c.salesOrderUseCase.UpdateSODetailById(soId, id, updateRequest, dbTransaction, ctx)
 
-	if errorLog != nil {
-		err = dbTransaction.Rollback()
+// 	if errorLog != nil {
+// 		err = dbTransaction.Rollback()
 
-		if err != nil {
-			errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
-			resultErrorLog = errorLog
-			result.StatusCode = http.StatusInternalServerError
-			result.Error = resultErrorLog
-			ctx.JSON(result.StatusCode, result)
-			return
-		}
+// 		if err != nil {
+// 			errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+// 			resultErrorLog = errorLog
+// 			result.StatusCode = http.StatusInternalServerError
+// 			result.Error = resultErrorLog
+// 			ctx.JSON(result.StatusCode, result)
+// 			return
+// 		}
 
-		result.StatusCode = errorLog.StatusCode
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
-		return
-	}
+// 		result.StatusCode = errorLog.StatusCode
+// 		result.Error = errorLog
+// 		ctx.JSON(result.StatusCode, result)
+// 		return
+// 	}
 
-	err = dbTransaction.Commit()
+// 	err = dbTransaction.Commit()
 
-	if err != nil {
-		errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
-		resultErrorLog = errorLog
-		result.StatusCode = http.StatusInternalServerError
-		result.Error = resultErrorLog
-		ctx.JSON(result.StatusCode, result)
-		return
-	}
+// 	if err != nil {
+// 		errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+// 		resultErrorLog = errorLog
+// 		result.StatusCode = http.StatusInternalServerError
+// 		result.Error = resultErrorLog
+// 		ctx.JSON(result.StatusCode, result)
+// 		return
+// 	}
 
-	result.Data = salesOrderDetail
-	result.StatusCode = http.StatusOK
-	ctx.JSON(http.StatusOK, result)
-	return
-}
+// 	result.Data = salesOrderDetail
+// 	result.StatusCode = http.StatusOK
+// 	ctx.JSON(http.StatusOK, result)
+// 	return
+// }
 
-func (c *salesOrderController) UpdateSODetailBySOID(ctx *gin.Context) {
-	var result baseModel.Response
-	var resultErrorLog *baseModel.ErrorLog
-	var soId int
-	var updateRequest []*models.SalesOrderDetailUpdateRequest
+// func (c *salesOrderController) UpdateSODetailBySOID(ctx *gin.Context) {
+// 	var result baseModel.Response
+// 	var resultErrorLog *baseModel.ErrorLog
+// 	var soId int
+// 	var updateRequest []*models.SalesOrderDetailUpdateRequest
 
-	ctx.Set("full_path", ctx.FullPath())
-	ctx.Set("method", ctx.Request.Method)
+// 	ctx.Set("full_path", ctx.FullPath())
+// 	ctx.Set("method", ctx.Request.Method)
 
-	ids := ctx.Param("so-id")
-	soId, err := strconv.Atoi(ids)
+// 	ids := ctx.Param("so-id")
+// 	soId, err := strconv.Atoi(ids)
 
-	if err != nil {
-		err = helper.NewError("Parameter 'id' harus bernilai integer")
-		resultErrorLog.Message = err.Error()
-		result.StatusCode = http.StatusBadRequest
-		result.Error = resultErrorLog
-		ctx.JSON(result.StatusCode, result)
-		return
-	}
+// 	if err != nil {
+// 		err = helper.NewError("Parameter 'id' harus bernilai integer")
+// 		resultErrorLog.Message = err.Error()
+// 		result.StatusCode = http.StatusBadRequest
+// 		result.Error = resultErrorLog
+// 		ctx.JSON(result.StatusCode, result)
+// 		return
+// 	}
 
-	err = ctx.BindJSON(&updateRequest)
+// 	err = ctx.BindJSON(&updateRequest)
 
-	if err != nil {
-		var unmarshalTypeError *json.UnmarshalTypeError
+// 	if err != nil {
+// 		var unmarshalTypeError *json.UnmarshalTypeError
 
-		if errors.As(err, &unmarshalTypeError) {
-			c.requestValidationMiddleware.DataTypeValidation(ctx, err, unmarshalTypeError)
-			return
-		} else {
-			c.requestValidationMiddleware.MandatoryValidation(ctx, err)
-			return
-		}
-	}
+// 		if errors.As(err, &unmarshalTypeError) {
+// 			c.requestValidationMiddleware.DataTypeValidation(ctx, err, unmarshalTypeError)
+// 			return
+// 		} else {
+// 			c.requestValidationMiddleware.MandatoryValidation(ctx, err)
+// 			return
+// 		}
+// 	}
 
-	mustActiveField := []*models.MustActiveRequest{}
-	for i, v := range updateRequest {
-		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
-			Table:    "products",
-			ReqField: fmt.Sprintf("sales_order_details[%d].product_id", i),
-			Clause:   fmt.Sprintf("id = %d AND isActive = %d", v.ProductID, 1),
-		})
-		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
-			Table:    "uoms",
-			ReqField: fmt.Sprintf("sales_order_details[%d].uom_id", i),
-			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", v.UomID),
-		})
-		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
-			Table:    "brands",
-			ReqField: fmt.Sprintf("sales_order_details[%d].brand_id", i),
-			Clause:   fmt.Sprintf("id = %d AND status_active = %d", v.BrandID, 1),
-		})
-	}
+// 	mustActiveField := []*models.MustActiveRequest{}
+// 	for i, v := range updateRequest {
+// 		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+// 			Table:    "products",
+// 			ReqField: fmt.Sprintf("sales_order_details[%d].product_id", i),
+// 			Clause:   fmt.Sprintf("id = %d AND isActive = %d", v.ProductID, 1),
+// 		})
+// 		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+// 			Table:    "uoms",
+// 			ReqField: fmt.Sprintf("sales_order_details[%d].uom_id", i),
+// 			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", v.UomID),
+// 		})
+// 		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+// 			Table:    "brands",
+// 			ReqField: fmt.Sprintf("sales_order_details[%d].brand_id", i),
+// 			Clause:   fmt.Sprintf("id = %d AND status_active = %d", v.BrandID, 1),
+// 		})
+// 	}
 
-	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
-	if err != nil {
-		return
-	}
+// 	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
+// 	if err != nil {
+// 		return
+// 	}
 
-	dbTransaction, err := c.db.BeginTx(ctx, nil)
+// 	dbTransaction, err := c.db.BeginTx(ctx, nil)
 
-	if err != nil {
-		errorLog := helper.WriteLog(err, http.StatusInternalServerError, nil)
-		resultErrorLog = errorLog
-		result.StatusCode = http.StatusInternalServerError
-		result.Error = resultErrorLog
-		ctx.JSON(result.StatusCode, result)
-		return
-	}
+// 	if err != nil {
+// 		errorLog := helper.WriteLog(err, http.StatusInternalServerError, nil)
+// 		resultErrorLog = errorLog
+// 		result.StatusCode = http.StatusInternalServerError
+// 		result.Error = resultErrorLog
+// 		ctx.JSON(result.StatusCode, result)
+// 		return
+// 	}
 
-	salesOrderDetail, errorLog := c.salesOrderUseCase.UpdateSODetailBySOId(soId, updateRequest, dbTransaction, ctx)
+// 	salesOrderDetail, errorLog := c.salesOrderUseCase.UpdateSODetailBySOId(soId, updateRequest, dbTransaction, ctx)
 
-	if errorLog != nil {
-		err = dbTransaction.Rollback()
+// 	if errorLog != nil {
+// 		err = dbTransaction.Rollback()
 
-		if err != nil {
-			errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
-			resultErrorLog = errorLog
-			result.StatusCode = http.StatusInternalServerError
-			result.Error = resultErrorLog
-			ctx.JSON(result.StatusCode, result)
-			return
-		}
+// 		if err != nil {
+// 			errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+// 			resultErrorLog = errorLog
+// 			result.StatusCode = http.StatusInternalServerError
+// 			result.Error = resultErrorLog
+// 			ctx.JSON(result.StatusCode, result)
+// 			return
+// 		}
 
-		result.StatusCode = errorLog.StatusCode
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
-		return
-	}
+// 		result.StatusCode = errorLog.StatusCode
+// 		result.Error = errorLog
+// 		ctx.JSON(result.StatusCode, result)
+// 		return
+// 	}
 
-	err = dbTransaction.Commit()
+// 	err = dbTransaction.Commit()
 
-	if err != nil {
-		errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
-		resultErrorLog = errorLog
-		result.StatusCode = http.StatusInternalServerError
-		result.Error = resultErrorLog
-		ctx.JSON(result.StatusCode, result)
-		return
-	}
+// 	if err != nil {
+// 		errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+// 		resultErrorLog = errorLog
+// 		result.StatusCode = http.StatusInternalServerError
+// 		result.Error = resultErrorLog
+// 		ctx.JSON(result.StatusCode, result)
+// 		return
+// 	}
 
-	result.Data = salesOrderDetail
-	result.StatusCode = http.StatusOK
-	ctx.JSON(http.StatusOK, result)
-	return
-}
+// 	result.Data = salesOrderDetail
+// 	result.StatusCode = http.StatusOK
+// 	ctx.JSON(http.StatusOK, result)
+// 	return
+// }
 
 func (c *salesOrderController) GetDetails(ctx *gin.Context) {
 	var result baseModel.Response

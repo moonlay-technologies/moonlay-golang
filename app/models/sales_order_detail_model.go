@@ -62,18 +62,15 @@ type SalesOrderDetailStoreResponse struct {
 	ProductName           string     `json:"product_name,omitempty"`
 	CategoryId            int        `json:"category_id,omitempty"`
 	CategoryName          string     `json:"category_name,omitempty"`
-	UnitMeasurementSmall  NullString `json:"unit_measurement_small,omitempty" bson:"unit_measurement_small,omitempty"`
-	UnitMeasurementMedium NullString `json:"unit_measurement_medium,omitempty" bson:"unit_measurement_medium,omitempty"`
-	UnitMeasurementBig    NullString `json:"unit_measurement_big,omitempty" bson:"unit_measurement_big,omitempty"`
+	UnitMeasurementSmall  string     `json:"unit_measurement_small,omitempty" bson:"unit_measurement_small,omitempty"`
+	UnitMeasurementMedium string     `json:"unit_measurement_medium,omitempty" bson:"unit_measurement_medium,omitempty"`
+	UnitMeasurementBig    string     `json:"unit_measurement_big,omitempty" bson:"unit_measurement_big,omitempty"`
 	UomCode               string     `json:"uom_code,omitempty"`
 	CreatedAt             *time.Time `json:"created_at,omitempty" bson:"created_at,omitempty"`
 }
 
 type SalesOrderDetailUpdateRequest struct {
-	SalesOrderDetailTemplate
-	ID      int     `json:"id,omitempty" bson:"id,omitempty" binding:"required"`
-	BrandID int     `json:"brand_id,omitempty" binding:"required"`
-	Price   float64 `json:"price,omitempty"`
+	ID int `json:"id,omitempty" bson:"id,omitempty" binding:"required"`
 }
 
 type SalesOrderDetailChan struct {
