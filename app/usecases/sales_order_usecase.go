@@ -127,7 +127,9 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 	soRefDate := parseSoRefDate.UTC().Add(duration)
 	nowUTC := now.UTC().Add(7 * time.Hour)
 	sourceName := getOrderSourceResult.OrderSource.SourceName
-
+	fmt.Println("soDate ", soDate)
+	fmt.Println("soRefDate ", soRefDate)
+	fmt.Println("nowUTC ", nowUTC)
 	if sourceName == "manager" && !(soDate.Add(1*time.Minute).After(soRefDate) && soRefDate.Add(-1*time.Minute).Before(nowUTC) && soDate.Add(-1*time.Minute).Before(nowUTC) && soRefDate.Month() == nowUTC.Month() && soRefDate.UTC().Year() == nowUTC.Year()) {
 
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
