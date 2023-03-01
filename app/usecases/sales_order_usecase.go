@@ -123,11 +123,12 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 	parseSoRefDate, _ := time.Parse("2006-01-02", request.SoRefDate)
 	duration := time.Hour*time.Duration(now.Hour()) + time.Minute*time.Duration(now.Minute()) + time.Second*time.Duration(now.Second()) + time.Nanosecond*time.Duration(now.Nanosecond())
 
-	soDate := parseSoDate.Local().Add((-7 * time.Hour) + duration)
-	soRefDate := parseSoRefDate.Local().Add((-7 * time.Hour) + duration)
+	soDate := parseSoDate.UTC().Add(duration)
+	soRefDate := parseSoRefDate.UTC().Add(duration)
+	nowUTC := now.UTC().Add(7 * time.Hour)
 	sourceName := getOrderSourceResult.OrderSource.SourceName
 
-	if sourceName == "manager" && !(soDate.Add(1*time.Minute).After(soRefDate) && soRefDate.Add(-1*time.Minute).Before(now.Local()) && soDate.Add(-1*time.Minute).Before(now.Local()) && soRefDate.Month() == now.Local().Month() && soRefDate.Local().Year() == now.Local().Year()) {
+	if sourceName == "manager" && !(soDate.Add(1*time.Minute).After(soRefDate) && soRefDate.Add(-1*time.Minute).Before(nowUTC) && soDate.Add(-1*time.Minute).Before(nowUTC) && soRefDate.Month() == nowUTC.Month() && soRefDate.UTC().Year() == nowUTC.Year()) {
 
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage("create", "so_date dan so_ref_date harus sama dengan kurang dari hari ini dan harus di bulan berjalan")},
