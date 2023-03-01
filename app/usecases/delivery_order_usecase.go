@@ -308,6 +308,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 
 		deliveryOrderDetail.ID = int(createDeliveryOrderDetailResult.ID)
 		deliveryOrderDetails = append(deliveryOrderDetails, deliveryOrderDetail)
+		getSalesOrderResult.SalesOrder.SalesOrderDetails = append(getSalesOrderResult.SalesOrder.SalesOrderDetails, getSalesOrderDetailResult.SalesOrderDetail)
 	}
 
 	deliveryOrder.DeliveryOrderDetails = deliveryOrderDetails
