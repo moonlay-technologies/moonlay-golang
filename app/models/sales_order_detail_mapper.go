@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"strconv"
 	"time"
 )
 
@@ -54,6 +55,29 @@ func (v *SalesOrderDetailStoreResponse) UpdateSoDetailResponseMap(soDetail *Sale
 func (salesOrderDetail *SalesOrderDetailOpenSearchResponse) SalesOrderDetailOpenSearchResponseMap(request *SalesOrderDetail) {
 	salesOrderDetail.ID = request.ID
 	salesOrderDetail.SalesOrderID = request.SalesOrderID
+	salesOrderDetail.ProductID = request.ProductID
+	salesOrderDetail.UomID = request.UomID
+	salesOrderDetail.OrderStatusID = request.OrderStatusID
+	salesOrderDetail.SoDetailCode = request.SoDetailCode
+	salesOrderDetail.Qty = NullInt64{NullInt64: sql.NullInt64{Int64: int64(request.Qty), Valid: true}}
+	salesOrderDetail.SentQty = NullInt64{NullInt64: sql.NullInt64{Int64: int64(request.SentQty), Valid: true}}
+	salesOrderDetail.ResidualQty = NullInt64{NullInt64: sql.NullInt64{Int64: int64(request.ResidualQty), Valid: true}}
+	salesOrderDetail.Price = request.Price
+	salesOrderDetail.Note = request.Note
+	salesOrderDetail.CreatedAt = request.CreatedAt
+
+	salesOrderDetail.Product = &ProductOpenSearchResponse{}
+	salesOrderDetail.Product.ProductOpenSearchResponseMap(request.Product)
+	salesOrderDetail.Uom = &UomOpenSearchResponse{}
+	salesOrderDetail.Uom.UomOpenSearchResponseMap(request.Uom)
+	salesOrderDetail.OrderStatus = &OrderStatusOpenSearchResponse{}
+	salesOrderDetail.OrderStatus.OrderStatusOpenSearchResponseMap(request.OrderStatus)
+	return
+}
+
+func (salesOrderDetail *SalesOrderDetailOpenSearchResponse) SalesOrderDetailOpenSearchMap(request *SalesOrderDetailOpenSearch) {
+	salesOrderDetail.ID = request.ID
+	salesOrderDetail.SalesOrderID = request.SoID
 	salesOrderDetail.ProductID = request.ProductID
 	salesOrderDetail.UomID = request.UomID
 	salesOrderDetail.OrderStatusID = request.OrderStatusID
@@ -134,13 +158,13 @@ func (salesOrderDetail *SalesOrderDetailOpenSearch) SalesOrderDetailOpenSearchMa
 
 	salesOrderDetail.AgentId = requestSalesOrder.AgentID
 	salesOrderDetail.AgentName = requestSalesOrder.AgentName.String
-	salesOrderDetail.AgentProvinceID = requestSalesOrder.AgentProvinceID
+	salesOrderDetail.AgentProvinceID, _ = strconv.Atoi(requestSalesOrder.Agent.ProvinceID.String)
 	salesOrderDetail.AgentProvinceName = requestSalesOrder.AgentProvinceName.String
-	salesOrderDetail.AgentCityID = requestSalesOrder.AgentCityID
+	salesOrderDetail.AgentCityID, _ = strconv.Atoi(requestSalesOrder.Agent.CityID.String)
 	salesOrderDetail.AgentCityName = requestSalesOrder.AgentCityName.String
-	salesOrderDetail.AgentDistrictID = requestSalesOrder.AgentDistrictID
+	salesOrderDetail.AgentDistrictID, _ = strconv.Atoi(requestSalesOrder.Agent.DistrictID.String)
 	salesOrderDetail.AgentDistrictName = requestSalesOrder.AgentDistrictName.String
-	salesOrderDetail.AgentVillageID = requestSalesOrder.AgentVillageID
+	salesOrderDetail.AgentVillageID, _ = strconv.Atoi(requestSalesOrder.Agent.VillageID.String)
 	salesOrderDetail.AgentVillageName = requestSalesOrder.AgentVillageName.String
 	salesOrderDetail.AgentPhone = requestSalesOrder.AgentPhone.String
 	salesOrderDetail.AgentAddress = requestSalesOrder.AgentAddress.String
@@ -148,13 +172,13 @@ func (salesOrderDetail *SalesOrderDetailOpenSearch) SalesOrderDetailOpenSearchMa
 	salesOrderDetail.StoreID = requestSalesOrder.StoreID
 	salesOrderDetail.StoreCode = requestSalesOrder.StoreCode.String
 	salesOrderDetail.StoreName = requestSalesOrder.StoreName.String
-	salesOrderDetail.StoreProvinceID = requestSalesOrder.StoreProvinceID
+	salesOrderDetail.StoreProvinceID, _ = strconv.Atoi(requestSalesOrder.Store.ProvinceID.String)
 	salesOrderDetail.StoreProvinceName = requestSalesOrder.StoreProvinceName.String
-	salesOrderDetail.StoreCityID = requestSalesOrder.StoreCityID
+	salesOrderDetail.StoreCityID, _ = strconv.Atoi(requestSalesOrder.Store.CityID.String)
 	salesOrderDetail.StoreCityName = requestSalesOrder.StoreCityName.String
-	salesOrderDetail.StoreDistrictID = requestSalesOrder.StoreDistrictID
+	salesOrderDetail.StoreDistrictID, _ = strconv.Atoi(requestSalesOrder.Store.DistrictID.String)
 	salesOrderDetail.StoreDistrictName = requestSalesOrder.StoreDistrictName.String
-	salesOrderDetail.StoreVillageID = requestSalesOrder.StoreVillageID
+	salesOrderDetail.StoreVillageID, _ = strconv.Atoi(requestSalesOrder.Store.VillageID.String)
 	salesOrderDetail.StoreVillageName = requestSalesOrder.StoreVillageName.String
 	salesOrderDetail.StoreAddress = requestSalesOrder.StoreAddress.String
 	salesOrderDetail.StorePhone = requestSalesOrder.StorePhone.String
@@ -166,7 +190,7 @@ func (salesOrderDetail *SalesOrderDetailOpenSearch) SalesOrderDetailOpenSearchMa
 	salesOrderDetail.UserID = requestSalesOrder.UserID
 	salesOrderDetail.UserFirstName = requestSalesOrder.UserFirstName.String
 	salesOrderDetail.UserLastName = requestSalesOrder.UserLastName.String
-	salesOrderDetail.UserRoleID = requestSalesOrder.UserRoleID
+	salesOrderDetail.UserRoleID, _ = strconv.Atoi(requestSalesOrder.User.RoleID.String)
 	salesOrderDetail.UserEmail = requestSalesOrder.UserEmail.String
 
 	salesOrderDetail.SalesmanID = int(requestSalesOrder.SalesmanID.Int64)
@@ -177,6 +201,7 @@ func (salesOrderDetail *SalesOrderDetailOpenSearch) SalesOrderDetailOpenSearchMa
 	salesOrderDetail.OrderSourceName = requestSalesOrder.OrderSourceName
 	salesOrderDetail.OrderStatusID = requestSalesOrder.OrderStatusID
 	salesOrderDetail.OrderStatusName = requestSalesOrder.OrderStatusName
+	salesOrderDetail.OrderStatus = requestSalesOrderDetail.OrderStatus
 
 	salesOrderDetail.GLat = requestSalesOrder.GLat
 	salesOrderDetail.GLong = requestSalesOrder.GLong
@@ -186,10 +211,12 @@ func (salesOrderDetail *SalesOrderDetailOpenSearch) SalesOrderDetailOpenSearchMa
 	salesOrderDetail.ProductName = requestSalesOrderDetail.Product.ProductName.String
 	salesOrderDetail.ProductDescription = requestSalesOrderDetail.Product.Description.String
 	salesOrderDetail.CategoryID = requestSalesOrderDetail.Product.CategoryID
+	salesOrderDetail.Product = requestSalesOrderDetail.Product
 
 	salesOrderDetail.UomID = requestSalesOrderDetail.UomID
 	salesOrderDetail.UomCode = requestSalesOrderDetail.Uom.Code.String
 	salesOrderDetail.UomName = requestSalesOrderDetail.Uom.Name.String
+	salesOrderDetail.Uom = requestSalesOrderDetail.Uom
 
 	salesOrderDetail.Qty = requestSalesOrderDetail.Qty
 	salesOrderDetail.SentQty = requestSalesOrderDetail.SentQty
