@@ -1167,7 +1167,7 @@ func (c *salesOrderController) GetDetails(ctx *gin.Context) {
 		endCreatedAt = ""
 	}
 
-	salesOrderRequest := &models.SalesOrderRequest{
+	salesOrderRequest := &models.GetSalesOrderDetailRequest{
 		Page:              pageInt,
 		PerPage:           perPageInt,
 		SortField:         sortField,
@@ -1591,7 +1591,7 @@ func (c *salesOrderController) GetDetailsBySoId(ctx *gin.Context) {
 		endCreatedAt = ""
 	}
 
-	salesOrderRequest := &models.SalesOrderRequest{
+	salesOrderRequest := &models.GetSalesOrderDetailRequest{
 		Page:              pageInt,
 		PerPage:           perPageInt,
 		SortField:         sortField,
@@ -1604,7 +1604,7 @@ func (c *salesOrderController) GetDetailsBySoId(ctx *gin.Context) {
 		OrderStatusID:     orderStatusIdInt,
 		StartSoDate:       startSoDate,
 		EndSoDate:         endSoDate,
-		ID:                soId,
+		SoID:              soId,
 		ProductID:         productIdInt,
 		CategoryID:        categoryIdInt,
 		SalesmanID:        salesmanIdInt,

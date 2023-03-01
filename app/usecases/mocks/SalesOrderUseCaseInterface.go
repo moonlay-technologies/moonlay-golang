@@ -254,11 +254,11 @@ func (_m *SalesOrderUseCaseInterface) UpdateSODetailBySOId(soId int, request *mo
 	return nil, nil
 }
 
-func (_m *SalesOrderUseCaseInterface) GetDetails(request *models.SalesOrderRequest) (*models.SalesOrderDetailsOpenSearchResponse, *model.ErrorLog)  {
+func (_m *SalesOrderUseCaseInterface) GetDetails(request *models.GetSalesOrderDetailRequest) (*models.SalesOrderDetailsOpenSearchResponse, *model.ErrorLog)  {
 	ret := _m.Called(request)
 
 	var r0 *models.SalesOrderDetailsOpenSearchResponse
-	if rf, ok := ret.Get(0).(func(*models.SalesOrderRequest) *models.SalesOrderDetailsOpenSearchResponse); ok {
+	if rf, ok := ret.Get(0).(func(*models.GetSalesOrderDetailRequest) *models.SalesOrderDetailsOpenSearchResponse); ok {
 		r0 = rf(request)
 	} else {
 		if ret.Get(0) != nil {
@@ -267,7 +267,7 @@ func (_m *SalesOrderUseCaseInterface) GetDetails(request *models.SalesOrderReque
 	}
 
 	var r1 *model.ErrorLog
-	if rf, ok := ret.Get(1).(func(*models.SalesOrderRequest) *model.ErrorLog); ok {
+	if rf, ok := ret.Get(1).(func(*models.GetSalesOrderDetailRequest) *model.ErrorLog); ok {
 		r1 = rf(request)
 	} else {
 		if ret.Get(1) != nil {
