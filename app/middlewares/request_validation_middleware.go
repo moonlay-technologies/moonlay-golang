@@ -179,7 +179,7 @@ func (u *requestValidationMiddleware) MustActiveValidation(ctx *gin.Context, val
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       messages,
 			SystemMessage: systemMessages,
-			StatusCode:    http.StatusExpectationFailed,
+			StatusCode:    http.StatusUnprocessableEntity,
 		})
 
 		result.StatusCode = http.StatusExpectationFailed
@@ -244,12 +244,11 @@ func (u *requestValidationMiddleware) MustEmptyValidation(ctx *gin.Context, valu
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       messages,
 			SystemMessage: systemMessages,
-			StatusCode:    http.StatusBadRequest,
+			StatusCode:    http.StatusUnprocessableEntity,
 		})
 		result.StatusCode = http.StatusUnprocessableEntity
 		result.Error = errorLog
 		ctx.JSON(result.StatusCode, result)
-		error = fmt.Errorf("Inactive value!")
 	}
 
 	return error

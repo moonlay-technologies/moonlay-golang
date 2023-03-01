@@ -60,13 +60,11 @@ func (r *requestValidationRepository) MustActiveValidation(value *models.MustAct
 		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
 		response.Error = err
 		response.ErrorLog = errorLogData
-		resultChan <- response
-		return
 	} else {
 		response.Total = total
-		resultChan <- response
-		return
 	}
+	resultChan <- response
+	return
 }
 
 func (r *requestValidationRepository) MustEmptyValidation(value *models.MustEmptyValidationRequest, resultChan chan *models.MustEmptyValidationRequestChan) {

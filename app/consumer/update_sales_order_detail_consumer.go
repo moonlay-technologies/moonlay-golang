@@ -77,7 +77,6 @@ func (c *UpdateSalesOrderDetailConsumerHandler) ProcessMessage() {
 			fmt.Println(errorLogData)
 			continue
 		}
-		fmt.Println("c = ", salesOrderDetail.ID)
 
 		go c.salesOrderLogRepository.GetByCollumn(constants.COLUMN_SALES_ORDER_CODE, salesOrderDetail.SoDetailCode, false, c.ctx, salesOrderLogResultChan)
 		salesOrderDetailResult := <-salesOrderLogResultChan
