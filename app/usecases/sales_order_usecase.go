@@ -30,6 +30,7 @@ type SalesOrderUseCaseInterface interface {
 	GetBySalesmanID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
 	GetByOrderStatusID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
 	GetByOrderSourceID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
+	GetSyncToKafkaHistories(request *models.SalesOrderEventLogRequest, ctx context.Context) ([]*models.SalesOrderLog, *model.ErrorLog)
 	UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
 	UpdateSODetailById(soId, id int, request *models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetail, *model.ErrorLog)
 	UpdateSODetailBySOId(SoId int, request []*models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) ([]*models.SalesOrder, *model.ErrorLog)
@@ -463,6 +464,20 @@ func (u *salesOrderUseCase) Get(request *models.SalesOrderRequest) (*models.Sale
 	}
 
 	return salesOrders, &model.ErrorLog{}
+}
+
+func (u *salesOrderUseCase) GetSyncToKafkaHistories(request *models.SalesOrderEventLogRequest, ctx context.Context) ([]*models.SalesOrderLog, *model.ErrorLog) {
+	getSalesOrderLogResultChan := make(chan *models.SalesOrderLogsChan)
+	// go u.salesOrderLogRepository.GetByCollumn(constants.COLUMN_SALES_ORDER_CODE, "OA0004230301JLY0BE", false, ctx, getSalesOrderLogResultChan)
+	go u.salesOrderLogRepository.Get(request, false, ctx, getSalesOrderLogResultChan)
+	getSalesOrderLogResult := <-getSalesOrderLogResultChan
+
+	if getSalesOrderLogResult.Error != nil {
+		return []*models.SalesOrderLog{}, getSalesOrderLogResult.ErrorLog
+	}
+
+	fmt.Println("data =", getSalesOrderLogResult.SalesOrderLogs)
+	return getSalesOrderLogResult.SalesOrderLogs, nil
 }
 
 func (u *salesOrderUseCase) GetByID(request *models.SalesOrderRequest, ctx context.Context) ([]*models.SalesOrderOpenSearchResponse, *model.ErrorLog) {
