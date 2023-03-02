@@ -60,7 +60,6 @@ func (r *requestValidationRepository) MustActiveValidation(values []*models.Must
 			query += fmt.Sprintf("SELECT COUNT(*) as total FROM %s WHERE %s UNION ALL ", value.Table, value.Clause)
 		}
 	}
-	fmt.Println(query)
 
 	q, err := r.db.Query(query)
 
