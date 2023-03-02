@@ -34,7 +34,6 @@ func newDeliveryOrderUsecase(status bool) deliveryOrderUseCase {
 	mockProductRepository := &mocks.ProductRepositoryInterface{}
 	mockAgentRepository := &mocks.AgentRepositoryInterface{}
 	mockStoreRepository := &mocks.StoreRepositoryInterface{}
-	mockSalesOrderUseCase := &mocks.SalesOrderUseCaseInterface{}
 	mockSalesOrderOpenSearchUseCase := &mocks.SalesOrderOpenSearchUseCaseInterface{}
 	mockSalesOrderOpenSearchRepository := &mocks.SalesOrderOpenSearchRepositoryInterface{}
 	openSearchHosts := []string{os.Getenv("OPENSEARCH_HOST_01")}
@@ -94,7 +93,6 @@ func newDeliveryOrderUsecase(status bool) deliveryOrderUseCase {
 		agentRepository:                   mockAgentRepository,
 		storeRepository:                   mockStoreRepository,
 		deliveryOrderLogRepository:        mockDeliveryOrderLogRepository,
-		salesOrderUseCase:                 mockSalesOrderUseCase,
 		SalesOrderOpenSearchUseCase:       mockSalesOrderOpenSearchUseCase,
 		kafkaClient:                       mockKafkaClient,
 		deliveryOrderOpenSearchRepository: deliveryOrderOpenSearch,
@@ -110,7 +108,7 @@ func Test_DeliveryOrderUseCase_InitDeliveryOrderUseCaseInterface_ShouldSuccess(t
 	deliveryOrderUseCase := newDeliveryOrderUsecase(false)
 	// deliveryOrderUseCaseInterface := InitDeliveryOrderUseCaseInterface(deliveryOrderUseCase.deliveryOrderRepository, deliveryOrderUseCase.deliveryOrderDetailRepository, deliveryOrderUseCase.salesOrderRepository, deliveryOrderUseCase.salesOrderDetailRepository, deliveryOrderUseCase.orderStatusRepository, deliveryOrderUseCase.orderSourceRepository, deliveryOrderUseCase.warehouseRepository, deliveryOrderUseCase.brandRepository, deliveryOrderUseCase.uomRepository, deliveryOrderUseCase.agentRepository, deliveryOrderUseCase.storeRepository, deliveryOrderUseCase.productRepository, deliveryOrderUseCase.userRepository, deliveryOrderUseCase.salesmanRepository, deliveryOrderUseCase.deliveryOrderLogRepository, deliveryOrderUseCase.deliveryOrderOpenSearchRepository, deliveryOrderUseCase.salesOrderOpenSearchRepository, deliveryOrderUseCase.salesOrderUseCase, deliveryOrderUseCase.kafkaClient, deliveryOrderUseCase.db, deliveryOrderUseCase.ctx)
 	// Act
-	dataDeliveryOrderUseCaseInit := InitDeliveryOrderUseCaseInterface(deliveryOrderUseCase.deliveryOrderRepository, deliveryOrderUseCase.deliveryOrderDetailRepository, deliveryOrderUseCase.salesOrderRepository, deliveryOrderUseCase.salesOrderDetailRepository, deliveryOrderUseCase.orderStatusRepository, deliveryOrderUseCase.orderSourceRepository, deliveryOrderUseCase.warehouseRepository, deliveryOrderUseCase.brandRepository, deliveryOrderUseCase.uomRepository, deliveryOrderUseCase.agentRepository, deliveryOrderUseCase.storeRepository, deliveryOrderUseCase.productRepository, deliveryOrderUseCase.userRepository, deliveryOrderUseCase.salesmanRepository, deliveryOrderUseCase.deliveryOrderLogRepository, deliveryOrderUseCase.deliveryOrderOpenSearchRepository, deliveryOrderUseCase.salesOrderOpenSearchRepository, deliveryOrderUseCase.salesOrderUseCase, deliveryOrderUseCase.SalesOrderOpenSearchUseCase, deliveryOrderUseCase.kafkaClient, deliveryOrderUseCase.ValidationRepository, deliveryOrderUseCase.db, deliveryOrderUseCase.ctx)
+	dataDeliveryOrderUseCaseInit := InitDeliveryOrderUseCaseInterface(deliveryOrderUseCase.deliveryOrderRepository, deliveryOrderUseCase.deliveryOrderDetailRepository, deliveryOrderUseCase.salesOrderRepository, deliveryOrderUseCase.salesOrderDetailRepository, deliveryOrderUseCase.orderStatusRepository, deliveryOrderUseCase.orderSourceRepository, deliveryOrderUseCase.warehouseRepository, deliveryOrderUseCase.brandRepository, deliveryOrderUseCase.uomRepository, deliveryOrderUseCase.agentRepository, deliveryOrderUseCase.storeRepository, deliveryOrderUseCase.productRepository, deliveryOrderUseCase.userRepository, deliveryOrderUseCase.salesmanRepository, deliveryOrderUseCase.deliveryOrderLogRepository, deliveryOrderUseCase.deliveryOrderOpenSearchRepository, deliveryOrderUseCase.salesOrderOpenSearchRepository, deliveryOrderUseCase.SalesOrderOpenSearchUseCase, deliveryOrderUseCase.kafkaClient, deliveryOrderUseCase.ValidationRepository, deliveryOrderUseCase.db, deliveryOrderUseCase.ctx)
 
 	// Assert
 	assert.NotNil(t, dataDeliveryOrderUseCaseInit)

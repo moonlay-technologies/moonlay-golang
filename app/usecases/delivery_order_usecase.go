@@ -59,7 +59,6 @@ type deliveryOrderUseCase struct {
 	deliveryOrderLogRepository        mongoRepositories.DeliveryOrderLogRepositoryInterface
 	deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface
 	salesOrderOpenSearchRepository    openSearchRepositories.SalesOrderOpenSearchRepositoryInterface
-	salesOrderUseCase                 SalesOrderUseCaseInterface
 	SalesOrderOpenSearchUseCase       SalesOrderOpenSearchUseCaseInterface
 	kafkaClient                       kafkadbo.KafkaClientInterface
 	ValidationRepository              repositories.RequestValidationRepositoryInterface
@@ -67,7 +66,7 @@ type deliveryOrderUseCase struct {
 	ctx                               context.Context
 }
 
-func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, deliveryOrderDetailRepository repositories.DeliveryOrderDetailRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderUseCase SalesOrderUseCaseInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, kafkaClient kafkadbo.KafkaClientInterface, ValidationRepository repositories.RequestValidationRepositoryInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderUseCaseInterface {
+func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, deliveryOrderDetailRepository repositories.DeliveryOrderDetailRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, kafkaClient kafkadbo.KafkaClientInterface, ValidationRepository repositories.RequestValidationRepositoryInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderUseCaseInterface {
 	return &deliveryOrderUseCase{
 		deliveryOrderRepository:           deliveryOrderRepository,
 		deliveryOrderDetailRepository:     deliveryOrderDetailRepository,
@@ -86,7 +85,6 @@ func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.Deli
 		deliveryOrderLogRepository:        deliveryOrderLogRepository,
 		deliveryOrderOpenSearchRepository: deliveryOrderOpenSearchRepository,
 		salesOrderOpenSearchRepository:    salesOrderOpenSearchRepository,
-		salesOrderUseCase:                 salesOrderUseCase,
 		SalesOrderOpenSearchUseCase:       salesOrderOpenSearchUseCase,
 		kafkaClient:                       kafkaClient,
 		ValidationRepository:              ValidationRepository,
@@ -230,6 +228,11 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 			return &models.DeliveryOrder{}, getSalesOrderDetailResult.ErrorLog
 		}
 
+		fmt.Println("sid get = ", getSalesOrderDetailResult.SalesOrderDetail.ID)
+		fmt.Println("snt get = ", getSalesOrderDetailResult.SalesOrderDetail.SentQty)
+		fmt.Println("res get = ", getSalesOrderDetailResult.SalesOrderDetail.ResidualQty)
+		fmt.Println("qty get = ", getSalesOrderDetailResult.SalesOrderDetail.Qty)
+
 		getOrderStatusDetailResultChan := make(chan *models.OrderStatusChan)
 		go u.orderStatusRepository.GetByID(getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID, false, ctx, getOrderStatusDetailResultChan)
 		getOrderStatusDetailResult := <-getOrderStatusDetailResultChan
@@ -242,16 +245,21 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		getSalesOrderDetailResult.SalesOrderDetail.SentQty += doDetail.Qty
 		getSalesOrderDetailResult.SalesOrderDetail.ResidualQty -= doDetail.Qty
 		totalResidualQty += getSalesOrderDetailResult.SalesOrderDetail.ResidualQty
+		fmt.Println("total residual = ", totalResidualQty)
+		statusName := "partial"
 
 		if getSalesOrderDetailResult.SalesOrderDetail.ResidualQty == 0 {
-			getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID = 14
-		} else {
-			getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID = 13
+			statusName = "closed"
 		}
 
 		getOrderStatusSODetailResultChan := make(chan *models.OrderStatusChan)
-		go u.orderStatusRepository.GetByID(getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID, false, ctx, getOrderStatusSODetailResultChan)
+		go u.orderStatusRepository.GetByNameAndType(statusName, "sales_order_detail", false, ctx, getOrderStatusSODetailResultChan)
 		getOrderStatusSODetailResult := <-getOrderStatusSODetailResultChan
+
+		fmt.Println("sid cnt = ", getSalesOrderDetailResult.SalesOrderDetail.ID)
+		fmt.Println("snt cnt = ", getSalesOrderDetailResult.SalesOrderDetail.SentQty)
+		fmt.Println("res cnt = ", getSalesOrderDetailResult.SalesOrderDetail.ResidualQty)
+		fmt.Println("qty cnt = ", getSalesOrderDetailResult.SalesOrderDetail.Qty)
 
 		if getOrderStatusSODetailResult.Error != nil {
 			return &models.DeliveryOrder{}, getOrderStatusSODetailResult.ErrorLog
@@ -298,6 +306,11 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 			return &models.DeliveryOrder{}, createDeliveryOrderDetailResult.ErrorLog
 		}
 
+		fmt.Println("sid ins = ", getSalesOrderDetailResult.SalesOrderDetail.ID)
+		fmt.Println("snt ins = ", getSalesOrderDetailResult.SalesOrderDetail.SentQty)
+		fmt.Println("res ins = ", getSalesOrderDetailResult.SalesOrderDetail.ResidualQty)
+		fmt.Println("qty ins = ", getSalesOrderDetailResult.SalesOrderDetail.Qty)
+
 		updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
 		go u.salesOrderDetailRepository.UpdateByID(getSalesOrderDetailResult.SalesOrderDetail.ID, getSalesOrderDetailResult.SalesOrderDetail, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
 		updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
@@ -306,17 +319,26 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 			return &models.DeliveryOrder{}, updateSalesOrderDetailResult.ErrorLog
 		}
 
+		fmt.Println("sid upt = ", getSalesOrderDetailResult.SalesOrderDetail.ID)
+		fmt.Println("snt upt = ", getSalesOrderDetailResult.SalesOrderDetail.SentQty)
+		fmt.Println("res upt = ", getSalesOrderDetailResult.SalesOrderDetail.ResidualQty)
+		fmt.Println("qty upt = ", getSalesOrderDetailResult.SalesOrderDetail.Qty)
+
 		deliveryOrderDetail.ID = int(createDeliveryOrderDetailResult.ID)
 		deliveryOrderDetails = append(deliveryOrderDetails, deliveryOrderDetail)
 		getSalesOrderResult.SalesOrder.SalesOrderDetails = append(getSalesOrderResult.SalesOrder.SalesOrderDetails, getSalesOrderDetailResult.SalesOrderDetail)
+		fmt.Println("total residual = ", totalResidualQty)
 	}
 
 	deliveryOrder.DeliveryOrderDetails = deliveryOrderDetails
+	fmt.Println("total residual 1 = ", totalResidualQty)
 	if totalResidualQty == 0 {
 		getSalesOrderResult.SalesOrder.OrderStatusID = 8
 	} else {
 		getSalesOrderResult.SalesOrder.OrderStatusID = 7
 	}
+
+	fmt.Println("status = ", getSalesOrderResult.SalesOrder.OrderStatusID)
 
 	getOrderStatusSOResultChan := make(chan *models.OrderStatusChan)
 	go u.orderStatusRepository.GetByID(getSalesOrderResult.SalesOrder.OrderStatusID, false, ctx, getOrderStatusSOResultChan)
@@ -367,6 +389,13 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		return &models.DeliveryOrder{}, errorLogData
+	}
+	fmt.Println("status = ", deliveryOrder.SalesOrder.OrderStatusID)
+	for _, v := range deliveryOrder.SalesOrder.SalesOrderDetails {
+		fmt.Println("sid rst = ", v.ID)
+		fmt.Println("snt rst = ", v.SentQty)
+		fmt.Println("res rst = ", v.ResidualQty)
+		fmt.Println("qty rst = ", v.Qty)
 	}
 
 	return deliveryOrder, nil
@@ -953,6 +982,11 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *mo
 			return errorLogData
 		}
 
+		fmt.Println("sid get = ", getSalesOrderDetailResult.SalesOrderDetail.ID)
+		fmt.Println("snt get = ", getSalesOrderDetailResult.SalesOrderDetail.SentQty)
+		fmt.Println("res get = ", getSalesOrderDetailResult.SalesOrderDetail.ResidualQty)
+		fmt.Println("qty get = ", getSalesOrderDetailResult.SalesOrderDetail.Qty)
+
 		getProductResultChan := make(chan *models.ProductChan)
 		go u.productRepository.GetByID(v.ProductID, false, ctx, getProductResultChan)
 		getProductResult := <-getProductResultChan
@@ -986,13 +1020,12 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *mo
 
 		deliveryOrder.DeliveryOrderDetails[k].Brand = getBrandResult.Brand
 
-		residualQty := (getSalesOrderDetailResult.SalesOrderDetail.Qty - getSalesOrderDetailResult.SalesOrderDetail.SentQty) - v.Qty
-		getSalesOrderDetailResult.SalesOrderDetail.ResidualQty = residualQty
-		getSalesOrderDetailResult.SalesOrderDetail.SentQty = v.Qty
+		getSalesOrderDetailResult.SalesOrderDetail.ResidualQty -= v.Qty
+		getSalesOrderDetailResult.SalesOrderDetail.SentQty += v.Qty
 
 		statusName := "partial"
 
-		if residualQty == 0 {
+		if getSalesOrderDetailResult.SalesOrderDetail.ResidualQty == 0 {
 			statusName = "closed"
 		}
 
@@ -1008,8 +1041,8 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *mo
 		salesOrderDetailDataUpdate := &models.SalesOrderDetail{
 			UpdatedAt:       &now,
 			OrderStatusID:   getStatusSalesOrderDetailResult.OrderStatus.ID,
-			ResidualQty:     residualQty,
-			SentQty:         v.Qty,
+			ResidualQty:     getSalesOrderDetailResult.SalesOrderDetail.ResidualQty,
+			SentQty:         getSalesOrderDetailResult.SalesOrderDetail.SentQty,
 			EndDateSyncToEs: &now,
 		}
 
@@ -1046,53 +1079,6 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *mo
 
 	deliveryOrder.SalesOrder.SalesOrderDetails = getSalesOrderDetailsResult.SalesOrderDetails
 
-	countPartialStatusOnSalesOrderDetail := 0
-	countClosedStatusOnSalesOrderDetail := 0
-	for _, v := range getSalesOrderDetailsResult.SalesOrderDetails {
-		getStatusSalesOrderDetailResultChan := make(chan *models.OrderStatusChan)
-		go u.orderStatusRepository.GetByID(v.OrderStatusID, false, ctx, getStatusSalesOrderDetailResultChan)
-		getStatusSalesOrderDetailResult := <-getStatusSalesOrderDetailResultChan
-
-		if getStatusSalesOrderDetailResult.Error != nil {
-			errorLogData := helper.WriteLog(getStatusSalesOrderDetailResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-
-		if getStatusSalesOrderDetailResult.OrderStatus.Name == "partial" {
-			countPartialStatusOnSalesOrderDetail++
-		} else {
-			countClosedStatusOnSalesOrderDetail++
-		}
-	}
-
-	salesOrderStatus := "partial"
-	if countPartialStatusOnSalesOrderDetail == 0 {
-		salesOrderStatus = "closed"
-	}
-
-	getStatusSalesOrderResultChan := make(chan *models.OrderStatusChan)
-	go u.orderStatusRepository.GetByNameAndType(salesOrderStatus, "sales_order", false, ctx, getStatusSalesOrderResultChan)
-	getStatusSalesOrderResult := <-getStatusSalesOrderResultChan
-
-	if getStatusSalesOrderResult.Error != nil {
-		errorLogData := helper.WriteLog(getStatusSalesOrderResult.Error, http.StatusInternalServerError, nil)
-		return errorLogData
-	}
-
-	salesOrderUpdateData := &models.SalesOrder{
-		UpdatedAt:     &now,
-		OrderStatusID: getStatusSalesOrderResult.OrderStatus.ID,
-	}
-
-	updateSalesOrderResultChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.UpdateByID(deliveryOrder.SalesOrderID, salesOrderUpdateData, sqlTransaction, ctx, updateSalesOrderResultChan)
-	updateSalesOrderResult := <-updateSalesOrderResultChan
-
-	if updateSalesOrderResult.Error != nil {
-		errorLogData := helper.WriteLog(updateSalesOrderResult.Error, http.StatusInternalServerError, nil)
-		return errorLogData
-	}
-
 	removeCacheSalesOrderResultChan := make(chan *models.SalesOrderChan)
 	go u.salesOrderRepository.RemoveCacheByID(deliveryOrder.SalesOrderID, ctx, removeCacheSalesOrderResultChan)
 	removeCacheSalesOrderResult := <-removeCacheSalesOrderResultChan
@@ -1106,21 +1092,6 @@ func (u *deliveryOrderUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *mo
 	deliveryOrder.EndDateSyncToEs = &now
 	deliveryOrder.UpdatedAt = &now
 	deliveryOrder.EndCreatedDate = &now
-
-	deliveryOrderUpdateData := &models.DeliveryOrder{
-		UpdatedAt:       &now,
-		IsDoneSyncToEs:  "1",
-		EndDateSyncToEs: &now,
-	}
-
-	updateDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderRepository.UpdateByID(deliveryOrder.ID, deliveryOrderUpdateData, sqlTransaction, ctx, updateDeliveryOrderResultChan)
-	updateDeliveryOrderResult := <-updateDeliveryOrderResultChan
-
-	if updateDeliveryOrderResult.Error != nil {
-		errorLogData := helper.WriteLog(updateDeliveryOrderResult.Error, http.StatusInternalServerError, nil)
-		return errorLogData
-	}
 
 	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
 	go u.deliveryOrderOpenSearchRepository.Create(deliveryOrder, createDeliveryOrderResultChan)
