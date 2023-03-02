@@ -82,9 +82,14 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 
 	mustActiveField := []*models.MustActiveRequest{
 		{
-			Table:    "warehouses a JOIN agents b ON a.owner_id = b.id",
+			Table:    "sales_orders",
+			ReqField: "sales_order_id",
+			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", insertRequest.SalesOrderID),
+		},
+		{
+			Table:    "warehouses a JOIN agents b JOIN sales_orders c ON a.owner_id = b.id AND c.agent_id = b.id",
 			ReqField: "warehouse_owner_id",
-			Clause:   fmt.Sprintf("a.id = %d AND b.deleted_at IS NULL AND a.`status` = 1", insertRequest.WarehouseID),
+			Clause:   fmt.Sprintf("c.id = %d AND b.deleted_at IS NULL AND a.`status` = 1", insertRequest.SalesOrderID),
 		},
 		{
 			Table:    "stores a JOIN sales_orders b ON b.store_id = a.id",
