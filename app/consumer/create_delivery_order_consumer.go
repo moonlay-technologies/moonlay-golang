@@ -108,47 +108,17 @@ func (c *createDeliveryOrderConsumerHandler) ProcessMessage() {
 			continue
 		}
 
-		salesOrderRequest := &models.SalesOrderRequest{
-			ID:            deliveryOrder.SalesOrderID,
-			OrderSourceID: deliveryOrder.OrderSourceID,
-		}
-
-		salesOrderWithDetail, errorLog := c.salesOrderUseCase.GetByIDWithDetail(salesOrderRequest, c.ctx)
-
 		if errorLog.Err != nil {
 			go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
 			fmt.Println(errorLog)
 			continue
 		}
 
-		errorLog = c.salesOrderOpenSearchUseCase.SyncToOpenSearchFromUpdateEvent(salesOrderWithDetail, c.ctx)
+		errorLog = c.salesOrderOpenSearchUseCase.SyncToOpenSearchFromUpdateEvent(deliveryOrder.SalesOrder, c.ctx)
 
 		if errorLog.Err != nil {
 			go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
 			fmt.Println(errorLog)
-			continue
-		}
-
-		deliveryOrderRequest := &models.DeliveryOrderRequest{
-			ID: deliveryOrder.ID,
-		}
-
-		deliveryOrderWithDetail, errorLog := c.deliveryOrderUseCase.GetByID(deliveryOrderRequest, c.ctx)
-
-		if errorLog.Err != nil {
-			go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
-			fmt.Println(errorLog)
-			continue
-		}
-
-		salesOrderWithDetail.DeliveryOrders = nil
-		deliveryOrderWithDetail.SalesOrder = salesOrderWithDetail
-		errorLog = c.deliveryOrderUseCase.SyncToOpenSearchFromUpdateEvent(deliveryOrderWithDetail, c.ctx)
-
-		if errorLog.Err != nil {
-			go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
-			errorLogData := helper.WriteLogConsumer(constants.CREATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, nil)
-			fmt.Println(errorLogData)
 			continue
 		}
 
