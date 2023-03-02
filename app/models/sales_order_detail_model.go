@@ -70,7 +70,23 @@ type SalesOrderDetailStoreResponse struct {
 }
 
 type SalesOrderDetailUpdateRequest struct {
-	ID int `json:"id,omitempty" bson:"id,omitempty" binding:"required"`
+	ID           int    `json:"id,omitempty" bson:"id,omitempty" binding:"required"`
+	SoDetailCode string `json:"so_detail_code,omitempty" bson:"so_detail_code,omitempty"`
+	Status       string `json:"status,omitempty" bson:"status,omitempty" binding:"required"`
+	Reason       string `json:"reason,omitempty" bson:"reason,omitempty" binding:"required"`
+}
+
+type UpdateSalesOrderDetailByIdRequest struct {
+	SoDate            string                             `json:"so_date,omitempty" bson:"so_date,omitempty"`
+	SoCode            string                             `json:"so_code,omitempty" bson:"so_code,omitempty"`
+	Status            string                             `json:"status,omitempty" bson:"status,omitempty"`
+	Reason            string                             `json:"reason,omitempty" bson:"reason,omitempty"`
+	SalesOrderDetails *SalesOrderDetailUpdateByIdRequest `json:"sales_order_details" bson:"sales_order_details" binding:"required,dive,required"`
+}
+type SalesOrderDetailUpdateByIdRequest struct {
+	SoDetailCode string `json:"so_detail_code,omitempty" bson:"so_detail_code,omitempty"`
+	Status       string `json:"status,omitempty" bson:"status,omitempty" binding:"required"`
+	Reason       string `json:"reason,omitempty" bson:"reason,omitempty" binding:"required"`
 }
 
 type SalesOrderDetailChan struct {

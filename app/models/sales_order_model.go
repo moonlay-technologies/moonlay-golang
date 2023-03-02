@@ -105,10 +105,9 @@ type SalesOrderTemplate struct {
 type SalesOrderStoreRequest struct {
 	CartID int `json:"cart_id,omitempty" bson:"cart_id,omitempty"`
 	SalesOrderTemplate
-	BrandID      int `json:"brand_id,omitempty" bson:"brand_id,omitempty"`
-	SalesmanID   int `json:"salesman_id,omitempty" bson:"salesman_id,omitempty"`
-	VisitationID int `json:"visitation_id,omitempty" bson:"visitation_id,omitempty"`
-	// SoCode            string                          `json:"so_code,omitempty" bson:"so_code,omitempty"`
+	BrandID           int                             `json:"brand_id,omitempty" bson:"brand_id,omitempty"`
+	SalesmanID        int                             `json:"salesman_id,omitempty" bson:"salesman_id,omitempty"`
+	VisitationID      int                             `json:"visitation_id,omitempty" bson:"visitation_id,omitempty"`
 	SoDate            string                          `json:"so_date,omitempty" bson:"so_date,omitempty" binding:"required"`
 	SoRefDate         string                          `json:"so_ref_date,omitempty" bson:"so_ref_date,omitempty" binding:"required"`
 	OrderStatusID     int                             `json:"order_status_id,omitempty" bson:"order_status_id,omitempty"`
@@ -159,6 +158,8 @@ type SalesOrderResponse struct {
 }
 
 type SalesOrderUpdateRequest struct {
+	SoDate            string                           `json:"so_date,omitempty" bson:"so_date,omitempty"`
+	SoCode            string                           `json:"so_code,omitempty" bson:"so_code,omitempty"`
 	Status            string                           `json:"status,omitempty" bson:"status,omitempty" binding:"required"`
 	Reason            string                           `json:"reason,omitempty" bson:"reason,omitempty"`
 	SalesOrderDetails []*SalesOrderDetailUpdateRequest `json:"sales_order_details" bson:"sales_order_details" binding:"required,dive,required"`

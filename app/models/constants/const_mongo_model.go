@@ -2,6 +2,7 @@ package constants
 
 const (
 	SALES_ORDER_TABLE_LOGS            = "sales_order_event_logs"
+	SALES_ORDER_TABLE_DETAIL_LOGS     = "sales_order_detail_event_logs"
 	SALES_ORDER_TABLE_JOURNEYS        = "sales_order_journeys"
 	SALES_ORDER_DETAIL_TABLE_JOURNEYS = "sales_order_detail_journeys"
 	DELIVERY_ORDER_TABLE_LOGS         = "delivery_order_event_logs"
