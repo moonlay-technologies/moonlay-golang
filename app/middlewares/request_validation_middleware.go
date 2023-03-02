@@ -156,20 +156,18 @@ func (u *requestValidationMiddleware) MustActiveValidation(ctx *gin.Context, val
 	messages := []string{}
 	systemMessages := []string{}
 	var error error
-
-	for _, v := range value {
-		mustActive := make(chan *models.MustActiveRequestChan)
-		go u.requestValidationRepository.MustActiveValidation(v, mustActive)
-		mustActiveResult := <-mustActive
-
-		if mustActiveResult.Total < 1 {
-			if v.CustomMessage != "" {
-				messages = append(messages, v.CustomMessage)
-				systemMessages = append(systemMessages, v.CustomMessage)
+	mustActive := make(chan *models.MustActiveRequestChan)
+	go u.requestValidationRepository.MustActiveValidation(value, mustActive)
+	mustActiveResult := <-mustActive
+	for k, v := range mustActiveResult.Total {
+		if v < 1 {
+			if value[k].CustomMessage != "" {
+				messages = append(messages, value[k].CustomMessage)
+				systemMessages = append(systemMessages, value[k].CustomMessage)
 			} else {
-				message := fmt.Sprintf("Data %s tidak ditemukan", v.ReqField)
+				message := fmt.Sprintf("Data %s tidak ditemukan", value[k].ReqField)
 				messages = append(messages, message)
-				systemMessage := fmt.Sprintf("%s Not Found", v.ReqField)
+				systemMessage := fmt.Sprintf("%s Not Found", value[k].ReqField)
 				systemMessages = append(systemMessages, systemMessage)
 			}
 		}
