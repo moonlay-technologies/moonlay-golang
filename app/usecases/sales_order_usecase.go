@@ -1795,13 +1795,10 @@ func (u *salesOrderUseCase) GetDetailById(id int) (*models.SalesOrderDetailOpenS
 	salesOrder.SalesOrderOpenSearchResponseMap(getSalesOrderResult.SalesOrder)
 
 	for _, x := range getSalesOrderResult.SalesOrder.SalesOrderDetails {
-		fmt.Println("id = ", x.ID, x.ID == id)
 		if x.ID == id {
 			result.SalesOrderDetailOpenSearchResponseMap(x)
 		}
-		fmt.Println("result = ", result.ID)
 	}
-	fmt.Println("result = ", result.ID)
 	return result, &model.ErrorLog{}
 
 }
