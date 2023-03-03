@@ -11,7 +11,7 @@ import (
 
 type RequestValidationRepositoryInterface interface {
 	UniqueValidation(value *models.UniqueRequest, resultChan chan *models.UniqueRequestChan)
-	MustActiveValidation(value *models.MustActiveRequest, resultChan chan *models.MustActiveRequestChan)
+	MustActiveValidation(value []*models.MustActiveRequest, resultChan chan *models.MustActiveRequestChan)
 	MustEmptyValidation(value *models.MustEmptyValidationRequest, resultChan chan *models.MustEmptyValidationRequestChan)
 	AgentIdValidation(agentId, userId int, resultChan chan *models.RequestIdValidationChan)
 	StoreIdValidation(storeId, agentId int, resultChan chan *models.RequestIdValidationChan)
@@ -49,19 +49,29 @@ func (r *requestValidationRepository) UniqueValidation(value *models.UniqueReque
 	}
 }
 
-func (r *requestValidationRepository) MustActiveValidation(value *models.MustActiveRequest, resultChan chan *models.MustActiveRequestChan) {
+func (r *requestValidationRepository) MustActiveValidation(values []*models.MustActiveRequest, resultChan chan *models.MustActiveRequestChan) {
 	response := &models.MustActiveRequestChan{}
 	var total int64
+	var query = ""
+	for k, value := range values {
+		if k == len(values)-1 {
+			query += fmt.Sprintf("SELECT COUNT(*) as total FROM %s WHERE %s ", value.Table, value.Clause)
+		} else {
+			query += fmt.Sprintf("SELECT COUNT(*) as total FROM %s WHERE %s UNION ALL ", value.Table, value.Clause)
+		}
+	}
 
-	query := fmt.Sprintf("SELECT COUNT(*) as total FROM %s WHERE %s ", value.Table, value.Clause)
-	err := r.db.QueryRow(query).Scan(&total)
+	q, err := r.db.Query(query)
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
 		response.Error = err
 		response.ErrorLog = errorLogData
-	} else {
-		response.Total = total
+	}
+
+	for q.Next() {
+		q.Scan(&total)
+		response.Total = append(response.Total, total)
 	}
 	resultChan <- response
 	return

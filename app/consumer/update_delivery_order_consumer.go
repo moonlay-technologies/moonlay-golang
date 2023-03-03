@@ -21,26 +21,28 @@ type UpdateDeliveryOrderConsumerHandlerInterface interface {
 }
 
 type UpdateDeliveryOrderConsumerHandler struct {
-	kafkaClient                 kafkadbo.KafkaClientInterface
-	salesOrderUseCase           usecases.SalesOrderUseCaseInterface
-	salesOrderOpenSearchUseCase usecases.SalesOrderOpenSearchUseCaseInterface
-	deliveryOrderUseCase        usecases.DeliveryOrderUseCaseInterface
-	ctx                         context.Context
-	args                        []interface{}
-	db                          dbresolver.DB
-	deliveryOrderLogRepository  mongoRepositories.DeliveryOrderLogRepositoryInterface
+	kafkaClient                    kafkadbo.KafkaClientInterface
+	salesOrderUseCase              usecases.SalesOrderUseCaseInterface
+	salesOrderOpenSearchUseCase    usecases.SalesOrderOpenSearchUseCaseInterface
+	deliveryOrderUseCase           usecases.DeliveryOrderUseCaseInterface
+	DeliveryOrderOpenSearchUseCase usecases.DeliveryOrderOpenSearchUseCaseInterface
+	ctx                            context.Context
+	args                           []interface{}
+	db                             dbresolver.DB
+	deliveryOrderLogRepository     mongoRepositories.DeliveryOrderLogRepositoryInterface
 }
 
-func InitUpdateDeliveryOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, salesOrderUseCase usecases.SalesOrderUseCaseInterface, salesOrderOpenSearchUseCase usecases.SalesOrderOpenSearchUseCaseInterface, deliveryOrderUseCase usecases.DeliveryOrderUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UpdateDeliveryOrderConsumerHandlerInterface {
+func InitUpdateDeliveryOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, salesOrderUseCase usecases.SalesOrderUseCaseInterface, salesOrderOpenSearchUseCase usecases.SalesOrderOpenSearchUseCaseInterface, deliveryOrderUseCase usecases.DeliveryOrderUseCaseInterface, DeliveryOrderOpenSearchUseCase usecases.DeliveryOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UpdateDeliveryOrderConsumerHandlerInterface {
 	return &UpdateDeliveryOrderConsumerHandler{
-		kafkaClient:                 kafkaClient,
-		salesOrderUseCase:           salesOrderUseCase,
-		salesOrderOpenSearchUseCase: salesOrderOpenSearchUseCase,
-		deliveryOrderUseCase:        deliveryOrderUseCase,
-		ctx:                         ctx,
-		args:                        args,
-		db:                          db,
-		deliveryOrderLogRepository:  deliveryOrderLogRepository,
+		kafkaClient:                    kafkaClient,
+		salesOrderUseCase:              salesOrderUseCase,
+		salesOrderOpenSearchUseCase:    salesOrderOpenSearchUseCase,
+		deliveryOrderUseCase:           deliveryOrderUseCase,
+		DeliveryOrderOpenSearchUseCase: DeliveryOrderOpenSearchUseCase,
+		ctx:                            ctx,
+		args:                           args,
+		db:                             db,
+		deliveryOrderLogRepository:     deliveryOrderLogRepository,
 	}
 }
 
@@ -90,7 +92,7 @@ func (c *UpdateDeliveryOrderConsumerHandler) ProcessMessage() {
 		deliveryOrderLog.Status = constants.LOG_STATUS_MONGO_ERROR
 		deliveryOrderLog.UpdatedAt = &now
 
-		errorLog := c.deliveryOrderUseCase.SyncToOpenSearchFromUpdateEvent(&deliveryOrder, c.ctx)
+		errorLog := c.DeliveryOrderOpenSearchUseCase.SyncToOpenSearchFromUpdateEvent(&deliveryOrder, c.ctx)
 
 		if errorLog.Err != nil {
 			dbTransaction.Rollback()
@@ -143,7 +145,7 @@ func (c *UpdateDeliveryOrderConsumerHandler) ProcessMessage() {
 
 		salesOrderWithDetail.DeliveryOrders = nil
 		deliveryOrderWithDetail.SalesOrder = salesOrderWithDetail
-		errorLog = c.deliveryOrderUseCase.SyncToOpenSearchFromUpdateEvent(deliveryOrderWithDetail, c.ctx)
+		errorLog = c.DeliveryOrderOpenSearchUseCase.SyncToOpenSearchFromUpdateEvent(deliveryOrderWithDetail, c.ctx)
 
 		if errorLog.Err != nil {
 			go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
