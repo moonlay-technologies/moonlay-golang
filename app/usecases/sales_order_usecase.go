@@ -15,7 +15,6 @@ import (
 	kafkadbo "order-service/global/utils/kafka"
 	"order-service/global/utils/model"
 	baseModel "order-service/global/utils/model"
-	"strings"
 	"time"
 
 	"github.com/bxcodec/dbresolver"
@@ -483,56 +482,6 @@ func (u *salesOrderUseCase) GetSyncToKafkaHistories(request *models.SalesOrderEv
 	}
 
 	return getSalesOrderLogResult.SalesOrderLogs, nil
-}
-
-func bongkar(ds []dataStruct) (map[string]interface{}, interface{}) {
-	temp := map[string]interface{}{}
-	var xyz interface{}
-	for _, y := range ds {
-		switch y.Value.(type) {
-		case float64:
-			value, _ := y.Value.(float64)
-			temp[y.Key] = value
-		case string:
-			value, _ := y.Value.(string)
-			temp[y.Key] = value
-		case []interface{}:
-			var ds1 []dataStruct
-			a, _ := json.Marshal(y.Value)
-			json.Unmarshal(a, &ds1)
-			if y.Key == "sales_order_details" {
-				var ds2 [][]dataStruct
-				b, _ := json.Marshal(y.Value)
-				json.Unmarshal(b, &ds2)
-				ds1 = ds2[0]
-				for _, fg := range ds2 {
-					for range fg {
-						// l, _ := bongkar(ds2[i])
-						jk, _ := json.Marshal(fg)
-						fmt.Println("woy ", string(jk))
-					}
-				}
-			}
-			if strings.Contains(y.Key, "null") {
-				var ds1 []dataStruct
-				a, _ := json.Marshal(y.Value)
-				json.Unmarshal(a, &ds1)
-
-				return nil, ds1[0].Value
-
-			}
-			l, k := bongkar(ds1)
-
-			if k != nil {
-				temp[y.Key] = k
-			} else {
-				temp[y.Key] = l
-			}
-		}
-
-	}
-
-	return temp, xyz
 }
 
 func (u *salesOrderUseCase) GetByID(request *models.SalesOrderRequest, ctx context.Context) ([]*models.SalesOrderOpenSearchResponse, *model.ErrorLog) {
