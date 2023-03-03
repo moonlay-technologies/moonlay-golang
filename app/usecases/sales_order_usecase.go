@@ -31,7 +31,7 @@ type SalesOrderUseCaseInterface interface {
 	GetByOrderStatusID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
 	GetByOrderSourceID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
 	UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
-	UpdateSODetailById(soId, id int, request *models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetail, *model.ErrorLog)
+	UpdateSODetailById(soId, soDetailId int, request *models.UpdateSalesOrderDetailByIdRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetailStoreResponse, *model.ErrorLog)
 	UpdateSODetailBySOId(soId int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
 	GetDetails(request *models.GetSalesOrderDetailRequest) (*models.SalesOrderDetailsOpenSearchResponse, *model.ErrorLog)
 	GetDetailById(id int) (*models.SalesOrderDetailOpenSearchResponse, *model.ErrorLog)
@@ -1273,92 +1273,392 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 	return salesOrdersResponse, nil
 }
 
-func (u *salesOrderUseCase) UpdateSODetailById(soId, id int, request *models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetail, *model.ErrorLog) {
-	// now := time.Now()
-	// var soCode string
+// func (u *salesOrderUseCase) UpdateSODetailById(soId, id int, request *models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetail, *model.ErrorLog) {
+// now := time.Now()
+// var soCode string
 
-	// getSalesOrderByIDResultChan := make(chan *models.SalesOrderChan)
-	// go u.salesOrderRepository.GetByID(soId, false, ctx, getSalesOrderByIDResultChan)
-	// getSalesOrderByIDResult := <-getSalesOrderByIDResultChan
+// getSalesOrderByIDResultChan := make(chan *models.SalesOrderChan)
+// go u.salesOrderRepository.GetByID(soId, false, ctx, getSalesOrderByIDResultChan)
+// getSalesOrderByIDResult := <-getSalesOrderByIDResultChan
 
-	// if getSalesOrderByIDResult.Error != nil {
-	// 	return &models.SalesOrderDetail{}, getSalesOrderByIDResult.ErrorLog
-	// }
+// if getSalesOrderByIDResult.Error != nil {
+// 	return &models.SalesOrderDetail{}, getSalesOrderByIDResult.ErrorLog
+// }
 
-	// // Check Order Status
-	// getOrderStatusResultChan := make(chan *models.OrderStatusChan)
-	// go u.orderStatusRepository.GetByID(getSalesOrderByIDResult.SalesOrder.OrderStatusID, false, ctx, getOrderStatusResultChan)
-	// getOrderStatusResult := <-getOrderStatusResultChan
+// // Check Order Status
+// getOrderStatusResultChan := make(chan *models.OrderStatusChan)
+// go u.orderStatusRepository.GetByID(getSalesOrderByIDResult.SalesOrder.OrderStatusID, false, ctx, getOrderStatusResultChan)
+// getOrderStatusResult := <-getOrderStatusResultChan
 
-	// if getOrderStatusResult.Error != nil {
-	// 	return &models.SalesOrderDetail{}, getOrderStatusResult.ErrorLog
-	// }
+// if getOrderStatusResult.Error != nil {
+// 	return &models.SalesOrderDetail{}, getOrderStatusResult.ErrorLog
+// }
 
-	// errorValidation := u.updateSOValidation(getSalesOrderByIDResult.SalesOrder.ID, getOrderStatusResult.OrderStatus.Name, ctx)
+// errorValidation := u.updateSOValidation(getSalesOrderByIDResult.SalesOrder.ID, getOrderStatusResult.OrderStatus.Name, ctx)
 
-	// if errorValidation != nil {
-	// 	errorLogData := helper.WriteLog(errorValidation, http.StatusBadRequest, "Ada kesalahan, silahkan coba lagi nanti")
-	// 	return &models.SalesOrderDetail{}, errorLogData
-	// }
+// if errorValidation != nil {
+// 	errorLogData := helper.WriteLog(errorValidation, http.StatusBadRequest, "Ada kesalahan, silahkan coba lagi nanti")
+// 	return &models.SalesOrderDetail{}, errorLogData
+// }
 
-	// // Check Order Detail Status
-	// getOrderDetailStatusResultChan := make(chan *models.OrderStatusChan)
-	// go u.orderStatusRepository.GetByNameAndType("open", "sales_order_detail", false, ctx, getOrderDetailStatusResultChan)
-	// getOrderDetailStatusResult := <-getOrderDetailStatusResultChan
+// // Check Order Detail Status
+// getOrderDetailStatusResultChan := make(chan *models.OrderStatusChan)
+// go u.orderStatusRepository.GetByNameAndType("open", "sales_order_detail", false, ctx, getOrderDetailStatusResultChan)
+// getOrderDetailStatusResult := <-getOrderDetailStatusResultChan
 
-	// if getOrderDetailStatusResult.Error != nil {
-	// 	return &models.SalesOrderDetail{}, getOrderDetailStatusResult.ErrorLog
-	// }
+// if getOrderDetailStatusResult.Error != nil {
+// 	return &models.SalesOrderDetail{}, getOrderDetailStatusResult.ErrorLog
+// }
 
-	// // Check Brand
-	// getBrandResultChan := make(chan *models.BrandChan)
-	// go u.brandRepository.GetByID(request.BrandID, false, ctx, getBrandResultChan)
-	// getBrandResult := <-getBrandResultChan
+// // Check Brand
+// getBrandResultChan := make(chan *models.BrandChan)
+// go u.brandRepository.GetByID(request.BrandID, false, ctx, getBrandResultChan)
+// getBrandResult := <-getBrandResultChan
 
-	// if getBrandResult.Error != nil {
-	// 	return &models.SalesOrderDetail{}, getBrandResult.ErrorLog
-	// }
+// if getBrandResult.Error != nil {
+// 	return &models.SalesOrderDetail{}, getBrandResult.ErrorLog
+// }
 
-	salesOrderDetail := &models.SalesOrderDetail{}
-	// salesOrderDetail.SalesOrderDetailUpdateRequestMap(request, now)
+// salesOrderDetail := &models.SalesOrderDetail{}
+// salesOrderDetail.SalesOrderDetailUpdateRequestMap(request, now)
 
-	// updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
-	// go u.salesOrderDetailRepository.UpdateByID(request.ID, salesOrderDetail, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
-	// updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
+// updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
+// go u.salesOrderDetailRepository.UpdateByID(request.ID, salesOrderDetail, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
+// updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
 
-	// if updateSalesOrderDetailResult.Error != nil {
-	// 	return &models.SalesOrderDetail{}, updateSalesOrderDetailResult.ErrorLog
-	// }
+// if updateSalesOrderDetailResult.Error != nil {
+// 	return &models.SalesOrderDetail{}, updateSalesOrderDetailResult.ErrorLog
+// }
 
-	// salesOrderDetail.BrandID = request.BrandID
+// salesOrderDetail.BrandID = request.BrandID
 
-	// salesOrderLog := &models.SalesOrderLog{
-	// 	RequestID: "",
-	// 	SoCode:    soCode,
-	// 	Data:      salesOrderDetail,
-	// 	Status:    "0",
-	// 	CreatedAt: &now,
-	// }
+// salesOrderLog := &models.SalesOrderLog{
+// 	RequestID: "",
+// 	SoCode:    soCode,
+// 	Data:      salesOrderDetail,
+// 	Status:    "0",
+// 	CreatedAt: &now,
+// }
 
-	// createSalesOrderLogResultChan := make(chan *models.SalesOrderLogChan)
-	// go u.salesOrderLogRepository.Insert(salesOrderLog, ctx, createSalesOrderLogResultChan)
-	// createSalesOrderLogResult := <-createSalesOrderLogResultChan
+// createSalesOrderLogResultChan := make(chan *models.SalesOrderLogChan)
+// go u.salesOrderLogRepository.Insert(salesOrderLog, ctx, createSalesOrderLogResultChan)
+// createSalesOrderLogResult := <-createSalesOrderLogResultChan
 
-	// if createSalesOrderLogResult.Error != nil {
-	// 	return &models.SalesOrderDetail{}, createSalesOrderLogResult.ErrorLog
-	// }
+// if createSalesOrderLogResult.Error != nil {
+// 	return &models.SalesOrderDetail{}, createSalesOrderLogResult.ErrorLog
+// }
 
-	// keyKafka := []byte(soCode)
-	// messageKafka, _ := json.Marshal(salesOrderDetail)
-	// err := u.kafkaClient.WriteToTopic(constants.UPDATE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
+// keyKafka := []byte(soCode)
+// messageKafka, _ := json.Marshal(salesOrderDetail)
+// err := u.kafkaClient.WriteToTopic(constants.UPDATE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
 
-	// if err != nil {
-	// 	errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-	// 	return &models.SalesOrderDetail{}, errorLogData
-	// }
+// if err != nil {
+// 	errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+// 	return &models.SalesOrderDetail{}, errorLogData
+// }
+
+// 	return salesOrderDetail, nil
+
+// }
+
+func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *models.UpdateSalesOrderDetailByIdRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetailStoreResponse, *model.ErrorLog) {
+	now := time.Now()
+	salesOrder := &models.SalesOrder{}
+
+	// Get Sales Order Detail by Id
+	getSalesOrderDetailByIDResultChan := make(chan *models.SalesOrderDetailChan)
+	go u.salesOrderDetailRepository.GetByID(soDetailId, false, ctx, getSalesOrderDetailByIDResultChan)
+	getSalesOrderDetailByIDResult := <-getSalesOrderDetailByIDResultChan
+
+	if getSalesOrderDetailByIDResult.Error != nil {
+		return &models.SalesOrderDetailStoreResponse{}, getSalesOrderDetailByIDResult.ErrorLog
+	}
+
+	if soId != getSalesOrderDetailByIDResult.SalesOrderDetail.SalesOrderID {
+		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, fmt.Sprintf("SO Detail Id %d tidak terdaftar di SO Id %d", soDetailId, soId))},
+			SystemMessage: []string{"Invalid Process"},
+			StatusCode:    http.StatusUnprocessableEntity,
+		})
+		return &models.SalesOrderDetailStoreResponse{}, errorLogData
+	}
+
+	// Get Sales Order By Id
+	getSalesOrderByIDResultChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderRepository.GetByID(soId, false, ctx, getSalesOrderByIDResultChan)
+	getSalesOrderByIDResult := <-getSalesOrderByIDResultChan
+
+	if getSalesOrderByIDResult.Error != nil {
+		return &models.SalesOrderDetailStoreResponse{}, getSalesOrderByIDResult.ErrorLog
+	}
+
+	salesOrder = getSalesOrderByIDResult.SalesOrder
+
+	// Get Sales Order Detail by Id
+	getSalesOrderDetailsBySoIdResultChan := make(chan *models.SalesOrderDetailsChan)
+	go u.salesOrderDetailRepository.GetBySalesOrderID(soId, false, ctx, getSalesOrderDetailsBySoIdResultChan)
+	getSalesOrderDetailsBySoIdResult := <-getSalesOrderDetailsBySoIdResultChan
+
+	if getSalesOrderDetailsBySoIdResult.Error != nil {
+		return &models.SalesOrderDetailStoreResponse{}, getSalesOrderDetailsBySoIdResult.ErrorLog
+	}
+
+	salesOrder.SalesOrderDetails = getSalesOrderDetailsBySoIdResult.SalesOrderDetails
+	totalSoDetail := getSalesOrderDetailsBySoIdResult.Total
+	var soStatus string
+	var soDetailStatus string
+
+	if salesOrder.OrderStatusName == constants.ORDER_STATUS_OPEN {
+		if totalSoDetail == 1 {
+			soStatus = constants.ORDER_STATUS_CANCELLED
+			soDetailStatus = constants.ORDER_STATUS_CANCELLED
+		} else if helper.CheckSalesOrderDetailStatus(soDetailId, true, constants.ORDER_STATUS_CANCELLED, salesOrder.SalesOrderDetails) > 0 {
+			soStatus = constants.ORDER_STATUS_OPEN
+			soDetailStatus = constants.ORDER_STATUS_CANCELLED
+		} else if helper.CheckSalesOrderDetailStatus(soDetailId, false, constants.ORDER_STATUS_CANCELLED, salesOrder.SalesOrderDetails) > 0 {
+			soStatus = constants.ORDER_STATUS_CANCELLED
+			soDetailStatus = constants.ORDER_STATUS_CANCELLED
+		}
+	} else if salesOrder.OrderStatusName == constants.ORDER_STATUS_PARTIAL {
+		if totalSoDetail == 1 {
+			soStatus = constants.ORDER_STATUS_CLOSED
+			soDetailStatus = constants.ORDER_STATUS_CLOSED
+		} else if totalSoDetail > 1 && getSalesOrderDetailByIDResult.SalesOrderDetail.SentQty > 0 {
+			soStatus = constants.ORDER_STATUS_PARTIAL
+			soDetailStatus = constants.ORDER_STATUS_CLOSED
+		} else if totalSoDetail > 1 && getSalesOrderDetailByIDResult.SalesOrderDetail.SentQty == 0 {
+			soStatus = constants.ORDER_STATUS_PARTIAL
+			soDetailStatus = constants.ORDER_STATUS_CANCELLED
+		}
+	}
+
+	if len(soStatus) < 1 || len(soDetailStatus) < 1 {
+		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, fmt.Sprintf("tidak memenuhi syarat"))},
+			SystemMessage: []string{"Invalid Process"},
+			StatusCode:    http.StatusUnprocessableEntity,
+		})
+		return &models.SalesOrderDetailStoreResponse{}, errorLogData
+	}
+
+	// Check Brand
+	getBrandResultChan := make(chan *models.BrandChan)
+	go u.brandRepository.GetByID(salesOrder.BrandID, false, ctx, getBrandResultChan)
+	getBrandResult := <-getBrandResultChan
+
+	if getBrandResult.Error != nil {
+		return &models.SalesOrderDetailStoreResponse{}, getBrandResult.ErrorLog
+	}
+
+	salesOrder.BrandChanMap(getBrandResult)
+
+	// Get Order Status By Name
+	getOrderStatusResultChan := make(chan *models.OrderStatusChan)
+	go u.orderStatusRepository.GetByNameAndType(soStatus, "sales_order", false, ctx, getOrderStatusResultChan)
+	getOrderStatusResult := <-getOrderStatusResultChan
+
+	if getOrderStatusResult.Error != nil {
+		return &models.SalesOrderDetailStoreResponse{}, getOrderStatusResult.ErrorLog
+	}
+
+	// Get Order Detail Status By Name
+	getOrderDetailStatusResultChan := make(chan *models.OrderStatusChan)
+	go u.orderStatusRepository.GetByNameAndType(soDetailStatus, "sales_order_detail", false, ctx, getOrderDetailStatusResultChan)
+	getOrderDetailStatusResult := <-getOrderDetailStatusResultChan
+
+	if getOrderDetailStatusResult.Error != nil {
+		return &models.SalesOrderDetailStoreResponse{}, getOrderDetailStatusResult.ErrorLog
+	}
+
+	// Get Order Source Status By Id
+	getOrderSourceResultChan := make(chan *models.OrderSourceChan)
+	go u.orderSourceRepository.GetByID(salesOrder.OrderSourceID, false, ctx, getOrderSourceResultChan)
+	getOrderSourceResult := <-getOrderSourceResultChan
+
+	if getOrderSourceResult.Error != nil {
+		return &models.SalesOrderDetailStoreResponse{}, getOrderSourceResult.ErrorLog
+	}
+
+	// Check Agent By Id
+	getAgentResultChan := make(chan *models.AgentChan)
+	go u.agentRepository.GetByID(salesOrder.AgentID, false, ctx, getAgentResultChan)
+	getAgentResult := <-getAgentResultChan
+
+	if getAgentResult.Error != nil {
+		errorLogData := helper.WriteLog(getAgentResult.Error, http.StatusInternalServerError, nil)
+		return &models.SalesOrderDetailStoreResponse{}, errorLogData
+	}
+
+	// Check Store By Id
+	getStoreResultChan := make(chan *models.StoreChan)
+	go u.storeRepository.GetByID(salesOrder.StoreID, false, ctx, getStoreResultChan)
+	getStoreResult := <-getStoreResultChan
+
+	if getStoreResult.Error != nil {
+		errorLogData := helper.WriteLog(getStoreResult.Error, http.StatusInternalServerError, nil)
+		return &models.SalesOrderDetailStoreResponse{}, errorLogData
+	}
+
+	// Check User By Id
+	getUserResultChan := make(chan *models.UserChan)
+	go u.userRepository.GetByID(salesOrder.UserID, false, ctx, getUserResultChan)
+	getUserResult := <-getUserResultChan
+
+	if getUserResult.Error != nil {
+		errorLogData := helper.WriteLog(getUserResult.Error, http.StatusInternalServerError, nil)
+		return &models.SalesOrderDetailStoreResponse{}, errorLogData
+	}
+
+	// Check Salesman By Id
+	getSalesmanResult := &models.SalesmanChan{}
+
+	if salesOrder.SalesmanID.Int64 > 0 {
+		getSalesmanResultChan := make(chan *models.SalesmanChan)
+		go u.salesmanRepository.GetByID(int(salesOrder.SalesmanID.Int64), false, ctx, getSalesmanResultChan)
+		getSalesmanResult = <-getSalesmanResultChan
+
+		if getSalesmanResult.Error != nil {
+			errorLogData := helper.WriteLog(getSalesmanResult.Error, http.StatusInternalServerError, nil)
+			return &models.SalesOrderDetailStoreResponse{}, errorLogData
+		}
+
+		salesOrder.SalesmanChanMap(getSalesmanResult)
+	}
+
+	if soStatus != salesOrder.OrderStatusName {
+
+		salesOrderUpdateReq := &models.SalesOrder{
+			OrderStatusID: getOrderStatusResult.OrderStatus.ID,
+			UpdatedAt:     &now,
+		}
+
+		// Update Sales Order
+		updateSalesOrderResultChan := make(chan *models.SalesOrderChan)
+		go u.salesOrderRepository.UpdateByID(soId, salesOrderUpdateReq, sqlTransaction, ctx, updateSalesOrderResultChan)
+		updateSalesOrderResult := <-updateSalesOrderResultChan
+
+		if updateSalesOrderResult.Error != nil {
+			return &models.SalesOrderDetailStoreResponse{}, updateSalesOrderResult.ErrorLog
+		}
+
+		// Remove Cache Sales Order
+		removeCacheSalesOrderResultChan := make(chan *models.SalesOrderChan)
+		go u.salesOrderRepository.RemoveCacheByID(soId, ctx, removeCacheSalesOrderResultChan)
+		removeCacheSalesOrderResult := <-removeCacheSalesOrderResultChan
+
+		if removeCacheSalesOrderResult.Error != nil {
+			return &models.SalesOrderDetailStoreResponse{}, removeCacheSalesOrderResult.ErrorLog
+		}
+
+		salesOrderJourneys := &models.SalesOrderJourneys{
+			SoCode:    salesOrder.SoCode,
+			SoId:      salesOrder.ID,
+			SoDate:    salesOrder.SoDate,
+			Status:    request.Status,
+			Remark:    "",
+			Reason:    request.Reason,
+			CreatedAt: &now,
+			UpdatedAt: &now,
+		}
+
+		createSalesOrderJourneysResultChan := make(chan *models.SalesOrderJourneysChan)
+		go u.salesOrderJourneysRepository.Insert(salesOrderJourneys, ctx, createSalesOrderJourneysResultChan)
+		createSalesOrderJourneysResult := <-createSalesOrderJourneysResultChan
+
+		if createSalesOrderJourneysResult.Error != nil {
+			return &models.SalesOrderDetailStoreResponse{}, createSalesOrderJourneysResult.ErrorLog
+		}
+
+	}
+
+	salesOrder.OrderSourceChanMap(getOrderSourceResult)
+	salesOrder.SalesOrderStatusChanMap(getOrderStatusResult)
+	salesOrder.AgentChanMap(getAgentResult)
+	salesOrder.StoreChanMap(getStoreResult)
+	salesOrder.UserChanMap(getUserResult)
+
+	salesOrderDetailReq := &models.SalesOrderDetail{
+		OrderStatusID: getOrderDetailStatusResult.OrderStatus.ID,
+		UpdatedAt:     &now,
+	}
+
+	// Update Sales Order Detail
+	updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
+	go u.salesOrderDetailRepository.UpdateByID(soDetailId, salesOrderDetailReq, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
+	updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
+
+	if updateSalesOrderDetailResult.Error != nil {
+		return &models.SalesOrderDetailStoreResponse{}, updateSalesOrderDetailResult.ErrorLog
+	}
+
+	for _, v := range salesOrder.SalesOrderDetails {
+		if v.ID == soDetailId {
+			v.OrderStatusID = getOrderDetailStatusResult.OrderStatus.ID
+			v.UpdatedAt = &now
+			break
+		}
+	}
+
+	salesOrderDetail := &models.SalesOrderDetailStoreResponse{}
+	salesOrderDetail.UpdateSalesOrderDetailByIdResponseMap(getSalesOrderDetailByIDResult.SalesOrderDetail, salesOrder.BrandID)
+
+	// Remove Cache Sales Order Detail
+	clearCacheSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
+	go u.salesOrderDetailRepository.RemoveCacheByID(soDetailId, ctx, clearCacheSalesOrderDetailResultChan)
+	clearCacheSalesOrderDetailResult := <-clearCacheSalesOrderDetailResultChan
+
+	if clearCacheSalesOrderDetailResult.Error != nil {
+		return &models.SalesOrderDetailStoreResponse{}, clearCacheSalesOrderDetailResult.ErrorLog
+
+	}
+
+	salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{
+		SoDetailId:   soDetailId,
+		SoDetailCode: getSalesOrderDetailByIDResult.SalesOrderDetail.SoDetailCode,
+		Status:       request.Status,
+		Remark:       "",
+		Reason:       request.Reason,
+		CreatedAt:    &now,
+		UpdatedAt:    &now,
+	}
+
+	createSalesOrderDetailJourneysResultChan := make(chan *models.SalesOrderDetailJourneysChan)
+	go u.salesOrderDetailJourneysRepository.Insert(salesOrderDetailJourneys, ctx, createSalesOrderDetailJourneysResultChan)
+	createSalesOrderDetailJourneysResult := <-createSalesOrderDetailJourneysResultChan
+
+	if createSalesOrderDetailJourneysResult.Error != nil {
+		return &models.SalesOrderDetailStoreResponse{}, createSalesOrderDetailJourneysResult.ErrorLog
+	}
+
+	salesOrderLog := &models.SalesOrderLog{
+		RequestID: "",
+		SoCode:    salesOrder.SoCode,
+		Data:      salesOrder,
+		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		Action:    constants.LOG_ACTION_MONGO_UPDATE,
+		CreatedAt: &now,
+		UpdatedAt: &now,
+	}
+
+	createSalesOrderLogResultChan := make(chan *models.SalesOrderLogChan)
+	go u.salesOrderLogRepository.Insert(salesOrderLog, ctx, createSalesOrderLogResultChan)
+	createSalesOrderLogResult := <-createSalesOrderLogResultChan
+
+	if createSalesOrderLogResult.Error != nil {
+		return &models.SalesOrderDetailStoreResponse{}, createSalesOrderLogResult.ErrorLog
+	}
+
+	keyKafka := []byte(getSalesOrderDetailByIDResult.SalesOrderDetail.SoDetailCode)
+	messageKafka, _ := json.Marshal(salesOrder)
+
+	err := u.kafkaClient.WriteToTopic(constants.UPDATE_SALES_ORDER_DETAIL_TOPIC, keyKafka, messageKafka)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		return &models.SalesOrderDetailStoreResponse{}, errorLogData
+	}
 
 	return salesOrderDetail, nil
-
 }
 
 func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog) {
@@ -1647,7 +1947,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 
 func (u *salesOrderUseCase) updateSOValidation(salesOrderId int, orderStatusName string, ctx context.Context) error {
 
-	if orderStatusName != "open" && orderStatusName != "pending" {
+	if orderStatusName != constants.ORDER_STATUS_OPEN && orderStatusName != constants.ORDER_STATUS_PENDING && orderStatusName != constants.ORDER_STATUS_PARTIAL {
 		return fmt.Errorf("status sales order %s", orderStatusName)
 	}
 

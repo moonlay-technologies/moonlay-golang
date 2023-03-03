@@ -228,3 +228,15 @@ func (salesOrderDetail *SalesOrderDetailOpenSearch) SalesOrderDetailOpenSearchMa
 	salesOrderDetail.UpdatedAt = requestSalesOrderDetail.UpdatedAt
 	salesOrderDetail.DeletedAt = requestSalesOrderDetail.DeletedAt
 }
+
+func (v *SalesOrderDetailStoreResponse) UpdateSalesOrderDetailByIdResponseMap(request *SalesOrderDetail, brandId int) {
+	v.BrandID = brandId
+	v.ProductID = request.ProductID
+	v.UomID = request.UomID
+	v.Note = request.Note.String
+	v.Price = request.Price
+	v.Qty = request.Qty
+	v.SentQty = NullInt64{NullInt64: sql.NullInt64{Int64: int64(request.SentQty), Valid: true}}
+	v.ResidualQty = NullInt64{NullInt64: sql.NullInt64{Int64: int64(request.ResidualQty), Valid: true}}
+	return
+}

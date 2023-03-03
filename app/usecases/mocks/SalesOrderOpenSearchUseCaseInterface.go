@@ -83,7 +83,7 @@ func (_m *SalesOrderOpenSearchUseCaseInterface) SyncDetailToOpenSearchFromCreate
 }
 
 // SyncToOpenSearchFromUpdateEvent provides a mock function with given fields: salesOrder, ctx
-func (_m *SalesOrderOpenSearchUseCaseInterface) SyncDetailToOpenSearchFromUpdateEvent(salesOrderDetail *models.SalesOrderDetail, ctx context.Context) *model.ErrorLog {
+func (_m *SalesOrderOpenSearchUseCaseInterface) SyncDetailToOpenSearchFromUpdateEvent(salesOrder *models.SalesOrder, salesOrderDetail *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
 	ret := _m.Called(salesOrderDetail, ctx)
 
 	var r0 *model.ErrorLog
