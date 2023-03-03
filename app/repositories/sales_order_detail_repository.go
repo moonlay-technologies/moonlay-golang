@@ -331,13 +331,10 @@ func (r *salesOrderDetail) UpdateByID(id int, request *models.SalesOrderDetail, 
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
-	if request.SentQty != 0 {
-		query := fmt.Sprintf("%s=%v", "sent_qty", request.SentQty)
-		rawSqlQueries = append(rawSqlQueries, query)
-	}
-
-	if request.ResidualQty != 0 {
+	if request.ResidualQty != 0 || request.SentQty != 0 {
 		query := fmt.Sprintf("%s=%v", "residual_qty", request.ResidualQty)
+		rawSqlQueries = append(rawSqlQueries, query)
+		query = fmt.Sprintf("%s=%v", "sent_qty", request.SentQty)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
@@ -396,7 +393,6 @@ func (r *salesOrderDetail) UpdateByID(id int, request *models.SalesOrderDetail, 
 	}
 
 	response.ID = salesOrderDetailID
-	request.ID = int(salesOrderDetailID)
 	response.SalesOrderDetail = request
 	resultChan <- response
 	return

@@ -24,8 +24,8 @@ type MustActiveRequest struct {
 }
 
 type MustActiveRequestChan struct {
-	UniqueRequest *MustActiveRequest
-	Total         int64
+	UniqueRequest []*MustActiveRequest
+	Total         []int64
 	Error         error
 	ErrorLog      *model.ErrorLog
 	ID            int64 `json:"id,omitempty" bson:"id,omitempty"`

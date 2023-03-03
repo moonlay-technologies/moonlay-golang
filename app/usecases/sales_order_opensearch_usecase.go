@@ -6,15 +6,11 @@ import (
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/repositories"
-	mongoRepositories "order-service/app/repositories/mongod"
 	openSearchRepositories "order-service/app/repositories/open_search"
 	"order-service/global/utils/helper"
-	kafkadbo "order-service/global/utils/kafka"
 	"order-service/global/utils/model"
 	"strings"
 	"time"
-
-	"github.com/bxcodec/dbresolver"
 )
 
 type SalesOrderOpenSearchUseCaseInterface interface {
@@ -30,73 +26,29 @@ type SalesOrderOpenSearchUseCase struct {
 	salesOrderRepository                 repositories.SalesOrderRepositoryInterface
 	salesOrderDetailRepository           repositories.SalesOrderDetailRepositoryInterface
 	orderStatusRepository                repositories.OrderStatusRepositoryInterface
-	orderSourceRepository                repositories.OrderSourceRepositoryInterface
-	agentRepository                      repositories.AgentRepositoryInterface
-	brandRepository                      repositories.BrandRepositoryInterface
-	storeRepository                      repositories.StoreRepositoryInterface
 	productRepository                    repositories.ProductRepositoryInterface
 	uomRepository                        repositories.UomRepositoryInterface
-	deliveryOrderRepository              repositories.DeliveryOrderRepositoryInterface
-	salesOrderLogRepository              mongoRepositories.SalesOrderLogRepositoryInterface
-	userRepository                       repositories.UserRepositoryInterface
-	salesmanRepository                   repositories.SalesmanRepositoryInterface
-	categoryRepository                   repositories.CategoryRepositoryInterface
 	salesOrderOpenSearchRepository       openSearchRepositories.SalesOrderOpenSearchRepositoryInterface
 	salesOrderDetailOpenSearchRepository openSearchRepositories.SalesOrderDetailOpenSearchRepositoryInterface
 	deliveryOrderOpenSearchRepository    openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface
-	kafkaClient                          kafkadbo.KafkaClientInterface
-	db                                   dbresolver.DB
 	ctx                                  context.Context
 }
 
-func InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, uomRepository repositories.UomRepositoryInterface, deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, categoryRepository repositories.CategoryRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderDetailOpenSearchRepository openSearchRepositories.SalesOrderDetailOpenSearchRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context) SalesOrderOpenSearchUseCaseInterface {
+func InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, productRepository repositories.ProductRepositoryInterface, uomRepository repositories.UomRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderDetailOpenSearchRepository openSearchRepositories.SalesOrderDetailOpenSearchRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface) SalesOrderOpenSearchUseCaseInterface {
 	return &SalesOrderOpenSearchUseCase{
 		salesOrderRepository:                 salesOrderRepository,
 		salesOrderDetailRepository:           salesOrderDetailRepository,
 		orderStatusRepository:                orderStatusRepository,
-		orderSourceRepository:                orderSourceRepository,
-		agentRepository:                      agentRepository,
-		brandRepository:                      brandRepository,
-		storeRepository:                      storeRepository,
 		productRepository:                    productRepository,
 		uomRepository:                        uomRepository,
-		deliveryOrderRepository:              deliveryOrderRepository,
-		salesOrderLogRepository:              salesOrderLogRepository,
-		userRepository:                       userRepository,
-		salesmanRepository:                   salesmanRepository,
-		categoryRepository:                   categoryRepository,
 		salesOrderOpenSearchRepository:       salesOrderOpenSearchRepository,
 		salesOrderDetailOpenSearchRepository: salesOrderDetailOpenSearchRepository,
 		deliveryOrderOpenSearchRepository:    deliveryOrderOpenSearchRepository,
-		kafkaClient:                          kafkaClient,
-		db:                                   db,
-		ctx:                                  ctx,
 	}
 }
 
 func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(salesOrder *models.SalesOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
 	now := time.Now()
-
-	// deliveryOrdersRequest := &models.DeliveryOrderRequest{
-	// 	SalesOrderID: salesOrder.ID,
-	// }
-
-	// getDeliveryOrdersResultChan := make(chan *models.DeliveryOrdersChan)
-	// go u.deliveryOrderOpenSearchRepository.GetBySalesOrderID(deliveryOrdersRequest, getDeliveryOrdersResultChan)
-	// getDeliveryOrdersResult := <-getDeliveryOrdersResultChan
-	// deliveryOrdersFound := true
-
-	// if getDeliveryOrdersResult.Error != nil {
-	// 	deliveryOrdersFound = false
-	// 	if !strings.Contains(getDeliveryOrdersResult.Error.Error(), "not found") {
-	// 		errorLogData := helper.WriteLog(getDeliveryOrdersResult.Error, http.StatusInternalServerError, nil)
-	// 		return errorLogData
-	// 	}
-	// }
-
-	// if deliveryOrdersFound == true {
-	// 	salesOrder.DeliveryOrders = getDeliveryOrdersResult.DeliveryOrders
-	// }
 
 	for k, v := range salesOrder.SalesOrderDetails {
 		getProductResultChan := make(chan *models.ProductChan)
