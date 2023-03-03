@@ -3,6 +3,7 @@ package helper
 import (
 	"fmt"
 	"math/rand"
+	"order-service/app/models"
 	"strconv"
 	"time"
 )
@@ -52,4 +53,22 @@ func GenerateSODetailCode(soID int, agentID int, productID int, uomID int) (stri
 
 func GenerateUnprocessableErrorMessage(action_name, reason string) string {
 	return fmt.Sprintf("Proses %s tidak dapat dilakukan karena %s", action_name, reason)
+}
+
+func CheckSalesOrderDetailStatus(soDetailId int, isNot bool, status string, soDetails []*models.SalesOrderDetail) int {
+	total := 0
+
+	for _, v := range soDetails {
+		if isNot {
+			if v.ID != soDetailId && v.OrderStatusName != status {
+				total++
+			}
+		} else {
+			if v.ID != soDetailId && v.OrderStatusName == status {
+				total++
+			}
+		}
+	}
+
+	return total
 }

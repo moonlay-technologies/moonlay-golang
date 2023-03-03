@@ -139,6 +139,7 @@ func (k *kafkaClient) WriteToTopic(topic string, key []byte, message []byte) err
 	err := k.writer.WriteMessages(k.ctx,
 		kafka.Message{
 			Value: message,
+			Key:   key,
 		},
 	)
 

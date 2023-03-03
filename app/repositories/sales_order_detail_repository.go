@@ -271,10 +271,10 @@ func (r *salesOrderDetail) GetByID(id int, countOnly bool, ctx context.Context, 
 		if countOnly == false {
 			salesOrderDetail = models.SalesOrderDetail{}
 			err = r.db.QueryRow(""+
-				"SELECT id, product_id, uom_id, order_status_id, qty, sent_qty, residual_qty, price, note, so_detail_code, created_at "+
+				"SELECT id, product_id, uom_id, order_status_id, sales_order_id, qty, sent_qty, residual_qty, price, note, so_detail_code, created_at "+
 				"FROM sales_order_details as sod "+
 				"WHERE sod.deleted_at IS NULL AND sod.id = ?", id).
-				Scan(&salesOrderDetail.ID, &salesOrderDetail.ProductID, &salesOrderDetail.UomID, &salesOrderDetail.OrderStatusID, &salesOrderDetail.Qty, &salesOrderDetail.SentQty, &salesOrderDetail.ResidualQty, &salesOrderDetail.Price, &salesOrderDetail.Note, &salesOrderDetail.SoDetailCode, &salesOrderDetail.CreatedAt)
+				Scan(&salesOrderDetail.ID, &salesOrderDetail.ProductID, &salesOrderDetail.UomID, &salesOrderDetail.OrderStatusID, &salesOrderDetail.SalesOrderID, &salesOrderDetail.Qty, &salesOrderDetail.SentQty, &salesOrderDetail.ResidualQty, &salesOrderDetail.Price, &salesOrderDetail.Note, &salesOrderDetail.SoDetailCode, &salesOrderDetail.CreatedAt)
 
 			if err != nil {
 				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)

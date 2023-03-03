@@ -41,7 +41,7 @@ func InitUpdateSalesOrderDetailConsumerHandlerInterface(kafkaClient kafkadbo.Kaf
 }
 
 func (c *UpdateSalesOrderDetailConsumerHandler) ProcessMessage() {
-	fmt.Println("process", constants.DELETE_SALES_ORDER_TOPIC)
+	fmt.Println("process", constants.UPDATE_SALES_ORDER_DETAIL_TOPIC)
 	topic := c.args[1].(string)
 	groupID := c.args[2].(string)
 	reader := c.kafkaClient.SetConsumerGroupReader(topic, groupID)
@@ -54,9 +54,9 @@ func (c *UpdateSalesOrderDetailConsumerHandler) ProcessMessage() {
 
 		fmt.Printf("message at topic/partition/offset %v/%v/%v \n", m.Topic, m.Partition, m.Offset)
 
-		var salesOrderDetail models.SalesOrderDetail
-		fmt.Println("value = ", string(m.Value))
-		err = json.Unmarshal(m.Value, &salesOrderDetail)
+		var salesOrder models.SalesOrder
+		err = json.Unmarshal(m.Value, &salesOrder)
+		key := string(m.Key[:])
 		now := time.Now()
 		salesOrderLogResultChan := make(chan *models.SalesOrderLogChan)
 
@@ -65,7 +65,7 @@ func (c *UpdateSalesOrderDetailConsumerHandler) ProcessMessage() {
 			RequestID: "",
 			SoCode:    "",
 			Data:      m.Value,
-			Action:    constants.LOG_ACTION_MONGO_DELETE,
+			Action:    constants.LOG_ACTION_MONGO_UPDATE,
 			Status:    constants.LOG_STATUS_MONGO_ERROR,
 			CreatedAt: &now,
 		}
@@ -78,7 +78,7 @@ func (c *UpdateSalesOrderDetailConsumerHandler) ProcessMessage() {
 			continue
 		}
 
-		go c.salesOrderLogRepository.GetByCollumn(constants.COLUMN_SALES_ORDER_CODE, salesOrderDetail.SoDetailCode, false, c.ctx, salesOrderLogResultChan)
+		go c.salesOrderLogRepository.GetByCollumn(constants.COLUMN_SALES_ORDER_CODE, salesOrder.SoCode, false, c.ctx, salesOrderLogResultChan)
 		salesOrderDetailResult := <-salesOrderLogResultChan
 		if salesOrderDetailResult.Error != nil {
 			salesOrderLog.Error = salesOrderDetailResult.Error
@@ -90,7 +90,25 @@ func (c *UpdateSalesOrderDetailConsumerHandler) ProcessMessage() {
 		salesOrderLog = salesOrderDetailResult.SalesOrderLog
 		salesOrderLog.Status = constants.LOG_STATUS_MONGO_ERROR
 		salesOrderLog.UpdatedAt = &now
-		errorLog := c.salesOrderOpenSearchUseCase.SyncDetailToOpenSearchFromUpdateEvent(&salesOrderDetail, c.ctx)
+
+		errorLog := c.salesOrderOpenSearchUseCase.SyncToOpenSearchFromUpdateEvent(&salesOrder, c.ctx)
+		if errorLog.Err != nil {
+			dbTransaction.Rollback()
+			errorLogData := helper.WriteLogConsumer(constants.UPDATE_SALES_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, nil)
+			salesOrderLog.Error = errorLogData
+			go c.salesOrderLogRepository.UpdateByID(logId, salesOrderLog, c.ctx, salesOrderLogResultChan)
+			fmt.Println(errorLogData)
+			continue
+		}
+
+		salesOrderDetail := &models.SalesOrderDetail{}
+		for _, v := range salesOrder.SalesOrderDetails {
+			if v.SoDetailCode == key {
+				salesOrderDetail = v
+				break
+			}
+		}
+		errorLog = c.salesOrderOpenSearchUseCase.SyncDetailToOpenSearchFromUpdateEvent(&salesOrder, salesOrderDetail, dbTransaction, c.ctx)
 		if errorLog.Err != nil {
 			dbTransaction.Rollback()
 			errorLogData := helper.WriteLogConsumer(constants.UPDATE_SALES_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, nil)

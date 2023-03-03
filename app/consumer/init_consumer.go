@@ -145,3 +145,26 @@ func InitDeleteDeliveryOrderConsumer(kafkaClient kafkadbo.KafkaClientInterface, 
 	handler := InitDeleteDeliveryOrderConsumerHandlerInterface(kafkaClient, deliveryOrderLogRepository, salesOrderUseCase, deliveryOrderOpenSearchUseCase, database, ctx, args)
 	return handler
 }
+
+func InitUpdateSalesOrderDetailConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodbClient mongodb.MongoDBInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, database dbresolver.DB, redisdb redisdb.RedisInterface, ctx context.Context, args []interface{}) UpdateSalesOrderDetailConsumerHandlerInterface {
+	salesOrderRepository := repositories.InitSalesOrderRepository(database, redisdb)
+	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(database, redisdb)
+	orderStatusRepository := repositories.InitOrderStatusRepository(database, redisdb)
+	// orderSourceRepository := repositories.InitOrderSourceRepository(database, redisdb)
+	// agentRepository := repositories.InitAgentRepository(database, redisdb)
+	// brandRepository := repositories.InitBrandRepository(database, redisdb)
+	// storeRepository := repositories.InitStoreRepository(database, redisdb)
+	productRepository := repositories.InitProductRepository(database, redisdb)
+	uomRepository := repositories.InitUomRepository(database, redisdb)
+	salesOrderLogRepository := mongoRepo.InitSalesOrderLogRepository(mongodbClient)
+	// deliveryOrderRepository := repositories.InitDeliveryRepository(database, redisdb)
+	// userRepository := repositories.InitUserRepository(database, redisdb)
+	// salesmanRepository := repositories.InitSalesmanRepository(database, redisdb)
+	// categoryRepository := repositories.InitCategoryRepository(database, redisdb)
+	salesOrderOpenSearchRepository := openSearchRepo.InitSalesOrderOpenSearchRepository(opensearchClient)
+	salesOrderDetailOpenSearchRepository := openSearchRepo.InitSalesOrderDetailOpenSearchRepository(opensearchClient)
+	deliveryOrderOpenSearchRepository := openSearchRepo.InitDeliveryOrderOpenSearchRepository(opensearchClient)
+	salesOrderOpenSearchUseCase := usecases.InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, productRepository, uomRepository, salesOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, deliveryOrderOpenSearchRepository)
+	handler := InitUpdateSalesOrderDetailConsumerHandlerInterface(kafkaClient, salesOrderLogRepository, salesOrderOpenSearchUseCase, database, ctx, args)
+	return handler
+}

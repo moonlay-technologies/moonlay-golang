@@ -23,8 +23,8 @@ type SalesOrderControllerInterface interface {
 	Create(ctx *gin.Context)
 	Get(ctx *gin.Context)
 	UpdateByID(ctx *gin.Context)
+	UpdateSODetailByID(ctx *gin.Context)
 	UpdateSODetailBySOID(ctx *gin.Context)
-	// UpdateSODetailByID(ctx *gin.Context)
 	GetDetails(ctx *gin.Context)
 	GetDetailsBySoId(ctx *gin.Context)
 	GetDetailsById(ctx *gin.Context)
@@ -671,122 +671,105 @@ func (c *salesOrderController) UpdateByID(ctx *gin.Context) {
 	return
 }
 
-// func (c *salesOrderController) UpdateSODetailByID(ctx *gin.Context) {
-// 	var result baseModel.Response
-// 	var resultErrorLog *baseModel.ErrorLog
-// 	updateRequest := &models.SalesOrderDetailUpdateRequest{}
+func (c *salesOrderController) UpdateSODetailByID(ctx *gin.Context) {
+	var result baseModel.Response
+	var resultErrorLog *baseModel.ErrorLog
+	updateRequest := &models.UpdateSalesOrderDetailByIdRequest{}
 
-// 	ctx.Set("full_path", ctx.FullPath())
-// 	ctx.Set("method", ctx.Request.Method)
+	ctx.Set("full_path", ctx.FullPath())
+	ctx.Set("method", ctx.Request.Method)
 
-// 	soIds := ctx.Param("so-id")
-// 	soId, err := strconv.Atoi(soIds)
+	soIds := ctx.Param("so-id")
+	soId, err := strconv.Atoi(soIds)
 
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'so-id' harus bernilai integer")
-// 		resultErrorLog.Message = err.Error()
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = resultErrorLog
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
+	if err != nil {
+		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, "sales order id harus bernilai integer")},
+			SystemMessage: []string{"Invalid Process"},
+			StatusCode:    http.StatusUnprocessableEntity,
+		})
+		result.StatusCode = http.StatusUnprocessableEntity
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
 
-// 	ids := ctx.Param("id")
-// 	id, err := strconv.Atoi(ids)
+	soDetailIds := ctx.Param("so-detail-id")
+	soDetailId, err := strconv.Atoi(soDetailIds)
 
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'id' harus bernilai integer")
-// 		resultErrorLog.Message = err.Error()
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = resultErrorLog
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
+	if err != nil {
+		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, "sales order detail id harus bernilai integer")},
+			SystemMessage: []string{"Invalid Process"},
+			StatusCode:    http.StatusUnprocessableEntity,
+		})
+		result.StatusCode = http.StatusUnprocessableEntity
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
 
-// 	err = ctx.BindJSON(updateRequest)
+	err = ctx.BindJSON(updateRequest)
 
-// 	if err != nil {
-// 		var unmarshalTypeError *json.UnmarshalTypeError
+	if err != nil {
+		var unmarshalTypeError *json.UnmarshalTypeError
 
-// 		if errors.As(err, &unmarshalTypeError) {
-// 			c.requestValidationMiddleware.DataTypeValidation(ctx, err, unmarshalTypeError)
-// 			return
-// 		} else {
-// 			c.requestValidationMiddleware.MandatoryValidation(ctx, err)
-// 			return
-// 		}
-// 	}
+		if errors.As(err, &unmarshalTypeError) {
+			c.requestValidationMiddleware.DataTypeValidation(ctx, err, unmarshalTypeError)
+			return
+		} else {
+			c.requestValidationMiddleware.MandatoryValidation(ctx, err)
+			return
+		}
+	}
 
-// 	mustActiveField := []*models.MustActiveRequest{
-// 		{
-// 			Table:    "products",
-// 			ReqField: "product_id",
-// 			Clause:   fmt.Sprintf("id = %d AND isActive = %d", updateRequest.ProductID, 1),
-// 		},
-// 		{
-// 			Table:    "uoms",
-// 			ReqField: "uom_id",
-// 			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", updateRequest.UomID),
-// 		},
-// 		{
-// 			Table:    "brands",
-// 			ReqField: "brand_id",
-// 			Clause:   fmt.Sprintf("id = %d AND status_active = %d", updateRequest.BrandID, 1),
-// 		},
-// 	}
+	dbTransaction, err := c.db.BeginTx(ctx, nil)
 
-// 	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
-// 	if err != nil {
-// 		return
-// 	}
+	if err != nil {
+		errorLog := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		resultErrorLog = errorLog
+		result.StatusCode = http.StatusInternalServerError
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
 
-// 	dbTransaction, err := c.db.BeginTx(ctx, nil)
+	salesOrderDetail, errorLog := c.salesOrderUseCase.UpdateSODetailById(soId, soDetailId, updateRequest, dbTransaction, ctx)
 
-// 	if err != nil {
-// 		errorLog := helper.WriteLog(err, http.StatusInternalServerError, nil)
-// 		resultErrorLog = errorLog
-// 		result.StatusCode = http.StatusInternalServerError
-// 		result.Error = resultErrorLog
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
+	if errorLog != nil {
+		err = dbTransaction.Rollback()
 
-// 	salesOrderDetail, errorLog := c.salesOrderUseCase.UpdateSODetailById(soId, id, updateRequest, dbTransaction, ctx)
+		if err != nil {
+			errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			resultErrorLog = errorLog
+			result.StatusCode = http.StatusInternalServerError
+			result.Error = resultErrorLog
+			ctx.JSON(result.StatusCode, result)
+			return
+		}
 
-// 	if errorLog != nil {
-// 		err = dbTransaction.Rollback()
+		result.StatusCode = errorLog.StatusCode
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
 
-// 		if err != nil {
-// 			errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
-// 			resultErrorLog = errorLog
-// 			result.StatusCode = http.StatusInternalServerError
-// 			result.Error = resultErrorLog
-// 			ctx.JSON(result.StatusCode, result)
-// 			return
-// 		}
+	err = dbTransaction.Commit()
 
-// 		result.StatusCode = errorLog.StatusCode
-// 		result.Error = errorLog
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
+	if err != nil {
+		errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		resultErrorLog = errorLog
+		result.StatusCode = http.StatusInternalServerError
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
 
-// 	err = dbTransaction.Commit()
-
-// 	if err != nil {
-// 		errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
-// 		resultErrorLog = errorLog
-// 		result.StatusCode = http.StatusInternalServerError
-// 		result.Error = resultErrorLog
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	result.Data = salesOrderDetail
-// 	result.StatusCode = http.StatusOK
-// 	ctx.JSON(http.StatusOK, result)
-// 	return
-// }
+	result.Data = salesOrderDetail
+	result.StatusCode = http.StatusOK
+	ctx.JSON(http.StatusOK, result)
+	return
+}
 
 func (c *salesOrderController) UpdateSODetailBySOID(ctx *gin.Context) {
 	var result baseModel.Response
@@ -797,8 +780,8 @@ func (c *salesOrderController) UpdateSODetailBySOID(ctx *gin.Context) {
 	ctx.Set("full_path", ctx.FullPath())
 	ctx.Set("method", ctx.Request.Method)
 
-	ids := ctx.Param("so-id")
-	soId, err := strconv.Atoi(ids)
+	soIds := ctx.Param("so-id")
+	soId, err := strconv.Atoi(soIds)
 
 	if err != nil {
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
@@ -1637,14 +1620,17 @@ func (c *salesOrderController) GetDetailsById(ctx *gin.Context) {
 	var result baseModel.Response
 	var resultErrorLog *baseModel.ErrorLog
 
-	soDetailIds := ctx.Param("id")
+	soDetailIds := ctx.Param("so-detail-id")
 	soDetailId, err := strconv.Atoi(soDetailIds)
 
 	if err != nil {
-		err = helper.NewError("Parameter 'so-id' harus bernilai integer")
-		resultErrorLog.Message = err.Error()
-		result.StatusCode = http.StatusBadRequest
-		result.Error = resultErrorLog
+		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, "sales order detail id harus bernilai integer")},
+			SystemMessage: []string{"Invalid Process"},
+			StatusCode:    http.StatusUnprocessableEntity,
+		})
+		result.StatusCode = http.StatusUnprocessableEntity
+		result.Error = errorLog
 		ctx.JSON(result.StatusCode, result)
 		return
 	}
