@@ -66,6 +66,17 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		}
 	}
 
+	dateField := []*models.DateInputRequest{
+		{
+			Field: "so_date",
+			Value: insertRequest.DoRefDate,
+		},
+	}
+	err = c.requestValidationMiddleware.DateInputValidation(ctx, dateField, constants.ERROR_ACTION_NAME_CREATE)
+	if err != nil {
+		return
+	}
+
 	uniqueField := []*models.UniqueRequest{
 		{
 			Table: constants.DELIVERY_ORDERS_TABLE,
@@ -168,7 +179,7 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		return
 	}
 
-	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
+	err = c.requestValidationMiddleware.MustActiveValidation422(ctx, mustActiveField)
 	if err != nil {
 		return
 	}
