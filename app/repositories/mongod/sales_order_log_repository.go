@@ -18,6 +18,7 @@ import (
 
 type SalesOrderLogRepositoryInterface interface {
 	Insert(request *models.SalesOrderLog, ctx context.Context, result chan *models.SalesOrderLogChan)
+	Get(request *models.SalesOrderEventLogRequest, countOnly bool, ctx context.Context, resultChan chan *models.GetSalesOrderLogsChan)
 	GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.SalesOrderLogChan)
 	GetByCollumn(collumnName string, value string, countOnly bool, ctx context.Context, resultChan chan *models.SalesOrderLogChan)
 	UpdateByID(ID string, request *models.SalesOrderLog, ctx context.Context, result chan *models.SalesOrderLogChan)
@@ -33,6 +34,120 @@ func InitSalesOrderLogRepository(mongod mongodb.MongoDBInterface) SalesOrderLogR
 	return &salesOrderLogRepository{
 		mongod:     mongod,
 		collection: constants.SALES_ORDER_TABLE_LOGS,
+	}
+}
+
+func (r *salesOrderLogRepository) Get(request *models.SalesOrderEventLogRequest, countOnly bool, ctx context.Context, resultChan chan *models.GetSalesOrderLogsChan) {
+	response := &models.GetSalesOrderLogsChan{}
+	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
+	filter := bson.M{}
+	sort := bson.M{}
+	asc := 1
+	desc := -1
+
+	if request.SortField == "created_at" && request.SortValue == "asc" {
+		sort = bson.M{
+			"created_at": asc,
+		}
+	} else if request.SortField == "updated_at" && request.SortValue == "asc" {
+		sort = bson.M{
+			"updated_at": asc,
+		}
+	} else if request.SortField == "created_at" && request.SortValue == "desc" {
+		sort = bson.M{
+			"created_at": desc,
+		}
+	} else if request.SortField == "updated_at" && request.SortValue == "desc" {
+		sort = bson.M{
+			"updated_at": desc,
+		}
+	} else {
+		sort = bson.M{
+			"created_at": desc,
+		}
+	}
+
+	// if request.GlobalSearchValue != "" {
+	// 	filter = bson.M{
+	// 		"$or": []bson.M{
+	// 			bson.M{"$in":},
+	// 			bson.M{},
+	// 		},
+	// }
+
+	if request.RequestID != "" {
+		filter = bson.M{"request_id": request.RequestID}
+	}
+
+	if request.SoCode != "" {
+		filter["so_code"] = request.SoCode
+	}
+
+	if request.Status != "" {
+		filter["status"] = request.Status
+	}
+
+	if request.Action != "" {
+		filter["action"] = request.Action
+	}
+
+	if request.AgentID > 0 {
+		filter["data.agent_id"] = request.AgentID
+	}
+
+	option := options.Find().SetSkip(int64((request.Page - 1) * request.PerPage)).SetLimit(int64(request.PerPage)).SetSort(sort)
+	total, err := collection.CountDocuments(ctx, filter)
+	fmt.Println("errs", err)
+	fmt.Println("total", total)
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	if total == 0 {
+		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	if countOnly == false {
+		salesOrderLogs := []*models.GetSalesOrderLog{}
+		cursor, errs := collection.Find(ctx, filter, option)
+
+		if errs != nil {
+			response.Error = err
+			resultChan <- response
+			return
+		}
+		defer cursor.Close(ctx)
+
+		for cursor.Next(ctx) {
+			var salesOrderLog *models.GetSalesOrderLog
+			if err := cursor.Decode(&salesOrderLog); err != nil {
+				response.Error = err
+				resultChan <- response
+				return
+			}
+
+			salesOrderLogs = append(salesOrderLogs, salesOrderLog)
+		}
+
+		response.SalesOrderLogs = salesOrderLogs
+		response.Total = total
+		response.Error = nil
+		resultChan <- response
+		return
+	} else {
+		response.SalesOrderLogs = nil
+		response.Total = total
+		resultChan <- response
+		return
 	}
 }
 
