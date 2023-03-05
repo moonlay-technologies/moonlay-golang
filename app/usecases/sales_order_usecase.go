@@ -30,7 +30,7 @@ type SalesOrderUseCaseInterface interface {
 	GetBySalesmanID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
 	GetByOrderStatusID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
 	GetByOrderSourceID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
-	GetSyncToKafkaHistories(request *models.SalesOrderEventLogRequest, ctx context.Context) ([]*models.GetSalesOrderLog, *model.ErrorLog)
+	GetSyncToKafkaHistories(request *models.SalesOrderEventLogRequest, ctx context.Context) ([]*models.SalesOrderEventLogResponse, *model.ErrorLog)
 	UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
 	UpdateSODetailById(soId, id int, request *models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetail, *model.ErrorLog)
 	UpdateSODetailBySOId(soId int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
@@ -467,21 +467,56 @@ func (u *salesOrderUseCase) Get(request *models.SalesOrderRequest) (*models.Sale
 	return salesOrders, &model.ErrorLog{}
 }
 
-type dataStruct struct {
-	Key   string      `bson:"Key"`
-	Value interface{} `bson:"Value"`
-}
-
-func (u *salesOrderUseCase) GetSyncToKafkaHistories(request *models.SalesOrderEventLogRequest, ctx context.Context) ([]*models.GetSalesOrderLog, *model.ErrorLog) {
+func (u *salesOrderUseCase) GetSyncToKafkaHistories(request *models.SalesOrderEventLogRequest, ctx context.Context) ([]*models.SalesOrderEventLogResponse, *model.ErrorLog) {
 	getSalesOrderLogResultChan := make(chan *models.GetSalesOrderLogsChan)
 	go u.salesOrderLogRepository.Get(request, false, ctx, getSalesOrderLogResultChan)
 	getSalesOrderLogResult := <-getSalesOrderLogResultChan
 
 	if getSalesOrderLogResult.Error != nil {
-		return []*models.GetSalesOrderLog{}, getSalesOrderLogResult.ErrorLog
+		return []*models.SalesOrderEventLogResponse{}, getSalesOrderLogResult.ErrorLog
 	}
 
-	return getSalesOrderLogResult.SalesOrderLogs, nil
+	salesOrderEventLogs := []*models.SalesOrderEventLogResponse{}
+	for _, v := range getSalesOrderLogResult.SalesOrderLogs {
+		salesOrderEventLog := models.SalesOrderEventLogResponse{
+			ID:        v.ID,
+			RequestID: v.RequestID,
+			SoCode:    v.SoCode,
+			Data: &models.DataEventLogResponse{
+				AgentID:      v.Data.AgentID,
+				AgentName:    v.Data.AgentName.String,
+				StoreCode:    v.Data.StoreCode.String,
+				StoreName:    v.Data.StoreName.String,
+				SalesID:      int(v.Data.SalesmanID.Int64),
+				SalesName:    v.Data.SalesmanName.String,
+				OrderDate:    v.Data.CreatedAt,
+				StartOrderAt: v.Data.StartCreatedDate,
+				OrderNote:    v.Data.Note.String,
+				InternalNote: v.Data.InternalComment.String,
+				BrandCode:    v.Data.BrandID,
+				BrandName:    v.Data.BrandName,
+				AddressID:    v.Data.StoreID,
+				Address:      v.Data.StoreAddress.String,
+			},
+			Status:    v.Status,
+			Action:    v.Action,
+			CreatedAt: v.CreatedAt,
+			UpdatedAt: v.UpdatedAt,
+		}
+
+		// orderQty := 0
+		for _, x := range v.Data.SalesOrderDetails {
+			// orderQty += x.Qty
+			salesOrderEventLog.Data.ProductCode = x.ProductSKU
+			salesOrderEventLog.Data.OrderQty = x.Qty
+			salesOrderEventLog.Data.ProductUnit = x.ProductName
+		}
+		// salesOrderEventLog.Data.OrderQty = orderQty
+
+		salesOrderEventLogs = append(salesOrderEventLogs, &salesOrderEventLog)
+	}
+
+	return salesOrderEventLogs, nil
 }
 
 func (u *salesOrderUseCase) GetByID(request *models.SalesOrderRequest, ctx context.Context) ([]*models.SalesOrderOpenSearchResponse, *model.ErrorLog) {

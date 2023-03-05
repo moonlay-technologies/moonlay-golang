@@ -67,3 +67,34 @@ type SalesOrderEventLogRequest struct {
 	Action            string `json:"action,omitempty" bson:"action,omitempty"`
 	AgentID           int    `json:"agent_id,omitempty" bson:"agent_id,omitempty"`
 }
+
+type SalesOrderEventLogResponse struct {
+	ID        primitive.ObjectID    `json:"_id,omitempty" bson:"_id,omitempty"`
+	RequestID string                `json:"request_id,omitempty" bson:"request_id,omitempty"`
+	SoCode    string                `json:"so_code,omitempty" bson:"so_code,omitempty"`
+	Data      *DataEventLogResponse `json:"data,omitempty" bson:"data,omitempty"`
+	Status    string                `json:"status,omitempty" bson:"status,omitempty"`
+	Action    string                `json:"action,omitempty" bson:"action,omitempty"`
+	CreatedAt *time.Time            `json:"created_at,omitempty" bson:"created_at,omitempty"`
+	UpdatedAt *time.Time            `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
+}
+
+type DataEventLogResponse struct {
+	AgentID      int        `json:"agent_id,omitempty" bson:"agent_id,omitempty"`
+	AgentName    string     `json:"agent_name,omitempty" bson:"agent_name,omitempty"`
+	StoreCode    string     `json:"store_code,omitempty" bson:"store_code,omitempty"`
+	StoreName    string     `json:"store_name,omitempty" bson:"store_name,omitempty"`
+	SalesID      int        `json:"sales_id,omitempty" bson:"sales_id,omitempty"`
+	SalesName    string     `json:"sales_name,omitempty" bson:"sales_name,omitempty"`
+	OrderDate    *time.Time `json:"order_date,omitempty" bson:"order_date,omitempty"`
+	StartOrderAt *time.Time `json:"start_order_at,omitempty" bson:"start_order_at,omitempty"`
+	OrderNote    string     `json:"order_note,omitempty" bson:"order_note,omitempty"`
+	InternalNote string     `json:"internal_note,omitempty" bson:"internal_note,omitempty"`
+	BrandCode    int        `json:"brand_code,omitempty" bson:"brand_code,omitempty"`
+	BrandName    string     `json:"brand_name,omitempty" bson:"brand_name,omitempty"`
+	ProductCode  string     `json:"product_code,omitempty" bson:"product_code,omitempty"`
+	OrderQty     int        `json:"order_qty,omitempty" bson:"order_qty,omitempty"`
+	ProductUnit  string     `json:"product_unit,omitempty" bson:"product_unit,omitempty"`
+	AddressID    int        `json:"address_id,omitempty" bson:"address_id,omitempty"`
+	Address      string     `json:"address,omitempty" bson:"address,omitempty"`
+}

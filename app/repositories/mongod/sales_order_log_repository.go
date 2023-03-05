@@ -70,13 +70,13 @@ func (r *salesOrderLogRepository) Get(request *models.SalesOrderEventLogRequest,
 	// if request.GlobalSearchValue != "" {
 	// 	filter = bson.M{
 	// 		"$or": []bson.M{
-	// 			bson.M{"$in":},
-	// 			bson.M{},
+	// 			{bson.M{"so_code": {"$regex": request.GlobalSearchValue}}},
+	// 			{bson.M{"status": {"$regex": request.GlobalSearchValue}}},
 	// 		},
 	// }
 
 	if request.RequestID != "" {
-		filter = bson.M{"request_id": request.RequestID}
+		filter["request_id"] = request.RequestID
 	}
 
 	if request.SoCode != "" {
@@ -94,7 +94,7 @@ func (r *salesOrderLogRepository) Get(request *models.SalesOrderEventLogRequest,
 	if request.AgentID > 0 {
 		filter["data.agent_id"] = request.AgentID
 	}
-
+	fmt.Println("filter", filter)
 	option := options.Find().SetSkip(int64((request.Page - 1) * request.PerPage)).SetLimit(int64(request.PerPage)).SetSort(sort)
 	total, err := collection.CountDocuments(ctx, filter)
 	fmt.Println("errs", err)
