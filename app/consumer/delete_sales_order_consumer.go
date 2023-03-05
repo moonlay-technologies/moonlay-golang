@@ -55,7 +55,6 @@ func (c *DeleteSalesOrderConsumerHandler) ProcessMessage() {
 		fmt.Printf("message at topic/partition/offset %v/%v/%v \n", m.Topic, m.Partition, m.Offset)
 
 		var salesOrder models.SalesOrder
-		fmt.Println("value = ", string(m.Value))
 		err = json.Unmarshal(m.Value, &salesOrder)
 		now := time.Now()
 		salesOrderLogResultChan := make(chan *models.SalesOrderLogChan)
@@ -77,7 +76,6 @@ func (c *DeleteSalesOrderConsumerHandler) ProcessMessage() {
 			fmt.Println(errorLogData)
 			continue
 		}
-		fmt.Println("c = ", salesOrder.ID)
 
 		go c.salesOrderLogRepository.GetByCollumn(constants.COLUMN_SALES_ORDER_CODE, salesOrder.SoCode, false, c.ctx, salesOrderLogResultChan)
 		salesOrderDetailResult := <-salesOrderLogResultChan

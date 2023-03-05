@@ -2,8 +2,10 @@ package middlewares
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"order-service/app/models"
 	"order-service/global/utils/helper"
 	baseModel "order-service/global/utils/model"
 	"os"
@@ -38,14 +40,12 @@ func BasicAuthMiddleware() gin.HandlerFunc {
 }
 
 func authenticateUser(tokenString string, c *gin.Context) bool {
-	// user := models.UserClaims{}
-
-	// fetch user from database. Here db.Client() is connection to your database. You will need to import your db package above.
-	// This is just for example purpose
-	// err := db.Where(models.User{Login: username, Password: password}).FirstOrCreate(&user)
-	// if err.Error != nil {
-	// 	return false
-	// }
+	user := models.UserClaims{}
+	token, _ := base64.StdEncoding.DecodeString(tokenString)
+	fmt.Println("parsed token = ", string(token))
+	json.Unmarshal(token, &user)
+	fmt.Println(user.UserEmail)
+	c.Set("user", &user)
 	return true
 }
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
@@ -87,7 +86,6 @@ func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.Deli
 
 func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.DeliveryOrder, *model.ErrorLog) {
 	now := time.Now()
-
 	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
 	go u.salesOrderRepository.GetByID(request.SalesOrderID, false, ctx, getSalesOrderResultChan)
 	getSalesOrderResult := <-getSalesOrderResultChan
@@ -194,7 +192,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	deliveryOrder.StoreID = getStoreResult.Store.ID
 	deliveryOrder.DoCode = helper.GenerateDOCode(getAgentResult.Agent.ID, getOrderSourceResult.OrderSource.Code)
 	deliveryOrder.DoDate = now.Format("2006-01-02")
-	deliveryOrder.CreatedBy = getUserResult.User.ID
+	deliveryOrder.CreatedBy = ctx.Value("user").(*models.UserClaims).UserID
 	deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
 	deliveryOrder.Brand = getBrandResult.Brand
 	if getSalesmanResult.Salesman != nil {
@@ -220,11 +218,6 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 			return &models.DeliveryOrder{}, getSalesOrderDetailResult.ErrorLog
 		}
 
-		fmt.Println("sid get = ", getSalesOrderDetailResult.SalesOrderDetail.ID)
-		fmt.Println("snt get = ", getSalesOrderDetailResult.SalesOrderDetail.SentQty)
-		fmt.Println("res get = ", getSalesOrderDetailResult.SalesOrderDetail.ResidualQty)
-		fmt.Println("qty get = ", getSalesOrderDetailResult.SalesOrderDetail.Qty)
-
 		getOrderStatusDetailResultChan := make(chan *models.OrderStatusChan)
 		go u.orderStatusRepository.GetByID(getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID, false, ctx, getOrderStatusDetailResultChan)
 		getOrderStatusDetailResult := <-getOrderStatusDetailResultChan
@@ -237,7 +230,6 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		getSalesOrderDetailResult.SalesOrderDetail.SentQty += doDetail.Qty
 		getSalesOrderDetailResult.SalesOrderDetail.ResidualQty -= doDetail.Qty
 		totalResidualQty += getSalesOrderDetailResult.SalesOrderDetail.ResidualQty
-		fmt.Println("total residual = ", totalResidualQty)
 		statusName := "partial"
 
 		if getSalesOrderDetailResult.SalesOrderDetail.ResidualQty == 0 {
@@ -247,11 +239,6 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		getOrderStatusSODetailResultChan := make(chan *models.OrderStatusChan)
 		go u.orderStatusRepository.GetByNameAndType(statusName, "sales_order_detail", false, ctx, getOrderStatusSODetailResultChan)
 		getOrderStatusSODetailResult := <-getOrderStatusSODetailResultChan
-
-		fmt.Println("sid cnt = ", getSalesOrderDetailResult.SalesOrderDetail.ID)
-		fmt.Println("snt cnt = ", getSalesOrderDetailResult.SalesOrderDetail.SentQty)
-		fmt.Println("res cnt = ", getSalesOrderDetailResult.SalesOrderDetail.ResidualQty)
-		fmt.Println("qty cnt = ", getSalesOrderDetailResult.SalesOrderDetail.Qty)
 
 		if getOrderStatusSODetailResult.Error != nil {
 			return &models.DeliveryOrder{}, getOrderStatusSODetailResult.ErrorLog
@@ -298,11 +285,6 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 			return &models.DeliveryOrder{}, createDeliveryOrderDetailResult.ErrorLog
 		}
 
-		fmt.Println("sid ins = ", getSalesOrderDetailResult.SalesOrderDetail.ID)
-		fmt.Println("snt ins = ", getSalesOrderDetailResult.SalesOrderDetail.SentQty)
-		fmt.Println("res ins = ", getSalesOrderDetailResult.SalesOrderDetail.ResidualQty)
-		fmt.Println("qty ins = ", getSalesOrderDetailResult.SalesOrderDetail.Qty)
-
 		updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
 		go u.salesOrderDetailRepository.UpdateByID(getSalesOrderDetailResult.SalesOrderDetail.ID, getSalesOrderDetailResult.SalesOrderDetail, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
 		updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
@@ -311,26 +293,17 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 			return &models.DeliveryOrder{}, updateSalesOrderDetailResult.ErrorLog
 		}
 
-		fmt.Println("sid upt = ", getSalesOrderDetailResult.SalesOrderDetail.ID)
-		fmt.Println("snt upt = ", getSalesOrderDetailResult.SalesOrderDetail.SentQty)
-		fmt.Println("res upt = ", getSalesOrderDetailResult.SalesOrderDetail.ResidualQty)
-		fmt.Println("qty upt = ", getSalesOrderDetailResult.SalesOrderDetail.Qty)
-
 		deliveryOrderDetail.ID = int(createDeliveryOrderDetailResult.ID)
 		deliveryOrderDetails = append(deliveryOrderDetails, deliveryOrderDetail)
 		getSalesOrderResult.SalesOrder.SalesOrderDetails = append(getSalesOrderResult.SalesOrder.SalesOrderDetails, getSalesOrderDetailResult.SalesOrderDetail)
-		fmt.Println("total residual = ", totalResidualQty)
 	}
 
 	deliveryOrder.DeliveryOrderDetails = deliveryOrderDetails
-	fmt.Println("total residual 1 = ", totalResidualQty)
 	if totalResidualQty == 0 {
 		getSalesOrderResult.SalesOrder.OrderStatusID = 8
 	} else {
 		getSalesOrderResult.SalesOrder.OrderStatusID = 7
 	}
-
-	fmt.Println("status = ", getSalesOrderResult.SalesOrder.OrderStatusID)
 
 	getOrderStatusSOResultChan := make(chan *models.OrderStatusChan)
 	go u.orderStatusRepository.GetByID(getSalesOrderResult.SalesOrder.OrderStatusID, false, ctx, getOrderStatusSOResultChan)
@@ -381,13 +354,6 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		return &models.DeliveryOrder{}, errorLogData
-	}
-	fmt.Println("status = ", deliveryOrder.SalesOrder.OrderStatusID)
-	for _, v := range deliveryOrder.SalesOrder.SalesOrderDetails {
-		fmt.Println("sid rst = ", v.ID)
-		fmt.Println("snt rst = ", v.SentQty)
-		fmt.Println("res rst = ", v.ResidualQty)
-		fmt.Println("qty rst = ", v.Qty)
 	}
 
 	return deliveryOrder, nil
@@ -1006,7 +972,6 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 	if deleteDeliveryOrderResult.ErrorLog != nil {
 		return deleteDeliveryOrderResult.ErrorLog
 	}
-	fmt.Println(getSalesOrderByIDResult.SalesOrder.OrderStatusID)
 	if totalSentQty > 0 {
 		getSalesOrderByIDResult.SalesOrder.OrderStatusID = 7
 	} else {

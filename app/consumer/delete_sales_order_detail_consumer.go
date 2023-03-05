@@ -55,7 +55,6 @@ func (c *DeleteSalesOrderDetailConsumerHandler) ProcessMessage() {
 		fmt.Printf("message at topic/partition/offset %v/%v/%v \n", m.Topic, m.Partition, m.Offset)
 
 		var salesOrderDetail models.SalesOrderDetail
-		fmt.Println("value = ", string(m.Value))
 		err = json.Unmarshal(m.Value, &salesOrderDetail)
 		now := time.Now()
 		salesOrderLogResultChan := make(chan *models.SalesOrderLogChan)

@@ -21,6 +21,7 @@ type RequestValidationMiddlewareInterface interface {
 	OrderSourceValidation(ctx *gin.Context, orderSourceId int, soRefCode, actionName string) error
 	UniqueValidation(ctx *gin.Context, value []*models.UniqueRequest) error
 	MustActiveValidation(ctx *gin.Context, value []*models.MustActiveRequest) error
+	MustActiveValidation422(ctx *gin.Context, value []*models.MustActiveRequest) error
 	DateInputValidation(ctx *gin.Context, value []*models.DateInputRequest, actionName string) error
 	MustEmptyValidation(ctx *gin.Context, value []*models.MustEmptyValidationRequest) error
 	AgentIdValidation(ctx *gin.Context, agentId, userId int, actionName string) error
@@ -151,7 +152,14 @@ func (u *requestValidationMiddleware) UniqueValidation(ctx *gin.Context, value [
 	return error
 }
 
+func (u *requestValidationMiddleware) MustActiveValidation422(ctx *gin.Context, value []*models.MustActiveRequest) error {
+	return u.BaseMustActiveValidation(422, ctx, value)
+}
 func (u *requestValidationMiddleware) MustActiveValidation(ctx *gin.Context, value []*models.MustActiveRequest) error {
+	return u.BaseMustActiveValidation(417, ctx, value)
+}
+
+func (u *requestValidationMiddleware) BaseMustActiveValidation(responseCode int, ctx *gin.Context, value []*models.MustActiveRequest) error {
 	var result baseModel.Response
 	messages := []string{}
 	systemMessages := []string{}
@@ -177,10 +185,10 @@ func (u *requestValidationMiddleware) MustActiveValidation(ctx *gin.Context, val
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       messages,
 			SystemMessage: systemMessages,
-			StatusCode:    http.StatusUnprocessableEntity,
+			StatusCode:    responseCode,
 		})
 
-		result.StatusCode = http.StatusExpectationFailed
+		result.StatusCode = responseCode
 		result.Error = errorLog
 		ctx.JSON(result.StatusCode, result)
 		error = fmt.Errorf("Inactive value!")

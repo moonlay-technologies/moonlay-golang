@@ -92,11 +92,6 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(deliver
 			return errorLogData
 		}
 
-		fmt.Println("sid get = ", getSalesOrderDetailResult.SalesOrderDetail.ID)
-		fmt.Println("snt get = ", getSalesOrderDetailResult.SalesOrderDetail.SentQty)
-		fmt.Println("res get = ", getSalesOrderDetailResult.SalesOrderDetail.ResidualQty)
-		fmt.Println("qty get = ", getSalesOrderDetailResult.SalesOrderDetail.Qty)
-
 		getProductResultChan := make(chan *models.ProductChan)
 		go u.productRepository.GetByID(v.ProductID, false, ctx, getProductResultChan)
 		getProductResult := <-getProductResultChan
