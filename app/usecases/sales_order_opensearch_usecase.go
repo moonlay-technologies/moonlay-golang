@@ -9,7 +9,6 @@ import (
 	openSearchRepositories "order-service/app/repositories/open_search"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/model"
-	"strings"
 	"time"
 )
 
@@ -149,31 +148,15 @@ func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(salesOrder
 func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(salesOrder *models.SalesOrder, ctx context.Context) *model.ErrorLog {
 	now := time.Now()
 
-	deliveryOrdersRequest := &models.DeliveryOrderRequest{
-		SalesOrderID: salesOrder.ID,
+	salesOrderRequest := &models.SalesOrderRequest{ID: salesOrder.ID}
+	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderOpenSearchRepository.GetByID(salesOrderRequest, getSalesOrderResultChan)
+	getSalesOrderResult := <-getSalesOrderResultChan
+
+	if getSalesOrderResult.ErrorLog != nil {
+		return getSalesOrderResult.ErrorLog
 	}
-
-	getDeliveryOrdersResultChan := make(chan *models.DeliveryOrdersChan)
-	go u.deliveryOrderOpenSearchRepository.GetBySalesOrderID(deliveryOrdersRequest, getDeliveryOrdersResultChan)
-	getDeliveryOrdersResult := <-getDeliveryOrdersResultChan
-	deliveryOrdersFound := true
-
-	if getDeliveryOrdersResult.Error != nil {
-		deliveryOrdersFound = false
-		if !strings.Contains(getDeliveryOrdersResult.Error.Error(), "not found") {
-			errorLogData := helper.WriteLog(getDeliveryOrdersResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-	}
-
-	if deliveryOrdersFound == true {
-
-		for x := range getDeliveryOrdersResult.DeliveryOrders {
-			getDeliveryOrdersResult.DeliveryOrders[x].SalesOrder = nil
-		}
-
-		salesOrder.DeliveryOrders = getDeliveryOrdersResult.DeliveryOrders
-	}
+	salesOrder.SalesOrderOpenSearchChanMap(getSalesOrderResult)
 
 	for k, v := range salesOrder.SalesOrderDetails {
 		getProductResultChan := make(chan *models.ProductChan)
@@ -252,6 +235,7 @@ func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromDeleteEvent(salesOrder
 
 	return &model.ErrorLog{}
 }
+
 func (u *SalesOrderOpenSearchUseCase) SyncDetailToOpenSearchFromCreateEvent(salesOrderDetail *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
 	return &model.ErrorLog{}
 }
