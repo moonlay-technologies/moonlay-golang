@@ -270,8 +270,13 @@ func (salesOrder *SalesOrder) SalesOrderOpenSearchChanMap(request *SalesOrderCha
 	}
 
 	for k, v := range request.SalesOrder.SalesOrderDetails {
-		salesOrder.SalesOrderDetails[k].ID = v.ID
+		for _, y := range salesOrder.SalesOrderDetails {
+			if y.ID == v.ID {
+				request.SalesOrder.SalesOrderDetails[k] = y
+			}
+		}
 	}
+	salesOrder.SalesOrderDetails = request.SalesOrder.SalesOrderDetails
 }
 
 func (salesOrder *SalesOrder) UpdateSalesOrderChanMap(request *SalesOrderChan) {

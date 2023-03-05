@@ -246,66 +246,7 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		return
 	}
 
-	deliveryOrderDetailResults := []*models.DeliveryOrderDetailStoreResponse{}
-	for _, v := range deliveryOrder.DeliveryOrderDetails {
-		deliveryOrderDetailResult := models.DeliveryOrderDetailStoreResponse{
-			DeliveryOrderID: v.DeliveryOrderID,
-			OrderStatusID:   v.OrderStatus.ID,
-			SoDetailID:      v.SoDetailID,
-			ProductSku:      v.ProductSKU,
-			ProductName:     v.ProductName,
-			SalesOrderQty:   v.SoDetail.Qty,
-			SentQty:         v.SoDetail.SentQty,
-			ResidualQty:     v.SoDetail.ResidualQty,
-			UomCode:         v.Uom.Code.String,
-			Price:           int(v.SoDetail.Price),
-			Qty:             v.Qty,
-			Note:            v.Note.String,
-		}
-		deliveryOrderDetailResults = append(deliveryOrderDetailResults, &deliveryOrderDetailResult)
-	}
-
-	storeProvinceID, _ := strconv.Atoi(deliveryOrder.Store.ProvinceID.String)
-	storeCityID, _ := strconv.Atoi(deliveryOrder.Store.CityID.String)
-	deliveryOrderResult := &models.DeliveryOrderStoreResponse{
-		SalesOrderID:              deliveryOrder.SalesOrderID,
-		SalesOrderOrderStatusID:   deliveryOrder.SalesOrder.OrderStatusID,
-		SalesOrderOrderStatusName: deliveryOrder.SalesOrder.OrderStatusName,
-		SalesOrderSoCode:          deliveryOrder.SalesOrder.SoCode,
-		SalesOrderSoDate:          deliveryOrder.SalesOrder.SoDate,
-		SalesOrderReferralCode:    deliveryOrder.SalesOrder.SoRefCode.String,
-		SalesOrderNote:            deliveryOrder.SalesOrder.Note.String,
-		SalesOrderInternalComment: deliveryOrder.SalesOrder.InternalComment.String,
-		StoreName:                 deliveryOrder.Store.Name.String,
-		StoreProvinceID:           storeProvinceID,
-		StoreProvince:             deliveryOrder.Store.ProvinceName.String,
-		StoreCityID:               storeCityID,
-		StoreCity:                 deliveryOrder.Store.CityName.String,
-		TotalAmount:               int(deliveryOrder.SalesOrder.TotalAmount),
-		WarehouseID:               deliveryOrder.WarehouseID,
-		WarehouseName:             deliveryOrder.Warehouse.Name,
-		WarehouseAddress:          deliveryOrder.Warehouse.Address.String,
-		OrderSourceID:             deliveryOrder.OrderSourceID,
-		OrderSourceName:           deliveryOrder.OrderSource.SourceName,
-		OrderStatusID:             deliveryOrder.OrderStatusID,
-		OrderStatusName:           deliveryOrder.OrderStatus.Name,
-		DoCode:                    deliveryOrder.DoCode,
-		DoDate:                    deliveryOrder.DoDate,
-		DoRefCode:                 deliveryOrder.DoRefCode.String,
-		DoRefDate:                 deliveryOrder.DoRefDate.String,
-		DriverName:                deliveryOrder.DriverName.String,
-		PlatNumber:                deliveryOrder.PlatNumber.String,
-		Note:                      deliveryOrder.Note.String,
-		InternalComment:           deliveryOrder.SalesOrder.InternalComment.String,
-		DeliveryOrderDetails:      deliveryOrderDetailResults,
-	}
-	if deliveryOrder.Salesman != nil {
-
-		deliveryOrderResult.SalesmanID = deliveryOrder.Salesman.ID
-		deliveryOrderResult.SalesmanName = deliveryOrder.Salesman.Name
-	}
-
-	result.Data = deliveryOrderResult
+	result.Data = deliveryOrder
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
 	return

@@ -113,7 +113,7 @@ func (c *createDeliveryOrderConsumerHandler) ProcessMessage() {
 			fmt.Println(errorLog)
 			continue
 		}
-
+		deliveryOrder.SalesOrder.ID = deliveryOrder.SalesOrderID
 		errorLog = c.salesOrderOpenSearchUseCase.SyncToOpenSearchFromUpdateEvent(deliveryOrder.SalesOrder, c.ctx)
 
 		if errorLog.Err != nil {
