@@ -641,38 +641,25 @@ func (u *deliveryOrderUseCase) Get(request *models.DeliveryOrderRequest) (*model
 		return &models.DeliveryOrdersOpenSearchResponse{}, getDeliveryOrdersResult.ErrorLog
 	}
 
-	deliveryOrderResult := []*models.DeliveryOrderOpenSearchResponse{}
+	deliveryOrderResults := []*models.DeliveryOrderOpenSearchResponse{}
 	for _, v := range getDeliveryOrdersResult.DeliveryOrders {
-		deliveryOrder := models.DeliveryOrderOpenSearchResponse{
-			ID:            v.ID,
-			SalesOrderID:  v.SalesOrderID,
-			WarehouseID:   v.WarehouseID,
-			OrderSourceID: v.OrderSourceID,
-			AgentName:     v.AgentName,
-			AgentID:       v.AgentID,
-			StoreID:       v.StoreID,
-			DoCode:        v.DoCode,
-			DoDate:        v.DoDate,
-			DoRefCode:     v.DoRefCode,
-			DoRefDate:     v.DoRefDate,
-			DriverName:    v.DriverName,
-			PlatNumber:    v.PlatNumber,
-			Note:          v.Note,
-		}
-		deliveryOrderResult = append(deliveryOrderResult, &deliveryOrder)
+		deliveryOrder := models.DeliveryOrderOpenSearchResponse{}
+		deliveryOrder.DeliveryOrderOpenSearchResponseMap(v)
+
+		deliveryOrderResults = append(deliveryOrderResults, &deliveryOrder)
+
 		deliveryOrderDetails := []*models.DeliveryOrderDetailOpenSearchDetailResponse{}
 		for _, x := range v.DeliveryOrderDetails {
-			deliveryOrderDetail := models.DeliveryOrderDetailOpenSearchDetailResponse{
-				SoDetailID: x.SoDetailID,
-				Qty:        x.Qty,
-			}
+			deliveryOrderDetail := models.DeliveryOrderDetailOpenSearchDetailResponse{}
+			deliveryOrderDetail.DeliveryOrderDetailOpenSearchResponseMap(x)
+
 			deliveryOrderDetails = append(deliveryOrderDetails, &deliveryOrderDetail)
 		}
 		deliveryOrder.DeliveryOrderDetail = deliveryOrderDetails
 	}
 
 	deliveryOrders := &models.DeliveryOrdersOpenSearchResponse{
-		DeliveryOrders: deliveryOrderResult,
+		DeliveryOrders: deliveryOrderResults,
 		Total:          getDeliveryOrdersResult.Total,
 	}
 
