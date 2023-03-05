@@ -116,7 +116,7 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 	sDoDate := "NOW()"
 	sDoDateEqualMonth := fmt.Sprintf("MONTH(so_date) = MONTH('%s') AND MONTH(so_date) = MONTH(%s)", insertRequest.DoRefDate, sDoDate)
 	sDoDateHigherOrEqualSoDate := fmt.Sprintf("DAY(so_date) <= DAY('%s') AND DAY(so_date) <= DAY(%s)", insertRequest.DoRefDate, sDoDate)
-	sDoDateLowerOrEqualSoRefDate := fmt.Sprintf("DAY(so_ref_date) >= DAY('%s') AND DAY(so_ref_date) >= DAY(%s)", insertRequest.DoRefDate, sDoDate)
+	// sDoDateLowerOrEqualSoRefDate := fmt.Sprintf("DAY(so_ref_date) >= DAY('%s') AND DAY(so_ref_date) >= DAY(%s)", insertRequest.DoRefDate, sDoDate)
 	sDoDateLowerOrEqualToday := fmt.Sprintf("DAY('%s') <= DAY(%s)", insertRequest.DoRefDate, sDoDate)
 	sSoDateEqualDoDate := fmt.Sprintf("IF(DAY(so_date) = DAY(%[2]s), IF(DAY(%[2]s) = DAY('%[1]s'), TRUE, FALSE), TRUE)", insertRequest.DoRefDate, sDoDate)
 	mustActiveField422 := []*models.MustActiveRequest{
@@ -149,6 +149,12 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		}
 
 		totalQty += x.Qty
+		mustActiveField417 = append(mustActiveField417, &models.MustActiveRequest{
+			Table:         "sales_orders a JOIN sales_order_details b ON b.sales_order_id = a.id",
+			ReqField:      "sales_order_id",
+			Clause:        fmt.Sprintf("b.id = %d AND a.id = %d AND a.deleted_at IS NULL AND b.deleted_at IS NULL", x.SoDetailID, insertRequest.SalesOrderID),
+			CustomMessage: fmt.Sprintf("sales order detail = %d tidak ditemukan", x.SoDetailID),
+		})
 		mustActiveField417 = append(mustActiveField417, &models.MustActiveRequest{
 			Table:    "products a JOIN sales_order_details b ON b.product_id = a.id",
 			ReqField: "product_id",
