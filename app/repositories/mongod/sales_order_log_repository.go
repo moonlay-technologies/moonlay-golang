@@ -41,6 +41,7 @@ func (r *salesOrderLogRepository) Get(request *models.SalesOrderEventLogRequest,
 	response := &models.GetSalesOrderLogsChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
 	filter := bson.M{}
+	filters := []bson.M{}
 	sort := bson.M{}
 	asc := 1
 	desc := -1
@@ -67,13 +68,16 @@ func (r *salesOrderLogRepository) Get(request *models.SalesOrderEventLogRequest,
 		}
 	}
 
-	// if request.GlobalSearchValue != "" {
-	// 	filter = bson.M{
-	// 		"$or": []bson.M{
-	// 			{bson.M{"so_code": {"$regex": request.GlobalSearchValue}}},
-	// 			{bson.M{"status": {"$regex": request.GlobalSearchValue}}},
-	// 		},
-	// }
+	if request.GlobalSearchValue != "" {
+		filter = bson.M{
+			"$or": []bson.M{
+				{"so_code": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
+				{"status": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
+				{"action": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
+				{"data.agent_id": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
+			},
+		}
+	}
 
 	if request.RequestID != "" {
 		filter["request_id"] = request.RequestID
@@ -95,6 +99,7 @@ func (r *salesOrderLogRepository) Get(request *models.SalesOrderEventLogRequest,
 		filter["data.agent_id"] = request.AgentID
 	}
 	fmt.Println("filter", filter)
+	fmt.Println("filter", filters)
 	option := options.Find().SetSkip(int64((request.Page - 1) * request.PerPage)).SetLimit(int64(request.PerPage)).SetSort(sort)
 	total, err := collection.CountDocuments(ctx, filter)
 	fmt.Println("errs", err)
