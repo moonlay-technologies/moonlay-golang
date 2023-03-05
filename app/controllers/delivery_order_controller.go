@@ -123,7 +123,7 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		{
 			Table:         "sales_orders",
 			ReqField:      "so_date",
-			Clause:        fmt.Sprintf("id = %d AND %s AND %s AND %s AND %s AND %s", insertRequest.SalesOrderID, sDoDateEqualMonth, sDoDateHigherOrEqualSoDate, sDoDateLowerOrEqualSoRefDate, sDoDateLowerOrEqualToday, sSoDateEqualDoDate),
+			Clause:        fmt.Sprintf("id = %d AND %s AND %s AND %s AND %s ", insertRequest.SalesOrderID, sDoDateEqualMonth, sDoDateHigherOrEqualSoDate, sDoDateLowerOrEqualToday, sSoDateEqualDoDate),
 			CustomMessage: "do_date and do_ref_date must be equal less than today, must be equal more than so_date and must be in the current month",
 		},
 	}
