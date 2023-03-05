@@ -41,7 +41,6 @@ func (r *salesOrderLogRepository) Get(request *models.SalesOrderEventLogRequest,
 	response := &models.GetSalesOrderLogsChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
 	filter := bson.M{}
-	filters := []bson.M{}
 	sort := bson.M{}
 	asc := 1
 	desc := -1
@@ -98,12 +97,10 @@ func (r *salesOrderLogRepository) Get(request *models.SalesOrderEventLogRequest,
 	if request.AgentID > 0 {
 		filter["data.agent_id"] = request.AgentID
 	}
-	fmt.Println("filter", filter)
-	fmt.Println("filter", filters)
+
 	option := options.Find().SetSkip(int64((request.Page - 1) * request.PerPage)).SetLimit(int64(request.PerPage)).SetSort(sort)
 	total, err := collection.CountDocuments(ctx, filter)
-	fmt.Println("errs", err)
-	fmt.Println("total", total)
+
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err

@@ -69,17 +69,17 @@ type SalesOrderEventLogRequest struct {
 }
 
 type SalesOrderEventLogResponse struct {
-	ID        primitive.ObjectID    `json:"_id,omitempty" bson:"_id,omitempty"`
-	RequestID string                `json:"request_id,omitempty" bson:"request_id,omitempty"`
-	SoCode    string                `json:"so_code,omitempty" bson:"so_code,omitempty"`
-	Data      *DataEventLogResponse `json:"data,omitempty" bson:"data,omitempty"`
-	Status    string                `json:"status,omitempty" bson:"status,omitempty"`
-	Action    string                `json:"action,omitempty" bson:"action,omitempty"`
-	CreatedAt *time.Time            `json:"created_at,omitempty" bson:"created_at,omitempty"`
-	UpdatedAt *time.Time            `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
+	ID        primitive.ObjectID      `json:"_id,omitempty" bson:"_id,omitempty"`
+	RequestID string                  `json:"request_id,omitempty" bson:"request_id,omitempty"`
+	SoCode    string                  `json:"so_code,omitempty" bson:"so_code,omitempty"`
+	Data      *DataSOEventLogResponse `json:"data,omitempty" bson:"data,omitempty"`
+	Status    string                  `json:"status,omitempty" bson:"status,omitempty"`
+	Action    string                  `json:"action,omitempty" bson:"action,omitempty"`
+	CreatedAt *time.Time              `json:"created_at,omitempty" bson:"created_at,omitempty"`
+	UpdatedAt *time.Time              `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
 }
 
-type DataEventLogResponse struct {
+type DataSOEventLogResponse struct {
 	AgentID      int        `json:"agent_id,omitempty" bson:"agent_id,omitempty"`
 	AgentName    string     `json:"agent_name,omitempty" bson:"agent_name,omitempty"`
 	StoreCode    string     `json:"store_code,omitempty" bson:"store_code,omitempty"`

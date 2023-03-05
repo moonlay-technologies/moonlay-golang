@@ -478,40 +478,17 @@ func (u *salesOrderUseCase) GetSyncToKafkaHistories(request *models.SalesOrderEv
 
 	salesOrderEventLogs := []*models.SalesOrderEventLogResponse{}
 	for _, v := range getSalesOrderLogResult.SalesOrderLogs {
-		salesOrderEventLog := models.SalesOrderEventLogResponse{
-			ID:        v.ID,
-			RequestID: v.RequestID,
-			SoCode:    v.SoCode,
-			Data: &models.DataEventLogResponse{
-				AgentID:      v.Data.AgentID,
-				AgentName:    v.Data.AgentName.String,
-				StoreCode:    v.Data.StoreCode.String,
-				StoreName:    v.Data.StoreName.String,
-				SalesID:      int(v.Data.SalesmanID.Int64),
-				SalesName:    v.Data.SalesmanName.String,
-				OrderDate:    v.Data.CreatedAt,
-				StartOrderAt: v.Data.StartCreatedDate,
-				OrderNote:    v.Data.Note.String,
-				InternalNote: v.Data.InternalComment.String,
-				BrandCode:    v.Data.BrandID,
-				BrandName:    v.Data.BrandName,
-				AddressID:    v.Data.StoreID,
-				Address:      v.Data.StoreAddress.String,
-			},
-			Status:    v.Status,
-			Action:    v.Action,
-			CreatedAt: v.CreatedAt,
-			UpdatedAt: v.UpdatedAt,
-		}
+		salesOrderEventLog := models.SalesOrderEventLogResponse{}
+		salesOrderEventLog.SalesOrderEventLogResponseMap(v)
+		dataSOEventLog := models.DataSOEventLogResponse{}
+		dataSOEventLog.DataSOEventLogResponseMap(v)
+		salesOrderEventLog.Data = &dataSOEventLog
 
-		// orderQty := 0
 		for _, x := range v.Data.SalesOrderDetails {
-			// orderQty += x.Qty
 			salesOrderEventLog.Data.ProductCode = x.ProductSKU
 			salesOrderEventLog.Data.OrderQty = x.Qty
 			salesOrderEventLog.Data.ProductUnit = x.ProductName
 		}
-		// salesOrderEventLog.Data.OrderQty = orderQty
 
 		salesOrderEventLogs = append(salesOrderEventLogs, &salesOrderEventLog)
 	}
