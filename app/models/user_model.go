@@ -3,6 +3,8 @@ package models
 import (
 	"order-service/global/utils/model"
 	"time"
+
+	jwt "github.com/golang-jwt/jwt/v4"
 )
 
 type User struct {
@@ -51,4 +53,15 @@ type UserRequest struct {
 type Users struct {
 	Users []*User `json:"users,omitempty"`
 	Total int64   `json:"total,omitempty"`
+}
+
+type UserClaims struct {
+	jwt.StandardClaims
+	UserID           int    `json:"user_id"`
+	AgentID          int    `json:"agent_id"`
+	UserEmail        string `json:"user_email"`
+	UserRoleSlug     string `json:"user_role_slug"`
+	UserRoleCategory string `json:"user_role_category"`
+	FirstName        string `json:"first_name"`
+	LastName         string `json:"last_name"`
 }

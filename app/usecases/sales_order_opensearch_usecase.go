@@ -18,7 +18,7 @@ type SalesOrderOpenSearchUseCaseInterface interface {
 	SyncToOpenSearchFromUpdateEvent(salesOrder *models.SalesOrder, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromDeleteEvent(salesOrder *models.SalesOrder, ctx context.Context) *model.ErrorLog
 	SyncDetailToOpenSearchFromCreateEvent(salesOrderDetail *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
-	SyncDetailToOpenSearchFromUpdateEvent(salesOrderDetail *models.SalesOrderDetail, ctx context.Context) *model.ErrorLog
+	SyncDetailToOpenSearchFromUpdateEvent(salesOrder *models.SalesOrder, salesOrderDetail *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	SyncDetailToOpenSearchFromDeleteEvent(salesOrderDetail *models.SalesOrderDetail, ctx context.Context) *model.ErrorLog
 }
 
@@ -256,7 +256,66 @@ func (u *SalesOrderOpenSearchUseCase) SyncDetailToOpenSearchFromCreateEvent(sale
 	return &model.ErrorLog{}
 }
 
-func (u *SalesOrderOpenSearchUseCase) SyncDetailToOpenSearchFromUpdateEvent(salesOrderDetail *models.SalesOrderDetail, ctx context.Context) *model.ErrorLog {
+func (u *SalesOrderOpenSearchUseCase) SyncDetailToOpenSearchFromUpdateEvent(salesOrder *models.SalesOrder, salesOrderDetail *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
+	now := time.Now()
+
+	getProductResultChan := make(chan *models.ProductChan)
+	go u.productRepository.GetByID(salesOrderDetail.ProductID, false, ctx, getProductResultChan)
+	getProductResult := <-getProductResultChan
+
+	if getProductResult.Error != nil {
+		errorLogData := helper.WriteLog(getProductResult.Error, http.StatusInternalServerError, nil)
+		return errorLogData
+	}
+
+	salesOrderDetail.Product = getProductResult.Product
+
+	getUomResultChan := make(chan *models.UomChan)
+	go u.uomRepository.GetByID(salesOrderDetail.UomID, false, ctx, getUomResultChan)
+	getUomResult := <-getUomResultChan
+
+	if getUomResult.Error != nil {
+		errorLogData := helper.WriteLog(getUomResult.Error, http.StatusInternalServerError, nil)
+		return errorLogData
+	}
+
+	salesOrderDetail.Uom = getUomResult.Uom
+
+	getOrderStatusDetailResultChan := make(chan *models.OrderStatusChan)
+	go u.orderStatusRepository.GetByID(salesOrderDetail.OrderStatusID, false, ctx, getOrderStatusDetailResultChan)
+	getOrderStatusDetailResult := <-getOrderStatusDetailResultChan
+
+	if getOrderStatusDetailResult.Error != nil {
+		errorLogData := helper.WriteLog(getOrderStatusDetailResult.Error, http.StatusInternalServerError, nil)
+		return errorLogData
+	}
+
+	salesOrderDetailOpenSearch := &models.SalesOrderDetailOpenSearch{}
+	salesOrderDetailOpenSearch.SalesOrderDetailOpenSearchMap(salesOrder, salesOrderDetail)
+
+	createSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailOpenSearchChan)
+	go u.salesOrderDetailOpenSearchRepository.Create(salesOrderDetailOpenSearch, createSalesOrderDetailResultChan)
+	createSalesOrderDetailResult := <-createSalesOrderDetailResultChan
+
+	if createSalesOrderDetailResult.Error != nil {
+		return createSalesOrderDetailResult.ErrorLog
+	}
+
+	salesOrderDetailUpdateData := &models.SalesOrderDetail{
+		UpdatedAt:       &now,
+		IsDoneSyncToEs:  "1",
+		EndDateSyncToEs: &now,
+	}
+
+	updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
+	go u.salesOrderDetailRepository.UpdateByID(salesOrderDetail.ID, salesOrderDetailUpdateData, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
+	updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
+
+	if updateSalesOrderDetailResult.Error != nil {
+		errorLogData := helper.WriteLog(updateSalesOrderDetailResult.Error, http.StatusInternalServerError, nil)
+		return errorLogData
+	}
+
 	return &model.ErrorLog{}
 }
 

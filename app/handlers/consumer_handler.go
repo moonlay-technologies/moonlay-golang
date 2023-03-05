@@ -48,6 +48,11 @@ func MainConsumerHandler(kafkaClient kafkadbo.KafkaClientInterface, mongodbClien
 		deliveryOrderConsumer := consumer.InitDeleteDeliveryOrderConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
 		go deliveryOrderConsumer.ProcessMessage()
 		break
+	case constants.UPDATE_SALES_ORDER_DETAIL_TOPIC:
+		wg.Add(1)
+		salesOrderDetailConsumer := consumer.InitUpdateSalesOrderDetailConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
+		go salesOrderDetailConsumer.ProcessMessage()
+		break
 	default:
 		fmt.Println("Choose Command Type You Want")
 		os.Exit(0)

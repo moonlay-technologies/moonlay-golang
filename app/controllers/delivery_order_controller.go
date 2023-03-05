@@ -66,6 +66,17 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		}
 	}
 
+	dateField := []*models.DateInputRequest{
+		{
+			Field: "so_date",
+			Value: insertRequest.DoRefDate,
+		},
+	}
+	err = c.requestValidationMiddleware.DateInputValidation(ctx, dateField, constants.ERROR_ACTION_NAME_CREATE)
+	if err != nil {
+		return
+	}
+
 	uniqueField := []*models.UniqueRequest{
 		{
 			Table: constants.DELIVERY_ORDERS_TABLE,
@@ -79,8 +90,7 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		fmt.Println("Error unique validation", err)
 		return
 	}
-
-	mustActiveField := []*models.MustActiveRequest{
+	mustActiveField417 := []*models.MustActiveRequest{
 		{
 			Table:    "sales_orders",
 			ReqField: "sales_order_id",
@@ -102,6 +112,21 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 			Clause:   fmt.Sprintf("b.id = %d AND a.status_active = 1 AND b.deleted_at IS NULL", insertRequest.SalesOrderID),
 		},
 	}
+
+	sDoDate := "NOW()"
+	sDoDateEqualMonth := fmt.Sprintf("MONTH(so_date) = MONTH('%s') AND MONTH(so_date) = MONTH(%s)", insertRequest.DoRefDate, sDoDate)
+	sDoDateHigherOrEqualSoDate := fmt.Sprintf("DAY(so_date) <= DAY('%s') AND DAY(so_date) <= DAY(%s)", insertRequest.DoRefDate, sDoDate)
+	// sDoDateLowerOrEqualSoRefDate := fmt.Sprintf("DAY(so_ref_date) >= DAY('%s') AND DAY(so_ref_date) >= DAY(%s)", insertRequest.DoRefDate, sDoDate)
+	sDoDateLowerOrEqualToday := fmt.Sprintf("DAY('%s') <= DAY(%s)", insertRequest.DoRefDate, sDoDate)
+	sSoDateEqualDoDate := fmt.Sprintf("IF(DAY(so_date) = DAY(%[2]s), IF(DAY(%[2]s) = DAY('%[1]s'), TRUE, FALSE), TRUE)", insertRequest.DoRefDate, sDoDate)
+	mustActiveField422 := []*models.MustActiveRequest{
+		{
+			Table:         "sales_orders",
+			ReqField:      "so_date",
+			Clause:        fmt.Sprintf("id = %d AND %s AND %s AND %s AND %s ", insertRequest.SalesOrderID, sDoDateEqualMonth, sDoDateHigherOrEqualSoDate, sDoDateLowerOrEqualToday, sSoDateEqualDoDate),
+			CustomMessage: "do_date and do_ref_date must be equal less than today, must be equal more than so_date and must be in the current month",
+		},
+	}
 	mustEmpties := []*models.MustEmptyValidationRequest{
 		{
 			Table:           "sales_orders",
@@ -112,19 +137,6 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 			MessageFormat:   "Status Sales Order <result>",
 		},
 	}
-
-	sDoDate := "NOW()"
-	sDoDateEqualMonth := fmt.Sprintf("MONTH(so_date) = MONTH('%s') AND MONTH(so_date) = MONTH(%s)", insertRequest.DoRefDate, sDoDate)
-	sDoDateHigherOrEqualSoDate := fmt.Sprintf("DAY(so_date) <= DAY('%s') AND DAY(so_date) <= DAY(%s)", insertRequest.DoRefDate, sDoDate)
-	sDoDateLowerOrEqualSoRefDate := fmt.Sprintf("DAY(so_ref_date) >= DAY('%s') AND DAY(so_ref_date) >= DAY(%s)", insertRequest.DoRefDate, sDoDate)
-	sDoDateLowerOrEqualToday := fmt.Sprintf("DAY('%s') <= DAY(%s)", insertRequest.DoRefDate, sDoDate)
-	sSoDateEqualDoDate := fmt.Sprintf("IF(DAY(so_date) = DAY(%[2]s), IF(DAY(%[2]s) = DAY('%[1]s'), TRUE, FALSE), TRUE)", insertRequest.DoRefDate, sDoDate)
-	mustActiveField = append(mustActiveField, &models.MustActiveRequest{
-		Table:         "sales_orders",
-		ReqField:      "so_date",
-		Clause:        fmt.Sprintf("id = %d AND %s AND %s AND %s AND %s AND %s", insertRequest.SalesOrderID, sDoDateEqualMonth, sDoDateHigherOrEqualSoDate, sDoDateLowerOrEqualSoRefDate, sDoDateLowerOrEqualToday, sSoDateEqualDoDate),
-		CustomMessage: "do_date and do_ref_date must be equal less than today, must be equal more than so_date and must be in the current month",
-	})
 	totalQty := 0
 	for _, x := range insertRequest.DeliveryOrderDetails {
 		if x.Qty < 0 {
@@ -137,17 +149,23 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		}
 
 		totalQty += x.Qty
-		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+		mustActiveField417 = append(mustActiveField417, &models.MustActiveRequest{
+			Table:         "sales_orders a JOIN sales_order_details b ON b.sales_order_id = a.id",
+			ReqField:      "sales_order_id",
+			Clause:        fmt.Sprintf("b.id = %d AND a.id = %d AND a.deleted_at IS NULL AND b.deleted_at IS NULL", x.SoDetailID, insertRequest.SalesOrderID),
+			CustomMessage: fmt.Sprintf("sales order detail = %d tidak ditemukan", x.SoDetailID),
+		})
+		mustActiveField417 = append(mustActiveField417, &models.MustActiveRequest{
 			Table:    "products a JOIN sales_order_details b ON b.product_id = a.id",
 			ReqField: "product_id",
 			Clause:   fmt.Sprintf("b.id = %d AND a.deleted_at IS NULL AND b.deleted_at IS NULL", x.SoDetailID),
 		})
-		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+		mustActiveField417 = append(mustActiveField417, &models.MustActiveRequest{
 			Table:    "uoms a JOIN sales_order_details b ON b.uom_id = a.id",
 			ReqField: "uoms_id",
 			Clause:   fmt.Sprintf("b.id = %d AND a.deleted_at IS NULL AND b.deleted_at IS NULL", x.SoDetailID),
 		})
-		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+		mustActiveField422 = append(mustActiveField422, &models.MustActiveRequest{
 			Table:         "sales_order_details",
 			ReqField:      "residual_qty",
 			Clause:        fmt.Sprintf("id = %d AND deleted_at IS NULL AND residual_qty >= %d", x.SoDetailID, x.Qty),
@@ -163,12 +181,17 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		})
 	}
 
+	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField417)
+	if err != nil {
+		return
+	}
+
 	err = c.requestValidationMiddleware.MustEmptyValidation(ctx, mustEmpties)
 	if err != nil {
 		return
 	}
 
-	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
+	err = c.requestValidationMiddleware.MustActiveValidation422(ctx, mustActiveField422)
 	if err != nil {
 		return
 	}

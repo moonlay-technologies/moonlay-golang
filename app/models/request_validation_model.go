@@ -17,15 +17,16 @@ type UniqueRequestChan struct {
 }
 
 type MustActiveRequest struct {
-	Table         string
-	ReqField      string
-	Clause        string
-	CustomMessage string
+	Table              string
+	ReqField           string
+	Clause             string
+	CustomMessage      string
+	CustomResponseCode int
 }
 
 type MustActiveRequestChan struct {
-	UniqueRequest *MustActiveRequest
-	Total         int64
+	UniqueRequest []*MustActiveRequest
+	Total         []int64
 	Error         error
 	ErrorLog      *model.ErrorLog
 	ID            int64 `json:"id,omitempty" bson:"id,omitempty"`

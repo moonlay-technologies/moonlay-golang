@@ -4,12 +4,12 @@ import (
 	"context"
 	"net/http"
 	"order-service/app/controllers"
+	"order-service/app/middlewares"
 	"order-service/app/models/constants"
 	kafkadbo "order-service/global/utils/kafka"
 	"order-service/global/utils/mongodb"
 	"order-service/global/utils/opensearch_dbo"
 	"order-service/global/utils/redisdb"
-	"os"
 
 	"github.com/bxcodec/dbresolver"
 	"github.com/gin-gonic/gin"
@@ -20,9 +20,11 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 		context.JSON(http.StatusOK, map[string]interface{}{"status": http.StatusText(http.StatusOK)})
 	})
 
-	basicAuthRootGroup := g.Group("", gin.BasicAuth(gin.Accounts{
-		os.Getenv("AUTHBASIC_USERNAME"): os.Getenv("AUTHBASIC_PASSWORD"),
-	}))
+	basicAuthRootGroup := g.Group("", middlewares.BasicAuthMiddleware())
+
+	// basicAuthRootGroup := g.Group("", gin.BasicAuth(gin.Accounts{
+	// 	os.Getenv("AUTHBASIC_USERNAME"): os.Getenv("AUTHBASIC_PASSWORD"),
+	// }))
 
 	salesOrderController := controllers.InitHTTPSalesOrderController(database, redisdb, mongodbClient, kafkaClient, opensearchClient, ctx)
 	basicAuthRootGroup.Use()
@@ -33,11 +35,11 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 			salesOrderControllerGroup.POST("", salesOrderController.Create)
 			salesOrderControllerGroup.GET("", salesOrderController.Get)
 			salesOrderControllerGroup.GET(":so-id", salesOrderController.GetByID)
-			salesOrderControllerGroup.GET("details/:id", salesOrderController.GetDetailsById)
+			salesOrderControllerGroup.GET("details/:so-detail-id", salesOrderController.GetDetailsById)
 			salesOrderControllerGroup.GET(":so-id/details", salesOrderController.GetDetailsBySoId)
 			salesOrderControllerGroup.PUT(":so-id", salesOrderController.UpdateByID)
 			salesOrderControllerGroup.PUT(":so-id/details", salesOrderController.UpdateSODetailBySOID)
-			// salesOrderControllerGroup.PUT(":so-id/details/:id", salesOrderController.UpdateSODetailByID)
+			salesOrderControllerGroup.PUT(":so-id/details/:so-detail-id", salesOrderController.UpdateSODetailByID)
 			salesOrderControllerGroup.DELETE(":so-id", salesOrderController.DeleteByID)
 			salesOrderControllerGroup.GET("event-logs", salesOrderController.GetSyncToKafkaHistories)
 		}

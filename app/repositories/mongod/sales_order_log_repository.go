@@ -202,8 +202,6 @@ func (r *salesOrderLogRepository) GetByID(ID string, countOnly bool, ctx context
 func (r *salesOrderLogRepository) GetByCollumn(collumnName string, value string, countOnly bool, ctx context.Context, resultChan chan *models.SalesOrderLogChan) {
 	response := &models.SalesOrderLogChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
-	fmt.Println("collumn = ", collumnName)
-	fmt.Println("value = ", value)
 	filter := bson.M{collumnName: value}
 	total, err := collection.CountDocuments(ctx, filter)
 
