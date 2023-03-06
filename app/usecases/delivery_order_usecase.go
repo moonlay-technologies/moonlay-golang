@@ -312,6 +312,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		return &models.DeliveryOrderStoreResponse{}, getOrderStatusSODetailResult.ErrorLog
 	}
 	getSalesOrderResult.SalesOrder.OrderStatus = getOrderStatusSODetailResult.OrderStatus
+	getSalesOrderResult.SalesOrder.OrderStatusName = getOrderStatusSODetailResult.OrderStatus.Name
 	getSalesOrderResult.SalesOrder.SoDate = ""
 	getSalesOrderResult.SalesOrder.SoRefDate = models.NullString{}
 	getSalesOrderResult.SalesOrder.UpdatedAt = &now
