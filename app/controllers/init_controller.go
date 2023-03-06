@@ -67,7 +67,8 @@ func InitHTTPDeliveryOrderController(database dbresolver.DB, redisdb redisdb.Red
 	deliveryOrderUseCase := usecases.InitDeliveryOrderUseCaseInterface(deliveryOrderRepository, deliveryOrderDetailRepository, salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, warehouseRepository, brandRepository, uomRepository, agentRepository, storeRepository, productRepository, userRepository, salesmanRepository, deliveryOrderLogRepository, deliveryOrderOpenSearchRepository, salesOrderOpenSearchUseCase, kafkaClient, database, ctx)
 	requestValidationRepository := repositories.InitUniqueRequestValidationRepository(database)
 	requestValidationMiddleware := middlewares.InitRequestValidationMiddlewareInterface(requestValidationRepository, orderSourceRepository)
-	handler := InitDeliveryOrderController(deliveryOrderUseCase, requestValidationMiddleware, database, ctx)
+	deliveryOrderValidator := usecases.InitDeliveryOrderValidator(requestValidationMiddleware, database, ctx)
+	handler := InitDeliveryOrderController(deliveryOrderUseCase, deliveryOrderValidator, requestValidationMiddleware, database, ctx)
 	return handler
 }
 
