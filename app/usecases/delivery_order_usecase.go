@@ -315,6 +315,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	getSalesOrderResult.SalesOrder.SoDate = ""
 	getSalesOrderResult.SalesOrder.SoRefDate = models.NullString{}
 	getSalesOrderResult.SalesOrder.UpdatedAt = &now
+	deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
 
 	updateSalesOrderChan := make(chan *models.SalesOrderChan)
 	go u.salesOrderRepository.UpdateByID(getSalesOrderResult.SalesOrder.ID, getSalesOrderResult.SalesOrder, sqlTransaction, u.ctx, updateSalesOrderChan)
