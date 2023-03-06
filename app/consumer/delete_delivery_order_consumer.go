@@ -30,7 +30,7 @@ type DeleteDeliveryOrderConsumerHandler struct {
 	deliveryOrderLogRepository     mongoRepositories.DeliveryOrderLogRepositoryInterface
 }
 
-func InitDeleteDeliveryOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, salesOrderUseCase usecases.SalesOrderUseCaseInterface, DeliveryOrderOpenSearchUseCase usecases.DeliveryOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UpdateDeliveryOrderConsumerHandlerInterface {
+func InitDeleteDeliveryOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, salesOrderUseCase usecases.SalesOrderUseCaseInterface, DeliveryOrderOpenSearchUseCase usecases.DeliveryOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) DeleteDeliveryOrderConsumerHandlerInterface {
 	return &DeleteDeliveryOrderConsumerHandler{
 		kafkaClient:                    kafkaClient,
 		salesOrderUseCase:              salesOrderUseCase,
@@ -43,7 +43,7 @@ func InitDeleteDeliveryOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaC
 }
 
 func (c *DeleteDeliveryOrderConsumerHandler) ProcessMessage() {
-	fmt.Println("process ", constants.UPDATE_DELIVERY_ORDER_TOPIC)
+	fmt.Println("process ", constants.DELETE_DELIVERY_ORDER_TOPIC)
 	topic := c.args[1].(string)
 	groupID := c.args[2].(string)
 	reader := c.kafkaClient.SetConsumerGroupReader(topic, groupID)
