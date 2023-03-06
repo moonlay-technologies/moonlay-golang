@@ -28,7 +28,7 @@ type DeliveryOrder struct {
 	WarehouseVillageName  NullString             `json:"warehouse_village_name,omitempty" bson:"warehouse_village_name"`
 	OrderStatusID         int                    `json:"order_status_id,omitempty" bson:"order_status_id"`
 	OrderStatus           *OrderStatus           `json:"order_status,omitempty" bson:"order_status"`
-	OrderStatusName       NullString             `json:"order_status_name,omitempty" bson:"order_status_name"`
+	OrderStatusName       string                 `json:"order_status_name,omitempty" bson:"order_status_name"`
 	OrderSourceID         int                    `json:"order_source_id,omitempty" bson:"order_source_id"`
 	OrderSource           *OrderSource           `json:"order_source,omitempty" bson:"order_source"`
 	OrderSourceName       NullString             `json:"order_source_name,omitempty" bson:"order_source_name"`
