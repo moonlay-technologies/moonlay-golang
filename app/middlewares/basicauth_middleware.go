@@ -42,9 +42,7 @@ func BasicAuthMiddleware() gin.HandlerFunc {
 func authenticateUser(tokenString string, c *gin.Context) bool {
 	user := models.UserClaims{}
 	token, _ := base64.StdEncoding.DecodeString(tokenString)
-	fmt.Println("parsed token = ", string(token))
 	json.Unmarshal(token, &user)
-	fmt.Println(user.UserEmail)
 	c.Set("user", &user)
 	return true
 }

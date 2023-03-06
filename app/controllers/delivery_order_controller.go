@@ -98,8 +98,8 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		},
 		{
 			Table:    "warehouses a JOIN agents b JOIN sales_orders c ON a.owner_id = b.id AND c.agent_id = b.id",
-			ReqField: "warehouse_owner_id",
-			Clause:   fmt.Sprintf("c.id = %d AND b.deleted_at IS NULL AND a.`status` = 1", insertRequest.SalesOrderID),
+			ReqField: "warehouse_id",
+			Clause:   fmt.Sprintf("c.id = %d AND a.id = %d AND b.deleted_at IS NULL AND a.`status` = 1", insertRequest.SalesOrderID, insertRequest.WarehouseID),
 		},
 		{
 			Table:    "stores a JOIN sales_orders b ON b.store_id = a.id",
