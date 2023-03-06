@@ -83,7 +83,6 @@ func (c *createSalesOrderConsumerHandler) ProcessMessage() {
 			fmt.Println(salesOrderDetailResult.Error)
 			continue
 		}
-		fmt.Println("code = ", salesOrderDetailResult.SalesOrderLog.SoCode)
 		salesOrderLog = salesOrderDetailResult.SalesOrderLog
 		salesOrderLog.Status = constants.LOG_STATUS_MONGO_ERROR
 		salesOrderLog.UpdatedAt = &now

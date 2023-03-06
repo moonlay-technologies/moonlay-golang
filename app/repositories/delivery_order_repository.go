@@ -473,7 +473,6 @@ func (r *deliveryOrder) UpdateByID(id int, request *models.DeliveryOrder, sqlTra
 	rawSqlQueries = append(rawSqlQueries, query)
 
 	rawSqlQueriesJoin := strings.Join(rawSqlQueries, ",")
-	fmt.Println(rawSqlQueriesJoin)
 	updateQuery := fmt.Sprintf("UPDATE delivery_orders set %v WHERE id = ?", rawSqlQueriesJoin)
 	result, err := sqlTransaction.ExecContext(ctx, updateQuery, id)
 
