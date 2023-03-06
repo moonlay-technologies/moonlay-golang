@@ -14,11 +14,7 @@ type DeliveryOrderDetailOpenSearchRepositoryInterface interface {
 	Create(request *models.DeliveryOrderDetail, result chan *models.DeliveryOrderDetailChan)
 	Get(request *models.DeliveryOrderDetailOpenSearchRequest, result chan *models.DeliveryOrderDetailsChan)
 	GetByDoID(request *models.DeliveryOrderRequest, resultChan chan *models.DeliveryOrderDetailsChan)
-	GetBySalesOrderID(request *models.DeliveryOrderDetailOpenSearchRequest, resultChan chan *models.DeliveryOrderDetailsChan)
-	GetBySalesmanID(request *models.DeliveryOrderDetailOpenSearchRequest, resultChan chan *models.DeliveryOrderDetailsChan)
-	GetBySalesmansID(request *models.DeliveryOrderDetailOpenSearchRequest, resultChan chan *models.DeliveryOrderDetailsChan)
-	GetByStoreID(request *models.DeliveryOrderDetailOpenSearchRequest, resultChan chan *models.DeliveryOrderDetailsChan)
-	GetByAgentID(request *models.DeliveryOrderDetailOpenSearchRequest, resultChan chan *models.DeliveryOrderDetailsChan)
+	GetByID(request *models.DeliveryOrderDetailOpenSearchRequest, resultChan chan *models.DeliveryOrderDetailsChan)
 	generateDeliveryOrderQueryOpenSearchResult(openSearchQueryJson []byte) (*models.DeliveryOrderDetails, *model.ErrorLog)
 	generateDeliveryOrderQueryOpenSearchTermRequest(term_field string, term_value interface{}, request *models.DeliveryOrderDetailOpenSearchRequest) []byte
 	generateDeliveryOrderQueryOpenSearchByQueryParamTermRequest(term_field string, term_value interface{}, request *models.DeliveryOrderDetailOpenSearchRequest) []byte
@@ -87,77 +83,26 @@ func (r *deliveryOrderDetailOpenSearch) GetByDoID(request *models.DeliveryOrderR
 	return
 }
 
+func (r *deliveryOrderDetailOpenSearch) GetByID(request *models.DeliveryOrderDetailOpenSearchRequest, resultChan chan *models.DeliveryOrderDetailsChan) {
+	response := &models.DeliveryOrderDetailsChan{}
+	requestQuery := r.generateDeliveryOrderQueryOpenSearchTermRequest("id", request.ID, nil)
+	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery)
+
+	if err.Err != nil {
+		response.Error = err.Err
+		response.ErrorLog = err
+		resultChan <- response
+		return
+	}
+
+	response.DeliveryOrderDetails = result.DeliveryOrderDetails
+	resultChan <- response
+	return
+}
+
 func (r *deliveryOrderDetailOpenSearch) GetBySalesOrderID(request *models.DeliveryOrderDetailOpenSearchRequest, resultChan chan *models.DeliveryOrderDetailsChan) {
 	response := &models.DeliveryOrderDetailsChan{}
 	requestQuery := r.generateDeliveryOrderQueryOpenSearchTermRequest("sales_order_id", request.SalesOrderID, request)
-	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery)
-
-	if err.Err != nil {
-		response.Error = err.Err
-		response.ErrorLog = err
-		resultChan <- response
-		return
-	}
-
-	response.DeliveryOrderDetails = result.DeliveryOrderDetails
-	resultChan <- response
-	return
-}
-
-func (r *deliveryOrderDetailOpenSearch) GetBySalesmanID(request *models.DeliveryOrderDetailOpenSearchRequest, resultChan chan *models.DeliveryOrderDetailsChan) {
-	response := &models.DeliveryOrderDetailsChan{}
-	requestQuery := r.generateDeliveryOrderQueryOpenSearchTermRequest("sales_order.user_id", request.SalesmanID, request)
-	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery)
-
-	if err.Err != nil {
-		response.Error = err.Err
-		response.ErrorLog = err
-		resultChan <- response
-		return
-	}
-
-	response.DeliveryOrderDetails = result.DeliveryOrderDetails
-	resultChan <- response
-	return
-}
-
-func (r *deliveryOrderDetailOpenSearch) GetBySalesmansID(request *models.DeliveryOrderDetailOpenSearchRequest, resultChan chan *models.DeliveryOrderDetailsChan) {
-	response := &models.DeliveryOrderDetailsChan{}
-	requestQuery := r.generateDeliveryOrderQueryOpenSearchByQueryParamTermRequest("", "", request)
-	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery)
-
-	if err.Err != nil {
-		response.Error = err.Err
-		response.ErrorLog = err
-		resultChan <- response
-		return
-	}
-
-	response.DeliveryOrderDetails = result.DeliveryOrderDetails
-	resultChan <- response
-	return
-}
-
-func (r *deliveryOrderDetailOpenSearch) GetByStoreID(request *models.DeliveryOrderDetailOpenSearchRequest, resultChan chan *models.DeliveryOrderDetailsChan) {
-	response := &models.DeliveryOrderDetailsChan{}
-	requestQuery := r.generateDeliveryOrderQueryOpenSearchTermRequest("store_id", request.StoreID, request)
-	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery)
-
-	if err.Err != nil {
-		response.Error = err.Err
-		response.ErrorLog = err
-		resultChan <- response
-		return
-	}
-
-	response.DeliveryOrderDetails = result.DeliveryOrderDetails
-	resultChan <- response
-	return
-}
-
-func (r *deliveryOrderDetailOpenSearch) GetByAgentID(request *models.DeliveryOrderDetailOpenSearchRequest, resultChan chan *models.DeliveryOrderDetailsChan) {
-	response := &models.DeliveryOrderDetailsChan{}
-	requestQuery := r.generateDeliveryOrderQueryOpenSearchTermRequest("agent_id", request.AgentID, request)
 	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery)
 
 	if err.Err != nil {

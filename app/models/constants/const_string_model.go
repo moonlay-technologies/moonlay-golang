@@ -10,6 +10,8 @@ const (
 	UPDATE_DELIVERY_ORDER_CONSUMER = "update-delivery-order-consumer"
 	DELETE_DELIVERY_ORDER_CONSUMER = "delete-delivery-order-consumer"
 
+	DELETE_DELIVERY_ORDER_DETAIL_CONSUMER = "delete-delivery-order-detail-consumer"
+
 	UPDATE_SO_STATUS_APPV = "APPV"
 	UPDATE_SO_STATUS_RJC  = "RJC"
 	UPDATE_SO_STATUS_CNCL = "CNCL"

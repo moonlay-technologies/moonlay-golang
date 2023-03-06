@@ -20,6 +20,9 @@ type DeliveryOrderDetailOpenSearchUseCaseInterface interface {
 	SyncToOpenSearchFromCreateDoEvent(deliveryOrder *models.DeliveryOrder, salesOrderUseCase SalesOrderUseCaseInterface, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromUpdateDoEvent(deliveryOrder *models.DeliveryOrder, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromDeleteDoEvent(deliveryOrderId *int, ctx context.Context) *model.ErrorLog
+	SyncToOpenSearchFromCreateEvent(deliveryOrderDetail *models.DeliveryOrderDetail, salesOrderUseCase SalesOrderUseCaseInterface, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
+	SyncToOpenSearchFromUpdateEvent(deliveryOrderDetail *models.DeliveryOrderDetail, ctx context.Context) *model.ErrorLog
+	SyncToOpenSearchFromDeleteEvent(Id *int, ctx context.Context) *model.ErrorLog
 }
 
 type DeliveryOrderDetailOpenSearchUseCase struct {
@@ -194,5 +197,14 @@ func (u *DeliveryOrderDetailOpenSearchUseCase) SyncToOpenSearchFromDeleteDoEvent
 		}
 	}
 
+	return &model.ErrorLog{}
+}
+func (u *DeliveryOrderDetailOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrderDetail *models.DeliveryOrderDetail, salesOrderUseCase SalesOrderUseCaseInterface, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
+	return &model.ErrorLog{}
+}
+func (u *DeliveryOrderDetailOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(deliveryOrderDetail *models.DeliveryOrderDetail, ctx context.Context) *model.ErrorLog {
+	return &model.ErrorLog{}
+}
+func (u *DeliveryOrderDetailOpenSearchUseCase) SyncToOpenSearchFromDeleteEvent(Id *int, ctx context.Context) *model.ErrorLog {
 	return &model.ErrorLog{}
 }
