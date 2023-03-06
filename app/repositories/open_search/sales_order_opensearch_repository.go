@@ -380,6 +380,7 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 				"multi_match": map[string]interface{}{
 					"query":  request.GlobalSearchValue,
 					"fields": []string{"store_code", "store_name", "so_code", "so_ref_code"},
+					"type":   "phrase_prefix",
 				},
 			}
 
