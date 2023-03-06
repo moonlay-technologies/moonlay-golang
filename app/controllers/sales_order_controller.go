@@ -13,6 +13,7 @@ import (
 	"order-service/global/utils/helper"
 	baseModel "order-service/global/utils/model"
 	"strconv"
+	"strings"
 
 	"github.com/bxcodec/dbresolver"
 	"github.com/gin-gonic/gin"
@@ -28,6 +29,7 @@ type SalesOrderControllerInterface interface {
 	GetDetails(ctx *gin.Context)
 	GetDetailsBySoId(ctx *gin.Context)
 	GetDetailsById(ctx *gin.Context)
+	GetSyncToKafkaHistories(ctx *gin.Context)
 	DeleteByID(ctx *gin.Context)
 }
 
@@ -1672,6 +1674,140 @@ func (c *salesOrderController) GetDetailsById(ctx *gin.Context) {
 		return
 	}
 	result.Data = data
+	result.StatusCode = http.StatusOK
+	ctx.JSON(http.StatusOK, result)
+	return
+}
+
+func (c *salesOrderController) GetSyncToKafkaHistories(ctx *gin.Context) {
+	var result baseModel.Response
+	var resultErrorLog *baseModel.ErrorLog
+	var pageInt, perPageInt, agentIdInt int
+
+	page, isPageExist := ctx.GetQuery("page")
+	if isPageExist == false {
+		page = "1"
+	}
+
+	pageInt, err := strconv.Atoi(page)
+
+	if err != nil {
+		err = helper.NewError("Parameter 'page' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	if pageInt == 0 {
+		err = helper.NewError("Parameter 'page' harus bernilai integer > 0")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	perPage, isPerPageExist := ctx.GetQuery("per_page")
+	if isPerPageExist == false {
+		perPage = "10"
+	}
+
+	perPageInt, err = strconv.Atoi(perPage)
+	if err != nil {
+		err = helper.NewError("Parameter 'per_page' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	if perPageInt == 0 {
+		err = helper.NewError("Parameter 'per_page' harus bernilai integer > 0")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	sortField, isSortFieldExist := ctx.GetQuery("sort_field")
+	if isSortFieldExist == false {
+		sortField = "created_at"
+	}
+
+	sortValue, isSortValueExist := ctx.GetQuery("sort_value")
+	if isSortValueExist == false {
+		sortValue = "desc"
+	}
+
+	globalSearchValue, isGlobalSearchValueExist := ctx.GetQuery("global_search_value")
+	if isGlobalSearchValueExist == false {
+		globalSearchValue = ""
+	}
+
+	requestId, isRequestIdExist := ctx.GetQuery("request_id")
+	if isRequestIdExist == false {
+		requestId = ""
+	}
+
+	soCode, isSoCodeExist := ctx.GetQuery("so_code")
+	if isSoCodeExist == false {
+		soCode = ""
+	}
+
+	status, isStatusExist := ctx.GetQuery("status")
+	if isStatusExist == false {
+		status = ""
+	}
+
+	action, isActionExist := ctx.GetQuery("action")
+	if isActionExist == false {
+		action = ""
+	}
+
+	agentId, isAgentIdExist := ctx.GetQuery("agent_id")
+	if isAgentIdExist == false {
+		agentId = "0"
+	}
+
+	agentIdInt, err = strconv.Atoi(agentId)
+	if err != nil {
+		err = helper.NewError("Parameter 'agent_id' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		result.StatusCode = http.StatusBadRequest
+		result.Error = errorLogData
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	salesOrderRequest := &models.SalesOrderEventLogRequest{
+		Page:              pageInt,
+		PerPage:           perPageInt,
+		SortField:         sortField,
+		SortValue:         strings.ToLower(sortValue),
+		GlobalSearchValue: globalSearchValue,
+		RequestID:         requestId,
+		SoCode:            soCode,
+		Status:            status,
+		Action:            action,
+		AgentID:           agentIdInt,
+	}
+
+	salesOrders, errorLog := c.salesOrderUseCase.GetSyncToKafkaHistories(salesOrderRequest, ctx)
+
+	if errorLog != nil {
+		resultErrorLog = errorLog
+		result.StatusCode = resultErrorLog.StatusCode
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	result.Data = salesOrders
+	// result.Total = salesOrders.Total
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
 	return

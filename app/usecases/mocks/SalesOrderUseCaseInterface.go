@@ -68,6 +68,31 @@ func (_m *SalesOrderUseCaseInterface) Get(request *models.SalesOrderRequest) (*m
 	return r0, r1
 }
 
+// GetSyncToKafkaHistories provides a mock function with given fields: request
+func (_m *SalesOrderUseCaseInterface) GetSyncToKafkaHistories(request *models.SalesOrderEventLogRequest, ctx context.Context) ([]*models.SalesOrderEventLogResponse, *model.ErrorLog) {
+	ret := _m.Called(request,  ctx)
+
+	var r0 []*models.SalesOrderEventLogResponse
+	if rf, ok := ret.Get(0).(func(*models.SalesOrderEventLogRequest, context.Context) []*models.SalesOrderEventLogResponse); ok {
+		r0 = rf(request,  ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*models.SalesOrderEventLogResponse)
+		}
+	}
+
+	var r1 *model.ErrorLog
+	if rf, ok := ret.Get(1).(func(*models.SalesOrderEventLogRequest, context.Context) *model.ErrorLog); ok {
+		r1 = rf(request,  ctx)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*model.ErrorLog)
+		}
+	}
+
+	return r0, r1
+}
+
 // GetByAgentID provides a mock function with given fields: request
 func (_m *SalesOrderUseCaseInterface) GetByAgentID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog) {
 	ret := _m.Called(request)

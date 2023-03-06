@@ -70,6 +70,7 @@ type DeliveryOrderStoreRequest struct {
 }
 
 type DeliveryOrderStoreResponse struct {
+	ID                        int                                 `json:"id,omitempty" bson:"id"`
 	SalesOrderID              int                                 `json:"sales_order_id,omitempty" bson:"sales_order_id,omitempty"`
 	SalesOrderOrderStatusID   int                                 `json:"sales_order_order_status_id,omitempty" bson:"sales_order_order_status_id,omitempty"`
 	SalesOrderOrderStatusName string                              `json:"sales_order_order_status_name,omitempty" bson:"sales_order_order_status_name,omitempty"`

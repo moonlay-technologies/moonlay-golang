@@ -82,91 +82,9 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(deliver
 
 	deliveryOrder.Store = getStoreResult.Store
 
-	for k, v := range deliveryOrder.DeliveryOrderDetails {
-		getSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
-		go u.salesOrderDetailRepository.GetByID(v.SoDetailID, false, ctx, getSalesOrderDetailResultChan)
-		getSalesOrderDetailResult := <-getSalesOrderDetailResultChan
-
-		if getSalesOrderDetailResult.Error != nil {
-			errorLogData := helper.WriteLog(getSalesOrderDetailResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-
-		fmt.Println("sid get = ", getSalesOrderDetailResult.SalesOrderDetail.ID)
-		fmt.Println("snt get = ", getSalesOrderDetailResult.SalesOrderDetail.SentQty)
-		fmt.Println("res get = ", getSalesOrderDetailResult.SalesOrderDetail.ResidualQty)
-		fmt.Println("qty get = ", getSalesOrderDetailResult.SalesOrderDetail.Qty)
-
-		getProductResultChan := make(chan *models.ProductChan)
-		go u.productRepository.GetByID(v.ProductID, false, ctx, getProductResultChan)
-		getProductResult := <-getProductResultChan
-
-		if getProductResult.Error != nil {
-			errorLogData := helper.WriteLog(getProductResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-
-		deliveryOrder.DeliveryOrderDetails[k].Product = getProductResult.Product
-
-		getUomResultChan := make(chan *models.UomChan)
-		go u.uomRepository.GetByID(v.UomID, false, ctx, getUomResultChan)
-		getUomResult := <-getUomResultChan
-
-		if getUomResult.Error != nil {
-			errorLogData := helper.WriteLog(getUomResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-
-		deliveryOrder.DeliveryOrderDetails[k].Uom = getUomResult.Uom
-
-		getBrandResultChan := make(chan *models.BrandChan)
-		go u.brandRepository.GetByID(v.UomID, false, ctx, getBrandResultChan)
-		getBrandResult := <-getBrandResultChan
-
-		if getBrandResult.Error != nil {
-			errorLogData := helper.WriteLog(getBrandResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-
-		deliveryOrder.DeliveryOrderDetails[k].Brand = getBrandResult.Brand
-
-		getSalesOrderDetailResult.SalesOrderDetail.ResidualQty -= v.Qty
-		getSalesOrderDetailResult.SalesOrderDetail.SentQty += v.Qty
-
-		statusName := "partial"
-
-		if getSalesOrderDetailResult.SalesOrderDetail.ResidualQty == 0 {
-			statusName = "closed"
-		}
-
-		getStatusSalesOrderDetailResultChan := make(chan *models.OrderStatusChan)
-		go u.orderStatusRepository.GetByNameAndType(statusName, "sales_order_detail", false, ctx, getStatusSalesOrderDetailResultChan)
-		getStatusSalesOrderDetailResult := <-getStatusSalesOrderDetailResultChan
-
-		if getStatusSalesOrderDetailResult.Error != nil {
-			errorLogData := helper.WriteLog(getStatusSalesOrderDetailResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-
-		salesOrderDetailDataUpdate := &models.SalesOrderDetail{
-			UpdatedAt:       &now,
-			OrderStatusID:   getStatusSalesOrderDetailResult.OrderStatus.ID,
-			ResidualQty:     getSalesOrderDetailResult.SalesOrderDetail.ResidualQty,
-			SentQty:         getSalesOrderDetailResult.SalesOrderDetail.SentQty,
-			EndDateSyncToEs: &now,
-		}
-
-		updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
-		go u.salesOrderDetailRepository.UpdateByID(getSalesOrderDetailResult.SalesOrderDetail.ID, salesOrderDetailDataUpdate, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
-		updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
-
-		if updateSalesOrderDetailResult.Error != nil {
-			errorLogData := helper.WriteLog(updateSalesOrderDetailResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-
+	for _, v := range deliveryOrder.DeliveryOrderDetails {
 		removeCacheSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
-		go u.salesOrderDetailRepository.RemoveCacheByID(getSalesOrderDetailResult.SalesOrderDetail.ID, ctx, removeCacheSalesOrderDetailResultChan)
+		go u.salesOrderDetailRepository.RemoveCacheByID(v.SoDetailID, ctx, removeCacheSalesOrderDetailResultChan)
 		removeCacheSalesOrderDetailResult := <-removeCacheSalesOrderDetailResultChan
 
 		if removeCacheSalesOrderDetailResult.Error != nil {
@@ -174,20 +92,9 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(deliver
 			return errorLogData
 		}
 
-		deliveryOrder.DeliveryOrderDetails[k].EndDateSyncToEs = &now
-		deliveryOrder.DeliveryOrderDetails[k].IsDoneSyncToEs = "1"
+		v.EndDateSyncToEs = &now
+		v.IsDoneSyncToEs = "1"
 	}
-
-	getSalesOrderDetailsResultChan := make(chan *models.SalesOrderDetailsChan)
-	go u.salesOrderDetailRepository.GetBySalesOrderID(deliveryOrder.SalesOrderID, false, ctx, getSalesOrderDetailsResultChan)
-	getSalesOrderDetailsResult := <-getSalesOrderDetailsResultChan
-
-	if getSalesOrderDetailsResult.Error != nil {
-		errorLogData := helper.WriteLog(getSalesOrderDetailsResult.Error, http.StatusInternalServerError, nil)
-		return errorLogData
-	}
-
-	deliveryOrder.SalesOrder.SalesOrderDetails = getSalesOrderDetailsResult.SalesOrderDetails
 
 	removeCacheSalesOrderResultChan := make(chan *models.SalesOrderChan)
 	go u.salesOrderRepository.RemoveCacheByID(deliveryOrder.SalesOrderID, ctx, removeCacheSalesOrderResultChan)
@@ -239,7 +146,7 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(deliver
 
 	deliveryOrder.Store = getStoreResult.Store
 
-	for k, v := range deliveryOrder.DeliveryOrderDetails {
+	for _, v := range deliveryOrder.DeliveryOrderDetails {
 		getSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
 		go u.salesOrderDetailRepository.GetByID(v.SoDetailID, false, ctx, getSalesOrderDetailResultChan)
 		getSalesOrderDetailResult := <-getSalesOrderDetailResultChan
@@ -258,7 +165,7 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(deliver
 			return errorLogData
 		}
 
-		deliveryOrder.DeliveryOrderDetails[k].Product = getProductResult.Product
+		v.Product = getProductResult.Product
 
 		getUomResultChan := make(chan *models.UomChan)
 		go u.uomRepository.GetByID(v.UomID, false, ctx, getUomResultChan)
@@ -269,7 +176,7 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(deliver
 			return errorLogData
 		}
 
-		deliveryOrder.DeliveryOrderDetails[k].Uom = getUomResult.Uom
+		v.Uom = getUomResult.Uom
 
 		getBrandResultChan := make(chan *models.BrandChan)
 		go u.brandRepository.GetByID(v.UomID, false, ctx, getBrandResultChan)
@@ -280,7 +187,7 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(deliver
 			return errorLogData
 		}
 
-		deliveryOrder.DeliveryOrderDetails[k].Brand = getBrandResult.Brand
+		v.Brand = getBrandResult.Brand
 	}
 
 	deliveryOrder.UpdatedAt = &now
@@ -311,9 +218,9 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromDeleteEvent(deliver
 	}
 	deliveryOrder := getDeliveryOrdersResult.DeliveryOrder
 
-	for k := range deliveryOrder.DeliveryOrderDetails {
-		deliveryOrder.DeliveryOrderDetails[k].DeletedAt = &now
-		deliveryOrder.DeliveryOrderDetails[k].UpdatedAt = &now
+	for _, v := range deliveryOrder.DeliveryOrderDetails {
+		v.DeletedAt = &now
+		v.UpdatedAt = &now
 	}
 
 	deliveryOrder.DeletedAt = &now

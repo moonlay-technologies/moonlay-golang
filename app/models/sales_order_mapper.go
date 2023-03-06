@@ -270,8 +270,13 @@ func (salesOrder *SalesOrder) SalesOrderOpenSearchChanMap(request *SalesOrderCha
 	}
 
 	for k, v := range request.SalesOrder.SalesOrderDetails {
-		salesOrder.SalesOrderDetails[k].ID = v.ID
+		for _, y := range salesOrder.SalesOrderDetails {
+			if y.ID == v.ID {
+				request.SalesOrder.SalesOrderDetails[k] = y
+			}
+		}
 	}
+	salesOrder.SalesOrderDetails = request.SalesOrder.SalesOrderDetails
 }
 
 func (salesOrder *SalesOrder) UpdateSalesOrderChanMap(request *SalesOrderChan) {
@@ -492,5 +497,34 @@ func (salesOrder *SalesOrderOpenSearchResponse) SalesOrderOpenSearchResponseMap(
 	salesOrder.CreatedAt = request.CreatedAt
 	salesOrder.UpdatedAt = request.UpdatedAt
 
+	return
+}
+
+func (salesOrderEventLog *SalesOrderEventLogResponse) SalesOrderEventLogResponseMap(request *GetSalesOrderLog) {
+	salesOrderEventLog.ID = request.ID
+	salesOrderEventLog.RequestID = request.RequestID
+	salesOrderEventLog.SoCode = request.SoCode
+	salesOrderEventLog.Status = request.Status
+	salesOrderEventLog.Action = request.Action
+	salesOrderEventLog.CreatedAt = request.CreatedAt
+	salesOrderEventLog.UpdatedAt = request.UpdatedAt
+	return
+}
+
+func (dataSOEventLog *DataSOEventLogResponse) DataSOEventLogResponseMap(request *GetSalesOrderLog) {
+	dataSOEventLog.AgentID = request.Data.AgentID
+	dataSOEventLog.AgentName = request.Data.AgentName.String
+	dataSOEventLog.StoreCode = request.Data.StoreCode.String
+	dataSOEventLog.StoreName = request.Data.StoreName.String
+	dataSOEventLog.SalesID = int(request.Data.SalesmanID.Int64)
+	dataSOEventLog.SalesName = request.Data.SalesmanName.String
+	dataSOEventLog.OrderDate = request.Data.CreatedAt
+	dataSOEventLog.StartOrderAt = request.Data.StartCreatedDate
+	dataSOEventLog.OrderNote = request.Data.Note.String
+	dataSOEventLog.InternalNote = request.Data.InternalComment.String
+	dataSOEventLog.BrandCode = request.Data.BrandID
+	dataSOEventLog.BrandName = request.Data.BrandName
+	dataSOEventLog.AddressID = request.Data.StoreID
+	dataSOEventLog.Address = request.Data.StoreAddress.String
 	return
 }
