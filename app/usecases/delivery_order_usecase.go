@@ -406,25 +406,17 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 
 	orderStatusID := int(getOrderStatusResult.OrderStatus.ID)
 	deliveryOrder := &models.DeliveryOrder{
-		WarehouseID:       int(getWarehouseResult.Warehouse.ID),
-		OrderSourceID:     int(getOrderSourceResult.OrderSource.ID),
+		// WarehouseID:       int(getWarehouseResult.Warehouse.ID),
+		// OrderSourceID:     int(getOrderSourceResult.OrderSource.ID),
+		// DoRefCode:         models.NullString{NullString: sql.NullString{String: request.DoRefCode, Valid: true}},
+		// DoRefDate:         models.NullString{NullString: sql.NullString{String: request.DoRefDate, Valid: true}},
+		// DriverName:        models.NullString{NullString: sql.NullString{String: request.DriverName, Valid: true}},
+		// PlatNumber:        models.NullString{NullString: sql.NullString{String: request.PlatNumber, Valid: true}},
 		OrderStatusID:     orderStatusID,
-		DoRefCode:         models.NullString{NullString: sql.NullString{String: request.DoRefCode, Valid: true}},
-		DoRefDate:         models.NullString{NullString: sql.NullString{String: request.DoRefDate, Valid: true}},
-		DriverName:        models.NullString{NullString: sql.NullString{String: request.DriverName, Valid: true}},
-		PlatNumber:        models.NullString{NullString: sql.NullString{String: request.PlatNumber, Valid: true}},
 		IsDoneSyncToEs:    "0",
 		StartDateSyncToEs: &now,
 		EndCreatedDate:    &now,
-		UpdatedAt:         &now,
-	}
-
-	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderRepository.UpdateByID(getDeliveryOrderResult.DeliveryOrder.ID, deliveryOrder, sqlTransaction, ctx, createDeliveryOrderResultChan)
-	createDeliveryOrderResult := <-createDeliveryOrderResultChan
-
-	if createDeliveryOrderResult.Error != nil {
-		return &models.DeliveryOrder{}, createDeliveryOrderResult.ErrorLog
+		// UpdatedAt:         &now,
 	}
 
 	getDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailsChan)
@@ -437,22 +429,52 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 
 	deliveryOrderDetails := []*models.DeliveryOrderDetail{}
 	for _, v := range request.DeliveryOrderDetails {
-		deliveryOrderDetail := &models.DeliveryOrderDetail{
-			Qty:       v.Qty,
-			Note:      models.NullString{NullString: sql.NullString{String: v.Note, Valid: true}},
-			UpdatedAt: &now,
-		}
 		for _, x := range getDeliveryOrderDetailResult.DeliveryOrderDetails {
-			createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
-			go u.deliveryOrderDetailRepository.UpdateByID(int(x.ID), deliveryOrderDetail, sqlTransaction, ctx, createDeliveryOrderDetailResultChan)
-			createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
+			if x.ID == v.ID {
+				orderStatusID := 18
+				if v.Qty == 0 {
+					orderStatusID = 19
+				}
+				getOrderStatusResultChan := make(chan *models.OrderStatusChan)
+				go u.orderStatusRepository.GetByID(orderStatusID, false, ctx, getOrderStatusResultChan)
+				getOrderStatusResult := <-getOrderStatusResultChan
 
-			if createDeliveryOrderDetailResult.Error != nil {
-				return &models.DeliveryOrder{}, createDeliveryOrderDetailResult.ErrorLog
+				if getOrderStatusResult.Error != nil {
+					return &models.DeliveryOrder{}, getOrderStatusResult.ErrorLog
+				}
+
+				// need validation
+				deliveryOrder.OrderStatus = getOrderStatusResult.OrderStatus
+				deliveryOrder.OrderStatusID = getOrderStatusResult.OrderStatus.ID
+				deliveryOrder.OrderStatusName = getOrderStatusResult.OrderStatus.Name
+
+				deliveryOrderDetail := &models.DeliveryOrderDetail{
+					ID:              v.ID,
+					Qty:             v.Qty,
+					OrderStatusID:   getOrderStatusResult.OrderStatus.ID,
+					OrderStatusName: getOrderStatusResult.OrderStatus.Name,
+					Note:            models.NullString{NullString: sql.NullString{String: v.Note, Valid: true}},
+					UpdatedAt:       &now,
+				}
+				createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
+				go u.deliveryOrderDetailRepository.UpdateByID(int(x.ID), deliveryOrderDetail, sqlTransaction, ctx, createDeliveryOrderDetailResultChan)
+				createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
+
+				if createDeliveryOrderDetailResult.Error != nil {
+					return &models.DeliveryOrder{}, createDeliveryOrderDetailResult.ErrorLog
+				}
+				deliveryOrderDetail.ID = int(createDeliveryOrderDetailResult.ID)
+				deliveryOrderDetails = append(deliveryOrderDetails, deliveryOrderDetail)
 			}
-			deliveryOrderDetail.ID = int(createDeliveryOrderDetailResult.ID)
-			deliveryOrderDetails = append(deliveryOrderDetails, deliveryOrderDetail)
 		}
+	}
+
+	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
+	go u.deliveryOrderRepository.UpdateByID(getDeliveryOrderResult.DeliveryOrder.ID, deliveryOrder, sqlTransaction, ctx, createDeliveryOrderResultChan)
+	createDeliveryOrderResult := <-createDeliveryOrderResultChan
+
+	if createDeliveryOrderResult.Error != nil {
+		return &models.DeliveryOrder{}, createDeliveryOrderResult.ErrorLog
 	}
 
 	deliveryOrder.DeliveryOrderDetails = deliveryOrderDetails
