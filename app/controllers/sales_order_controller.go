@@ -204,14 +204,51 @@ func (c *salesOrderController) Get(ctx *gin.Context) {
 		return
 	}
 
-	startSoDate, isStartSoDate := ctx.GetQuery("start_so_date")
-	if isStartSoDate == false {
+	dateField := []*models.DateInputRequest{}
+
+	startSoDate, isStartSoDateExist := ctx.GetQuery("start_so_date")
+	if isStartSoDateExist == false {
 		startSoDate = ""
+	} else {
+		dateField = append(dateField, &models.DateInputRequest{
+			Field: "start_so_date",
+			Value: startSoDate,
+		})
 	}
 
-	endSoDate, isEndSoDate := ctx.GetQuery("end_so_date")
-	if isEndSoDate == false {
+	endSoDate, isEndSoDateExist := ctx.GetQuery("end_so_date")
+	if isEndSoDateExist == false {
 		endSoDate = ""
+	} else {
+		dateField = append(dateField, &models.DateInputRequest{
+			Field: "end_so_date",
+			Value: endSoDate,
+		})
+	}
+
+	startCreatedAt, isStartCreatedAtExist := ctx.GetQuery("start_created_at")
+	if isStartCreatedAtExist == false {
+		startCreatedAt = ""
+	} else {
+		dateField = append(dateField, &models.DateInputRequest{
+			Field: "start_created_at",
+			Value: startCreatedAt,
+		})
+	}
+
+	endCreatedAt, isEndCreatedAtExist := ctx.GetQuery("end_created_at")
+	if isEndCreatedAtExist == false {
+		endCreatedAt = ""
+	} else {
+		dateField = append(dateField, &models.DateInputRequest{
+			Field: "end_created_at",
+			Value: endCreatedAt,
+		})
+	}
+
+	err = c.requestValidationMiddleware.DateInputValidation(ctx, dateField, constants.ERROR_ACTION_NAME_CREATE)
+	if err != nil {
+		return
 	}
 
 	id, isIdExist := ctx.GetQuery("id")
@@ -332,16 +369,6 @@ func (c *salesOrderController) Get(ctx *gin.Context) {
 		result.Error = errorLogData
 		ctx.JSON(result.StatusCode, result)
 		return
-	}
-
-	startCreatedAt, isStartCreatedAt := ctx.GetQuery("start_created_at")
-	if isStartCreatedAt == false {
-		startCreatedAt = ""
-	}
-
-	endCreatedAt, isEndCreatedAt := ctx.GetQuery("end_created_at")
-	if isEndCreatedAt == false {
-		endCreatedAt = ""
 	}
 
 	salesOrderRequest := &models.SalesOrderRequest{
