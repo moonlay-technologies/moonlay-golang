@@ -90,10 +90,10 @@ func (d *DeliveryOrderValidator) CreateDeliveryOrderValidator(insertRequest *mod
 	now := time.Now().UTC().Add(7 * time.Hour)
 	sDoDate := now.Format("2006-01-02")
 	sDoDateEqualMonth := fmt.Sprintf("MONTH(so_date) = MONTH('%s') AND MONTH(so_date) = MONTH('%s')", insertRequest.DoRefDate, sDoDate)
-	sDoDateHigherOrEqualSoDate := fmt.Sprintf("DAY(so_date) <= DAY('%s') AND DAY(so_date) <= DAY('%s')", insertRequest.DoRefDate, sDoDate)
+	sDoDateHigherOrEqualSoDate := fmt.Sprintf("DATE(so_date) <= DATE('%s') AND DATE(so_date) <= DATE('%s')", insertRequest.DoRefDate, sDoDate)
 	// sDoDateLowerOrEqualSoRefDate := fmt.Sprintf("DAY(so_ref_date) >= DAY('%s') AND DAY(so_ref_date) >= DAY(%s)", insertRequest.DoRefDate, sDoDate)
-	sDoDateLowerOrEqualToday := fmt.Sprintf("DAY('%s') <= DAY('%s')", insertRequest.DoRefDate, sDoDate)
-	sSoDateEqualDoDate := fmt.Sprintf("IF(DAY(so_date) = DAY('%[2]s'), IF(DAY('%[2]s') = DAY('%[1]s'), TRUE, FALSE), TRUE)", insertRequest.DoRefDate, sDoDate)
+	sDoDateLowerOrEqualToday := fmt.Sprintf("DATE('%s') <= DATE('%s')", insertRequest.DoRefDate, sDoDate)
+	sSoDateEqualDoDate := fmt.Sprintf("IF(DATE(so_date) = DATE('%[2]s'), IF(DATE('%[2]s') = DATE('%[1]s'), TRUE, FALSE), TRUE)", insertRequest.DoRefDate, sDoDate)
 	mustActiveField422 := []*models.MustActiveRequest{
 		{
 			Table:         "sales_orders",
