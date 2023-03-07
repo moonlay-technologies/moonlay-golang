@@ -103,7 +103,7 @@ type DeliveryOrderDetailOpenSearch struct {
 
 type DeliveryOrderDetailStoreRequest struct {
 	SoDetailID int    `json:"so_detail_id,omitempty" bson:"so_detail_id,omitempty" binding:"required"`
-	Qty        int    `json:"qty,omitempty" bson:"qty,omitempty" binding:"required"`
+	Qty        int    `json:"qty,omitempty" bson:"qty,omitempty"`
 	Note       string `json:"note,omitempty" bson:"note,omitempty"`
 }
 

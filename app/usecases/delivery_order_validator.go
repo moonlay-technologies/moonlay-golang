@@ -115,7 +115,7 @@ func (d *DeliveryOrderValidator) CreateDeliveryOrderValidator(insertRequest *mod
 	totalQty := 0
 	for _, x := range insertRequest.DeliveryOrderDetails {
 		if x.Qty < 0 {
-			err = helper.NewError(fmt.Sprintf("qty sales order detail %d must equal or higher than 0", x.SoDetailID))
+			err = helper.NewError(fmt.Sprintf("qty delivery order detail %d must equal or higher than 0", x.SoDetailID))
 			result.StatusCode = http.StatusUnprocessableEntity
 			result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
 			ctx.JSON(result.StatusCode, result)
