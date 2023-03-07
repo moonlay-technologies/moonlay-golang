@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
@@ -58,8 +57,7 @@ func (r *salesOrderJourneysRepository) GetBySoId(ID int, countOnly bool, ctx con
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
 	filter := bson.M{"so_id": ID}
 	total, err := collection.CountDocuments(ctx, filter)
-	fmt.Println("err", err)
-	fmt.Println("total", total)
+
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
@@ -98,12 +96,11 @@ func (r *salesOrderJourneysRepository) GetBySoId(ID int, countOnly bool, ctx con
 
 			salesOrderJourneys = append(salesOrderJourneys, salesOrderJourney)
 		}
-		fmt.Println("hit sini")
+
 		response.SalesOrderJourneys = salesOrderJourneys
 		response.Total = total
 		response.Error = nil
 		resultChan <- response
-		fmt.Println("hit 2", response)
 		return
 	} else {
 		response.SalesOrderJourneys = nil
