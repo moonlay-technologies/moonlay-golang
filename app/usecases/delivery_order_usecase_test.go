@@ -195,6 +195,19 @@ func Test_DeliveryOrderUseCase_GetByID_ShouldError(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func Test_DeliveryOrderUseCase_GetByIDWithDetail_ShouldError(t *testing.T) {
+	// Arrange
+	deliveryOrderUsecase := newDeliveryOrderUsecase(false)
+	var ctx context.Context
+	request := &models.DeliveryOrderRequest{}
+	request.ID = 1
+
+	// Act
+	_, err := deliveryOrderUsecase.GetByIDWithDetail(request, ctx)
+	// Assert
+	assert.NotNil(t, err)
+}
+
 func Test_DeliveryOrderUseCase_GetAgentID_ShouldError(t *testing.T) {
 	// Arrange
 	deliveryOrderUsecase := newDeliveryOrderUsecase(false)
