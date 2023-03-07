@@ -255,6 +255,7 @@ func (u *requestValidationMiddleware) MustEmptyValidation(ctx *gin.Context, valu
 		result.StatusCode = http.StatusUnprocessableEntity
 		result.Error = errorLog
 		ctx.JSON(result.StatusCode, result)
+		error = fmt.Errorf("Invalid Process")
 	}
 
 	return error
