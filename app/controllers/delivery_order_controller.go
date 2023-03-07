@@ -383,7 +383,7 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 	var result baseModel.Response
 	var resultErrorLog *baseModel.ErrorLog
 
-	deliveryOrderRequest, err := c.deliveryOrderValidator.GetDeliveryOrderBySalesmanIDValidator(ctx)
+	deliveryOrderRequest, err := c.deliveryOrderValidator.GetDeliveryOrderValidator(ctx)
 	if err != nil {
 		return
 	}
