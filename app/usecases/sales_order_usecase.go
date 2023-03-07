@@ -31,6 +31,7 @@ type SalesOrderUseCaseInterface interface {
 	GetByOrderStatusID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
 	GetByOrderSourceID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
 	GetSyncToKafkaHistories(request *models.SalesOrderEventLogRequest, ctx context.Context) ([]*models.SalesOrderEventLogResponse, *model.ErrorLog)
+	GetSOJourneyBySOId(soId int, ctx context.Context) (*models.SalesOrderJourneyResponses, *model.ErrorLog)
 	UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
 	UpdateSODetailById(soId, soDetailId int, request *models.UpdateSalesOrderDetailByIdRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetailStoreResponse, *model.ErrorLog)
 	UpdateSODetailBySOId(soId int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
@@ -467,35 +468,6 @@ func (u *salesOrderUseCase) Get(request *models.SalesOrderRequest) (*models.Sale
 	return salesOrders, &model.ErrorLog{}
 }
 
-func (u *salesOrderUseCase) GetSyncToKafkaHistories(request *models.SalesOrderEventLogRequest, ctx context.Context) ([]*models.SalesOrderEventLogResponse, *model.ErrorLog) {
-	getSalesOrderLogResultChan := make(chan *models.GetSalesOrderLogsChan)
-	go u.salesOrderLogRepository.Get(request, false, ctx, getSalesOrderLogResultChan)
-	getSalesOrderLogResult := <-getSalesOrderLogResultChan
-
-	if getSalesOrderLogResult.Error != nil {
-		return []*models.SalesOrderEventLogResponse{}, getSalesOrderLogResult.ErrorLog
-	}
-
-	salesOrderEventLogs := []*models.SalesOrderEventLogResponse{}
-	for _, v := range getSalesOrderLogResult.SalesOrderLogs {
-		salesOrderEventLog := models.SalesOrderEventLogResponse{}
-		salesOrderEventLog.SalesOrderEventLogResponseMap(v)
-		dataSOEventLog := models.DataSOEventLogResponse{}
-		dataSOEventLog.DataSOEventLogResponseMap(v)
-		salesOrderEventLog.Data = &dataSOEventLog
-
-		for _, x := range v.Data.SalesOrderDetails {
-			salesOrderEventLog.Data.ProductCode = x.ProductSKU
-			salesOrderEventLog.Data.OrderQty = x.Qty
-			salesOrderEventLog.Data.ProductUnit = x.ProductName
-		}
-
-		salesOrderEventLogs = append(salesOrderEventLogs, &salesOrderEventLog)
-	}
-
-	return salesOrderEventLogs, nil
-}
-
 func (u *salesOrderUseCase) GetByID(request *models.SalesOrderRequest, ctx context.Context) ([]*models.SalesOrderOpenSearchResponse, *model.ErrorLog) {
 
 	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
@@ -772,6 +744,81 @@ func (u *salesOrderUseCase) GetByOrderSourceID(request *models.SalesOrderRequest
 	}
 
 	return salesOrders, &model.ErrorLog{}
+}
+
+func (u *salesOrderUseCase) GetSyncToKafkaHistories(request *models.SalesOrderEventLogRequest, ctx context.Context) ([]*models.SalesOrderEventLogResponse, *model.ErrorLog) {
+	getSalesOrderLogResultChan := make(chan *models.GetSalesOrderLogsChan)
+	go u.salesOrderLogRepository.Get(request, false, ctx, getSalesOrderLogResultChan)
+	getSalesOrderLogResult := <-getSalesOrderLogResultChan
+
+	if getSalesOrderLogResult.Error != nil {
+		return []*models.SalesOrderEventLogResponse{}, getSalesOrderLogResult.ErrorLog
+	}
+
+	salesOrderEventLogs := []*models.SalesOrderEventLogResponse{}
+	for _, v := range getSalesOrderLogResult.SalesOrderLogs {
+		salesOrderEventLog := models.SalesOrderEventLogResponse{}
+		salesOrderEventLog.SalesOrderEventLogResponseMap(v)
+		dataSOEventLog := models.DataSOEventLogResponse{}
+		dataSOEventLog.DataSOEventLogResponseMap(v)
+		salesOrderEventLog.Data = &dataSOEventLog
+
+		for _, x := range v.Data.SalesOrderDetails {
+			salesOrderEventLog.Data.ProductCode = x.ProductSKU
+			salesOrderEventLog.Data.OrderQty = x.Qty
+			salesOrderEventLog.Data.ProductUnit = x.ProductName
+		}
+
+		salesOrderEventLogs = append(salesOrderEventLogs, &salesOrderEventLog)
+	}
+
+	return salesOrderEventLogs, nil
+}
+
+func (u *salesOrderUseCase) GetSOJourneyBySOId(soId int, ctx context.Context) (*models.SalesOrderJourneyResponses, *model.ErrorLog) {
+	getSalesOrderJourneyResultChan := make(chan *models.SalesOrdersJourneysChan)
+	go u.salesOrderJourneysRepository.GetBySoId(soId, false, ctx, getSalesOrderJourneyResultChan)
+	getSalesOrderJourneyResult := <-getSalesOrderJourneyResultChan
+
+	if getSalesOrderJourneyResult.Error != nil {
+		return &models.SalesOrderJourneyResponses{}, getSalesOrderJourneyResult.ErrorLog
+	}
+
+	salesOrderJourneys := []*models.SalesOrderJourneyResponse{}
+	for _, v := range getSalesOrderJourneyResult.SalesOrderJourneys {
+		orderStatusID := 0
+		switch v.Status {
+		case constants.UPDATE_SO_STATUS_APPV:
+			orderStatusID = 5
+		case constants.UPDATE_SO_STATUS_REAPPV:
+			orderStatusID = 5
+		case constants.UPDATE_SO_STATUS_RJC:
+			orderStatusID = 9
+		case constants.UPDATE_SO_STATUS_CNCL:
+			orderStatusID = 10
+		case constants.UPDATE_SO_STATUS_ORDPRT:
+			orderStatusID = 7
+		case constants.UPDATE_SO_STATUS_ORDCLS:
+			orderStatusID = 8
+		case constants.UPDATE_SO_STATUS_PEND:
+			orderStatusID = 6
+		default:
+			orderStatusID = 0
+		}
+
+		salesOrderJourney := models.SalesOrderJourneyResponse{}
+		salesOrderJourney.SalesOrderJourneyResponseMap(v)
+		salesOrderJourney.OrderStatusID = orderStatusID
+
+		salesOrderJourneys = append(salesOrderJourneys, &salesOrderJourney)
+	}
+
+	salesOrderJourneysResult := &models.SalesOrderJourneyResponses{
+		SalesOrderJourneys: salesOrderJourneys,
+		Total:              getSalesOrderJourneyResult.Total,
+	}
+
+	return salesOrderJourneysResult, nil
 }
 
 // func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog) {
