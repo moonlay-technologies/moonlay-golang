@@ -452,7 +452,7 @@ func (d *DeliveryOrderValidator) getQueryWithDefault(param string, empty string,
 	return result
 }
 
-func (d *DeliveryOrderValidator) getIntQueryWithDefault(param string, empty string, isAllowZero bool, ctx *gin.Context) (int, error) {
+func (d *DeliveryOrderValidator) getIntQueryWithDefault(param string, empty string, isNotZero bool, ctx *gin.Context) (int, error) {
 	var response baseModel.Response
 	sResult := d.getQueryWithDefault(param, empty, ctx)
 	result, err := strconv.Atoi(sResult)
@@ -463,7 +463,7 @@ func (d *DeliveryOrderValidator) getIntQueryWithDefault(param string, empty stri
 		ctx.JSON(response.StatusCode, result)
 		return 0, err
 	}
-	if result == 0 && !isAllowZero {
+	if result == 0 && isNotZero {
 		err = helper.NewError(fmt.Sprintf("Parameter '%s' harus bernilai integer > 0", param))
 		response.StatusCode = http.StatusBadRequest
 		response.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
