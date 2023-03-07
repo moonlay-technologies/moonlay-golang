@@ -460,14 +460,14 @@ func (d *DeliveryOrderValidator) getIntQueryWithDefault(param string, empty stri
 		err = helper.NewError(fmt.Sprintf("Parameter '%s' harus bernilai integer", param))
 		response.StatusCode = http.StatusBadRequest
 		response.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(response.StatusCode, result)
+		ctx.JSON(response.StatusCode, response)
 		return 0, err
 	}
 	if result == 0 && isNotZero {
 		err = helper.NewError(fmt.Sprintf("Parameter '%s' harus bernilai integer > 0", param))
 		response.StatusCode = http.StatusBadRequest
 		response.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(response.StatusCode, result)
+		ctx.JSON(response.StatusCode, response)
 		return 0, err
 	}
 	return result, nil
