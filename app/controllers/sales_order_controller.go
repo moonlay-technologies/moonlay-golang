@@ -30,6 +30,7 @@ type SalesOrderControllerInterface interface {
 	GetDetailsBySoId(ctx *gin.Context)
 	GetDetailsById(ctx *gin.Context)
 	GetSyncToKafkaHistories(ctx *gin.Context)
+	GetSOJourneyBySoId(ctx *gin.Context)
 	DeleteByID(ctx *gin.Context)
 }
 
@@ -1808,6 +1809,45 @@ func (c *salesOrderController) GetSyncToKafkaHistories(ctx *gin.Context) {
 
 	result.Data = salesOrders
 	// result.Total = salesOrders.Total
+	result.StatusCode = http.StatusOK
+	ctx.JSON(http.StatusOK, result)
+	return
+}
+
+func (c *salesOrderController) GetSOJourneyBySoId(ctx *gin.Context) {
+	var result baseModel.Response
+	var resultErrorLog *baseModel.ErrorLog
+
+	ctx.Set("full_path", ctx.FullPath())
+	ctx.Set("method", ctx.Request.Method)
+
+	ids := ctx.Param("so-id")
+	id, err := strconv.Atoi(ids)
+
+	if err != nil {
+		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_GET, "sales order id harus bernilai integer")},
+			SystemMessage: []string{"Invalid Process"},
+			StatusCode:    http.StatusUnprocessableEntity,
+		})
+		result.StatusCode = http.StatusUnprocessableEntity
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	salesOrderJourney, errorLog := c.salesOrderUseCase.GetSOJourneyBySOId(id, ctx)
+
+	if errorLog != nil {
+		resultErrorLog = errorLog
+		result.StatusCode = resultErrorLog.StatusCode
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	result.Data = salesOrderJourney.SalesOrderJourneys
+	result.Total = salesOrderJourney.Total
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
 	return

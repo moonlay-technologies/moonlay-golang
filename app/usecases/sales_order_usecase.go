@@ -31,6 +31,7 @@ type SalesOrderUseCaseInterface interface {
 	GetByOrderStatusID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
 	GetByOrderSourceID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
 	GetSyncToKafkaHistories(request *models.SalesOrderEventLogRequest, ctx context.Context) ([]*models.SalesOrderEventLogResponse, *model.ErrorLog)
+	GetSOJourneyBySOId(soId int, ctx context.Context) (*models.SalesOrderJourneyResponses, *model.ErrorLog)
 	UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
 	UpdateSODetailById(soId, soDetailId int, request *models.UpdateSalesOrderDetailByIdRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetailStoreResponse, *model.ErrorLog)
 	UpdateSODetailBySOId(soId int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
@@ -494,6 +495,63 @@ func (u *salesOrderUseCase) GetSyncToKafkaHistories(request *models.SalesOrderEv
 	}
 
 	return salesOrderEventLogs, nil
+}
+
+func (u *salesOrderUseCase) GetSOJourneyBySOId(soId int, ctx context.Context) (*models.SalesOrderJourneyResponses, *model.ErrorLog) {
+	getSalesOrderJourneyResultChan := make(chan *models.SalesOrdersJourneysChan)
+	go u.salesOrderJourneysRepository.GetBySoId(soId, false, ctx, getSalesOrderJourneyResultChan)
+	getSalesOrderJourneyResult := <-getSalesOrderJourneyResultChan
+
+	if getSalesOrderJourneyResult.Error != nil {
+		return &models.SalesOrderJourneyResponses{}, getSalesOrderJourneyResult.ErrorLog
+	}
+	fmt.Println("data", getSalesOrderJourneyResult.SalesOrderJourneys)
+	fmt.Println("data", getSalesOrderJourneyResult)
+
+	salesOrderJourneys := []*models.SalesOrderJourneyResponse{}
+	for _, v := range getSalesOrderJourneyResult.SalesOrderJourneys {
+		orderStatusID := 0
+		switch v.Status {
+		case constants.UPDATE_SO_STATUS_APPV:
+			orderStatusID = 5
+		case constants.UPDATE_SO_STATUS_REAPPV:
+			orderStatusID = 5
+		case constants.UPDATE_SO_STATUS_RJC:
+			orderStatusID = 9
+		case constants.UPDATE_SO_STATUS_CNCL:
+			orderStatusID = 10
+		case constants.UPDATE_SO_STATUS_ORDPRT:
+			orderStatusID = 7
+		case constants.UPDATE_SO_STATUS_ORDCLS:
+			orderStatusID = 8
+		case constants.UPDATE_SO_STATUS_PEND:
+			orderStatusID = 6
+		default:
+			orderStatusID = 0
+		}
+
+		salesOrderJourney := models.SalesOrderJourneyResponse{
+			ID:              v.ID,
+			SoId:            v.SoId,
+			SoCode:          v.SoCode,
+			SoDate:          v.SoDate,
+			OrderStatusID:   orderStatusID,
+			OrderStatusName: v.Status,
+			Remark:          models.NullString{sql.NullString{String: v.Remark, Valid: true}},
+			Reason:          models.NullString{sql.NullString{String: v.Reason, Valid: true}},
+			CreatedAt:       v.CreatedAt,
+			UpdatedAt:       v.UpdatedAt,
+		}
+
+		salesOrderJourneys = append(salesOrderJourneys, &salesOrderJourney)
+	}
+
+	salesOrderJourneysResult := &models.SalesOrderJourneyResponses{
+		SalesOrderJourneys: salesOrderJourneys,
+		Total:              getSalesOrderJourneyResult.Total,
+	}
+
+	return salesOrderJourneysResult, nil
 }
 
 func (u *salesOrderUseCase) GetByID(request *models.SalesOrderRequest, ctx context.Context) ([]*models.SalesOrderOpenSearchResponse, *model.ErrorLog) {
