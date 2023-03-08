@@ -195,7 +195,7 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(request
 	updateDeliveryOrderResult.DeliveryOrder.SalesOrder = salesOrderWithDetail
 	updateDeliveryOrderResult.ErrorLog = u.SalesOrderOpenSearchUseCase.SyncToOpenSearchFromUpdateEvent(salesOrderWithDetail, ctx)
 
-	if updateDeliveryOrderResult.ErrorLog != nil {
+	if updateDeliveryOrderResult.Error != nil {
 		fmt.Println(updateDeliveryOrderResult.ErrorLog.Err.Error())
 		return updateDeliveryOrderResult.ErrorLog
 	}

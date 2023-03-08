@@ -442,7 +442,7 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 		return &models.DeliveryOrder{}, getOrderStatusResult.ErrorLog
 	}
 
-	deliveryOrder := &models.DeliveryOrder{}
+	deliveryOrder := getDeliveryOrderResult.DeliveryOrder
 	deliveryOrder.DeliveryOrderUpdateByIDRequestMap(request, now)
 	deliveryOrder.WarehouseChanMap(getWarehouseResult)
 	deliveryOrder.OrderStatus = getOrderStatusResult.OrderStatus
@@ -599,7 +599,7 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 
 	deliveryOrderLog := &models.DeliveryOrderLog{
 		RequestID: request.RequestID,
-		DoCode:    updateDeliveryOrderResult.DeliveryOrder.DoCode,
+		DoCode:    deliveryOrder.DoCode,
 		Data:      deliveryOrder,
 		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
 		Action:    constants.LOG_ACTION_MONGO_UPDATE,
