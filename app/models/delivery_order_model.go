@@ -107,11 +107,11 @@ type DeliveryOrderStoreResponse struct {
 
 type DeliveryOrderUpdateByIDRequest struct {
 	RequestID            string                                  `json:"request_id,omitempty" bson:"request_id,omitempty"`
-	WarehouseID          int                                     `json:"warehouse_id,omitempty" bson:"warehouse_id,omitempty" binding:"required"`
-	OrderSourceID        int                                     `json:"order_source_id,omitempty" bson:"order_source_id,omitempty" binding:"required"`
-	OrderStatusID        int                                     `json:"order_status_id,omitempty" bson:"order_status_id,omitempty" binding:"required"`
-	DoRefCode            string                                  `json:"do_ref_code,omitempty" bson:"do_ref_code,omitempty" binding:"required"`
-	DoRefDate            string                                  `json:"do_ref_date,omitempty" bson:"do_ref_date,omitempty" binding:"required"`
+	WarehouseID          int                                     `json:"warehouse_id,omitempty" bson:"warehouse_id,omitempty"`
+	OrderSourceID        int                                     `json:"order_source_id,omitempty" bson:"order_source_id,omitempty"`
+	OrderStatusID        int                                     `json:"order_status_id,omitempty" bson:"order_status_id,omitempty"`
+	DoRefCode            string                                  `json:"do_ref_code,omitempty" bson:"do_ref_code,omitempty"`
+	DoRefDate            string                                  `json:"do_ref_date,omitempty" bson:"do_ref_date,omitempty"`
 	DriverName           string                                  `json:"driver_name,omitempty" bson:"driver_name,omitempty"`
 	PlatNumber           string                                  `json:"plat_number,omitempty" bson:"plat_number,omitempty"`
 	Note                 string                                  `json:"note,omitempty" bson:"note,omitempty"`

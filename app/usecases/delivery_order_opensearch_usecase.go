@@ -121,84 +121,83 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(deliver
 	return &model.ErrorLog{}
 }
 
-func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(deliveryOrder *models.DeliveryOrder, ctx context.Context) *model.ErrorLog {
+func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(request *models.DeliveryOrder, ctx context.Context) *model.ErrorLog {
 	now := time.Now()
 
-	getAgentResultChan := make(chan *models.AgentChan)
-	go u.agentRepository.GetByID(deliveryOrder.AgentID, false, ctx, getAgentResultChan)
-	getAgentResult := <-getAgentResultChan
+	getDeliveryOrdersResultChan := make(chan *models.DeliveryOrderChan)
+	go u.deliveryOrderOpenSearchRepository.GetByID(&models.DeliveryOrderRequest{ID: request.ID}, getDeliveryOrdersResultChan)
+	getDeliveryOrdersResult := <-getDeliveryOrdersResultChan
 
-	if getAgentResult.Error != nil {
-		errorLogData := helper.WriteLog(getAgentResult.Error, http.StatusInternalServerError, nil)
-		return errorLogData
+	if getDeliveryOrdersResult.Error != nil {
+		if !strings.Contains(getDeliveryOrdersResult.Error.Error(), "not found") {
+			errorLogData := helper.WriteLog(getDeliveryOrdersResult.Error, http.StatusInternalServerError, nil)
+			return errorLogData
+		}
 	}
-
-	deliveryOrder.Agent = getAgentResult.Agent
-
-	getStoreResultChan := make(chan *models.StoreChan)
-	go u.storeRepository.GetByID(deliveryOrder.StoreID, false, ctx, getStoreResultChan)
-	getStoreResult := <-getStoreResultChan
-
-	if getStoreResult.Error != nil {
-		errorLogData := helper.WriteLog(getStoreResult.Error, http.StatusInternalServerError, nil)
-		return errorLogData
-	}
-
-	deliveryOrder.Store = getStoreResult.Store
+	deliveryOrder := getDeliveryOrdersResult.DeliveryOrder
+	deliveryOrder.OrderStatus = request.OrderStatus
+	deliveryOrder.OrderStatusID = request.OrderStatus.ID
+	deliveryOrder.OrderStatusName = request.OrderStatus.Name
+	deliveryOrder.UpdatedAt = &now
+	deliveryOrder.IsDoneSyncToEs = "1"
+	deliveryOrder.EndDateSyncToEs = &now
 
 	for _, v := range deliveryOrder.DeliveryOrderDetails {
-		getSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
-		go u.salesOrderDetailRepository.GetByID(v.SoDetailID, false, ctx, getSalesOrderDetailResultChan)
-		getSalesOrderDetailResult := <-getSalesOrderDetailResultChan
-
-		if getSalesOrderDetailResult.Error != nil {
-			errorLogData := helper.WriteLog(getSalesOrderDetailResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
+		for _, x := range request.DeliveryOrderDetails {
+			if v.ID == x.ID {
+				v.OrderStatus = x.OrderStatus
+				v.OrderStatusID = x.OrderStatus.ID
+				v.OrderStatusName = x.OrderStatus.Name
+				v.Qty = x.Qty
+				v.UpdatedAt = &now
+				v.IsDoneSyncToEs = "1"
+				v.EndDateSyncToEs = &now
+			}
 		}
-
-		getProductResultChan := make(chan *models.ProductChan)
-		go u.productRepository.GetByID(v.ProductID, false, ctx, getProductResultChan)
-		getProductResult := <-getProductResultChan
-
-		if getProductResult.Error != nil {
-			errorLogData := helper.WriteLog(getProductResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-
-		v.Product = getProductResult.Product
-
-		getUomResultChan := make(chan *models.UomChan)
-		go u.uomRepository.GetByID(v.UomID, false, ctx, getUomResultChan)
-		getUomResult := <-getUomResultChan
-
-		if getUomResult.Error != nil {
-			errorLogData := helper.WriteLog(getUomResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-
-		v.Uom = getUomResult.Uom
-
-		getBrandResultChan := make(chan *models.BrandChan)
-		go u.brandRepository.GetByID(v.UomID, false, ctx, getBrandResultChan)
-		getBrandResult := <-getBrandResultChan
-
-		if getBrandResult.Error != nil {
-			errorLogData := helper.WriteLog(getBrandResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-
-		v.Brand = getBrandResult.Brand
 	}
 
-	deliveryOrder.UpdatedAt = &now
+	updateDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
+	go u.deliveryOrderOpenSearchRepository.Create(deliveryOrder, updateDeliveryOrderResultChan)
+	updateDeliveryOrderResult := <-updateDeliveryOrderResultChan
 
-	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderOpenSearchRepository.Create(deliveryOrder, createDeliveryOrderResultChan)
-	createDeliveryOrderResult := <-createDeliveryOrderResultChan
+	if updateDeliveryOrderResult.Error != nil {
+		fmt.Println(updateDeliveryOrderResult.ErrorLog.Err.Error())
+		return updateDeliveryOrderResult.ErrorLog
+	}
 
-	if createDeliveryOrderResult.Error != nil {
-		fmt.Println(createDeliveryOrderResult.ErrorLog.Err.Error())
-		return createDeliveryOrderResult.ErrorLog
+	salesOrderRequest := &models.SalesOrderRequest{
+		ID:            deliveryOrder.SalesOrderID,
+		OrderSourceID: deliveryOrder.OrderSourceID,
+	}
+
+	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderOpenSearchRepository.GetByID(salesOrderRequest, getSalesOrderResultChan)
+	getSalesOrderResult := <-getSalesOrderResultChan
+
+	if getSalesOrderResult.ErrorLog != nil {
+		fmt.Println(getSalesOrderResult.ErrorLog.Err.Error())
+		return getSalesOrderResult.ErrorLog
+	}
+
+	salesOrderWithDetail := getSalesOrderResult.SalesOrder
+	for _, v := range salesOrderWithDetail.SalesOrderDetails {
+		for _, x := range request.SalesOrder.SalesOrderDetails {
+			v.OrderStatus = x.OrderStatus
+			v.OrderStatusID = x.OrderStatus.ID
+			v.OrderStatusName = x.OrderStatus.Name
+			v.SentQty = x.SentQty
+			v.ResidualQty = x.ResidualQty
+			v.UpdatedAt = &now
+			v.IsDoneSyncToEs = "1"
+			v.EndDateSyncToEs = &now
+		}
+	}
+	updateDeliveryOrderResult.DeliveryOrder.SalesOrder = salesOrderWithDetail
+	updateDeliveryOrderResult.ErrorLog = u.SalesOrderOpenSearchUseCase.SyncToOpenSearchFromUpdateEvent(salesOrderWithDetail, ctx)
+
+	if updateDeliveryOrderResult.ErrorLog != nil {
+		fmt.Println(updateDeliveryOrderResult.ErrorLog.Err.Error())
+		return updateDeliveryOrderResult.ErrorLog
 	}
 
 	return &model.ErrorLog{}
@@ -220,11 +219,9 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromDeleteEvent(deliver
 
 	for _, v := range deliveryOrder.DeliveryOrderDetails {
 		v.DeletedAt = &now
-		v.UpdatedAt = &now
 	}
 
 	deliveryOrder.DeletedAt = &now
-	deliveryOrder.UpdatedAt = &now
 
 	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
 	go u.deliveryOrderOpenSearchRepository.Create(deliveryOrder, createDeliveryOrderResultChan)
@@ -245,9 +242,8 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromDeleteEvent(deliver
 	getSalesOrderResult := <-getSalesOrderResultChan
 
 	if getSalesOrderResult.ErrorLog != nil {
-		deleteDeliveryOrderResult.ErrorLog = getSalesOrderResult.ErrorLog
-		fmt.Println(deleteDeliveryOrderResult.ErrorLog.Err.Error())
-		return deleteDeliveryOrderResult.ErrorLog
+		fmt.Println(getSalesOrderResult.ErrorLog.Err.Error())
+		return getSalesOrderResult.ErrorLog
 	}
 
 	salesOrderWithDetail := getSalesOrderResult.SalesOrder
@@ -263,12 +259,12 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromDeleteEvent(deliver
 		return deleteDeliveryOrderResult.ErrorLog
 	}
 
-	deleteDeliveryOrderResult.ErrorLog = u.SyncToOpenSearchFromUpdateEvent(deleteDeliveryOrderResult.DeliveryOrder, ctx)
+	// deleteDeliveryOrderResult.ErrorLog = u.SyncToOpenSearchFromUpdateEvent(deleteDeliveryOrderResult.DeliveryOrder, ctx)
 
-	if deleteDeliveryOrderResult.ErrorLog != nil {
-		fmt.Println(deleteDeliveryOrderResult.ErrorLog.Err.Error())
-		return deleteDeliveryOrderResult.ErrorLog
-	}
+	// if deleteDeliveryOrderResult.ErrorLog != nil {
+	// 	fmt.Println(deleteDeliveryOrderResult.ErrorLog.Err.Error())
+	// 	return deleteDeliveryOrderResult.ErrorLog
+	// }
 
 	return &model.ErrorLog{}
 }
