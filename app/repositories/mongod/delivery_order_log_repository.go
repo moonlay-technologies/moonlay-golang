@@ -20,6 +20,7 @@ type DeliveryOrderLogRepositoryInterface interface {
 	GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan)
 	GetByCode(doCode string, status string, action string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan)
 	UpdateByID(ID string, request *models.DeliveryOrderLog, ctx context.Context, result chan *models.DeliveryOrderLogChan)
+	InsertJourney(request *models.DeliveryOrderJourney, ctx context.Context, result chan *models.DeliveryOrderJourneyChan)
 }
 
 type deliveryOrderLogRepository struct {
@@ -185,6 +186,26 @@ func (r *deliveryOrderLogRepository) UpdateByID(ID string, request *models.Deliv
 		return
 	}
 
+	response.Error = nil
+	resultChan <- response
+	return
+}
+
+func (r *deliveryOrderLogRepository) InsertJourney(request *models.DeliveryOrderJourney, ctx context.Context, resultChan chan *models.DeliveryOrderJourneyChan) {
+	response := &models.DeliveryOrderJourneyChan{}
+	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
+	result, err := collection.InsertOne(ctx, request)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	request.ID, _ = result.InsertedID.(primitive.ObjectID)
+	response.DeliveryOrderJourney = request
 	response.Error = nil
 	resultChan <- response
 	return
