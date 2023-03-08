@@ -348,6 +348,24 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		return &models.DeliveryOrderStoreResponse{}, createDeliveryOrderLogResult.ErrorLog
 	}
 
+	deliveryOrderJourney := &models.DeliveryOrderJourney{
+		DoId:      deliveryOrder.ID,
+		DoCode:    deliveryOrder.DoCode,
+		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		Remark:    "",
+		Reason:    "",
+		CreatedAt: &now,
+		UpdatedAt: &now,
+	}
+
+	createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
+	go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, ctx, createDeliveryOrderJourneyChan)
+	createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
+
+	if createDeliveryOrderJourneysResult.Error != nil {
+		return &models.DeliveryOrderStoreResponse{}, createDeliveryOrderJourneysResult.ErrorLog
+	}
+
 	keyKafka := []byte(deliveryOrder.DoCode)
 	messageKafka, _ := json.Marshal(deliveryOrder)
 	err := u.kafkaClient.WriteToTopic(constants.CREATE_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
@@ -595,6 +613,24 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 	if createDeliveryOrderLogResult.Error != nil {
 		errorLogData := helper.WriteLog(createDeliveryOrderLogResult.Error, http.StatusInternalServerError, nil)
 		return &models.DeliveryOrder{}, errorLogData
+	}
+
+	deliveryOrderJourney := &models.DeliveryOrderJourney{
+		DoId:      deliveryOrder.ID,
+		DoCode:    deliveryOrder.DoCode,
+		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		Remark:    "",
+		Reason:    "",
+		CreatedAt: &now,
+		UpdatedAt: &now,
+	}
+
+	createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
+	go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, ctx, createDeliveryOrderJourneyChan)
+	createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
+
+	if createDeliveryOrderJourneysResult.Error != nil {
+		return &models.DeliveryOrder{}, createDeliveryOrderJourneysResult.ErrorLog
 	}
 
 	keyKafka := []byte(deliveryOrder.DoCode)
@@ -1101,7 +1137,7 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 	go u.salesOrderRepository.UpdateByID(getSalesOrderByIDResult.SalesOrder.ID, getSalesOrderByIDResult.SalesOrder, sqlTransaction, u.ctx, updateSalesOrderChan)
 	updateSalesOrderResult := <-updateSalesOrderChan
 
-	salesOrderLog := &models.DeliveryOrderLog{
+	deiveryOrderLog := &models.DeliveryOrderLog{
 		RequestID: "",
 		DoCode:    getDeliveryOrderByIDResult.DeliveryOrder.DoCode,
 		Data:      getDeliveryOrderByIDResult.DeliveryOrder,
@@ -1110,17 +1146,36 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 		CreatedAt: &now,
 	}
 	createDeliveryOrderLogResultChan := make(chan *models.DeliveryOrderLogChan)
-	go u.deliveryOrderLogRepository.Insert(salesOrderLog, u.ctx, createDeliveryOrderLogResultChan)
+	go u.deliveryOrderLogRepository.Insert(deiveryOrderLog, u.ctx, createDeliveryOrderLogResultChan)
 	createDeliveryOrderLogResult := <-createDeliveryOrderLogResultChan
 
 	if createDeliveryOrderLogResult.Error != nil {
 		return createDeliveryOrderLogResult.ErrorLog
 	}
+
+	deliveryOrderJourney := &models.DeliveryOrderJourney{
+		DoId:      getDeliveryOrderByIDResult.DeliveryOrder.ID,
+		DoCode:    getDeliveryOrderByIDResult.DeliveryOrder.DoCode,
+		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		Remark:    "",
+		Reason:    "",
+		CreatedAt: &now,
+		UpdatedAt: &now,
+	}
+
+	createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
+	go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, u.ctx, createDeliveryOrderJourneyChan)
+	createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
+
+	if createDeliveryOrderJourneysResult.Error != nil {
+		return createDeliveryOrderJourneysResult.ErrorLog
+	}
+
 	keyKafka := []byte(getSalesOrderByIDResult.SalesOrder.SoCode)
 	messageKafka, _ := json.Marshal(
 		&models.DeliveryOrder{
 			ID:        id,
-			DoCode:    salesOrderLog.DoCode,
+			DoCode:    deiveryOrderLog.DoCode,
 			UpdatedAt: getSalesOrderByIDResult.SalesOrder.UpdatedAt,
 			DeletedAt: getSalesOrderByIDResult.SalesOrder.DeletedAt,
 		},

@@ -29,6 +29,11 @@ func (_m *DeliveryOrderLogRepositoryInterface) Insert(request *models.DeliveryOr
 	_m.Called(request, ctx, result)
 }
 
+// Insert provides a mock function with given fields: request, ctx, result
+func (_m *DeliveryOrderLogRepositoryInterface) InsertJourney(request *models.DeliveryOrderJourney, ctx context.Context, result chan *models.DeliveryOrderJourneyChan) {
+	_m.Called(request, ctx, result)
+}
+
 // UpdateByID provides a mock function with given fields: ID, request, ctx, result
 func (_m *DeliveryOrderLogRepositoryInterface) UpdateByID(ID string, request *models.DeliveryOrderLog, ctx context.Context, result chan *models.DeliveryOrderLogChan) {
 	_m.Called(ID, request, ctx, result)
