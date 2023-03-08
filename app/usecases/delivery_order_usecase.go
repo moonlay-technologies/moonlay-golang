@@ -272,8 +272,8 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		deliveryOrderDetail.Uom = getUomDetailResult.Uom
 		deliveryOrderDetail.ProductChanMap(getProductDetailResult)
 		deliveryOrderDetail.SalesOrderDetailChanMap(getSalesOrderDetailResult)
-		deliveryOrderDetail.OrderStatusID = getOrderStatusDetailResult.OrderStatus.ID
-		deliveryOrderDetail.OrderStatusName = getOrderStatusDetailResult.OrderStatus.Name
+		deliveryOrderDetail.OrderStatusID = deliveryOrder.OrderStatusID
+		deliveryOrderDetail.OrderStatusName = deliveryOrder.OrderStatusName
 		deliveryOrderDetail.OrderStatus = getOrderStatusDetailResult.OrderStatus
 
 		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
@@ -380,44 +380,59 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 		return &models.DeliveryOrder{}, getDeliveryOrderResult.ErrorLog
 	}
 
+	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderRepository.GetByID(getDeliveryOrderResult.DeliveryOrder.SalesOrderID, false, ctx, getSalesOrderResultChan)
+	getSalesOrderResult := <-getSalesOrderResultChan
+
+	if getSalesOrderResult.Error != nil {
+		return &models.DeliveryOrder{}, getDeliveryOrderResult.ErrorLog
+	}
+
+	warehouseId := request.WarehouseID
+	if warehouseId == 0 {
+		warehouseId = getDeliveryOrderResult.DeliveryOrder.WarehouseID
+	}
 	getWarehouseResultChan := make(chan *models.WarehouseChan)
-	go u.warehouseRepository.GetByID(request.WarehouseID, false, ctx, getWarehouseResultChan)
+	go u.warehouseRepository.GetByID(warehouseId, false, ctx, getWarehouseResultChan)
 	getWarehouseResult := <-getWarehouseResultChan
 
 	if getWarehouseResult.Error != nil {
 		return &models.DeliveryOrder{}, getWarehouseResult.ErrorLog
 	}
 
+	orderSourceID := request.OrderSourceID
+	if orderSourceID == 0 {
+		orderSourceID = getDeliveryOrderResult.DeliveryOrder.OrderSourceID
+	}
 	getOrderSourceResultChan := make(chan *models.OrderSourceChan)
-	go u.orderSourceRepository.GetByID(request.OrderSourceID, false, ctx, getOrderSourceResultChan)
+	go u.orderSourceRepository.GetByID(orderSourceID, false, ctx, getOrderSourceResultChan)
 	getOrderSourceResult := <-getOrderSourceResultChan
 
 	if getDeliveryOrderResult.Error != nil {
 		return &models.DeliveryOrder{}, getOrderSourceResult.ErrorLog
 	}
 
+	orderStatusID := request.OrderStatusID
+	if orderStatusID == 0 {
+		orderStatusID = getDeliveryOrderResult.DeliveryOrder.OrderStatusID
+	}
 	getOrderStatusResultChan := make(chan *models.OrderStatusChan)
-	go u.orderStatusRepository.GetByID(request.OrderStatusID, false, ctx, getOrderStatusResultChan)
+	go u.orderStatusRepository.GetByID(orderStatusID, false, ctx, getOrderStatusResultChan)
 	getOrderStatusResult := <-getOrderStatusResultChan
 
 	if getOrderStatusResult.Error != nil {
 		return &models.DeliveryOrder{}, getOrderStatusResult.ErrorLog
 	}
 
-	orderStatusID := int(getOrderStatusResult.OrderStatus.ID)
-	deliveryOrder := &models.DeliveryOrder{
-		// WarehouseID:       int(getWarehouseResult.Warehouse.ID),
-		// OrderSourceID:     int(getOrderSourceResult.OrderSource.ID),
-		// DoRefCode:         models.NullString{NullString: sql.NullString{String: request.DoRefCode, Valid: true}},
-		// DoRefDate:         models.NullString{NullString: sql.NullString{String: request.DoRefDate, Valid: true}},
-		// DriverName:        models.NullString{NullString: sql.NullString{String: request.DriverName, Valid: true}},
-		// PlatNumber:        models.NullString{NullString: sql.NullString{String: request.PlatNumber, Valid: true}},
-		OrderStatusID:     orderStatusID,
-		IsDoneSyncToEs:    "0",
-		StartDateSyncToEs: &now,
-		EndCreatedDate:    &now,
-		// UpdatedAt:         &now,
-	}
+	deliveryOrder := &models.DeliveryOrder{}
+	deliveryOrder.DeliveryOrderUpdateByIDRequestMap(request, now)
+	deliveryOrder.WarehouseChanMap(getWarehouseResult)
+	deliveryOrder.OrderStatus = getOrderStatusResult.OrderStatus
+	deliveryOrder.OrderStatusID = getOrderStatusResult.OrderStatus.ID
+	deliveryOrder.OrderSource = getOrderSourceResult.OrderSource
+	deliveryOrder.OrderSourceID = getOrderSourceResult.OrderSource.ID
+	deliveryOrder.CreatedBy = ctx.Value("user").(*models.UserClaims).UserID
+	deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
 
 	getDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailsChan)
 	go u.deliveryOrderDetailRepository.GetByDeliveryOrderID(ID, false, ctx, getDeliveryOrderDetailResultChan)
@@ -428,12 +443,16 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 	}
 
 	deliveryOrderDetails := []*models.DeliveryOrderDetail{}
-	for _, v := range request.DeliveryOrderDetails {
-		for _, x := range getDeliveryOrderDetailResult.DeliveryOrderDetails {
+	totalSentQty := 0
+	totalQty := 0
+	for _, x := range request.DeliveryOrderDetails {
+		for _, v := range getDeliveryOrderDetailResult.DeliveryOrderDetails {
 			if x.ID == v.ID {
-				orderStatusID := 18
-				if v.Qty == 0 {
-					orderStatusID = 19
+				balanceQty := x.Qty - v.Qty
+				v.Qty = x.Qty
+				orderStatusID := 19
+				if v.Qty > 0 {
+					orderStatusID = 18
 				}
 				getOrderStatusResultChan := make(chan *models.OrderStatusChan)
 				go u.orderStatusRepository.GetByID(orderStatusID, false, ctx, getOrderStatusResultChan)
@@ -443,44 +462,126 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 					return &models.DeliveryOrder{}, getOrderStatusResult.ErrorLog
 				}
 
-				// need validation
 				deliveryOrder.OrderStatus = getOrderStatusResult.OrderStatus
 				deliveryOrder.OrderStatusID = getOrderStatusResult.OrderStatus.ID
 				deliveryOrder.OrderStatusName = getOrderStatusResult.OrderStatus.Name
 
-				deliveryOrderDetail := &models.DeliveryOrderDetail{
-					ID:              v.ID,
-					Qty:             v.Qty,
-					OrderStatusID:   getOrderStatusResult.OrderStatus.ID,
-					OrderStatusName: getOrderStatusResult.OrderStatus.Name,
-					Note:            models.NullString{NullString: sql.NullString{String: v.Note, Valid: true}},
-					UpdatedAt:       &now,
-				}
-				createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
-				go u.deliveryOrderDetailRepository.UpdateByID(int(x.ID), deliveryOrderDetail, sqlTransaction, ctx, createDeliveryOrderDetailResultChan)
-				createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
+				updateDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
+				go u.deliveryOrderDetailRepository.UpdateByID(v.ID, v, sqlTransaction, ctx, updateDeliveryOrderDetailResultChan)
+				updateDeliveryOrderDetailResult := <-updateDeliveryOrderDetailResultChan
 
-				if createDeliveryOrderDetailResult.Error != nil {
-					return &models.DeliveryOrder{}, createDeliveryOrderDetailResult.ErrorLog
+				if updateDeliveryOrderDetailResult.Error != nil {
+					return &models.DeliveryOrder{}, updateDeliveryOrderDetailResult.ErrorLog
 				}
-				deliveryOrderDetail.ID = int(createDeliveryOrderDetailResult.ID)
-				deliveryOrderDetails = append(deliveryOrderDetails, deliveryOrderDetail)
+
+				getSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
+				go u.salesOrderDetailRepository.GetByID(v.SoDetailID, false, ctx, getSalesOrderDetailResultChan)
+				getSalesOrderDetailResult := <-getSalesOrderDetailResultChan
+
+				if getSalesOrderDetailResult.Error != nil {
+					return &models.DeliveryOrder{}, getSalesOrderDetailResult.ErrorLog
+				}
+
+				totalQty += getSalesOrderDetailResult.SalesOrderDetail.Qty
+
+				if balanceQty != 0 {
+
+					getOrderStatusDetailResultChan := make(chan *models.OrderStatusChan)
+					go u.orderStatusRepository.GetByID(getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID, false, ctx, getOrderStatusDetailResultChan)
+					getOrderStatusDetailResult := <-getOrderStatusDetailResultChan
+
+					if getOrderStatusDetailResult.Error != nil {
+						return &models.DeliveryOrder{}, getOrderStatusDetailResult.ErrorLog
+					}
+
+					getSalesOrderDetailResult.SalesOrderDetail.UpdatedAt = &now
+					getSalesOrderDetailResult.SalesOrderDetail.SentQty += balanceQty
+					getSalesOrderDetailResult.SalesOrderDetail.ResidualQty -= balanceQty
+
+					if getSalesOrderDetailResult.SalesOrderDetail.SentQty == 0 {
+						getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID = 11
+					} else if getSalesOrderDetailResult.SalesOrderDetail.SentQty == getSalesOrderDetailResult.SalesOrderDetail.Qty {
+						getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID = 14
+					} else {
+						getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID = 13
+					}
+
+					getOrderStatusSODetailResultChan := make(chan *models.OrderStatusChan)
+					go u.orderStatusRepository.GetByID(getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID, false, ctx, getOrderStatusSODetailResultChan)
+					getOrderStatusSODetailResult := <-getOrderStatusSODetailResultChan
+
+					if getOrderStatusSODetailResult.Error != nil {
+						return &models.DeliveryOrder{}, getOrderStatusSODetailResult.ErrorLog
+					}
+
+					getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID = getOrderStatusSODetailResult.OrderStatus.ID
+					getSalesOrderDetailResult.SalesOrderDetail.OrderStatusName = getOrderStatusSODetailResult.OrderStatus.Name
+					getSalesOrderDetailResult.SalesOrderDetail.OrderStatus = getOrderStatusSODetailResult.OrderStatus
+
+					updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
+					go u.salesOrderDetailRepository.UpdateByID(getSalesOrderDetailResult.SalesOrderDetail.ID, getSalesOrderDetailResult.SalesOrderDetail, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
+					updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
+
+					if updateSalesOrderDetailResult.Error != nil {
+						return &models.DeliveryOrder{}, updateSalesOrderDetailResult.ErrorLog
+					}
+				} else {
+					totalSentQty += v.Qty
+				}
+
+				deliveryOrderDetails = append(deliveryOrderDetails, v)
 			}
 		}
 	}
 
-	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderRepository.UpdateByID(getDeliveryOrderResult.DeliveryOrder.ID, deliveryOrder, sqlTransaction, ctx, createDeliveryOrderResultChan)
-	createDeliveryOrderResult := <-createDeliveryOrderResultChan
+	deliveryOrder.DeliveryOrderDetails = deliveryOrderDetails
 
-	if createDeliveryOrderResult.Error != nil {
-		return &models.DeliveryOrder{}, createDeliveryOrderResult.ErrorLog
+	updateDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
+	go u.deliveryOrderRepository.UpdateByID(getDeliveryOrderResult.DeliveryOrder.ID, deliveryOrder, sqlTransaction, ctx, updateDeliveryOrderResultChan)
+	updateDeliveryOrderResult := <-updateDeliveryOrderResultChan
+
+	if updateDeliveryOrderResult.Error != nil {
+		return &models.DeliveryOrder{}, updateDeliveryOrderResult.ErrorLog
 	}
 
-	deliveryOrder.DeliveryOrderDetails = deliveryOrderDetails
+	if totalSentQty == 0 {
+		getSalesOrderResult.SalesOrder.OrderStatusID = 5
+	} else if totalSentQty == totalQty {
+		getSalesOrderResult.SalesOrder.OrderStatusID = 8
+	} else {
+		getSalesOrderResult.SalesOrder.OrderStatusID = 7
+	}
+
+	getOrderStatusSOResultChan := make(chan *models.OrderStatusChan)
+	go u.orderStatusRepository.GetByID(getSalesOrderResult.SalesOrder.OrderStatusID, false, ctx, getOrderStatusSOResultChan)
+	getOrderStatusSODetailResult := <-getOrderStatusSOResultChan
+
+	if getOrderStatusSODetailResult.Error != nil {
+		return &models.DeliveryOrder{}, getOrderStatusSODetailResult.ErrorLog
+	}
+	getSalesOrderResult.SalesOrder.OrderStatus = getOrderStatusSODetailResult.OrderStatus
+	getSalesOrderResult.SalesOrder.OrderStatusName = getOrderStatusSODetailResult.OrderStatus.Name
+	getSalesOrderResult.SalesOrder.SoDate = ""
+	getSalesOrderResult.SalesOrder.SoRefDate = models.NullString{}
+	getSalesOrderResult.SalesOrder.UpdatedAt = &now
+	deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
+
+	updateSalesOrderChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderRepository.UpdateByID(getSalesOrderResult.SalesOrder.ID, getSalesOrderResult.SalesOrder, sqlTransaction, u.ctx, updateSalesOrderChan)
+	updateSalesOrderResult := <-updateSalesOrderChan
+
+	if updateSalesOrderResult.ErrorLog != nil {
+		err := sqlTransaction.Rollback()
+		if err != nil {
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			return &models.DeliveryOrder{}, errorLogData
+		}
+		return &models.DeliveryOrder{}, updateSalesOrderResult.ErrorLog
+	}
+
 	deliveryOrderLog := &models.DeliveryOrderLog{
 		RequestID: request.RequestID,
-		DoCode:    createDeliveryOrderResult.DeliveryOrder.DoCode,
+		DoCode:    updateDeliveryOrderResult.DeliveryOrder.DoCode,
 		Data:      deliveryOrder,
 		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
 		Action:    constants.LOG_ACTION_MONGO_UPDATE,

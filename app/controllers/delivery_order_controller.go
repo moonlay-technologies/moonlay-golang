@@ -123,12 +123,12 @@ func (c *deliveryOrderController) UpdateByID(ctx *gin.Context) {
 
 	var result baseModel.Response
 	var resultErrorLog *baseModel.ErrorLog
-	insertRequest := &models.DeliveryOrderUpdateByIDRequest{}
+	updateRequest := &models.DeliveryOrderUpdateByIDRequest{}
 
 	ctx.Set("full_path", ctx.FullPath())
 	ctx.Set("method", ctx.Request.Method)
 
-	err := ctx.ShouldBindJSON(insertRequest)
+	err := ctx.ShouldBindJSON(updateRequest)
 	if err != nil {
 		var unmarshalTypeError *json.UnmarshalTypeError
 
@@ -141,7 +141,15 @@ func (c *deliveryOrderController) UpdateByID(ctx *gin.Context) {
 		}
 	}
 
-	err = c.deliveryOrderValidator.UpdateDeliveryOrderByIDValidator(insertRequest, ctx)
+	updateRequest.WarehouseID = 0
+	updateRequest.OrderStatusID = 0
+	updateRequest.OrderSourceID = 0
+	updateRequest.DoRefCode = ""
+	updateRequest.DoRefDate = ""
+	updateRequest.DriverName = ""
+	updateRequest.PlatNumber = ""
+
+	err = c.deliveryOrderValidator.UpdateDeliveryOrderByIDValidator(intID, updateRequest, ctx)
 	if err != nil {
 		return
 	}
@@ -157,7 +165,7 @@ func (c *deliveryOrderController) UpdateByID(ctx *gin.Context) {
 		return
 	}
 
-	deliveryOrder, errorLog := c.deliveryOrderUseCase.UpdateByID(intID, insertRequest, dbTransaction, ctx)
+	deliveryOrder, errorLog := c.deliveryOrderUseCase.UpdateByID(intID, updateRequest, dbTransaction, ctx)
 	if errorLog != nil {
 		err = dbTransaction.Rollback()
 

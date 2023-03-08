@@ -383,6 +383,9 @@ func (r *deliveryOrder) Insert(request *models.DeliveryOrder, sqlTransaction *sq
 		return
 	}
 
+	deliveryOrderRedisKey := fmt.Sprintf("%s", constants.DELIVERY_ORDER+"*")
+	_, err = r.redisdb.Client().Del(ctx, deliveryOrderRedisKey).Result()
+
 	response.ID = deliveryOrderID
 	request.ID = int(deliveryOrderID)
 	response.DeliveryOrder = request
@@ -552,6 +555,9 @@ func (r *deliveryOrder) DeleteByID(request *models.DeliveryOrder, ctx context.Co
 		resultChan <- response
 		return
 	}
+
+	deliveryOrderRedisKey := fmt.Sprintf("%s", constants.DELIVERY_ORDER+"*")
+	_, err = r.redisdb.Client().Del(ctx, deliveryOrderRedisKey).Result()
 
 	response.ID = deliveryOrderID
 	response.DeliveryOrder = request

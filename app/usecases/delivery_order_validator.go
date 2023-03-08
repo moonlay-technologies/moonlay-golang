@@ -21,7 +21,7 @@ type DeliveryOrderValidatorInterface interface {
 	CreateDeliveryOrderValidator(*models.DeliveryOrderStoreRequest, *gin.Context) error
 	GetDeliveryOrderValidator(*gin.Context) (*models.DeliveryOrderRequest, error)
 	GetDeliveryOrderBySalesmanIDValidator(*gin.Context) (*models.DeliveryOrderRequest, error)
-	UpdateDeliveryOrderByIDValidator(*models.DeliveryOrderUpdateByIDRequest, *gin.Context) error
+	UpdateDeliveryOrderByIDValidator(int, *models.DeliveryOrderUpdateByIDRequest, *gin.Context) error
 	DeleteDeliveryOrderByIDValidator(string, *gin.Context) error
 }
 
@@ -104,11 +104,9 @@ func (d *DeliveryOrderValidator) CreateDeliveryOrderValidator(insertRequest *mod
 	}
 	mustEmpties := []*models.MustEmptyValidationRequest{
 		{
-			Table:           "sales_orders",
-			TableJoin:       "order_statuses",
-			ForeignKey:      "order_status_id",
-			SelectedCollumn: "order_statuses.name",
-			Clause:          fmt.Sprintf("sales_orders.id = %d AND sales_orders.order_status_id NOT IN (5,7)", insertRequest.SalesOrderID),
+			Table:           "sales_orders s JOIN order_statuses o ON s.order_status_id = o.id",
+			SelectedCollumn: "o.name",
+			Clause:          fmt.Sprintf("s.id = %d AND s.order_status_id NOT IN (5,7)", insertRequest.SalesOrderID),
 			MessageFormat:   "Status Sales Order <result>",
 		},
 	}
@@ -146,11 +144,9 @@ func (d *DeliveryOrderValidator) CreateDeliveryOrderValidator(insertRequest *mod
 			CustomMessage: fmt.Sprintf("Residual Qty SO Detail %d must be higher than or equal delivery order qty", x.SoDetailID),
 		})
 		mustEmpties = append(mustEmpties, &models.MustEmptyValidationRequest{
-			Table:           "sales_order_details",
-			TableJoin:       "order_statuses",
-			ForeignKey:      "order_status_id",
-			SelectedCollumn: "order_statuses.name",
-			Clause:          fmt.Sprintf("sales_order_details.id = %d AND sales_order_details.order_status_id NOT IN (11, 13)", x.SoDetailID),
+			Table:           "sales_order_details d JOIN order_statuses s ON d.order_status_id = s.id",
+			SelectedCollumn: "s.name",
+			Clause:          fmt.Sprintf("d.id = %d AND d.order_status_id NOT IN (11, 13)", x.SoDetailID),
 			MessageFormat:   fmt.Sprintf("Status Sales Order Detail %d <result>", x.SoDetailID),
 		})
 	}
@@ -179,7 +175,7 @@ func (d *DeliveryOrderValidator) CreateDeliveryOrderValidator(insertRequest *mod
 	}
 	return nil
 }
-func (d *DeliveryOrderValidator) UpdateDeliveryOrderByIDValidator(insertRequest *models.DeliveryOrderUpdateByIDRequest, ctx *gin.Context) error {
+func (d *DeliveryOrderValidator) UpdateDeliveryOrderByIDValidator(id int, insertRequest *models.DeliveryOrderUpdateByIDRequest, ctx *gin.Context) error {
 	uniqueField := []*models.UniqueRequest{
 		{
 			Table: constants.DELIVERY_ORDERS_TABLE,
@@ -193,8 +189,66 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderByIDValidator(insertRequest 
 		fmt.Println("Error unique validation", err)
 		return err
 	}
+
+	mustActiveField417 := []*models.MustActiveRequest{
+		{
+			Table:    "delivery_orders",
+			ReqField: "delivery_order_id",
+			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", id),
+		},
+		{
+			Table:    "sales_orders s JOIN delivery_orders d ON d.sales_order_id = s.id",
+			ReqField: "sales-order_id",
+			Clause:   fmt.Sprintf("d.id = %d AND s.deleted_at IS NULL", id),
+		},
+	}
+	mustEmpties := []*models.MustEmptyValidationRequest{
+		{
+			Table:           "delivery_orders d JOIN order_statuses s ON d.order_status_id = s.id",
+			SelectedCollumn: "s.name",
+			Clause:          fmt.Sprintf("d.id = %d AND d.order_status_id NOT IN (17)", id),
+			MessageFormat:   "Status Delivery Order <result>",
+		},
+		{
+			Table:           "sales_orders s JOIN delivery_orders d JOIN order_statuses o ON d.sales_order_id = s.id AND o.id = s.order_status_id",
+			SelectedCollumn: "o.name",
+			Clause:          fmt.Sprintf("d.id = %d AND s.order_status_id NOT IN (5,7,8)", id),
+			MessageFormat:   "Status Sales Order <result>",
+		},
+	}
+
+	for _, v := range insertRequest.DeliveryOrderDetails {
+		mustActiveField417 = append(mustActiveField417, &models.MustActiveRequest{
+			Table:    "delivery_order_details",
+			ReqField: "delivery_order_detail_id",
+			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", v.ID),
+		})
+		mustActiveField417 = append(mustActiveField417, &models.MustActiveRequest{
+			Table:    "sales_order_details s JOIN delivery_order_details d ON d.so_detail_id = s.id",
+			ReqField: "sales-order_id",
+			Clause:   fmt.Sprintf("d.id = %d AND s.deleted_at IS NULL", v.ID),
+		})
+		mustEmpties = append(mustEmpties, &models.MustEmptyValidationRequest{
+			Table:           "sales_order_details s JOIN delivery_order_details d ON s.id = d.so_detail_id",
+			SelectedCollumn: "s.id",
+			Clause:          fmt.Sprintf("d.id = %d AND s.qty < %d", v.ID, v.Qty),
+			MessageFormat:   fmt.Sprintf("Qty SO Detail <result> FROM DO Detail %d must be higher than or equal delivery order qty", v.ID),
+		})
+	}
+
+	err = d.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField417)
+	if err != nil {
+		return err
+	}
+
+	err = d.requestValidationMiddleware.MustEmptyValidation(ctx, mustEmpties)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
+
 func (d *DeliveryOrderValidator) DeleteDeliveryOrderByIDValidator(sId string, ctx *gin.Context) error {
 	var result baseModel.Response
 	id, err := strconv.Atoi(sId)

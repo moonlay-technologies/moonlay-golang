@@ -25,6 +25,34 @@ func (delicveryOrder *DeliveryOrder) DeliveryOrderStoreRequestMap(request *Deliv
 	return
 }
 
+func (delicveryOrder *DeliveryOrder) DeliveryOrderUpdateByIDRequestMap(request *DeliveryOrderUpdateByIDRequest, now time.Time) {
+	if request.WarehouseID > 0 {
+		delicveryOrder.WarehouseID = request.WarehouseID
+	}
+	if request.DoRefCode != "" {
+		delicveryOrder.DoRefCode = NullString{NullString: sql.NullString{String: request.DoRefCode, Valid: true}}
+	}
+	if request.DoRefDate != "" {
+		delicveryOrder.DoRefDate = NullString{NullString: sql.NullString{String: request.DoRefDate, Valid: true}}
+	}
+	if request.DriverName != "" {
+		delicveryOrder.DriverName = NullString{NullString: sql.NullString{String: request.DriverName, Valid: true}}
+	}
+	if request.PlatNumber != "" {
+		delicveryOrder.PlatNumber = NullString{NullString: sql.NullString{String: request.PlatNumber, Valid: true}}
+	}
+	if request.Note != "" {
+		delicveryOrder.Note = NullString{NullString: sql.NullString{String: request.Note, Valid: true}}
+	}
+	delicveryOrder.IsDoneSyncToEs = "0"
+	delicveryOrder.StartDateSyncToEs = &now
+	delicveryOrder.EndDateSyncToEs = &now
+	delicveryOrder.LatestUpdatedBy = &now
+	delicveryOrder.UpdatedAt = &now
+	delicveryOrder.DeletedAt = nil
+	return
+}
+
 func (deliveryOrder *DeliveryOrder) WarehouseChanMap(request *WarehouseChan) {
 	deliveryOrder.Warehouse = request.Warehouse
 	deliveryOrder.WarehouseID = request.Warehouse.ID

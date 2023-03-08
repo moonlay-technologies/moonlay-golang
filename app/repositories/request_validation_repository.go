@@ -79,7 +79,7 @@ func (r *requestValidationRepository) MustActiveValidation(values []*models.Must
 
 func (r *requestValidationRepository) MustEmptyValidation(value *models.MustEmptyValidationRequest, resultChan chan *models.MustEmptyValidationRequestChan) {
 	response := &models.MustEmptyValidationRequestChan{}
-	query := fmt.Sprintf("SELECT %[4]s as resultQuery FROM %[1]s JOIN %[2]s ON %[2]s.id = %[1]s.%[3]s WHERE %[5]s", value.Table, value.TableJoin, value.ForeignKey, value.SelectedCollumn, value.Clause)
+	query := fmt.Sprintf("SELECT %[2]s as resultQuery FROM %[1]s WHERE %[3]s", value.Table, value.SelectedCollumn, value.Clause)
 	q, err := r.db.Query(query)
 	if err != nil {
 		response.Result = false

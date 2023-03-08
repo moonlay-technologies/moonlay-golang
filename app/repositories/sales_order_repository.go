@@ -493,6 +493,9 @@ func (r *salesOrder) Insert(request *models.SalesOrder, sqlTransaction *sql.Tx, 
 		return
 	}
 
+	salesOrderRedisKey := fmt.Sprintf("%s", constants.SALES_ORDER+"*")
+	_, err = r.redisdb.Client().Del(ctx, salesOrderRedisKey).Result()
+
 	response.ID = salesOrderID
 	request.ID = int(salesOrderID)
 	response.SalesOrder = request
@@ -649,6 +652,9 @@ func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, sqlTransacti
 		return
 	}
 
+	salesOrderRedisKey := fmt.Sprintf("%s", constants.SALES_ORDER+"*")
+	_, err = r.redisdb.Client().Del(ctx, salesOrderRedisKey).Result()
+
 	response.ID = salesOrderID
 	request.ID = int(salesOrderID)
 	response.SalesOrder = request
@@ -722,6 +728,9 @@ func (r *salesOrder) DeleteByID(request *models.SalesOrder, sqlTransaction *sql.
 		resultChan <- response
 		return
 	}
+
+	salesOrderRedisKey := fmt.Sprintf("%s", constants.SALES_ORDER+"*")
+	_, err = r.redisdb.Client().Del(ctx, salesOrderRedisKey).Result()
 
 	response.ID = salesOrderID
 	response.SalesOrder = request

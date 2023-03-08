@@ -34,8 +34,6 @@ type MustActiveRequestChan struct {
 
 type MustEmptyValidationRequest struct {
 	Table           string
-	TableJoin       string
-	ForeignKey      string
 	SelectedCollumn string
 	Clause          string
 	MessageFormat   string
