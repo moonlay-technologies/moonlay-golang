@@ -118,6 +118,14 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(deliver
 		return createDeliveryOrderResult.ErrorLog
 	}
 
+	deliveryOrder.SalesOrder.ID = deliveryOrder.SalesOrderID
+	createDeliveryOrderResult.ErrorLog = u.SalesOrderOpenSearchUseCase.SyncToOpenSearchFromUpdateEvent(deliveryOrder.SalesOrder, ctx)
+
+	if createDeliveryOrderResult.Error != nil {
+		fmt.Println(createDeliveryOrderResult.Error)
+		return createDeliveryOrderResult.ErrorLog
+	}
+
 	return &model.ErrorLog{}
 }
 
@@ -161,39 +169,11 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(request
 	updateDeliveryOrderResult := <-updateDeliveryOrderResultChan
 
 	if updateDeliveryOrderResult.Error != nil {
-		fmt.Println(updateDeliveryOrderResult.ErrorLog.Err.Error())
+		fmt.Println(updateDeliveryOrderResult.Error)
 		return updateDeliveryOrderResult.ErrorLog
 	}
-
-	salesOrderRequest := &models.SalesOrderRequest{
-		ID:            deliveryOrder.SalesOrderID,
-		OrderSourceID: deliveryOrder.OrderSourceID,
-	}
-
-	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderOpenSearchRepository.GetByID(salesOrderRequest, getSalesOrderResultChan)
-	getSalesOrderResult := <-getSalesOrderResultChan
-
-	if getSalesOrderResult.ErrorLog != nil {
-		fmt.Println(getSalesOrderResult.ErrorLog.Err.Error())
-		return getSalesOrderResult.ErrorLog
-	}
-
-	salesOrderWithDetail := getSalesOrderResult.SalesOrder
-	for _, v := range salesOrderWithDetail.SalesOrderDetails {
-		for _, x := range request.SalesOrder.SalesOrderDetails {
-			v.OrderStatus = x.OrderStatus
-			v.OrderStatusID = x.OrderStatus.ID
-			v.OrderStatusName = x.OrderStatus.Name
-			v.SentQty = x.SentQty
-			v.ResidualQty = x.ResidualQty
-			v.UpdatedAt = &now
-			v.IsDoneSyncToEs = "1"
-			v.EndDateSyncToEs = &now
-		}
-	}
-	updateDeliveryOrderResult.DeliveryOrder.SalesOrder = salesOrderWithDetail
-	updateDeliveryOrderResult.ErrorLog = u.SalesOrderOpenSearchUseCase.SyncToOpenSearchFromUpdateEvent(salesOrderWithDetail, ctx)
+	request.SalesOrder.ID = request.SalesOrderID
+	updateDeliveryOrderResult.ErrorLog = u.SalesOrderOpenSearchUseCase.SyncToOpenSearchFromUpdateEvent(request.SalesOrder, ctx)
 
 	if updateDeliveryOrderResult.Error != nil {
 		fmt.Println(updateDeliveryOrderResult.ErrorLog.Err.Error())
