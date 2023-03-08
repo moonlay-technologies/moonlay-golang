@@ -450,10 +450,8 @@ func (r *deliveryOrderDetail) UpdateByID(id int, request *models.DeliveryOrderDe
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
-	if request.Qty != 0 {
-		query := fmt.Sprintf("%s=%v", "qty", request.Qty)
-		rawSqlQueries = append(rawSqlQueries, query)
-	}
+	query := fmt.Sprintf("%s=%v", "qty", request.Qty)
+	rawSqlQueries = append(rawSqlQueries, query)
 
 	if len(request.Note.String) > 0 {
 		query := fmt.Sprintf("%s='%v'", "note", request.Note.String)
@@ -475,7 +473,7 @@ func (r *deliveryOrderDetail) UpdateByID(id int, request *models.DeliveryOrderDe
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
-	query := fmt.Sprintf("%s='%v'", "updated_at", request.UpdatedAt.Format("2006-01-02 15:04:05"))
+	query = fmt.Sprintf("%s='%v'", "updated_at", request.UpdatedAt.Format("2006-01-02 15:04:05"))
 	rawSqlQueries = append(rawSqlQueries, query)
 
 	rawSqlQueriesJoin := strings.Join(rawSqlQueries, ",")

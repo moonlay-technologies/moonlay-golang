@@ -125,7 +125,7 @@ type DeliveryOrderDetailStoreResponse struct {
 type DeliveryOrderDetailUpdateByIDRequest struct {
 	RequestID string `json:"request_id,omitempty" bson:"request_id,omitempty"`
 	ID        int    `json:"id,omitempty" bson:"id"`
-	Qty       int    `json:"qty,omitempty" bson:"qty,omitempty" binding:"required"`
+	Qty       int    `json:"qty,omitempty" bson:"qty,omitempty"`
 	Note      string `json:"note,omitempty" bson:"note,omitempty"`
 }
 
