@@ -89,9 +89,14 @@ func (r *requestValidationRepository) MustEmptyValidation(value *models.MustEmpt
 	} else {
 		result := ""
 		var resultQuery string
-		for q.Next() {
+		isNotLast := q.Next()
+		for isNotLast {
 			q.Scan(&resultQuery)
-			result += resultQuery + ", "
+			isNotLast = q.Next()
+			result += resultQuery
+			if isNotLast {
+				result += ", "
+			}
 		}
 		if result == "" {
 			response.Result = true
