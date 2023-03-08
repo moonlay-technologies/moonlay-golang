@@ -24,21 +24,23 @@ type DeliveryOrderLogRepositoryInterface interface {
 }
 
 type deliveryOrderLogRepository struct {
-	logger     log.Logger
-	mongod     mongodb.MongoDBInterface
-	collection string
+	logger            log.Logger
+	mongod            mongodb.MongoDBInterface
+	collectionLog     string
+	collectionJourney string
 }
 
 func InitDeliveryOrderLogRepository(mongod mongodb.MongoDBInterface) DeliveryOrderLogRepositoryInterface {
 	return &deliveryOrderLogRepository{
-		mongod:     mongod,
-		collection: constants.DELIVERY_ORDER_TABLE_LOGS,
+		mongod:            mongod,
+		collectionLog:     constants.DELIVERY_ORDER_TABLE_LOGS,
+		collectionJourney: constants.DELIVERY_ORDER_TABLE_JOURNEYS,
 	}
 }
 
 func (r *deliveryOrderLogRepository) GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan) {
 	response := &models.DeliveryOrderLogChan{}
-	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
+	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collectionLog)
 	objectID, _ := primitive.ObjectIDFromHex(ID)
 	filter := bson.M{"_id": objectID}
 	total, err := collection.CountDocuments(ctx, filter)
@@ -86,7 +88,7 @@ func (r *deliveryOrderLogRepository) GetByID(ID string, countOnly bool, ctx cont
 
 func (r *deliveryOrderLogRepository) GetByCode(doCode string, status string, action string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan) {
 	response := &models.DeliveryOrderLogChan{}
-	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
+	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collectionLog)
 	filter := bson.M{constants.COLUMN_DELIVERY_ORDER_CODE: doCode, constants.COLUMN_STATUS: status, constants.COLUMN_ACTION: action}
 	total, err := collection.CountDocuments(ctx, filter)
 
@@ -133,7 +135,7 @@ func (r *deliveryOrderLogRepository) GetByCode(doCode string, status string, act
 
 func (r *deliveryOrderLogRepository) Insert(request *models.DeliveryOrderLog, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan) {
 	response := &models.DeliveryOrderLogChan{}
-	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
+	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collectionLog)
 	result, err := collection.InsertOne(ctx, request)
 
 	if err != nil {
@@ -153,7 +155,7 @@ func (r *deliveryOrderLogRepository) Insert(request *models.DeliveryOrderLog, ct
 
 func (r *deliveryOrderLogRepository) UpdateByID(ID string, request *models.DeliveryOrderLog, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan) {
 	response := &models.DeliveryOrderLogChan{}
-	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
+	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collectionLog)
 	objectID, _ := primitive.ObjectIDFromHex(ID)
 	filter := bson.M{"_id": objectID}
 	total, err := collection.CountDocuments(ctx, filter)
@@ -193,7 +195,7 @@ func (r *deliveryOrderLogRepository) UpdateByID(ID string, request *models.Deliv
 
 func (r *deliveryOrderLogRepository) InsertJourney(request *models.DeliveryOrderJourney, ctx context.Context, resultChan chan *models.DeliveryOrderJourneyChan) {
 	response := &models.DeliveryOrderJourneyChan{}
-	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
+	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collectionJourney)
 	result, err := collection.InsertOne(ctx, request)
 
 	if err != nil {
