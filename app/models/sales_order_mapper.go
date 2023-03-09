@@ -33,206 +33,206 @@ func (salesOrder *SalesOrder) SalesOrderRequestMap(request *SalesOrderStoreReque
 }
 
 func (salesOrder *SalesOrder) SalesOrderOpenSearchChanMap(request *SalesOrderChan) {
-	x := &SalesOrder{}
-	if salesOrder.ID == x.ID {
+	defaultSo := &SalesOrder{}
+	if salesOrder.ID == defaultSo.ID {
 		salesOrder.ID = request.SalesOrder.ID
 	}
-	if salesOrder.CartID == x.CartID {
+	if salesOrder.CartID == defaultSo.CartID {
 		salesOrder.CartID = request.SalesOrder.CartID
 	}
-	if salesOrder.AgentID == x.AgentID {
+	if salesOrder.AgentID == defaultSo.AgentID {
 		salesOrder.AgentID = request.SalesOrder.AgentID
 	}
-	if salesOrder.AgentName == x.AgentName {
+	if salesOrder.AgentName == defaultSo.AgentName {
 		salesOrder.AgentName = request.SalesOrder.AgentName
 	}
-	if salesOrder.AgentEmail == x.AgentEmail {
+	if salesOrder.AgentEmail == defaultSo.AgentEmail {
 		salesOrder.AgentEmail = request.SalesOrder.AgentEmail
 	}
-	if salesOrder.AgentProvinceID == x.AgentProvinceID {
+	if salesOrder.AgentProvinceID == defaultSo.AgentProvinceID {
 		salesOrder.AgentProvinceID = request.SalesOrder.AgentProvinceID
 	}
-	if salesOrder.AgentProvinceName == x.AgentProvinceName {
+	if salesOrder.AgentProvinceName == defaultSo.AgentProvinceName {
 		salesOrder.AgentProvinceName = request.SalesOrder.AgentProvinceName
 	}
-	if salesOrder.AgentCityID == x.AgentCityID {
+	if salesOrder.AgentCityID == defaultSo.AgentCityID {
 		salesOrder.AgentCityID = request.SalesOrder.AgentCityID
 	}
-	if salesOrder.AgentCityName == x.AgentCityName {
+	if salesOrder.AgentCityName == defaultSo.AgentCityName {
 		salesOrder.AgentCityName = request.SalesOrder.AgentCityName
 	}
-	if salesOrder.AgentDistrictID == x.AgentDistrictID {
+	if salesOrder.AgentDistrictID == defaultSo.AgentDistrictID {
 		salesOrder.AgentDistrictID = request.SalesOrder.AgentDistrictID
 	}
-	if salesOrder.AgentDistrictName == x.AgentDistrictName {
+	if salesOrder.AgentDistrictName == defaultSo.AgentDistrictName {
 		salesOrder.AgentDistrictName = request.SalesOrder.AgentDistrictName
 	}
-	if salesOrder.AgentVillageID == x.AgentVillageID {
+	if salesOrder.AgentVillageID == defaultSo.AgentVillageID {
 		salesOrder.AgentVillageID = request.SalesOrder.AgentVillageID
 	}
-	if salesOrder.AgentVillageName == x.AgentVillageName {
+	if salesOrder.AgentVillageName == defaultSo.AgentVillageName {
 		salesOrder.AgentVillageName = request.SalesOrder.AgentVillageName
 	}
-	if salesOrder.AgentAddress == x.AgentAddress {
+	if salesOrder.AgentAddress == defaultSo.AgentAddress {
 		salesOrder.AgentAddress = request.SalesOrder.AgentAddress
 	}
-	if salesOrder.AgentPhone == x.AgentPhone {
+	if salesOrder.AgentPhone == defaultSo.AgentPhone {
 		salesOrder.AgentPhone = request.SalesOrder.AgentPhone
 	}
-	if salesOrder.AgentMainMobilePhone == x.AgentMainMobilePhone {
+	if salesOrder.AgentMainMobilePhone == defaultSo.AgentMainMobilePhone {
 		salesOrder.AgentMainMobilePhone = request.SalesOrder.AgentMainMobilePhone
 	}
-	if salesOrder.Agent == x.Agent {
+	if salesOrder.Agent == defaultSo.Agent {
 		salesOrder.Agent = request.SalesOrder.Agent
 	}
-	if salesOrder.StoreID == x.StoreID {
+	if salesOrder.StoreID == defaultSo.StoreID {
 		salesOrder.StoreID = request.SalesOrder.StoreID
 	}
-	if salesOrder.StoreName == x.StoreName {
+	if salesOrder.StoreName == defaultSo.StoreName {
 		salesOrder.StoreName = request.SalesOrder.StoreName
 	}
-	if salesOrder.StoreCode == x.StoreCode {
+	if salesOrder.StoreCode == defaultSo.StoreCode {
 		salesOrder.StoreCode = request.SalesOrder.StoreCode
 	}
-	if salesOrder.StoreEmail == x.StoreEmail {
+	if salesOrder.StoreEmail == defaultSo.StoreEmail {
 		salesOrder.StoreEmail = request.SalesOrder.StoreEmail
 	}
-	if salesOrder.StoreProvinceID == x.StoreProvinceID {
+	if salesOrder.StoreProvinceID == defaultSo.StoreProvinceID {
 		salesOrder.StoreProvinceID = request.SalesOrder.StoreProvinceID
 	}
-	if salesOrder.StoreProvinceName == x.StoreProvinceName {
+	if salesOrder.StoreProvinceName == defaultSo.StoreProvinceName {
 		salesOrder.StoreProvinceName = request.SalesOrder.StoreProvinceName
 	}
-	if salesOrder.StoreCityID == x.StoreCityID {
+	if salesOrder.StoreCityID == defaultSo.StoreCityID {
 		salesOrder.StoreCityID = request.SalesOrder.StoreCityID
 	}
-	if salesOrder.StoreCityName == x.StoreCityName {
+	if salesOrder.StoreCityName == defaultSo.StoreCityName {
 		salesOrder.StoreCityName = request.SalesOrder.StoreCityName
 	}
-	if salesOrder.StoreDistrictID == x.StoreDistrictID {
+	if salesOrder.StoreDistrictID == defaultSo.StoreDistrictID {
 		salesOrder.StoreDistrictID = request.SalesOrder.StoreDistrictID
 	}
-	if salesOrder.StoreDistrictName == x.StoreDistrictName {
+	if salesOrder.StoreDistrictName == defaultSo.StoreDistrictName {
 		salesOrder.StoreDistrictName = request.SalesOrder.StoreDistrictName
 	}
-	if salesOrder.StoreVillageID == x.StoreVillageID {
+	if salesOrder.StoreVillageID == defaultSo.StoreVillageID {
 		salesOrder.StoreVillageID = request.SalesOrder.StoreVillageID
 	}
-	if salesOrder.StoreVillageName == x.StoreVillageName {
+	if salesOrder.StoreVillageName == defaultSo.StoreVillageName {
 		salesOrder.StoreVillageName = request.SalesOrder.StoreVillageName
 	}
-	if salesOrder.StoreAddress == x.StoreAddress {
+	if salesOrder.StoreAddress == defaultSo.StoreAddress {
 		salesOrder.StoreAddress = request.SalesOrder.StoreAddress
 	}
-	if salesOrder.StorePhone == x.StorePhone {
+	if salesOrder.StorePhone == defaultSo.StorePhone {
 		salesOrder.StorePhone = request.SalesOrder.StorePhone
 	}
-	if salesOrder.StoreMainMobilePhone == x.StoreMainMobilePhone {
+	if salesOrder.StoreMainMobilePhone == defaultSo.StoreMainMobilePhone {
 		salesOrder.StoreMainMobilePhone = request.SalesOrder.StoreMainMobilePhone
 	}
-	if salesOrder.Store == x.Store {
+	if salesOrder.Store == defaultSo.Store {
 		salesOrder.Store = request.SalesOrder.Store
 	}
-	if salesOrder.BrandID == x.BrandID {
+	if salesOrder.BrandID == defaultSo.BrandID {
 		salesOrder.BrandID = request.SalesOrder.BrandID
 	}
-	if salesOrder.BrandName == x.BrandName {
+	if salesOrder.BrandName == defaultSo.BrandName {
 		salesOrder.BrandName = request.SalesOrder.BrandName
 	}
-	if salesOrder.Brand == x.Brand {
+	if salesOrder.Brand == defaultSo.Brand {
 		salesOrder.Brand = request.SalesOrder.Brand
 	}
-	if salesOrder.UserID == x.UserID {
+	if salesOrder.UserID == defaultSo.UserID {
 		salesOrder.UserID = request.SalesOrder.UserID
 	}
-	if salesOrder.UserFirstName == x.UserFirstName {
+	if salesOrder.UserFirstName == defaultSo.UserFirstName {
 		salesOrder.UserFirstName = request.SalesOrder.UserFirstName
 	}
-	if salesOrder.UserLastName == x.UserLastName {
+	if salesOrder.UserLastName == defaultSo.UserLastName {
 		salesOrder.UserLastName = request.SalesOrder.UserLastName
 	}
-	if salesOrder.UserRoleID == x.UserRoleID {
+	if salesOrder.UserRoleID == defaultSo.UserRoleID {
 		salesOrder.UserRoleID = request.SalesOrder.UserRoleID
 	}
-	if salesOrder.UserEmail == x.UserEmail {
+	if salesOrder.UserEmail == defaultSo.UserEmail {
 		salesOrder.UserEmail = request.SalesOrder.UserEmail
 	}
-	if salesOrder.User == x.User {
+	if salesOrder.User == defaultSo.User {
 		salesOrder.User = request.SalesOrder.User
 	}
-	if salesOrder.Salesman == x.Salesman {
+	if salesOrder.Salesman == defaultSo.Salesman {
 		salesOrder.Salesman = request.SalesOrder.Salesman
 	}
-	if salesOrder.VisitationID == x.VisitationID {
+	if salesOrder.VisitationID == defaultSo.VisitationID {
 		salesOrder.VisitationID = request.SalesOrder.VisitationID
 	}
-	if salesOrder.OrderSourceID == x.OrderSourceID {
+	if salesOrder.OrderSourceID == defaultSo.OrderSourceID {
 		salesOrder.OrderSourceID = request.SalesOrder.OrderSourceID
 	}
-	if salesOrder.OrderSourceName == x.OrderSourceName {
+	if salesOrder.OrderSourceName == defaultSo.OrderSourceName {
 		salesOrder.OrderSourceName = request.SalesOrder.OrderSourceName
 	}
-	if salesOrder.OrderSource == x.OrderSource {
+	if salesOrder.OrderSource == defaultSo.OrderSource {
 		salesOrder.OrderSource = request.SalesOrder.OrderSource
 	}
-	if salesOrder.OrderStatusID == x.OrderStatusID {
+	if salesOrder.OrderStatusID == defaultSo.OrderStatusID {
 		salesOrder.OrderStatusID = request.SalesOrder.OrderStatusID
 	}
-	if salesOrder.OrderStatus == x.OrderStatus {
+	if salesOrder.OrderStatus == defaultSo.OrderStatus {
 		salesOrder.OrderStatus = request.SalesOrder.OrderStatus
 	}
-	if salesOrder.OrderStatusName == x.OrderStatusName {
+	if salesOrder.OrderStatusName == defaultSo.OrderStatusName {
 		salesOrder.OrderStatusName = request.SalesOrder.OrderStatusName
 	}
-	if salesOrder.SoCode == x.SoCode {
+	if salesOrder.SoCode == defaultSo.SoCode {
 		salesOrder.SoCode = request.SalesOrder.SoCode
 	}
-	if salesOrder.SoDate == x.SoDate {
+	if salesOrder.SoDate == defaultSo.SoDate {
 		salesOrder.SoDate = request.SalesOrder.SoDate
 	}
-	if salesOrder.SoRefCode == x.SoRefCode {
+	if salesOrder.SoRefCode == defaultSo.SoRefCode {
 		salesOrder.SoRefCode = request.SalesOrder.SoRefCode
 	}
-	if salesOrder.SoRefDate == x.SoRefDate {
+	if salesOrder.SoRefDate == defaultSo.SoRefDate {
 		salesOrder.SoRefDate = request.SalesOrder.SoRefDate
 	}
-	if salesOrder.ReferralCode == x.ReferralCode {
+	if salesOrder.ReferralCode == defaultSo.ReferralCode {
 		salesOrder.ReferralCode = request.SalesOrder.ReferralCode
 	}
-	if salesOrder.GLat == x.GLat {
+	if salesOrder.GLat == defaultSo.GLat {
 		salesOrder.GLat = request.SalesOrder.GLat
 	}
-	if salesOrder.GLong == x.GLong {
+	if salesOrder.GLong == defaultSo.GLong {
 		salesOrder.GLong = request.SalesOrder.GLong
 	}
-	if salesOrder.DeviceId == x.DeviceId {
+	if salesOrder.DeviceId == defaultSo.DeviceId {
 		salesOrder.DeviceId = request.SalesOrder.DeviceId
 	}
-	if salesOrder.Note == x.Note {
+	if salesOrder.Note == defaultSo.Note {
 		salesOrder.Note = request.SalesOrder.Note
 	}
-	if salesOrder.InternalComment == x.InternalComment {
+	if salesOrder.InternalComment == defaultSo.InternalComment {
 		salesOrder.InternalComment = request.SalesOrder.InternalComment
 	}
-	if salesOrder.TotalAmount == x.TotalAmount {
+	if salesOrder.TotalAmount == defaultSo.TotalAmount {
 		salesOrder.TotalAmount = request.SalesOrder.TotalAmount
 	}
-	if salesOrder.TotalTonase == x.TotalTonase {
+	if salesOrder.TotalTonase == defaultSo.TotalTonase {
 		salesOrder.TotalTonase = request.SalesOrder.TotalTonase
 	}
-	if salesOrder.IsDoneSyncToEs == x.IsDoneSyncToEs {
+	if salesOrder.IsDoneSyncToEs == defaultSo.IsDoneSyncToEs {
 		salesOrder.IsDoneSyncToEs = request.SalesOrder.IsDoneSyncToEs
 	}
-	if salesOrder.StartDateSyncToEs == x.StartDateSyncToEs {
+	if salesOrder.StartDateSyncToEs == defaultSo.StartDateSyncToEs {
 		salesOrder.StartDateSyncToEs = request.SalesOrder.StartDateSyncToEs
 	}
-	if salesOrder.EndDateSyncToEs == x.EndDateSyncToEs {
+	if salesOrder.EndDateSyncToEs == defaultSo.EndDateSyncToEs {
 		salesOrder.EndDateSyncToEs = request.SalesOrder.EndDateSyncToEs
 	}
-	if salesOrder.StartCreatedDate == x.StartCreatedDate {
+	if salesOrder.StartCreatedDate == defaultSo.StartCreatedDate {
 		salesOrder.StartCreatedDate = request.SalesOrder.StartCreatedDate
 	}
-	if salesOrder.EndCreatedDate == x.EndCreatedDate {
+	if salesOrder.EndCreatedDate == defaultSo.EndCreatedDate {
 		salesOrder.EndCreatedDate = request.SalesOrder.EndCreatedDate
 	}
 	if salesOrder.SalesOrderDetails == nil {
@@ -241,31 +241,31 @@ func (salesOrder *SalesOrder) SalesOrderOpenSearchChanMap(request *SalesOrderCha
 	if salesOrder.DeliveryOrders == nil {
 		salesOrder.DeliveryOrders = request.SalesOrder.DeliveryOrders
 	}
-	if salesOrder.SalesmanID == x.SalesmanID {
+	if salesOrder.SalesmanID == defaultSo.SalesmanID {
 		salesOrder.SalesmanID = request.SalesOrder.SalesmanID
 	}
-	if salesOrder.SalesmanName == x.SalesmanName {
+	if salesOrder.SalesmanName == defaultSo.SalesmanName {
 		salesOrder.SalesmanName = request.SalesOrder.SalesmanName
 	}
-	if salesOrder.SalesmanEmail == x.SalesmanEmail {
+	if salesOrder.SalesmanEmail == defaultSo.SalesmanEmail {
 		salesOrder.SalesmanEmail = request.SalesOrder.SalesmanEmail
 	}
-	if salesOrder.SalesOrderLogID == x.SalesOrderLogID {
+	if salesOrder.SalesOrderLogID == defaultSo.SalesOrderLogID {
 		salesOrder.SalesOrderLogID = request.SalesOrder.SalesOrderLogID
 	}
-	if salesOrder.CreatedBy == x.CreatedBy {
+	if salesOrder.CreatedBy == defaultSo.CreatedBy {
 		salesOrder.CreatedBy = request.SalesOrder.CreatedBy
 	}
-	if salesOrder.LatestUpdatedBy == x.LatestUpdatedBy {
+	if salesOrder.LatestUpdatedBy == defaultSo.LatestUpdatedBy {
 		salesOrder.LatestUpdatedBy = request.SalesOrder.LatestUpdatedBy
 	}
-	if salesOrder.CreatedAt == x.CreatedAt {
+	if salesOrder.CreatedAt == defaultSo.CreatedAt {
 		salesOrder.CreatedAt = request.SalesOrder.CreatedAt
 	}
-	if salesOrder.UpdatedAt == x.UpdatedAt {
+	if salesOrder.UpdatedAt == defaultSo.UpdatedAt {
 		salesOrder.UpdatedAt = request.SalesOrder.UpdatedAt
 	}
-	if salesOrder.DeletedAt == x.DeletedAt {
+	if salesOrder.DeletedAt == defaultSo.DeletedAt {
 		salesOrder.DeletedAt = request.SalesOrder.DeletedAt
 	}
 	for _, v := range request.SalesOrder.SalesOrderDetails {
@@ -275,6 +275,7 @@ func (salesOrder *SalesOrder) SalesOrderOpenSearchChanMap(request *SalesOrderCha
 			}
 		}
 	}
+	return
 }
 
 func (salesOrder *SalesOrder) UpdateSalesOrderChanMap(request *SalesOrderChan) {

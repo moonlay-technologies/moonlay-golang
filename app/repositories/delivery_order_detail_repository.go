@@ -489,7 +489,7 @@ func (r *deliveryOrderDetail) UpdateByID(id int, request *models.DeliveryOrderDe
 		return
 	}
 
-	salesOrderID, err := result.LastInsertId()
+	deliveryOrderID, err := result.LastInsertId()
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -499,8 +499,7 @@ func (r *deliveryOrderDetail) UpdateByID(id int, request *models.DeliveryOrderDe
 		return
 	}
 
-	response.ID = salesOrderID
-	request.ID = int(salesOrderID)
+	response.ID = deliveryOrderID
 	response.DeliveryOrderDetail = request
 	resultChan <- response
 	return
