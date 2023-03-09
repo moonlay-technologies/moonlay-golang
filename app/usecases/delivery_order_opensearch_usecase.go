@@ -143,25 +143,15 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(request
 		}
 	}
 	deliveryOrder := getDeliveryOrdersResult.DeliveryOrder
-	deliveryOrder.OrderStatus = request.OrderStatus
-	deliveryOrder.OrderStatusID = request.OrderStatus.ID
-	deliveryOrder.OrderStatusName = request.OrderStatus.Name
+	deliveryOrder.DeliveryOrderUpdateMap(request)
 	deliveryOrder.UpdatedAt = &now
 	deliveryOrder.IsDoneSyncToEs = "1"
 	deliveryOrder.EndDateSyncToEs = &now
 
 	for _, v := range deliveryOrder.DeliveryOrderDetails {
-		for _, x := range request.DeliveryOrderDetails {
-			if v.ID == x.ID {
-				v.OrderStatus = x.OrderStatus
-				v.OrderStatusID = x.OrderStatus.ID
-				v.OrderStatusName = x.OrderStatus.Name
-				v.Qty = x.Qty
-				v.UpdatedAt = &now
-				v.IsDoneSyncToEs = "1"
-				v.EndDateSyncToEs = &now
-			}
-		}
+		v.UpdatedAt = &now
+		v.IsDoneSyncToEs = "1"
+		v.EndDateSyncToEs = &now
 	}
 
 	updateDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)

@@ -472,12 +472,14 @@ func (r *deliveryOrder) UpdateByID(id int, request *models.DeliveryOrder, sqlTra
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
-	query := fmt.Sprintf("%s='%v'", "updated_at", request.UpdatedAt.Format("2006-01-02 15:04:05"))
-	rawSqlQueries = append(rawSqlQueries, query)
+	if request.UpdatedAt != nil {
+		query := fmt.Sprintf("%s='%v'", "updated_at", request.UpdatedAt.Format("2006-01-02 15:04:05"))
+		rawSqlQueries = append(rawSqlQueries, query)
+	}
 
 	rawSqlQueriesJoin := strings.Join(rawSqlQueries, ",")
 	updateQuery := fmt.Sprintf("UPDATE delivery_orders set %v WHERE id = ?", rawSqlQueriesJoin)
-	fmt.Println(updateQuery)
+
 	result, err := sqlTransaction.ExecContext(ctx, updateQuery, id)
 
 	if err != nil {

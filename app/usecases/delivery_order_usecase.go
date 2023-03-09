@@ -485,6 +485,10 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 				deliveryOrder.OrderStatusID = getOrderStatusResult.OrderStatus.ID
 				deliveryOrder.OrderStatusName = getOrderStatusResult.OrderStatus.Name
 
+				v.OrderStatus = getOrderStatusResult.OrderStatus
+				v.OrderStatusID = getOrderStatusResult.OrderStatus.ID
+				v.OrderStatusName = getOrderStatusResult.OrderStatus.Name
+
 				updateDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
 				go u.deliveryOrderDetailRepository.UpdateByID(v.ID, v, sqlTransaction, ctx, updateDeliveryOrderDetailResultChan)
 				updateDeliveryOrderDetailResult := <-updateDeliveryOrderDetailResultChan
@@ -757,7 +761,15 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 		return &models.DeliveryOrderDetails{}, getDeliveryOrderResult.ErrorLog
 	}
 
-	deliveryOrder := &models.DeliveryOrder{ID: deliveryOrderID}
+	deliveryOrder := getDeliveryOrderResult.DeliveryOrder
+
+	getOrderStatusResultChan := make(chan *models.OrderStatusChan)
+	go u.orderStatusRepository.GetByID(deliveryOrder.OrderStatusID, false, ctx, getOrderStatusResultChan)
+	getOrderStatusResult := <-getOrderStatusResultChan
+
+	deliveryOrder.OrderStatusID = getOrderStatusResult.OrderStatus.ID
+	deliveryOrder.OrderStatusName = getOrderStatusResult.OrderStatus.Name
+	deliveryOrder.OrderStatus = getOrderStatusResult.OrderStatus
 
 	getDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailsChan)
 	go u.deliveryOrderDetailRepository.GetByDeliveryOrderID(deliveryOrderID, false, ctx, getDeliveryOrderDetailResultChan)
@@ -787,6 +799,10 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 				if getOrderStatusResult.Error != nil {
 					return &models.DeliveryOrderDetails{}, getOrderStatusResult.ErrorLog
 				}
+
+				v.OrderStatus = getOrderStatusResult.OrderStatus
+				v.OrderStatusID = getOrderStatusResult.OrderStatus.ID
+				v.OrderStatusName = getOrderStatusResult.OrderStatus.Name
 
 				updateDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
 				go u.deliveryOrderDetailRepository.UpdateByID(v.ID, v, sqlTransaction, ctx, updateDeliveryOrderDetailResultChan)
@@ -862,14 +878,6 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 
 	deliveryOrder.DeliveryOrderDetails = deliveryOrderDetails
 
-	updateDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderRepository.UpdateByID(getDeliveryOrderResult.DeliveryOrder.ID, deliveryOrder, sqlTransaction, ctx, updateDeliveryOrderResultChan)
-	updateDeliveryOrderResult := <-updateDeliveryOrderResultChan
-
-	if updateDeliveryOrderResult.Error != nil {
-		return &models.DeliveryOrderDetails{}, updateDeliveryOrderResult.ErrorLog
-	}
-
 	if totalSentQty == 0 {
 		getSalesOrderResult.SalesOrder.OrderStatusID = 5
 	} else if totalSentQty == totalQty {
@@ -907,7 +915,7 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 
 	deliveryOrderLog := &models.DeliveryOrderLog{
 		RequestID: "",
-		DoCode:    updateDeliveryOrderResult.DeliveryOrder.DoCode,
+		DoCode:    deliveryOrder.DoCode,
 		Data:      deliveryOrder,
 		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
 		Action:    constants.LOG_ACTION_MONGO_UPDATE,
