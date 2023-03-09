@@ -520,12 +520,19 @@ func (dataSOEventLog *DataSOEventLogResponse) DataSOEventLogResponseMap(request 
 	dataSOEventLog.SalesName = request.Data.SalesmanName.String
 	dataSOEventLog.OrderDate = request.Data.CreatedAt
 	dataSOEventLog.StartOrderAt = request.Data.StartCreatedDate
-	dataSOEventLog.OrderNote = request.Data.Note.String
-	dataSOEventLog.InternalNote = request.Data.InternalComment.String
+	dataSOEventLog.OrderNote = NullString{sql.NullString{String: request.Data.Note.String, Valid: true}}
+	dataSOEventLog.InternalNote = NullString{sql.NullString{String: request.Data.InternalComment.String, Valid: true}}
 	dataSOEventLog.BrandCode = request.Data.BrandID
 	dataSOEventLog.BrandName = request.Data.BrandName
-	dataSOEventLog.AddressID = request.Data.StoreID
-	dataSOEventLog.Address = request.Data.StoreAddress.String
+	return
+}
+
+func (soDetailEventLogResponse *SODetailEventLogResponse) SoDetailEventLogResponse(request *SalesOrderDetail) {
+	soDetailEventLogResponse.ID = request.ID
+	soDetailEventLogResponse.SalesOrderID = request.SalesOrderID
+	soDetailEventLogResponse.ProductID = request.ProductID
+	soDetailEventLogResponse.OrderQty = request.Qty
+	soDetailEventLogResponse.UomID = request.UomID
 	return
 }
 
@@ -539,6 +546,7 @@ func (salesOrderJourney *SalesOrderJourneyResponse) SalesOrderJourneyResponseMap
 	salesOrderJourney.Reason = NullString{sql.NullString{String: request.Reason, Valid: true}}
 	salesOrderJourney.CreatedAt = request.CreatedAt
 	salesOrderJourney.UpdatedAt = request.UpdatedAt
+	return
 }
 
 func (salesOrder *SalesOrder) SalesOrderUploadSOSJMap(request *UploadSOSJField, now time.Time) {

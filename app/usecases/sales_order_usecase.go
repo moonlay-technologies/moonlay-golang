@@ -764,9 +764,10 @@ func (u *salesOrderUseCase) GetSyncToKafkaHistories(request *models.SalesOrderEv
 		salesOrderEventLog.Data = &dataSOEventLog
 
 		for _, x := range v.Data.SalesOrderDetails {
-			salesOrderEventLog.Data.ProductCode = x.ProductSKU
-			salesOrderEventLog.Data.OrderQty = x.Qty
-			salesOrderEventLog.Data.ProductUnit = x.ProductName
+			soDetailEventLog := models.SODetailEventLogResponse{}
+			soDetailEventLog.SoDetailEventLogResponse(x)
+
+			dataSOEventLog.SalesOrderDetails = append(dataSOEventLog.SalesOrderDetails, &soDetailEventLog)
 		}
 
 		salesOrderEventLogs = append(salesOrderEventLogs, &salesOrderEventLog)
