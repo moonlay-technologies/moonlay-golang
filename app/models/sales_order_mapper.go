@@ -540,3 +540,19 @@ func (salesOrderJourney *SalesOrderJourneyResponse) SalesOrderJourneyResponseMap
 	salesOrderJourney.CreatedAt = request.CreatedAt
 	salesOrderJourney.UpdatedAt = request.UpdatedAt
 }
+
+func (salesOrder *SalesOrder) SalesOrderUploadSOSJMap(request *UploadSOSJField, now time.Time) {
+
+	salesOrder.AgentID = request.IDDistributor
+	salesOrder.StoreID = request.KodeTokoDBO
+	salesOrder.BrandID = request.IDMerk
+	salesOrder.SalesmanID = NullInt64{sql.NullInt64{Int64: int64(request.IDSalesman), Valid: true}}
+	salesOrder.SoDate = request.TglSuratJalan
+	salesOrder.SoRefDate = NullString{sql.NullString{String: request.TglSuratJalan, Valid: true}}
+	salesOrder.Note = NullString{sql.NullString{String: request.Catatan, Valid: true}}
+	salesOrder.InternalComment = NullString{sql.NullString{String: request.CatatanInternal, Valid: true}}
+	salesOrder.IsDoneSyncToEs = "0"
+	salesOrder.CreatedAt = &now
+	salesOrder.StartDateSyncToEs = &now
+	salesOrder.StartCreatedDate = &now
+}

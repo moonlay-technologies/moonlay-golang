@@ -9,4 +9,5 @@ const (
 	SALESMANS_PATH           = "salesmans"
 	HEALTH_CHECK_PATH        = "health-check"
 	HOST_TO_HOST_PATH        = "h2h"
+	UPLOAD_SOSJ_PATH         = "upload-sosj"
 )

@@ -67,3 +67,8 @@ type RequestIdValidationChan struct {
 	ErrorLog *model.ErrorLog
 	ID       int64 `json:"id,omitempty" bson:"id,omitempty"`
 }
+
+type TemplateRequest struct {
+	Field string
+	Value string
+}
