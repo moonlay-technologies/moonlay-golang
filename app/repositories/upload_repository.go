@@ -19,6 +19,7 @@ import (
 
 type UploadRepositoryInterface interface {
 	UploadSOSJ(bucket, object, region string, user_id int, resultChan chan *models.UploadSOSJFieldChan)
+	UploadDO(bucket, object, region string, resultChan chan *models.UploadDOFieldsChan)
 }
 
 type upload struct {
@@ -238,6 +239,35 @@ func (r *upload) UploadSOSJ(bucket, object, region string, user_id int, resultCh
 	resultChan <- response
 	return
 
+}
+
+func (r *upload) UploadDO(bucket, object, region string, resultChan chan *models.UploadDOFieldsChan) {
+	response := &models.UploadDOFieldsChan{}
+
+	results, err := r.ReadFile(bucket, object, region, s3.FileHeaderInfoUse)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	var uploadDOFields []*models.UploadDOField
+	for _, v := range results {
+		// a, _ := json.Marshal(v)
+		// fmt.Println(string(a))
+		var uploadDOField models.UploadDOField
+		uploadDOField.UploadDOFieldMap(v)
+
+		uploadDOFields = append(uploadDOFields, &uploadDOField)
+	}
+
+	response.Total = int64(len(uploadDOFields))
+	response.UploadDOFields = uploadDOFields
+	resultChan <- response
+	return
 }
 
 func (r *upload) ReadFile(bucket, object, region, fileHeaderInfo string) ([]map[string]string, error) {

@@ -3,6 +3,8 @@ package usecases
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
+	"fmt"
 	"order-service/app/models"
 	"order-service/app/models/constants"
 	"order-service/app/repositories"
@@ -19,6 +21,7 @@ import (
 
 type UploadUseCaseInterface interface {
 	UploadSOSJ(ctx context.Context) *model.ErrorLog
+	UploadDO(ctx context.Context) *model.ErrorLog
 }
 
 type uploadUseCase struct {
@@ -448,5 +451,18 @@ func (u *uploadUseCase) UploadSOSJ(ctx context.Context) *model.ErrorLog {
 
 	}
 
+	return nil
+}
+
+func (u *uploadUseCase) UploadDO(ctx context.Context) *model.ErrorLog {
+
+	uploadDOResultChan := make(chan *models.UploadDOFieldsChan)
+	go u.uploadRepository.UploadDO("be-so-service", "upload-service/do/format-file-upload-data-DO-V2 (1).csv", "ap-southeast-1", uploadDOResultChan)
+	uploadDOResult := <-uploadDOResultChan
+
+	for _, v := range uploadDOResult.UploadDOFields {
+		a, _ := json.Marshal(v)
+		fmt.Println(string(a))
+	}
 	return nil
 }

@@ -10,4 +10,5 @@ const (
 	HEALTH_CHECK_PATH        = "health-check"
 	HOST_TO_HOST_PATH        = "h2h"
 	UPLOAD_SOSJ_PATH         = "upload-sosj"
+	UPLOAD_DO_PATH           = "upload-deliveryorders"
 )
