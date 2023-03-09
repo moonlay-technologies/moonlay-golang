@@ -4,13 +4,13 @@ docker pull 650142038379.dkr.ecr.ap-southeast-1.amazonaws.com/order-service:cons
 docker run --restart always --log-opt awslogs-stream=order-service-consumer -d -p 8000:8000 --name order-service 650142038379.dkr.ecr.ap-southeast-1.amazonaws.com/order-service:consumer-"$DEPLOYMENT_GROUP_NAME"-latest
 cloudfront_id=""
 
-cp /home/order-service/supervisor.d/* /etc/supervisord.d/
+cp /home/ec2-user/order-service/supervisor.d/* /etc/supervisord.d/
 
 systemctl restart supervisord
 
 rm -rf /etc/awslogs/awslogs.conf
 cp /etc/awslogs/awslogs.conf.orig /etc/awslogs/awslogs.conf
-cp -fr /home/order-service/awslog/order_service_awslog.conf /etc/awslogs/config
+cp -fr /home/ec2-user/order-service/awslog/order_service_awslog.conf /etc/awslogs/config
 cat /etc/awslogs/config/*.conf >> /etc/awslogs/awslogs.conf
 systemctl restart awslogsd
 
