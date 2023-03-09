@@ -9,6 +9,7 @@ import (
 
 type UploadControllerInterface interface {
 	UploadSOSJ(ctx *gin.Context)
+	UploadDO(ctx *gin.Context)
 }
 
 type uploadController struct {
@@ -26,5 +27,11 @@ func InitUploadController(uploadUseCase usecases.UploadUseCaseInterface, ctx con
 func (c *uploadController) UploadSOSJ(ctx *gin.Context) {
 
 	c.uploadUseCase.UploadSOSJ(ctx)
+
+}
+
+func (c *uploadController) UploadDO(ctx *gin.Context) {
+
+	c.uploadUseCase.UploadDO(ctx)
 
 }

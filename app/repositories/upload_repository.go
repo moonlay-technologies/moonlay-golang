@@ -19,6 +19,7 @@ import (
 
 type UploadRepositoryInterface interface {
 	UploadSOSJ(bucket, object, region string, resultChan chan *models.UploadSOSJFieldChan)
+	UploadDO(bucket, object, region string, resultChan chan *models.UploadDOFieldsChan)
 }
 
 type upload struct {
@@ -180,11 +181,40 @@ func (r *upload) UploadSOSJ(bucket, object, region string, resultChan chan *mode
 
 }
 
+func (r *upload) UploadDO(bucket, object, region string, resultChan chan *models.UploadDOFieldsChan) {
+	response := &models.UploadDOFieldsChan{}
+
+	results, err := r.ReadFile(bucket, object, region, s3.FileHeaderInfoUse)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	var uploadDOFields []*models.UploadDOField
+	for _, v := range results {
+		// a, _ := json.Marshal(v)
+		// fmt.Println(string(a))
+		var uploadDOField models.UploadDOField
+		uploadDOField.UploadDOFieldMap(v)
+
+		uploadDOFields = append(uploadDOFields, &uploadDOField)
+	}
+
+	response.Total = int64(len(uploadDOFields))
+	response.UploadDOFields = uploadDOFields
+	resultChan <- response
+	return
+}
+
 func (r *upload) ReadFile(bucket, object, region, fileHeaderInfo string) ([]map[string]string, error) {
 	sess := session.New(&aws.Config{
 		Region:                        aws.String(region),
 		CredentialsChainVerboseErrors: aws.Bool(true),
-		Credentials:                   credentials.NewStaticCredentials("ASIAUHX63DBTJSNFFWFY", "OWoH8MJin2iBegS32dT8HDGx0ilgY78ih8y8kLSM", "IQoJb3JpZ2luX2VjEJr//////////wEaDmFwLXNvdXRoZWFzdC0xIkcwRQIhALE9XsKawi1OxiCjJ88z4OrbQdMeAJKXm8DO2rxjmQEpAiBAf+9+oMN1q/gfe/u8nFebukjhqMjhRPCESkoBtVTYJyr1AghTEAAaDDI5MTUxODQ4NjYzMCIMQb3/yCle1EhmcFtJKtICgdc0v+q9l2yWvuPzSzl4zUIqTb/r6QSkT+I5XnSJNoCvwkCQVphLhWB6CwaoQKoztHdbAt+rGQuCPMkhnnXV+rRD8nte/hBr83p2qXxKyeCotVZlA6+6QloGwbNp23+A/cD43/0qHgrQnXQXdVlBfT4f9k9TJZ92cRNgesb6+5JWDOb+epPMbomuBn9HuKlnjzOHEqwXODDTbyooU0l0HX+gnf4+uWqs3z0MlA1U1dInsWAzx78HWs0ggdMkrZvISXi1I7B8k5tNRfYV+PFGQq7TAuBCZ1bm2kxbeUU1WzVf1S77alr1hoI+gWgpRSql+1O2nYMHHdVppPlv1WaIHli1uxsSqKSK3rmC/bFO8zXOpUvzEFjQEfYql4pozrRsWo97Rt3XhrzmBQ9sxeAOo60ImWrvPuOWhK4YHUuLkwwZTqk5X9T3i7W5W5Ef4zq2VbQwhfakoAY6pwGmXuCOpI76IRaCiP17X7aItZiE8H4dV15CIk28bHHGXzGSKNf20Zn2elA2kLy/1xfZP0+jq99N1keK/qwXevEBiDY/LaON7Ng51XKVJok856s7Sygr5wkcr6+RzwORGMl516hMS3PZTN2yfZMIq+m4nfJMI639CyTwfGMCQ5lvI4ok3rwUayhqjUfkccmO3+LSbjNt5qE/lrUWxwYbv7KI2QEdVaTinw=="),
+		Credentials:                   credentials.NewStaticCredentials("ASIAUHX63DBTNCRETHDA", "Ufuvfa2ajxnGVyt00ClkT9/ZCl5BWxpsAyoT8qj/", "IQoJb3JpZ2luX2VjEJz//////////wEaDmFwLXNvdXRoZWFzdC0xIkcwRQIhAM0N3QMEwKnJkvCX7+MXMq4cO5Ch4f1aH4YL6WlCE5BaAiA1aax030KrfO+hTrNgAz9JO5am+ph1BEpjqZBa2+qrlCr1AghVEAAaDDI5MTUxODQ4NjYzMCIMcTLjJuqh2bB46QvXKtICNMGnBdQPkKTdQLN/oAvUIdUw1Ujo6cOAbQmA9snWkhnGoqbuUMtm8O9jC6X4OrL9Ef4oMcWYz4HwaxPwck5Zh5ZuR49tK9ty0v/ZcPEfaOHODnhqxuNMBr/KwREUpoAGgZUDfP9Asqs/myERIlfJmWO7nh24x3vBVTx3jSHWZ5RDoL3kfVU4h/ZusYk2xSXTchZGCbWqkUKVVQpkwsWLzUfrzUOAgm+SFJBggRXUDCtJn5LW+FDwDkOu3VKYtGHxRAlXZCaZsBUvxH0j5LAjHVup3U2YRdapP4+f7FNcClmr8lTIiLnNXH0OgLDrNcjw6EA0LineunjowUIWvPBVuVO9XeG/jgEvzef6fAj+eIy+BXDkdK56XgYruRk8anACuvz/WJ5Mi0OcXlCakL/897QDDxrrwxNIewN9GTt2RHsgRJGRvNAF57sRPSycf8bpnPAws7GloAY6pwG9/QgCj+51pVnHmOkZkkFfsknTNsi0nKMGxALhH4VMDEtO4lMqfTO2CulgFB83EbBFOjWnx2nC5IS/Th9F6xFmY7vj/OiRcX5drlzsAX5jB+bZ0+BoVAhz9szpqy+JisKvQbKwA1wob8zHUQY5tqNcotnnwSGHANVt5FPt5FAqFvrSUd2JAaMznDOPhb51F5+CFRHBOSl4gK5VMC063PvlTbuEeCdBYg=="),
 		HTTPClient:                    &http.Client{Timeout: 10 * time.Second},
 	})
 	svc := s3.New(sess)
