@@ -18,18 +18,22 @@ import (
 )
 
 type UploadRepositoryInterface interface {
-	UploadSOSJ(bucket, object, region string, resultChan chan *models.UploadSOSJFieldChan)
+	UploadSOSJ(bucket, object, region string, user_id int, resultChan chan *models.UploadSOSJFieldChan)
 }
 
 type upload struct {
+	requestValidationRepository RequestValidationRepositoryInterface
 }
 
-func InitUploadRepository() UploadRepositoryInterface {
-	return &upload{}
+func InitUploadRepository(requestValidationRepository RequestValidationRepositoryInterface) UploadRepositoryInterface {
+	return &upload{
+		requestValidationRepository: requestValidationRepository,
+	}
 }
 
-func (r *upload) UploadSOSJ(bucket, object, region string, resultChan chan *models.UploadSOSJFieldChan) {
+func (r *upload) UploadSOSJ(bucket, object, region string, user_id int, resultChan chan *models.UploadSOSJFieldChan) {
 	response := &models.UploadSOSJFieldChan{}
+
 	var errors []string
 
 	var idDistributor int
@@ -64,91 +68,148 @@ func (r *upload) UploadSOSJ(bucket, object, region string, resultChan chan *mode
 
 	noSuratJalan := []string{}
 	for _, v := range results {
-		intType := []*models.TemplateRequest{
-			{
-				Field: "KodeTokoDBO",
-				Value: v["_4"],
-			},
-			{
-				Field: "IDMerek",
-				Value: v["_5"],
-			},
-			{
-				Field: "KodeProdukDBO",
-				Value: v["_6"],
-			},
-			{
-				Field: "Qty",
-				Value: v["_7"],
-			},
-			{
-				Field: "Unit",
-				Value: v["_8"],
-			},
-			{
-				Field: "KodeGudang",
-				Value: v["_11"],
-			},
-		}
-		if v["_12"] != "" {
-			intType = append(intType, &models.TemplateRequest{
-				Field: "IDSalesman",
-				Value: v["_12"],
-			})
-		}
-		intTypeError := uploadIntTypeValidation(intType)
-		if len(intTypeError) > 1 {
-			errors = append(errors, intTypeError...)
-			continue
-		}
-
-		mandatoryError := uploadMandatoryValidation([]*models.TemplateRequest{
-			{
-				Field: "Status",
-				Value: v["_1"],
-			},
-			{
-				Field: "NoSuratJalan",
-				Value: v["_2"],
-			},
-			{
-				Field: "TglSuratJalan",
-				Value: v["_3"],
-			},
-			{
-				Field: "KodeTokoDBO",
-				Value: v["_4"],
-			},
-			{
-				Field: "IDMerk",
-				Value: v["_5"],
-			},
-			{
-				Field: "KodeProdukDBO",
-				Value: v["_6"],
-			},
-			{
-				Field: "Qty",
-				Value: v["_7"],
-			},
-			{
-				Field: "Unit",
-				Value: v["_8"],
-			},
-		})
-		if len(mandatoryError) > 1 {
-			errors = append(errors, mandatoryError...)
-			continue
-		}
-
-		// mustActiveField := []*models.MustActiveRequest{
-		// 	helper.GenerateMustActive("stores", "store_id", v["_4"], "active"),
-		// 	helper.GenerateMustActive("users", "user_id", insertRequest.UserID, "ACTIVE"),
-		// }
-
 		if v["_1"] != "Status" {
+			mandatoryError := uploadMandatoryValidation([]*models.TemplateRequest{
+				{
+					Field: "Status",
+					Value: v["_1"],
+				},
+				{
+					Field: "NoSuratJalan",
+					Value: v["_2"],
+				},
+				{
+					Field: "TglSuratJalan",
+					Value: v["_3"],
+				},
+				{
+					Field: "KodeTokoDBO",
+					Value: v["_4"],
+				},
+				{
+					Field: "IDMerk",
+					Value: v["_5"],
+				},
+				{
+					Field: "KodeProdukDBO",
+					Value: v["_6"],
+				},
+				{
+					Field: "Qty",
+					Value: v["_7"],
+				},
+				{
+					Field: "Unit",
+					Value: v["_8"],
+				},
+			})
+			if len(mandatoryError) > 1 {
+				errors = append(errors, mandatoryError...)
+				continue
+			}
+
+			intType := []*models.TemplateRequest{
+				{
+					Field: "KodeTokoDBO",
+					Value: v["_4"],
+				},
+				{
+					Field: "IDMerk",
+					Value: v["_5"],
+				},
+				{
+					Field: "KodeProdukDBO",
+					Value: v["_6"],
+				},
+				{
+					Field: "Qty",
+					Value: v["_7"],
+				},
+				{
+					Field: "Unit",
+					Value: v["_8"],
+				},
+			}
+			if v["_11"] != "" {
+				intType = append(intType, &models.TemplateRequest{
+					Field: "KodeGudang",
+					Value: v["_11"],
+				})
+			}
+			if v["_12"] != "" {
+				intType = append(intType, &models.TemplateRequest{
+					Field: "IDSalesman",
+					Value: v["_12"],
+				})
+			}
+			intTypeResult, intTypeError := uploadIntTypeValidation(intType)
+			if len(intTypeError) > 1 {
+				errors = append(errors, intTypeError...)
+				continue
+			}
+
+			if intTypeResult["Qty"] < 1 {
+				errors = append(errors, "Quantity harus lebih dari 0")
+				continue
+			}
+
+			mustActiveField := []*models.MustActiveRequest{
+				helper.GenerateMustActive("stores", "KodeTokoDBO", intTypeResult["KodeTokoDBO"], "active"),
+				helper.GenerateMustActive("users", "user_id", user_id, "ACTIVE"),
+				{
+					Table:    "brands",
+					ReqField: "IDMerk",
+					Clause:   fmt.Sprintf("id = %d AND status_active = %d", intTypeResult["IDMerk"], 1),
+					Id:       intTypeResult["IDMerk"],
+				},
+				{
+					Table:    "products",
+					ReqField: "KodeProdukDBO",
+					Clause:   fmt.Sprintf("id = %d AND isActive = %d", intTypeResult["KodeProdukDBO"], 1),
+					Id:       intTypeResult["KodeProdukDBO"],
+				},
+				{
+					Table:    "uoms",
+					ReqField: "Unit",
+					Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", intTypeResult["Unit"]),
+					Id:       intTypeResult["Unit"],
+				},
+			}
+			mustActiveError := r.mustActiveValidation(mustActiveField)
+			if len(mustActiveError) > 1 {
+				errors = append(errors, mustActiveError...)
+				continue
+			}
+
+			if len(v["_12"]) > 0 {
+				brandSalesman := make(chan *models.RequestIdValidationChan)
+				go r.requestValidationRepository.BrandSalesmanValidation(intTypeResult["IDMerk"], intTypeResult["IDSalesman"], idDistributor, brandSalesman)
+				brandSalesmanResult := <-brandSalesman
+
+				if brandSalesmanResult.Total < 1 {
+					errors = append(errors, fmt.Sprintf("Kode Merek = %d Tidak Terdaftar pada Distributor <nama_agent>. Silahkan gunakan Kode Merek yang lain.", intTypeResult["IDMerk"]))
+					errors = append(errors, fmt.Sprintf("ID Salesman = %d Tidak Terdaftar pada Distributor <nama_agent>. Silahkan gunakan ID Salesman yang lain.", intTypeResult["IDSalesman"]))
+					errors = append(errors, fmt.Sprintf("Salesman di Kode Toko = %d untuk Merek <Nama Merk> Tidak Terdaftar. Silahkan gunakan ID Salesman yang terdaftar.", intTypeResult["KodeTokoDBO"]))
+					continue
+				}
+			}
+			storeAddresses := make(chan *models.RequestIdValidationChan)
+			go r.requestValidationRepository.StoreAddressesValidation(intTypeResult["KodeTokoDBO"], storeAddresses)
+			storeAddressesResult := <-storeAddresses
+
+			if storeAddressesResult.Total < 1 {
+				errors = append(errors, fmt.Sprintf("Alamat Utama pada Kode Toko = %s Tidak Ditemukan. Silahkan gunakan Alamat Toko yang lain.", v["_4"]))
+				continue
+			}
 
 			var uploadSOSJField models.UploadSOSJField
+			uploadSOSJField.TglSuratJalan, err = helper.ParseDDYYMMtoYYYYMMDD(v["_3"])
+			if err != nil {
+				errors = append(errors, fmt.Sprintf("Format Tanggal Order = %s Salah, silahkan sesuaikan dengan format DD-MMM-YYYY, contoh 15/12/2021", v["_3"]))
+				continue
+			}
+			uploadSOSJField.UploadSOSJFieldMap(v, idDistributor)
+
 			checkIfNoSuratJalanExist := helper.InSliceString(noSuratJalan, v["_2"])
 			if checkIfNoSuratJalanExist {
 
@@ -167,8 +228,7 @@ func (r *upload) UploadSOSJ(bucket, object, region string, resultChan chan *mode
 				uploadSOSJField.NoSuratJalan = v["_2"]
 				noSuratJalan = append(noSuratJalan, v["_2"])
 			}
-			uploadSOSJField.UploadSOSJFieldMap(v, idDistributor)
-			uploadSOSJField.TglSuratJalan, _ = helper.ParseDDYYMMtoYYYYMMDD(uploadSOSJField.TglSuratJalan)
+
 			uploadSOSJFields = append(uploadSOSJFields, &uploadSOSJField)
 		}
 	}
@@ -184,7 +244,7 @@ func (r *upload) ReadFile(bucket, object, region, fileHeaderInfo string) ([]map[
 	sess := session.New(&aws.Config{
 		Region:                        aws.String(region),
 		CredentialsChainVerboseErrors: aws.Bool(true),
-		Credentials:                   credentials.NewStaticCredentials("ASIAUHX63DBTJSNFFWFY", "OWoH8MJin2iBegS32dT8HDGx0ilgY78ih8y8kLSM", "IQoJb3JpZ2luX2VjEJr//////////wEaDmFwLXNvdXRoZWFzdC0xIkcwRQIhALE9XsKawi1OxiCjJ88z4OrbQdMeAJKXm8DO2rxjmQEpAiBAf+9+oMN1q/gfe/u8nFebukjhqMjhRPCESkoBtVTYJyr1AghTEAAaDDI5MTUxODQ4NjYzMCIMQb3/yCle1EhmcFtJKtICgdc0v+q9l2yWvuPzSzl4zUIqTb/r6QSkT+I5XnSJNoCvwkCQVphLhWB6CwaoQKoztHdbAt+rGQuCPMkhnnXV+rRD8nte/hBr83p2qXxKyeCotVZlA6+6QloGwbNp23+A/cD43/0qHgrQnXQXdVlBfT4f9k9TJZ92cRNgesb6+5JWDOb+epPMbomuBn9HuKlnjzOHEqwXODDTbyooU0l0HX+gnf4+uWqs3z0MlA1U1dInsWAzx78HWs0ggdMkrZvISXi1I7B8k5tNRfYV+PFGQq7TAuBCZ1bm2kxbeUU1WzVf1S77alr1hoI+gWgpRSql+1O2nYMHHdVppPlv1WaIHli1uxsSqKSK3rmC/bFO8zXOpUvzEFjQEfYql4pozrRsWo97Rt3XhrzmBQ9sxeAOo60ImWrvPuOWhK4YHUuLkwwZTqk5X9T3i7W5W5Ef4zq2VbQwhfakoAY6pwGmXuCOpI76IRaCiP17X7aItZiE8H4dV15CIk28bHHGXzGSKNf20Zn2elA2kLy/1xfZP0+jq99N1keK/qwXevEBiDY/LaON7Ng51XKVJok856s7Sygr5wkcr6+RzwORGMl516hMS3PZTN2yfZMIq+m4nfJMI639CyTwfGMCQ5lvI4ok3rwUayhqjUfkccmO3+LSbjNt5qE/lrUWxwYbv7KI2QEdVaTinw=="),
+		Credentials:                   credentials.NewStaticCredentials("ASIAUHX63DBTHZ6MUWJ3", "6+vQpDZaqP75TGCvjMG16mB/Nq46+5l7Ot4a1Bka", "IQoJb3JpZ2luX2VjEKf//////////wEaDmFwLXNvdXRoZWFzdC0xIkcwRQIhAKUmFaefISnx0H8vxJEeS/YYJYm/y5vQLTMeTNkzxqhbAiBhh577yZAismiuV+O1XIly4rrpT0zdXUvgwsRKtrNR5Sr1AghgEAAaDDI5MTUxODQ4NjYzMCIM23p/Xl0MJzVnPBYPKtICj6PCyBgmv7n4oVuIrqyBs7evVzHTNV0DrAuvhOPiPob4kst1TFLisCfQEGGYhTaXJCksYukZns9lN08qzZGZQzsxnKggcUitVNACtUQ37OEFbBJJh2zqeaUdq927/j6kgQiE/5PqKGaDAzSLUC3DCAdHssWeyr8kY3UitL1Q3I4DmVSWxR0rEMOPzjv7CHWMtJQCRZET+r0yoNXDndXqhKrxr3HFE1xHqXoWaRVuOQ5wUJrTKps4uuEkL8P4IbHwv97wF2ZyYtFU7LGKH9c+9clLSKQSVMwhMTevGWPNGFXSe/ibgub2xDktmGs+hjil+lihX0EIGftsoqa/qD3Ti4hPKRMVy12J59KEzqNJsR1KIvPyocp/BcSPL0lbYp0R5x4D33pT6k2cNoGTWrV43ox7y2GRqPfKXiNEq3WWYnQMsviL1GxI5tJ10l74zOUSfz8w496noAY6pwEDRW8eED/rt9e8xV+gjL9o1vvxH0zndUTm8WP9G6SdSA9Q7LhbaymU3G+CHcrasgJCK85uF0ozCb4f5vR8NCSmJV3GRrhOBbr02UfZgSiXitbN2515x2kewHpkTOBlJHDZjYJ6GzR4jAHQmhmQJUkrmZvXAqQ+oK66jHrTVDJ8KtMlk2IlTc6lBdmp+qHk1lLIVlCPK5TgxV4PVQKc+QScloroM0TPnA=="),
 		HTTPClient:                    &http.Client{Timeout: 10 * time.Second},
 	})
 	svc := s3.New(sess)
@@ -259,14 +319,48 @@ func uploadMandatoryValidation(request []*models.TemplateRequest) []string {
 	return errors
 }
 
-func uploadIntTypeValidation(request []*models.TemplateRequest) []string {
+func uploadIntTypeValidation(request []*models.TemplateRequest) (map[string]int, []string) {
+	result := map[string]int{}
 	errors := []string{}
 
 	for _, v := range request {
-		_, error := strconv.Atoi(v.Value)
+		parseInt, error := strconv.Atoi(v.Value)
+
 		if error != nil {
 			error := fmt.Sprintf("Data %s harus bertipe data integer", v.Value)
 			errors = append(errors, error)
+		} else {
+			result[v.Field] = parseInt
+		}
+	}
+
+	return result, errors
+}
+
+func (r *upload) mustActiveValidation(request []*models.MustActiveRequest) []string {
+
+	errors := []string{}
+
+	mustActive := make(chan *models.MustActiveRequestChan)
+	go r.requestValidationRepository.MustActiveValidation(request, mustActive)
+	mustActiveResult := <-mustActive
+
+	for k, v := range mustActiveResult.Total {
+		if v < 1 {
+
+			var error string
+			switch request[k].ReqField {
+			case "KodeTokoDBO":
+				error = fmt.Sprintf("Kode Toko = %d sudah Tidak Aktif. Silahkan gunakan Kode Toko yang lain", request[k].Id)
+			case "KodeProdukDBO":
+				error = fmt.Sprintf("Kode SKU = %d dengan Merek <Nama_Merk> sudah Tidak Aktif. Silahkan gunakan Kode SKU yang lain.", request[k].Id)
+			case "IDMerk":
+				error = fmt.Sprintf("Merk = %d sudah Tidak Aktif. Silahkan gunakan Kode yang lain.", request[k].Id)
+			default:
+				error = fmt.Sprintf("Kode = %d sudah Tidak Aktif. Silahkan gunakan Kode yang lain.", request[k].Id)
+			}
+			errors = append(errors, error)
+
 		}
 	}
 

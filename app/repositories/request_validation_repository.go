@@ -17,6 +17,8 @@ type RequestValidationRepositoryInterface interface {
 	StoreIdValidation(storeId, agentId int, resultChan chan *models.RequestIdValidationChan)
 	SalesmanIdValidation(salesmanId, agentId int, resultChan chan *models.RequestIdValidationChan)
 	BrandIdValidation(brandId, agentId int, resultChan chan *models.RequestIdValidationChan)
+	BrandSalesmanValidation(brandId, salesmanId, agentId int, resultChan chan *models.RequestIdValidationChan)
+	StoreAddressesValidation(storeId int, resultChan chan *models.RequestIdValidationChan)
 }
 
 type requestValidationRepository struct {
@@ -169,6 +171,46 @@ func (r *requestValidationRepository) BrandIdValidation(brandId, agentId int, re
 	var total int64
 
 	query := fmt.Sprintf("SELECT COUNT(*) AS total FROM brands JOIN brand_salesman ON brands.id = brand_salesman.brand_id JOIN agents ON brand_salesman.agent_id = agents.id WHERE brands.id = %d AND agents.id = %d AND brands.deleted_at IS NULL", brandId, agentId)
+	err := r.db.QueryRow(query).Scan(&total)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	} else {
+		response.Total = total
+		resultChan <- response
+		return
+	}
+}
+
+func (r *requestValidationRepository) BrandSalesmanValidation(brandId, salesmanId, agentId int, resultChan chan *models.RequestIdValidationChan) {
+	response := &models.RequestIdValidationChan{}
+	var total int64
+
+	query := fmt.Sprintf("SELECT COUNT(*) AS total FROM brand_salesman WHERE brand_id = %d AND salesman_id = %d AND agent_id = %d", brandId, salesmanId, agentId)
+	err := r.db.QueryRow(query).Scan(&total)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	} else {
+		response.Total = total
+		resultChan <- response
+		return
+	}
+}
+
+func (r *requestValidationRepository) StoreAddressesValidation(storeId int, resultChan chan *models.RequestIdValidationChan) {
+	response := &models.RequestIdValidationChan{}
+	var total int64
+
+	query := fmt.Sprintf("SELECT COUNT(*) AS total FROM store_addresses WHERE store_id = %d", storeId)
 	err := r.db.QueryRow(query).Scan(&total)
 
 	if err != nil {

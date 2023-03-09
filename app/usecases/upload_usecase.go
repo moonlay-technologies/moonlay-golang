@@ -3,7 +3,6 @@ package usecases
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"order-service/app/models"
 	"order-service/app/models/constants"
 	"order-service/app/repositories"
@@ -83,7 +82,7 @@ func (u *uploadUseCase) UploadSOSJ(ctx context.Context) *model.ErrorLog {
 	var user_id = ctx.Value("user").(*models.UserClaims).UserID
 
 	uploadSOSJResultChan := make(chan *models.UploadSOSJFieldChan)
-	go u.uploadRepository.UploadSOSJ("be-so-service", "upload-service/sosj/format-file-upload-data-SOSJ-V2.csv", "ap-southeast-1", uploadSOSJResultChan)
+	go u.uploadRepository.UploadSOSJ("be-so-service", "upload-service/sosj/format-file-upload-data-SOSJ-V2.csv", "ap-southeast-1", user_id, uploadSOSJResultChan)
 	uploadSOSJResult := <-uploadSOSJResultChan
 
 	// Get Order Source Status By Id
@@ -100,7 +99,7 @@ func (u *uploadUseCase) UploadSOSJ(ctx context.Context) *model.ErrorLog {
 
 	salesOrders := []*models.SalesOrder{}
 	for _, v := range uploadSOSJResult.UploadSOSJFields {
-		fmt.Println(v.NoSuratJalan)
+
 		var noSuratJalan = v.NoSuratJalan
 
 		checkIfSoRefCodeExist := helper.InSliceString(soRefCodes, noSuratJalan)

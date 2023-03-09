@@ -22,6 +22,7 @@ type MustActiveRequest struct {
 	Clause             string
 	CustomMessage      string
 	CustomResponseCode int
+	Id                 int
 }
 
 type MustActiveRequestChan struct {

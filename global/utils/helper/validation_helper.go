@@ -10,5 +10,6 @@ func GenerateMustActive(table string, reqField string, id int, status string) *m
 		Table:    table,
 		ReqField: reqField,
 		Clause:   fmt.Sprintf("id = %d AND status = '%s'", id, status),
+		Id:       id,
 	}
 }

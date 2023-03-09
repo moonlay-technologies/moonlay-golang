@@ -8,7 +8,6 @@ import (
 func (result *UploadSOSJField) UploadSOSJFieldMap(request map[string]string, idDistributor int) {
 	result.IDDistributor = idDistributor
 	result.Status = request["_1"]
-	result.TglSuratJalan = request["_3"]
 	result.KodeTokoDBO, _ = strconv.Atoi(request["_4"])
 	result.IDMerk, _ = strconv.Atoi(request["_5"])
 	result.KodeProdukDBO, _ = strconv.Atoi(request["_6"])
