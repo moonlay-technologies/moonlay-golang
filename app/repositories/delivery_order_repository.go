@@ -281,7 +281,7 @@ func (r *deliveryOrder) Insert(request *models.DeliveryOrder, sqlTransaction *sq
 		rawSqlValues = append(rawSqlValues, request.DoDate)
 	}
 
-	if request.DoRefDate.String != "" {
+	if request.DoRefCode.String != "" {
 		rawSqlFields = append(rawSqlFields, "do_ref_code")
 		rawSqlDataTypes = append(rawSqlDataTypes, "?")
 		rawSqlValues = append(rawSqlValues, request.DoRefCode)
@@ -428,7 +428,7 @@ func (r *deliveryOrder) UpdateByID(id int, request *models.DeliveryOrder, sqlTra
 	}
 
 	if request.DoDate != "" {
-		query := fmt.Sprintf("%s='%v'", "so_date", request.DoDate)
+		query := fmt.Sprintf("%s='%v'", "do_date", request.DoDate[0:10])
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
@@ -438,7 +438,7 @@ func (r *deliveryOrder) UpdateByID(id int, request *models.DeliveryOrder, sqlTra
 	}
 
 	if request.DoRefDate.String != "" {
-		query := fmt.Sprintf("%s='%v'", "do_ref_date", request.DoRefDate.String)
+		query := fmt.Sprintf("%s='%v'", "do_ref_date", request.DoRefDate.String[0:10])
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
@@ -477,6 +477,7 @@ func (r *deliveryOrder) UpdateByID(id int, request *models.DeliveryOrder, sqlTra
 
 	rawSqlQueriesJoin := strings.Join(rawSqlQueries, ",")
 	updateQuery := fmt.Sprintf("UPDATE delivery_orders set %v WHERE id = ?", rawSqlQueriesJoin)
+	fmt.Println(updateQuery)
 	result, err := sqlTransaction.ExecContext(ctx, updateQuery, id)
 
 	if err != nil {
@@ -487,7 +488,7 @@ func (r *deliveryOrder) UpdateByID(id int, request *models.DeliveryOrder, sqlTra
 		return
 	}
 
-	salesOrderID, err := result.LastInsertId()
+	deliveryOrderID, err := result.LastInsertId()
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -500,8 +501,7 @@ func (r *deliveryOrder) UpdateByID(id int, request *models.DeliveryOrder, sqlTra
 	deliveryOrderRedisKey := fmt.Sprintf("%s", constants.DELIVERY_ORDER+"*")
 	_, err = r.redisdb.Client().Del(ctx, deliveryOrderRedisKey).Result()
 
-	response.ID = salesOrderID
-	request.ID = int(salesOrderID)
+	response.ID = deliveryOrderID
 	response.DeliveryOrder = request
 	resultChan <- response
 	return

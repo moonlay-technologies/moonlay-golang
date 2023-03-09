@@ -108,20 +108,6 @@ func (c *createDeliveryOrderConsumerHandler) ProcessMessage() {
 			continue
 		}
 
-		if errorLog.Err != nil {
-			go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
-			fmt.Println(errorLog)
-			continue
-		}
-		deliveryOrder.SalesOrder.ID = deliveryOrder.SalesOrderID
-		errorLog = c.salesOrderOpenSearchUseCase.SyncToOpenSearchFromUpdateEvent(deliveryOrder.SalesOrder, c.ctx)
-
-		if errorLog.Err != nil {
-			go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
-			fmt.Println(errorLog)
-			continue
-		}
-
 		deliveryOrderLog.Status = constants.LOG_STATUS_MONGO_SUCCESS
 		go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
 	}

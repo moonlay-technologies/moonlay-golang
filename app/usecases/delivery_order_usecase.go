@@ -441,7 +441,7 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 		return &models.DeliveryOrderUpdateByIDRequest{}, getOrderStatusResult.ErrorLog
 	}
 
-	deliveryOrder := &models.DeliveryOrder{}
+	deliveryOrder := getDeliveryOrderResult.DeliveryOrder
 	deliveryOrder.DeliveryOrderUpdateByIDRequestMap(request, now)
 	deliveryOrder.WarehouseChanMap(getWarehouseResult)
 	deliveryOrder.OrderStatus = getOrderStatusResult.OrderStatus
@@ -461,6 +461,7 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 
 	deliveryOrderDetails := []*models.DeliveryOrderDetail{}
 	deliveryOrderDetailResults := []*models.DeliveryOrderDetailUpdateByIDRequest{}
+	salesOrderDetails := []*models.SalesOrderDetail{}
 	totalSentQty := 0
 	totalQty := 0
 	for _, x := range request.DeliveryOrderDetails {
@@ -515,6 +516,7 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 					getSalesOrderDetailResult.SalesOrderDetail.UpdatedAt = &now
 					getSalesOrderDetailResult.SalesOrderDetail.SentQty += balanceQty
 					getSalesOrderDetailResult.SalesOrderDetail.ResidualQty -= balanceQty
+					totalSentQty += getSalesOrderDetailResult.SalesOrderDetail.SentQty
 
 					if getSalesOrderDetailResult.SalesOrderDetail.SentQty == 0 {
 						getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID = 11
@@ -523,6 +525,9 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 					} else {
 						getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID = 13
 					}
+
+					getSalesOrderDetailResult.SalesOrderDetail.IsDoneSyncToEs = "0"
+					getSalesOrderDetailResult.SalesOrderDetail.StartDateSyncToEs = &now
 
 					getOrderStatusSODetailResultChan := make(chan *models.OrderStatusChan)
 					go u.orderStatusRepository.GetByID(getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID, false, ctx, getOrderStatusSODetailResultChan)
@@ -546,12 +551,12 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 				} else {
 					totalSentQty += v.Qty
 				}
-
 				deliveryOrderDetails = append(deliveryOrderDetails, v)
 				deliveryOrderDetailResults = append(deliveryOrderDetailResults, &models.DeliveryOrderDetailUpdateByIDRequest{
 					Qty:  v.Qty,
 					Note: v.Note.String,
 				})
+				salesOrderDetails = append(salesOrderDetails, getSalesOrderDetailResult.SalesOrderDetail)
 			}
 		}
 	}
@@ -586,6 +591,7 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 	getSalesOrderResult.SalesOrder.SoDate = ""
 	getSalesOrderResult.SalesOrder.SoRefDate = models.NullString{}
 	getSalesOrderResult.SalesOrder.UpdatedAt = &now
+	getSalesOrderResult.SalesOrder.SalesOrderDetails = salesOrderDetails
 	deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
 
 	updateSalesOrderChan := make(chan *models.SalesOrderChan)
@@ -603,7 +609,7 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 
 	deliveryOrderLog := &models.DeliveryOrderLog{
 		RequestID: request.RequestID,
-		DoCode:    updateDeliveryOrderResult.DeliveryOrder.DoCode,
+		DoCode:    deliveryOrder.DoCode,
 		Data:      deliveryOrder,
 		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
 		Action:    constants.LOG_ACTION_MONGO_UPDATE,

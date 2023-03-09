@@ -191,6 +191,8 @@ func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(salesOrder
 		}
 
 		salesOrder.SalesOrderDetails[k].OrderStatus = getOrderStatusDetailResult.OrderStatus
+		v.IsDoneSyncToEs = "1"
+		v.EndDateSyncToEs = &now
 	}
 
 	salesOrder.UpdatedAt = &now
