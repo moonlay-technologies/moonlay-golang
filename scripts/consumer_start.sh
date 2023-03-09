@@ -3,11 +3,16 @@ aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS
 docker pull 650142038379.dkr.ecr.ap-southeast-1.amazonaws.com/order-service:consumer-"$DEPLOYMENT_GROUP_NAME"-latest
 docker run --restart always --log-opt awslogs-stream=order-service-consumer -d -p 8000:8000 --name order-service 650142038379.dkr.ecr.ap-southeast-1.amazonaws.com/order-service:consumer-"$DEPLOYMENT_GROUP_NAME"-latest
 cloudfront_id=""
-docker exec -i order-service screen -dmS create_sales_order ./ordersrv consumer create-sales-order create-sales-order create-so-group 0 0
-docker exec -i order-service screen -dmS update_sales_order ./ordersrv consumer update-sales-order update-sales-order update-so-group 0 0
-docker exec -i order-service screen -dmS create_delivery_order ./ordersrv consumer create-delivery-order create-delivery-order create-do-group 0 0
-docker exec -i order-service screen -dmS update_delivery_order ./ordersrv consumer update-delivery-order update-delivery-order update-do-group 0 0
 
+cp /home/order-service/supervisor.d/* /etc/supervisord.d/
+
+systemctl restart supervisord
+
+rm -rf /etc/awslogs/awslogs.conf
+cp /etc/awslogs/awslogs.conf.orig /etc/awslogs/awslogs.conf
+cp -fr /home/order-service/awslog/order_service_awslog.conf /etc/awslogs/config
+cat /etc/awslogs/config/*.conf >> /etc/awslogs/awslogs.conf
+systemctl restart awslogsd
 
 if [ "$DEPLOYMENT_GROUP_NAME" == "staging" ]; then
   cloudfront_id=$(aws secretsmanager get-secret-value --secret-id StgCloudFrontID --query SecretString --output text --region ap-southeast-1)
