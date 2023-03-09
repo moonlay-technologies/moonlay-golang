@@ -219,9 +219,10 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderByIDValidator(id int, insert
 
 	for _, v := range insertRequest.DeliveryOrderDetails {
 		mustActiveField417 = append(mustActiveField417, &models.MustActiveRequest{
-			Table:    "delivery_order_details",
-			ReqField: "delivery_order_detail_id",
-			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", v.ID),
+			Table:         "delivery_order_details",
+			ReqField:      "delivery_order_detail_id",
+			Clause:        fmt.Sprintf("id = %d AND delivery_order_id = %d AND deleted_at IS NULL", v.ID, id),
+			CustomMessage: fmt.Sprintf("delivery_order_detail_id %d not found in delivery_order id %d", v.ID, id),
 		})
 		mustActiveField417 = append(mustActiveField417, &models.MustActiveRequest{
 			Table:    "sales_order_details s JOIN delivery_order_details d ON d.so_detail_id = s.id",
@@ -230,9 +231,9 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderByIDValidator(id int, insert
 		})
 		mustEmpties = append(mustEmpties, &models.MustEmptyValidationRequest{
 			Table:           "sales_order_details s JOIN delivery_order_details d ON s.id = d.so_detail_id",
-			SelectedCollumn: "s.id",
-			Clause:          fmt.Sprintf("d.id = %d AND s.qty < %d", v.ID, v.Qty),
-			MessageFormat:   fmt.Sprintf("Qty SO Detail <result> FROM DO Detail %d must be higher than or equal delivery order qty", v.ID),
+			SelectedCollumn: "s.residual_qty+d.qty",
+			Clause:          fmt.Sprintf("d.id = %[1]d AND s.residual_qty+d.qty < %[2]d", v.ID, v.Qty),
+			MessageFormat:   fmt.Sprintf("DO Detail %d must be lower than or equal residual qty (<result>)", v.ID),
 		})
 	}
 
