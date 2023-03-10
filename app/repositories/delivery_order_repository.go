@@ -349,7 +349,7 @@ func (r *deliveryOrder) Insert(request *models.DeliveryOrder, sqlTransaction *sq
 
 	rawSqlFields = append(rawSqlFields, "latest_updated_by")
 	rawSqlDataTypes = append(rawSqlDataTypes, "?")
-	rawSqlValues = append(rawSqlValues, request.LatestUpdatedBy.Format("2006-01-02 15:04:05"))
+	rawSqlValues = append(rawSqlValues, request.LatestUpdatedBy)
 
 	rawSqlFields = append(rawSqlFields, "created_at")
 	rawSqlDataTypes = append(rawSqlDataTypes, "?")

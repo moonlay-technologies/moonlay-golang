@@ -166,7 +166,11 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	}
 
 	getSalesmanResultChan := make(chan *models.SalesmanChan)
-	go u.salesmanRepository.GetByEmail(getUserResult.User.Email, false, ctx, getSalesmanResultChan)
+	if getSalesOrderResult.SalesOrder.SalesmanID.Int64 > 0 {
+		go u.salesmanRepository.GetByID(int(getSalesOrderResult.SalesOrder.SalesmanID.Int64), false, ctx, getSalesmanResultChan)
+	} else {
+		go u.salesmanRepository.GetByEmail(getUserResult.User.Email, false, ctx, getSalesmanResultChan)
+	}
 	getSalesmanResult := <-getSalesmanResultChan
 
 	if getSalesmanResult.Error != nil {
@@ -178,7 +182,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 
 	deliveryOrder := &models.DeliveryOrder{}
 
-	deliveryOrder.DeliveryOrderStoreRequestMap(request, now)
+	deliveryOrder.DeliveryOrderStoreRequestMap(request, now, ctx.Value("user").(*models.UserClaims))
 	deliveryOrder.WarehouseChanMap(getWarehouseResult)
 	deliveryOrder.AgentMap(getAgentResult.Agent)
 	deliveryOrder.DoCode = helper.GenerateDOCode(getAgentResult.Agent.ID, getOrderSourceResult.OrderSource.Code)
@@ -189,9 +193,9 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	deliveryOrder.OrderSourceID = getOrderSourceResult.OrderSource.ID
 	deliveryOrder.Store = getStoreResult.Store
 	deliveryOrder.StoreID = getStoreResult.Store.ID
-	deliveryOrder.CreatedBy = ctx.Value("user").(*models.UserClaims).UserID
 	deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
 	deliveryOrder.Brand = getBrandResult.Brand
+
 	if getSalesmanResult.Salesman != nil {
 		deliveryOrder.Salesman = getSalesmanResult.Salesman
 	}
@@ -442,7 +446,7 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 	}
 
 	deliveryOrder := getDeliveryOrderResult.DeliveryOrder
-	deliveryOrder.DeliveryOrderUpdateByIDRequestMap(request, now)
+	deliveryOrder.DeliveryOrderUpdateByIDRequestMap(request, now, ctx.Value("user").(*models.UserClaims))
 	deliveryOrder.WarehouseChanMap(getWarehouseResult)
 	deliveryOrder.OrderStatus = getOrderStatusResult.OrderStatus
 	deliveryOrder.OrderStatusID = getOrderStatusResult.OrderStatus.ID
