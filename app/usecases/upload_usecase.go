@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
 	"order-service/app/repositories"
@@ -13,6 +14,8 @@ import (
 	"order-service/global/utils/helper"
 	kafkadbo "order-service/global/utils/kafka"
 	"order-service/global/utils/model"
+	baseModel "order-service/global/utils/model"
+	"strconv"
 	"strings"
 	"time"
 
@@ -459,9 +462,100 @@ func (u *uploadUseCase) UploadDO(ctx context.Context) *model.ErrorLog {
 	go u.uploadRepository.UploadDO("be-so-service", "upload-service/do/format-file-upload-data-DO-V2 (1).csv", "ap-southeast-1", uploadDOResultChan)
 	uploadDOResult := <-uploadDOResultChan
 
+	// Get Order Source Status By Name
+	getOrderStatusResultChan := make(chan *models.OrderSourceChan)
+	go u.orderSourceRepository.GetBySourceName("upload_sj", false, ctx, getOrderStatusResultChan)
+	getOrderSourceResult := <-getOrderStatusResultChan
+
+	if getOrderSourceResult.Error != nil {
+		return getOrderSourceResult.ErrorLog
+	}
+
 	for _, v := range uploadDOResult.UploadDOFields {
 		a, _ := json.Marshal(v)
 		fmt.Println(string(a))
+
+		// Get Sales Order By So Code
+		getSalesOrderResultChan := make(chan *models.SalesOrderChan)
+		go u.salesOrderRepository.GetByCode(v.NoOrder, false, ctx, getSalesOrderResultChan)
+		getSalesOrderResult := <-getSalesOrderResultChan
+
+		if getSalesOrderResult.Error != nil {
+			return getSalesOrderResult.ErrorLog
+		}
+
+		kodeProduk, _ := strconv.Atoi(v.KodeProduk)
+		qtyShip, _ := strconv.Atoi(v.QTYShip)
+		errorDOValidation := u.uploadDOValidation(getSalesOrderResult.SalesOrder.ID, getSalesOrderResult.SalesOrder.OrderStatusName, kodeProduk, v.Unit, qtyShip, ctx)
+
+		if errorDOValidation != nil {
+			errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
+				Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPLOAD, errorDOValidation.Error())},
+				SystemMessage: []string{"Invalid Process"},
+				StatusCode:    http.StatusUnprocessableEntity,
+			})
+			return errorLogData
+		}
 	}
+
+	// Get Sales Order Detail
+	// Get SO Detail Product
+
+	return nil
+}
+
+func (u *uploadUseCase) uploadDOValidation(salesOrderId int, orderStatusName string, kodeProduk int, unitProduk string, qtyShip int, ctx context.Context) error {
+
+	if orderStatusName != constants.ORDER_STATUS_OPEN && orderStatusName != constants.ORDER_STATUS_PARTIAL {
+		return fmt.Errorf("status sales orders %s, not allowed to upload", orderStatusName)
+	}
+
+	getSalesOrderDetailBySoIdResultChan := make(chan *models.SalesOrderDetailsChan)
+	go u.salesOrderDetailRepository.GetBySalesOrderID(salesOrderId, false, ctx, getSalesOrderDetailBySoIdResultChan)
+	getSalesOrderDetailBySoIdResult := <-getSalesOrderDetailBySoIdResultChan
+
+	if getSalesOrderDetailBySoIdResult.Total == 0 {
+
+		return fmt.Errorf("data sales order detail %d", getSalesOrderDetailBySoIdResult.Total)
+
+	} else {
+		for _, v := range getSalesOrderDetailBySoIdResult.SalesOrderDetails {
+
+			getOrderStatusResultChan := make(chan *models.OrderStatusChan)
+			go u.orderStatusRepository.GetByID(v.OrderStatusID, false, ctx, getOrderStatusResultChan)
+			getOrderStatusResult := <-getOrderStatusResultChan
+
+			if getOrderStatusResult.OrderStatus.Name != constants.ORDER_STATUS_OPEN && getOrderStatusResult.OrderStatus.Name != constants.ORDER_STATUS_PARTIAL {
+				return fmt.Errorf("status sales order detail %s, not allowed to upload", getOrderStatusResult.OrderStatus.Name)
+			}
+
+			allowedQtyUpload := v.ResidualQty - qtyShip
+			if allowedQtyUpload <= 0 {
+				return fmt.Errorf("residual qty equal or less than zero")
+			}
+
+			getProductResultChan := make(chan *models.ProductChan)
+			go u.productRepository.GetByID(v.ProductID, false, ctx, getProductResultChan)
+			getProductResult := <-getProductResultChan
+
+			productSKU, err := strconv.Atoi(getProductResult.Product.Sku.String)
+			if err != nil {
+				return fmt.Errorf("fail to convert productSKU from string to int")
+			}
+
+			if productSKU != kodeProduk {
+				return fmt.Errorf("productSKU %d from database doesn't match with kodeProduk %d to be uploaded", productSKU, kodeProduk)
+			}
+
+			getUomResultChan := make(chan *models.UomChan)
+			go u.uomRepository.GetByID(v.UomID, false, ctx, getUomResultChan)
+			getUomResult := <-getUomResultChan
+
+			if getUomResult.Uom.Code.String != unitProduk {
+				return fmt.Errorf("uom code %s from database doesn't match with unitProduk %s to be uploaded", getUomResult.Uom.Code.String, unitProduk)
+			}
+		}
+	}
+
 	return nil
 }
