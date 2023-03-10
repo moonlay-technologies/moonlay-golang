@@ -5,51 +5,52 @@ import (
 	"time"
 )
 
-func (delicveryOrder *DeliveryOrder) DeliveryOrderStoreRequestMap(request *DeliveryOrderStoreRequest, now time.Time) {
-	delicveryOrder.SalesOrderID = request.SalesOrderID
-	delicveryOrder.WarehouseID = request.WarehouseID
-	delicveryOrder.DoRefCode = NullString{NullString: sql.NullString{String: request.DoRefCode, Valid: true}}
-	delicveryOrder.DoRefDate = NullString{NullString: sql.NullString{String: request.DoRefDate, Valid: true}}
-	delicveryOrder.DriverName = NullString{NullString: sql.NullString{String: request.DriverName, Valid: true}}
-	delicveryOrder.PlatNumber = NullString{NullString: sql.NullString{String: request.PlatNumber, Valid: true}}
-	delicveryOrder.Note = NullString{NullString: sql.NullString{String: request.Note, Valid: true}}
-	delicveryOrder.IsDoneSyncToEs = "0"
-	delicveryOrder.StartDateSyncToEs = &now
-	delicveryOrder.EndDateSyncToEs = &now
-	delicveryOrder.StartCreatedDate = &now
-	delicveryOrder.EndCreatedDate = &now
-	delicveryOrder.LatestUpdatedBy = &now
-	delicveryOrder.CreatedAt = &now
-	delicveryOrder.UpdatedAt = &now
-	delicveryOrder.DeletedAt = nil
+func (deliveryOrder *DeliveryOrder) DeliveryOrderStoreRequestMap(request *DeliveryOrderStoreRequest, now time.Time, user *UserClaims) {
+	deliveryOrder.SalesOrderID = request.SalesOrderID
+	deliveryOrder.WarehouseID = request.WarehouseID
+	deliveryOrder.DoRefCode = NullString{NullString: sql.NullString{String: request.DoRefCode, Valid: true}}
+	deliveryOrder.DoRefDate = NullString{NullString: sql.NullString{String: request.DoRefDate, Valid: true}}
+	deliveryOrder.DriverName = NullString{NullString: sql.NullString{String: request.DriverName, Valid: true}}
+	deliveryOrder.PlatNumber = NullString{NullString: sql.NullString{String: request.PlatNumber, Valid: true}}
+	deliveryOrder.Note = NullString{NullString: sql.NullString{String: request.Note, Valid: true}}
+	deliveryOrder.CreatedBy = user.UserID
+	deliveryOrder.LatestUpdatedBy = user.UserID
+	deliveryOrder.IsDoneSyncToEs = "0"
+	deliveryOrder.StartDateSyncToEs = &now
+	deliveryOrder.EndDateSyncToEs = &now
+	deliveryOrder.StartCreatedDate = &now
+	deliveryOrder.EndCreatedDate = &now
+	deliveryOrder.CreatedAt = &now
+	deliveryOrder.UpdatedAt = &now
+	deliveryOrder.DeletedAt = nil
 	return
 }
 
-func (delicveryOrder *DeliveryOrder) DeliveryOrderUpdateByIDRequestMap(request *DeliveryOrderUpdateByIDRequest, now time.Time) {
+func (deliveryOrder *DeliveryOrder) DeliveryOrderUpdateByIDRequestMap(request *DeliveryOrderUpdateByIDRequest, now time.Time, user *UserClaims) {
 	if request.WarehouseID > 0 {
-		delicveryOrder.WarehouseID = request.WarehouseID
+		deliveryOrder.WarehouseID = request.WarehouseID
 	}
 	if request.DoRefCode != "" {
-		delicveryOrder.DoRefCode = NullString{NullString: sql.NullString{String: request.DoRefCode, Valid: true}}
+		deliveryOrder.DoRefCode = NullString{NullString: sql.NullString{String: request.DoRefCode, Valid: true}}
 	}
 	if request.DoRefDate != "" {
-		delicveryOrder.DoRefDate = NullString{NullString: sql.NullString{String: request.DoRefDate, Valid: true}}
+		deliveryOrder.DoRefDate = NullString{NullString: sql.NullString{String: request.DoRefDate, Valid: true}}
 	}
 	if request.DriverName != "" {
-		delicveryOrder.DriverName = NullString{NullString: sql.NullString{String: request.DriverName, Valid: true}}
+		deliveryOrder.DriverName = NullString{NullString: sql.NullString{String: request.DriverName, Valid: true}}
 	}
 	if request.PlatNumber != "" {
-		delicveryOrder.PlatNumber = NullString{NullString: sql.NullString{String: request.PlatNumber, Valid: true}}
+		deliveryOrder.PlatNumber = NullString{NullString: sql.NullString{String: request.PlatNumber, Valid: true}}
 	}
 	if request.Note != "" {
-		delicveryOrder.Note = NullString{NullString: sql.NullString{String: request.Note, Valid: true}}
+		deliveryOrder.Note = NullString{NullString: sql.NullString{String: request.Note, Valid: true}}
 	}
-	delicveryOrder.IsDoneSyncToEs = "0"
-	delicveryOrder.StartDateSyncToEs = &now
-	delicveryOrder.EndDateSyncToEs = &now
-	delicveryOrder.LatestUpdatedBy = &now
-	delicveryOrder.UpdatedAt = &now
-	delicveryOrder.DeletedAt = nil
+	deliveryOrder.IsDoneSyncToEs = "0"
+	deliveryOrder.StartDateSyncToEs = &now
+	deliveryOrder.EndDateSyncToEs = &now
+	deliveryOrder.LatestUpdatedBy = user.UserID
+	deliveryOrder.UpdatedAt = &now
+	deliveryOrder.DeletedAt = nil
 	return
 }
 
