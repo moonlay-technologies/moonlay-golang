@@ -166,7 +166,11 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	}
 
 	getSalesmanResultChan := make(chan *models.SalesmanChan)
-	go u.salesmanRepository.GetByEmail(getUserResult.User.Email, false, ctx, getSalesmanResultChan)
+	if getSalesOrderResult.SalesOrder.SalesmanID.Int64 > 0 {
+		go u.salesmanRepository.GetByID(int(getSalesOrderResult.SalesOrder.SalesmanID.Int64), false, ctx, getSalesmanResultChan)
+	} else {
+		go u.salesmanRepository.GetByEmail(getUserResult.User.Email, false, ctx, getSalesmanResultChan)
+	}
 	getSalesmanResult := <-getSalesmanResultChan
 
 	if getSalesmanResult.Error != nil {
