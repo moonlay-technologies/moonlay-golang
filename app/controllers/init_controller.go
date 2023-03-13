@@ -198,3 +198,31 @@ func InitHTTPHostToHostController(database dbresolver.DB, redisdb redisdb.RedisI
 	handler := InitHostToHostController(cartUseCase, salesOrderUseCase, deliveryOrderUseCase, requestValidationMiddleware, database, ctx)
 	return handler
 }
+
+func InitHTTPUploadController(database dbresolver.DB, redisdb redisdb.RedisInterface, mongodbClient mongodb.MongoDBInterface, kafkaClient kafkadbo.KafkaClientInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, ctx context.Context) UploadControllerInterface {
+	salesOrderRepository := repositories.InitSalesOrderRepository(database, redisdb)
+	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(database, redisdb)
+	orderStatusRepository := repositories.InitOrderStatusRepository(database, redisdb)
+	orderSourceRepository := repositories.InitOrderSourceRepository(database, redisdb)
+	requestValidationRepository := repositories.InitUniqueRequestValidationRepository(database)
+	uploadRepositories := repositories.InitUploadRepository(requestValidationRepository)
+	agentRepository := repositories.InitAgentRepository(database, redisdb)
+	brandRepository := repositories.InitBrandRepository(database, redisdb)
+	storeRepository := repositories.InitStoreRepository(database, redisdb)
+	productRepository := repositories.InitProductRepository(database, redisdb)
+	uomRepository := repositories.InitUomRepository(database, redisdb)
+	deliveryOrderRepository := repositories.InitDeliveryRepository(database, redisdb)
+	deliveryOrderDetailRepository := repositories.InitDeliveryOrderDetailRepository(database, redisdb)
+	warehouseRepository := repositories.InitWarehouseRepository(database, redisdb)
+	salesOrderLogRepository := mongoRepo.InitSalesOrderLogRepository(mongodbClient)
+	salesOrderJourneysRepository := mongoRepo.InitSalesOrderJourneysRepository(mongodbClient)
+	salesOrderDetailJourneysRepository := mongoRepo.InitSalesOrderDetailJourneysRepository(mongodbClient)
+	userRepository := repositories.InitUserRepository(database, redisdb)
+	salesmanRepository := repositories.InitSalesmanRepository(database, redisdb)
+	categoryRepository := repositories.InitCategoryRepository(database, redisdb)
+	salesOrderOpenSearchRepository := openSearchRepo.InitSalesOrderOpenSearchRepository(opensearchClient)
+	salesOrderDetailOpenSearchRepository := openSearchRepo.InitSalesOrderDetailOpenSearchRepository(opensearchClient)
+	uploadUseCase := usecases.InitUploadUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, agentRepository, brandRepository, storeRepository, productRepository, uomRepository, deliveryOrderRepository, deliveryOrderDetailRepository, salesOrderLogRepository, salesOrderJourneysRepository, salesOrderDetailJourneysRepository, userRepository, salesmanRepository, categoryRepository, salesOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, uploadRepositories, warehouseRepository, kafkaClient, database, ctx)
+	handler := InitUploadController(uploadUseCase, ctx)
+	return handler
+}

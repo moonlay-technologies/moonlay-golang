@@ -113,6 +113,18 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 		}
 	}
 
+	uploadController := controllers.InitHTTPUploadController(database, redisdb, mongodbClient, kafkaClient, opensearchClient, ctx)
+	basicAuthRootGroup.Use()
+	{
+		uploadControllerGroup := basicAuthRootGroup.Group("")
+		uploadControllerGroup.Use()
+		{
+			uploadControllerGroup.GET(constants.UPLOAD_SOSJ_PATH, uploadController.UploadSOSJ)
+			uploadControllerGroup.GET(constants.UPLOAD_DO_PATH, uploadController.UploadDO)
+			uploadControllerGroup.GET(constants.UPLOAD_SO_PATH, uploadController.UploadSO)
+		}
+	}
+
 	//
 	//oauthRootGroup.Use(middlewares.OauthMiddleware(mongod))
 	//{

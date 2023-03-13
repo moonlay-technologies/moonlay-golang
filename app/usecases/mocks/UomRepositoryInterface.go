@@ -19,6 +19,10 @@ func (_m *UomRepositoryInterface) GetByID(ID int, countOnly bool, ctx context.Co
 	_m.Called(ID, countOnly, ctx, result)
 }
 
+func (_m *UomRepositoryInterface) GetByCode(code string, countOnly bool, ctx context.Context, resultChan chan *models.UomChan) {
+	_m.Called(code, countOnly, ctx, resultChan)
+}
+
 type mockConstructorTestingTNewUomRepositoryInterface interface {
 	mock.TestingT
 	Cleanup(func())
