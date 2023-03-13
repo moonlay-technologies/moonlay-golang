@@ -13,10 +13,16 @@ import (
 type SalesOrderLogRepositoryInterface struct {
 	mock.Mock
 }
+func (_m *SalesOrderLogRepositoryInterface) Get(request *models.SalesOrderEventLogRequest, countOnly bool, ctx context.Context, resultChan chan *models.GetSalesOrderLogsChan) {
+	_m.Called(request, countOnly, ctx, resultChan)
+}
 
 // GetByID provides a mock function with given fields: ID, countOnly, ctx, resultChan
 func (_m *SalesOrderLogRepositoryInterface) GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.SalesOrderLogChan) {
 	_m.Called(ID, countOnly, ctx, resultChan)
+}
+func (_m *SalesOrderLogRepositoryInterface) GetByCollumn(collumnName string, value string, countOnly bool, ctx context.Context, resultChan chan *models.SalesOrderLogChan){
+	_m.Called(collumnName, value, countOnly, ctx, resultChan)
 }
 
 // Insert provides a mock function with given fields: request, ctx, result
