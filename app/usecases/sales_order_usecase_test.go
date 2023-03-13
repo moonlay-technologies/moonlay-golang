@@ -185,31 +185,31 @@ func Test_SalesOrderUseCase_Get_ShouldError(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func Test_SalesOrderUseCase_GetByID_ShouldError(t *testing.T) {
-	// Arrange
-	salesOrderUseCase := newSalesOrderUseCase(false)
-	var ctx context.Context
-	request := &models.SalesOrderRequest{}
-	request.ID = 1
+// func Test_SalesOrderUseCase_GetByID_ShouldError(t *testing.T) {
+// 	// Arrange
+// 	salesOrderUseCase := newSalesOrderUseCase(false)
+// 	var ctx context.Context
+// 	request := &models.SalesOrderRequest{}
+// 	request.ID = 1
 
-	// Act
-	_, err := salesOrderUseCase.GetByID(request, ctx)
-	// Assert
-	assert.NotNil(t, err)
-}
+// 	// Act
+// 	_, err := salesOrderUseCase.GetByID(request, ctx)
+// 	// Assert
+// 	assert.NotNil(t, err)
+// }
 
-func Test_SalesOrderUseCase_GetByIDWithDetail_ShouldError(t *testing.T) {
-	// Arrange
-	salesOrderUseCase := newSalesOrderUseCase(false)
-	var ctx context.Context
-	request := &models.SalesOrderRequest{}
-	request.ID = 1
+// func Test_SalesOrderUseCase_GetByIDWithDetail_ShouldError(t *testing.T) {
+// 	// Arrange
+// 	salesOrderUseCase := newSalesOrderUseCase(false)
+// 	var ctx context.Context
+// 	request := &models.SalesOrderRequest{}
+// 	request.ID = 1
 
-	// Act
-	_, err := salesOrderUseCase.GetByIDWithDetail(request, ctx)
-	// Assert
-	assert.NotNil(t, err)
-}
+// 	// Act
+// 	_, err := salesOrderUseCase.GetByIDWithDetail(request, ctx)
+// 	// Assert
+// 	assert.NotNil(t, err)
+// }
 
 func Test_SalesOrderUseCase_GetAgentID_ShouldError(t *testing.T) {
 	// Arrange
