@@ -183,6 +183,7 @@ func (r *upload) UploadSOSJ(bucket, object, region string, resultChan chan *mode
 
 func (r *upload) UploadDO(bucket, object, region string, resultChan chan *models.UploadDOFieldsChan) {
 	response := &models.UploadDOFieldsChan{}
+	var errors []string
 
 	results, err := r.ReadFile(bucket, object, region, s3.FileHeaderInfoUse)
 
@@ -193,13 +194,98 @@ func (r *upload) UploadDO(bucket, object, region string, resultChan chan *models
 		resultChan <- response
 		return
 	}
-
+	result, _ := json.Marshal(results)
+	fmt.Println("results :", results)
+	fmt.Println("result :", string(result))
 	var uploadDOFields []*models.UploadDOField
 	for _, v := range results {
+		fmt.Println("IDDistributor", v["IDDistributor"])
+		fmt.Println("KodeMerk", v["KodeMerk"])
+		fmt.Println("KodeProduk", v["KodeProduk"])
 		// a, _ := json.Marshal(v)
 		// fmt.Println(string(a))
+		intType := []*models.TemplateRequest{
+			{
+				Field: "IDDistributor",
+				Value: v["IDDistributor"],
+			},
+			{
+				Field: "KodeMerk",
+				Value: v["KodeMerk"],
+			},
+			{
+				Field: "KodeProduk",
+				Value: v["KodeProduk"],
+			},
+			{
+				Field: "QTYShip",
+				Value: v["QTYShip"],
+			},
+			// {
+			// 	Field: "Unit",
+			// 	Value: v["_14"],
+			// },
+		}
+		// if v["KodeGudang"] != "" {
+		// 	intType = append(intType, &models.TemplateRequest{
+		// 		Field: "KodeGudang",
+		// 		Value: v["KodeGudang"],
+		// 	})
+		// }
+		intTypeError := uploadIntTypeValidation(intType)
+		if len(intTypeError) > 1 {
+			errors = append(errors, intTypeError...)
+			continue
+		}
+
+		mandatoryError := uploadMandatoryValidation([]*models.TemplateRequest{
+			{
+				Field: "IDDistributor",
+				Value: v["IDDistributor"],
+			},
+			{
+				Field: "NoOrder",
+				Value: v["NoOrder"],
+			},
+			{
+				Field: "TanggalSJ",
+				Value: v["TanggalSJ"],
+			},
+			{
+				Field: "NoSJ",
+				Value: v["NoSJ"],
+			},
+			{
+				Field: "KodeMerk",
+				Value: v["KodeMerk"],
+			},
+			{
+				Field: "KodeProduk",
+				Value: v["KodeProduk"],
+			},
+			{
+				Field: "QTYShip",
+				Value: v["QTYShip"],
+			},
+			{
+				Field: "Unit",
+				Value: v["Unit"],
+			},
+		})
+
+		if len(mandatoryError) > 1 {
+			errors = append(errors, mandatoryError...)
+			continue
+		}
+
+		// dataIdDistributor, _ := strconv.Atoi(v["_1"])
+		// mustActiveField := []*models.MustActiveRequest{
+		// 	helper.GenerateMustActive("agents", "agent_id", dataIdDistributor, "active"),
+		// }
+
 		var uploadDOField models.UploadDOField
 		uploadDOField.UploadDOFieldMap(v)
+		// uploadDOField.TanggalSJ, _ = helper.ParseDDYYMMtoYYYYMMDD(uploadDOField.TanggalSJ)
 
 		uploadDOFields = append(uploadDOFields, &uploadDOField)
 	}
@@ -214,7 +300,7 @@ func (r *upload) ReadFile(bucket, object, region, fileHeaderInfo string) ([]map[
 	sess := session.New(&aws.Config{
 		Region:                        aws.String(region),
 		CredentialsChainVerboseErrors: aws.Bool(true),
-		Credentials:                   credentials.NewStaticCredentials("ASIAUHX63DBTMP5NRTFF", "KU2edn3ocS0YzFojWFl73S+9TlXAYwE1GqrKVmAG", "IQoJb3JpZ2luX2VjEJ3//////////wEaDmFwLXNvdXRoZWFzdC0xIkcwRQIhAP5c2AqDnMDdUMkjHHui/fqbZ7TyvnaSrEZCeZpUachPAiAeWBT4uuvvUOosFTlio+S8T/6wZZryFQNMXfzchZZBBSr3AghWEAAaDDI5MTUxODQ4NjYzMCIMJHlP5ptN5g9AkgJEKtQCNISePFrLtTof+txAe9VxibuYOQBGXTPPk8VKdgC1QZJ1lmtoU+5bX5gR7Kc9YtVfZHvr9/QVaIUj9I0UtxPuZhWtKndvJ5Oa73NTJ9opp+Pm8JtnBB7fx6lA4NS4frvCYZnP8Vjx9BcN5+VNhaVBv2HZSQTViS3pClNWiGc3iY0Pw2A5PSYC2L+++jUeZv5MLLkcZta+d7OPC0uQ18aAjnkFa+l2wa4j4G/+EnFYbbbKSKprtg+nsttYqxoMmfDS/2P2rsNyLLIDc2XSqLjbNEGbenXXzFEAfOkTruLTvMV4KfZGGapszfZJrUMSVEBZkUmPvMejDDtAzxfpMfpZ0swPzA0Tfr5G2fu36EGjziaO1RpSoAORqPfEmLGhod/uL+1WmJEhf4XayHwTCcdez6rpp2T9BUgHP2Lxa9Yr80ZK8aEAM7GAKSLmapHCyv/0xTVGyDCgwqWgBjqnAZqtxL7g3kQ3FAY+c8P7HD1AT23DVoqc9jUSyWoR3ko1BQ7dxdxCwJxRCuUrFgg0wNNNsOPSQxTspnSAR0luI+mbP3YNLEDfQIFhqTZ92dubzQm5A9m44Yeecug2CoxA/MaKMfgRJP34V8/rKI/+XVKk4wmrrARfrjG/5sCAcSHkXtaiXD2PfgER4ZNKw8bIG+3z90wPnldBA7XWHGg2zeKIIMxuKKGV"),
+		Credentials:                   credentials.NewStaticCredentials("ASIAUHX63DBTOVIYO7NQ", "DRo/YQ9asqtII0ZIk5+fstf6pDWhqeGv+HDQTY6G", "IQoJb3JpZ2luX2VjEPT//////////wEaDmFwLXNvdXRoZWFzdC0xIkcwRQIgc6phR0pQWK+PZE+44JnKXM/yeNhqA8ze0LXRBwpUhG0CIQClqHelb6pHy4h5wMcbiYx3HPLLYUGQyNKHANiSzywR2SqAAwit//////////8BEAAaDDI5MTUxODQ4NjYzMCIMM8iNAD/+HVK+CQorKtQCHZcNng0OzePbGVzrjF42NzY55KePXVOJI91bo9WwuPQVRwVz01iTyzu2BzI/1P4Tlwy5XXs4JIKX60/9XM03cc8F5yXCPtwrU+S5Jw1OjRjiprK0y+K9cz+hvfdg1AOa55mF8JxsD/q+myHlr1priKOleMkBe4YEZkdhbNlYh72X9FOsql4OkrpL9G5VnaRyNkDPw/xp4hQE8uA+OMIuduKUHnKsomjRdPkqQIqYDCQOCfOMKkfzZYCn/08jUNKmXPO9CannIHxI1NOSCnEBeuUuiGeyuZDjozoslxM/Sqq+z+J7+hoHQ2CxoLxIpDgc3aiRQzzNCDqk5bwDCCGi0C0I3VdZc9wkKrNDGkVOZP/T/M7vciV0Iro3hVeuPy4hiLOKBJWlpurF67NSi6r488KRvdrz0DXAh5TeAlZaaLtuZgakj36VdWCP04JaScABr8HDDTCQ37igBjqnAQUmS+9YFlN3FEQxPAY5+2hN3aihOr4qW2uokpU8PmrRMr688qU80WwsshuNfy5s1oYIaBmXgYkzgEFssV4HcEpmzTQGi3HbiJP2RHRKZBBwak6l8HH+BsRFeITEIRQou3CR+isZW9ioSj9oNo2Qgp/pDE5bUd69XLZk0kfY93YIJNgf9wst0tF/3ZVINunLTBs+RwuOAOyw0l4p6rV2pXjD0mUSr/IM"),
 		HTTPClient:                    &http.Client{Timeout: 10 * time.Second},
 	})
 	svc := s3.New(sess)

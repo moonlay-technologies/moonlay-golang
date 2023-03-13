@@ -1,7 +1,9 @@
 package models
 
+import "strconv"
+
 func (result *UploadDOField) UploadDOFieldMap(request map[string]string) {
-	result.IDDistributor = request["IDDistributor"]
+	result.IDDistributor, _ = strconv.Atoi(request["IDDistributor"])
 	result.NoOrder = request["NoOrder"]
 	result.TanggalSJ = request["TanggalSJ"]
 	result.NoSJ = request["NoSJ"]
@@ -9,11 +11,12 @@ func (result *UploadDOField) UploadDOFieldMap(request map[string]string) {
 	result.CatatanInternal = request["CatatanInternal"]
 	result.NamaSupir = request["NamaSupir"]
 	result.PlatNo = request["PlatNo"]
-	result.KodeMerk = request["KodeMerk"]
+	result.KodeMerk, _ = strconv.Atoi(request["KodeMerk"])
 	result.NamaMerk = request["NamaMerk"]
-	result.KodeProduk = request["KodeProduk"]
+	result.KodeProduk, _ = strconv.Atoi(request["KodeProduk"])
 	result.NamaProduk = request["NamaProduk"]
-	result.QTYShip = request["QTYShip"]
+	result.QTYShip, _ = strconv.Atoi(request["QTYShip"])
 	result.Unit = request["Unit"]
-	result.KodeGudang = request["KodeGudang"]
+	result.KodeGudang, _ = strconv.Atoi(request["KodeGudang"])
+	return
 }
