@@ -555,7 +555,7 @@ func (u *uploadUseCase) UploadDO(ctx context.Context) *model.ErrorLog {
 		getSalesmanResult := <-getSalesmanResultChan
 
 		deliveryOrder := &models.DeliveryOrder{}
-
+		latestUpdatedBy := ctx.Value("user").(*models.UserClaims)
 		deliveryOrder.SalesOrderID = getSalesOrderResult.SalesOrder.ID
 		deliveryOrder.DoRefCode = models.NullString{NullString: sql.NullString{String: v.NoSJ, Valid: true}}
 		deliveryOrder.DoRefDate = models.NullString{NullString: sql.NullString{String: v.TanggalSJ, Valid: true}}
@@ -567,7 +567,7 @@ func (u *uploadUseCase) UploadDO(ctx context.Context) *model.ErrorLog {
 		deliveryOrder.EndDateSyncToEs = &now
 		deliveryOrder.StartCreatedDate = &now
 		deliveryOrder.EndCreatedDate = &now
-		deliveryOrder.LatestUpdatedBy = &now
+		deliveryOrder.LatestUpdatedBy = latestUpdatedBy.UserID
 		deliveryOrder.CreatedAt = &now
 		deliveryOrder.UpdatedAt = &now
 		deliveryOrder.DeletedAt = nil

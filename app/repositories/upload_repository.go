@@ -293,7 +293,7 @@ func (r *upload) UploadDO(bucket, object, region string, resultChan chan *models
 		// 		Value: v["KodeGudang"],
 		// 	})
 		// }
-		intTypeError := uploadIntTypeValidation(intType)
+		_, intTypeError := uploadIntTypeValidation(intType)
 		if len(intTypeError) > 1 {
 			errors = append(errors, intTypeError...)
 			continue
