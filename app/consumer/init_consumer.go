@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"context"
+	"order-service/app/middlewares"
 	"order-service/app/repositories"
 	mongoRepo "order-service/app/repositories/mongod"
 	openSearchRepo "order-service/app/repositories/open_search"
@@ -166,5 +167,15 @@ func InitUpdateSalesOrderDetailConsumer(kafkaClient kafkadbo.KafkaClientInterfac
 	deliveryOrderOpenSearchRepository := openSearchRepo.InitDeliveryOrderOpenSearchRepository(opensearchClient)
 	salesOrderOpenSearchUseCase := usecases.InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, productRepository, uomRepository, salesOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, deliveryOrderOpenSearchRepository)
 	handler := InitUpdateSalesOrderDetailConsumerHandlerInterface(kafkaClient, salesOrderLogRepository, salesOrderOpenSearchUseCase, database, ctx, args)
+	return handler
+}
+
+func InitUploadSOFileConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodbClient mongodb.MongoDBInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, database dbresolver.DB, redisdb redisdb.RedisInterface, ctx context.Context, args []interface{}) UploadSOFileConsumerHandlerInterface {
+	orderSourceRepository := repositories.InitOrderSourceRepository(database, redisdb)
+	requestValidationRepository := repositories.InitRequestValidationRepository(database)
+	uploadRepository := repositories.InitUploadRepository(requestValidationRepository)
+	requestValidationMiddleware := middlewares.InitRequestValidationMiddlewareInterface(requestValidationRepository, orderSourceRepository)
+	uploadSOHistoriesRepository := mongoRepo.InitUploadSOHistoriesRepositoryInterface(mongodbClient)
+	handler := InitUploadSOFileConsumerHandlerInterface(kafkaClient, uploadRepository, requestValidationMiddleware, requestValidationRepository, uploadSOHistoriesRepository, database, ctx, args)
 	return handler
 }

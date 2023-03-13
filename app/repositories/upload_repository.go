@@ -18,6 +18,7 @@ import (
 )
 
 type UploadRepositoryInterface interface {
+	ReadFile(bucket, object, region, fileHeaderInfo string) ([]map[string]string, error)
 	UploadSOSJ(bucket, object, region string, user_id int, resultChan chan *models.UploadSOSJFieldChan)
 	UploadDO(bucket, object, region string, resultChan chan *models.UploadDOFieldsChan)
 	UploadSO(bucket, object, region string, resultChan chan *models.UploadSOFieldsChan)
@@ -341,7 +342,7 @@ func (r *upload) ReadFile(bucket, object, region, fileHeaderInfo string) ([]map[
 	sess := session.New(&aws.Config{
 		Region:                        aws.String(region),
 		CredentialsChainVerboseErrors: aws.Bool(true),
-		Credentials:                   credentials.NewStaticCredentials("ASIAUHX63DBTJAQN5E7R", "gMlQhWzTQnVaWxg9b59FHlhbzZhxE/JMRtfBVI5l", "IQoJb3JpZ2luX2VjELL//////////wEaDmFwLXNvdXRoZWFzdC0xIkcwRQIhAIE4ECz8SUDtYnpt0AD8XyIYXSla6lqqgpWfcdyTMRTeAiAZ6+kl7lPmOZtESowR97YmDvTM5IysqCsgkRjjqUHc6yr1AghrEAAaDDI5MTUxODQ4NjYzMCIM7srqQ27ST0oAUGJCKtICVvZEFnan3ZI/Y/WSUhrFYWufHtMyEL1XC4u8ixlB9IsQUeY4QlzXgJHVETuv5u7QwVv6NvS/+I6IBBQHgRtIjQNIgJ5t1gqGRCQPXAITVUlvMbsd6n8xXF9DWcsz/y/rOhAe5j+nWwFU04esJgG/XxKjGjp2tRXtk64UY1o2woBYKE+iBL3cHju+CqoyKy7TsGLViuHzfbkCM3H6pFCK3xK6cYOn15svREsuTVhgfyGnwP7tZaalkwDCoo17+K8mw+cDKL0iHQq/XIZlG2j6vEe6rj7hKgTSpzzVZ3ILaXR+8Z1cLprM93x3IYevzJvGrvhLck/uGrGUKft4pDouwHr6uOuibpopKxQjauYNlrOtMhCbODv0TnXhv9foRIj3gDiIJ8ZHiSPCH0V8xT1PvADwp/vQYwYpzNSe7jMQqQ48zFp20zKS91qQQg+Qs6TKBU8wiqCqoAY6pwEADQBgh6s77Wg3ri9s7c6T1UWlwCMxYH3bm0Je7e45PZ3VRlburfCsQ7zx0dbHz9FoAQmN+AVNU8B2n4ghBrgFElhdEiI5rcdm7+eoBVPXF6C5uehlvS8p3YmAGaCjw9U6vDoXc07KrJZATpnLvQhw1zljU0ZJSyGUQjMBhwKE0XkdqWSGLvIyP23j4xX/2qYdNZU+OrURMgcNGwVakWs7Fnsma8gVBQ=="),
+		Credentials:                   credentials.NewStaticCredentials("ASIAUHX63DBTIKEAMEPK", "BNidAh6PTgGBCrQayo00RGxPcqlL9wvL5YOZH+Qg", "IQoJb3JpZ2luX2VjEAgaDmFwLXNvdXRoZWFzdC0xIkgwRgIhALtd3YcO1UeaiJWEulU+CulYxkswKFLar2X5osJsuKfCAiEAg7r3BBQstF5UsGy/iztKuAqhfzeQSLaAG+olypEKfmoq/gIIwf//////////ARAAGgwyOTE1MTg0ODY2MzAiDLxlwaVHu+RTHErCAyrSAgnCIEoJSU5OXzpjRKblu+nRk5532JEtX1rIVASgVyDhP3vzV8dX+YHvNq+VxyalwiB/70RQy6Y7VGcZCbTWTVDXcumPlNiKWPkuIeQcnWaeU7I2tz4MJ3rKS9kwWa+1QX1k/URBgUw7NUn8GeAkKJaBQeJLRB0AS2NoJSK1UhuLEIvvZ9xVURZcqZO9ySZ4QGr9dP+jwbRcg2lhGORhxcOIcBoxWzaV3j0Z1Y5LwT//ZVsJU7mtV+aRBTbwFBCz7qRLwG1GghdJXpH1MWQjVtLsT2VxPxvqsD4lx1XOqfM9lT/eRREoTWXU+gf9U4sP32guSRaMXYIkVCXqtKXuLbGOmajGJHVfitSds8EagaFLDS+l7yL7W4ZnhfhPeHM+GqH7T4MTQLVV2mIeei/mHctEsf3Tf+8SS3CP6eAH/KiWq7M3h8axUKeIBS+BFeE6OZdgMLmXvaAGOqYB+Dj4fqlK9C22P7ZtaIhsacrrNHllLQVIK/fLg/cTGXJh9HneOjEeZcpM1GM21TI7C9NkAvBn9F8il3grnGgBQiwf11kV2e4gEkk4pbCLhoBbXrCE7BfvCb/OE6s4+G9gNPuZ8nK5Mu7GmwTY65db9/1DOV2UyTiY/NZw4rPXfEdg5sPVG17Dy0z/Ig8SM03RsVtJ5HiaOQUIxfMlbjx8GKGXk/qoeA=="),
 		HTTPClient:                    &http.Client{Timeout: 10 * time.Second},
 	})
 	svc := s3.New(sess)

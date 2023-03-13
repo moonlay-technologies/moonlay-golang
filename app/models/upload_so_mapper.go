@@ -1,6 +1,9 @@
 package models
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 func (result *UploadSOField) UploadSOFieldMap(request map[string]string) {
 	result.IDDistributor, _ = strconv.Atoi(request["IDDistributor"])
@@ -18,5 +21,5 @@ func (result *UploadSOField) UploadSOFieldMap(request map[string]string) {
 	result.QTYOrder, _ = strconv.Atoi(request["QTYOrder"])
 	result.UnitProduk = request["UnitProduk"]
 	result.IDAlamat, _ = strconv.Atoi(request["IDAlamat"])
-	result.NamaAlamat = request["NamaAlamat"]
+	result.NamaAlamat = strings.ReplaceAll(request["NamaAlamat"], "\r", "")
 }

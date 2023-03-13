@@ -25,7 +25,7 @@ type requestValidationRepository struct {
 	db dbresolver.DB
 }
 
-func InitUniqueRequestValidationRepository(db dbresolver.DB) RequestValidationRepositoryInterface {
+func InitRequestValidationRepository(db dbresolver.DB) RequestValidationRepositoryInterface {
 	return &requestValidationRepository{
 		db: db,
 	}

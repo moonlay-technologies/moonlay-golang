@@ -2,6 +2,10 @@ package models
 
 import "order-service/global/utils/model"
 
+type UploadSORequest struct {
+	File string `json:"file,omitempty" binding:"required"`
+}
+
 type UploadSOField struct {
 	IDDistributor    int
 	KodeToko         int
