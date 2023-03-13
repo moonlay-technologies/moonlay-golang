@@ -253,3 +253,14 @@ func (v *SalesOrderDetail) SalesOrderDetailUploadSOSJMap(soDetail *UploadSOSJFie
 	v.StartDateSyncToEs = &now
 	v.UpdatedAt = &now
 }
+
+func (v *SalesOrderDetail) SalesOrderDetailUploadSOMap(soDetail *UploadSOField, now time.Time) {
+	v.Qty = soDetail.QTYOrder
+	v.SentQty = 0
+	v.ResidualQty = soDetail.QTYOrder
+	v.Note = NullString{NullString: sql.NullString{String: soDetail.CatatanOrder, Valid: true}}
+	v.IsDoneSyncToEs = "0"
+	v.CreatedAt = &now
+	v.StartDateSyncToEs = &now
+	v.UpdatedAt = &now
+}

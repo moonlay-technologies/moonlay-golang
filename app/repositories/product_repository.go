@@ -16,6 +16,7 @@ import (
 
 type ProductRepositoryInterface interface {
 	GetByID(ID int, countOnly bool, ctx context.Context, result chan *models.ProductChan)
+	GetBySKU(SKU string, countOnly bool, ctx context.Context, resultChan chan *models.ProductChan)
 }
 
 type product struct {
@@ -64,6 +65,83 @@ func (r *product) GetByID(ID int, countOnly bool, ctx context.Context, resultCha
 			err = r.db.QueryRow(""+
 				"SELECT id, SKU, productName, category_id, unitMeasurementSmall, unitMeasurementMedium, unitMeasurementBig, priceSmall, priceMedium, priceBig, isActive, nettWeight  from products as p "+
 				"WHERE p.deleted_at IS NULL AND p.id = ?", ID).
+				Scan(&product.ID, &product.Sku, &product.ProductName, &product.CategoryID, &product.UnitMeasurementSmall, &product.UnitMeasurementMedium, &product.UnitMeasurementBig, &product.PriceSmall, &product.PriceMedium, &product.PriceBig, &product.IsActive, &product.NettWeight)
+
+			if err != nil {
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+				response.Error = err
+				response.ErrorLog = errorLogData
+				resultChan <- response
+				return
+			}
+
+			productJson, _ := json.Marshal(product)
+			setProductOnRedis := r.redisdb.Client().Set(ctx, productRedisKey, productJson, 1*time.Hour)
+
+			if setProductOnRedis.Err() != nil {
+				errorLogData := helper.WriteLog(setProductOnRedis.Err(), http.StatusInternalServerError, nil)
+				response.Error = setProductOnRedis.Err()
+				response.ErrorLog = errorLogData
+				resultChan <- response
+				return
+			}
+
+			response.Total = total
+			response.Product = &product
+			resultChan <- response
+			return
+		}
+
+	} else if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	} else {
+		total = 1
+		_ = json.Unmarshal([]byte(productOnRedis), &product)
+		response.Product = &product
+		response.Total = total
+		resultChan <- response
+		return
+	}
+}
+
+func (r *product) GetBySKU(SKU string, countOnly bool, ctx context.Context, resultChan chan *models.ProductChan) {
+	response := &models.ProductChan{}
+	var product models.Product
+	var total int64
+
+	productRedisKey := fmt.Sprintf("%s:%s", "product", SKU)
+	productOnRedis, err := r.redisdb.Client().Get(ctx, productRedisKey).Result()
+
+	if err == redis.Nil {
+		err = r.db.QueryRow("SELECT COUNT(*) as total FROM products WHERE deleted_at IS NULL AND SKU = ?", SKU).Scan(&total)
+
+		if err != nil {
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+
+		if total == 0 {
+			errStr := fmt.Sprintf("product id %s data not found", SKU)
+			err = helper.NewError(errStr)
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+
+		if countOnly == false {
+			product = models.Product{}
+			err = r.db.QueryRow(""+
+				"SELECT id, SKU, productName, category_id, unitMeasurementSmall, unitMeasurementMedium, unitMeasurementBig, priceSmall, priceMedium, priceBig, isActive, nettWeight  from products as p "+
+				"WHERE p.deleted_at IS NULL AND p.SKU = ?", SKU).
 				Scan(&product.ID, &product.Sku, &product.ProductName, &product.CategoryID, &product.UnitMeasurementSmall, &product.UnitMeasurementMedium, &product.UnitMeasurementBig, &product.PriceSmall, &product.PriceMedium, &product.PriceBig, &product.IsActive, &product.NettWeight)
 
 			if err != nil {

@@ -562,3 +562,18 @@ func (salesOrder *SalesOrder) SalesOrderUploadSOSJMap(request *UploadSOSJField, 
 	salesOrder.StartDateSyncToEs = &now
 	salesOrder.StartCreatedDate = &now
 }
+
+func (salesOrder *SalesOrder) SalesOrderUploadSOMap(request *UploadSOField, now time.Time) {
+
+	salesOrder.AgentID = request.IDDistributor
+	salesOrder.BrandID = request.KodeMerk
+	salesOrder.SalesmanID = NullInt64{sql.NullInt64{Int64: int64(request.IDSalesman), Valid: true}}
+	salesOrder.SoDate = request.TanggalOrder
+	salesOrder.SoRefDate = NullString{sql.NullString{String: request.TanggalTokoOrder, Valid: true}}
+	salesOrder.Note = NullString{sql.NullString{String: request.CatatanOrder, Valid: true}}
+	salesOrder.InternalComment = NullString{sql.NullString{String: request.CatatanInternal, Valid: true}}
+	salesOrder.IsDoneSyncToEs = "0"
+	salesOrder.CreatedAt = &now
+	salesOrder.StartDateSyncToEs = &now
+	salesOrder.StartCreatedDate = &now
+}

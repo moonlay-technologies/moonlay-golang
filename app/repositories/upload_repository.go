@@ -20,6 +20,7 @@ import (
 type UploadRepositoryInterface interface {
 	UploadSOSJ(bucket, object, region string, user_id int, resultChan chan *models.UploadSOSJFieldChan)
 	UploadDO(bucket, object, region string, resultChan chan *models.UploadDOFieldsChan)
+	UploadSO(bucket, object, region string, resultChan chan *models.UploadSOFieldsChan)
 }
 
 type upload struct {
@@ -270,11 +271,77 @@ func (r *upload) UploadDO(bucket, object, region string, resultChan chan *models
 	return
 }
 
+func (r *upload) UploadSO(bucket, object, region string, resultChan chan *models.UploadSOFieldsChan) {
+	response := &models.UploadSOFieldsChan{}
+
+	var errors []string
+
+	results, err := r.ReadFile(bucket, object, region, s3.FileHeaderInfoUse)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	brandIds := map[string][]map[string]string{}
+	var uploadSOFields []*models.UploadSOField
+	for _, v := range results {
+
+		if brandIds[v["NoOrder"]] != nil {
+			var error string
+
+			if brandIds[v["NoOrder"]][0]["KodeMerk"] != v["KodeMerk"] {
+				fmt.Println("Error satu file")
+				response.Total = 0
+				response.UploadSOFields = nil
+				resultChan <- response
+				return
+			}
+
+			for _, x := range brandIds[v["NoOrder"]] {
+				if x["KodeProduk"] == v["KodeProduk"] && x["UnitProduk"] == v["UnitProduk"] {
+					error = fmt.Sprintf("Duplikat row untuk No Order %s", v["NoOrder"])
+					break
+				}
+			}
+
+			if len(error) > 0 {
+				errors = append(errors, error)
+				continue
+			}
+		}
+
+		brandIds[v["NoOrder"]] = append(brandIds[v["NoOrder"]], map[string]string{
+			"KodeMerk":   v["KodeMerk"],
+			"KodeProduk": v["KodeProduk"],
+			"UnitProduk": v["UnitProduk"],
+		})
+
+		var uploadSOField models.UploadSOField
+		uploadSOField.TanggalOrder, err = helper.ParseDDYYMMtoYYYYMMDD(v["TanggalOrder"])
+		uploadSOField.TanggalTokoOrder, err = helper.ParseDDYYMMtoYYYYMMDD(v["TanggalTokoOrder"])
+		uploadSOField.UploadSOFieldMap(v)
+
+		uploadSOFields = append(uploadSOFields, &uploadSOField)
+	}
+	a, _ := json.Marshal(errors)
+	fmt.Println("Errornya", string(a))
+
+	response.Total = int64(len(uploadSOFields))
+	response.UploadSOFields = uploadSOFields
+	resultChan <- response
+	return
+
+}
+
 func (r *upload) ReadFile(bucket, object, region, fileHeaderInfo string) ([]map[string]string, error) {
 	sess := session.New(&aws.Config{
 		Region:                        aws.String(region),
 		CredentialsChainVerboseErrors: aws.Bool(true),
-		Credentials:                   credentials.NewStaticCredentials("ASIAUHX63DBTHZ6MUWJ3", "6+vQpDZaqP75TGCvjMG16mB/Nq46+5l7Ot4a1Bka", "IQoJb3JpZ2luX2VjEKf//////////wEaDmFwLXNvdXRoZWFzdC0xIkcwRQIhAKUmFaefISnx0H8vxJEeS/YYJYm/y5vQLTMeTNkzxqhbAiBhh577yZAismiuV+O1XIly4rrpT0zdXUvgwsRKtrNR5Sr1AghgEAAaDDI5MTUxODQ4NjYzMCIM23p/Xl0MJzVnPBYPKtICj6PCyBgmv7n4oVuIrqyBs7evVzHTNV0DrAuvhOPiPob4kst1TFLisCfQEGGYhTaXJCksYukZns9lN08qzZGZQzsxnKggcUitVNACtUQ37OEFbBJJh2zqeaUdq927/j6kgQiE/5PqKGaDAzSLUC3DCAdHssWeyr8kY3UitL1Q3I4DmVSWxR0rEMOPzjv7CHWMtJQCRZET+r0yoNXDndXqhKrxr3HFE1xHqXoWaRVuOQ5wUJrTKps4uuEkL8P4IbHwv97wF2ZyYtFU7LGKH9c+9clLSKQSVMwhMTevGWPNGFXSe/ibgub2xDktmGs+hjil+lihX0EIGftsoqa/qD3Ti4hPKRMVy12J59KEzqNJsR1KIvPyocp/BcSPL0lbYp0R5x4D33pT6k2cNoGTWrV43ox7y2GRqPfKXiNEq3WWYnQMsviL1GxI5tJ10l74zOUSfz8w496noAY6pwEDRW8eED/rt9e8xV+gjL9o1vvxH0zndUTm8WP9G6SdSA9Q7LhbaymU3G+CHcrasgJCK85uF0ozCb4f5vR8NCSmJV3GRrhOBbr02UfZgSiXitbN2515x2kewHpkTOBlJHDZjYJ6GzR4jAHQmhmQJUkrmZvXAqQ+oK66jHrTVDJ8KtMlk2IlTc6lBdmp+qHk1lLIVlCPK5TgxV4PVQKc+QScloroM0TPnA=="),
+		Credentials:                   credentials.NewStaticCredentials("ASIAUHX63DBTJAQN5E7R", "gMlQhWzTQnVaWxg9b59FHlhbzZhxE/JMRtfBVI5l", "IQoJb3JpZ2luX2VjELL//////////wEaDmFwLXNvdXRoZWFzdC0xIkcwRQIhAIE4ECz8SUDtYnpt0AD8XyIYXSla6lqqgpWfcdyTMRTeAiAZ6+kl7lPmOZtESowR97YmDvTM5IysqCsgkRjjqUHc6yr1AghrEAAaDDI5MTUxODQ4NjYzMCIM7srqQ27ST0oAUGJCKtICVvZEFnan3ZI/Y/WSUhrFYWufHtMyEL1XC4u8ixlB9IsQUeY4QlzXgJHVETuv5u7QwVv6NvS/+I6IBBQHgRtIjQNIgJ5t1gqGRCQPXAITVUlvMbsd6n8xXF9DWcsz/y/rOhAe5j+nWwFU04esJgG/XxKjGjp2tRXtk64UY1o2woBYKE+iBL3cHju+CqoyKy7TsGLViuHzfbkCM3H6pFCK3xK6cYOn15svREsuTVhgfyGnwP7tZaalkwDCoo17+K8mw+cDKL0iHQq/XIZlG2j6vEe6rj7hKgTSpzzVZ3ILaXR+8Z1cLprM93x3IYevzJvGrvhLck/uGrGUKft4pDouwHr6uOuibpopKxQjauYNlrOtMhCbODv0TnXhv9foRIj3gDiIJ8ZHiSPCH0V8xT1PvADwp/vQYwYpzNSe7jMQqQ48zFp20zKS91qQQg+Qs6TKBU8wiqCqoAY6pwEADQBgh6s77Wg3ri9s7c6T1UWlwCMxYH3bm0Je7e45PZ3VRlburfCsQ7zx0dbHz9FoAQmN+AVNU8B2n4ghBrgFElhdEiI5rcdm7+eoBVPXF6C5uehlvS8p3YmAGaCjw9U6vDoXc07KrJZATpnLvQhw1zljU0ZJSyGUQjMBhwKE0XkdqWSGLvIyP23j4xX/2qYdNZU+OrURMgcNGwVakWs7Fnsma8gVBQ=="),
 		HTTPClient:                    &http.Client{Timeout: 10 * time.Second},
 	})
 	svc := s3.New(sess)
