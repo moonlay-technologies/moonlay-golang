@@ -23,6 +23,7 @@ type DeliveryOrderValidatorInterface interface {
 	GetDeliveryOrderBySalesmanIDValidator(*gin.Context) (*models.DeliveryOrderRequest, error)
 	UpdateDeliveryOrderByIDValidator(int, *models.DeliveryOrderUpdateByIDRequest, *gin.Context) error
 	UpdateDeliveryOrderDetailByDoIDValidator(int, []*models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest, *gin.Context) error
+	UpdateDeliveryOrderDetailByIDValidator(int, *models.DeliveryOrderDetailUpdateByIDRequest, *gin.Context) error
 	DeleteDeliveryOrderByIDValidator(string, *gin.Context) error
 }
 
@@ -321,6 +322,75 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByDoIDValidator(id int
 			Clause:          fmt.Sprintf("d.id = %d AND s.qty < %d", v.ID, v.Qty),
 			MessageFormat:   fmt.Sprintf("Qty SO Detail <result> FROM DO Detail %d must be higher than or equal delivery order qty", v.ID),
 		})
+	}
+
+	err := d.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField417)
+	if err != nil {
+		return err
+	}
+
+	err = d.requestValidationMiddleware.MustEmptyValidation(ctx, mustEmpties)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByIDValidator(detailId int, insertRequest *models.DeliveryOrderDetailUpdateByIDRequest, ctx *gin.Context) error {
+	mustActiveField417 := []*models.MustActiveRequest{
+		{
+			Table:    "delivery_orders d JOIN delivery_order_details dd ON d.id = dd.delivery_order_id",
+			ReqField: "d.delivery_order_id",
+			Clause:   fmt.Sprintf("dd.id = %d AND d.deleted_at IS NULL", detailId),
+		},
+		{
+			Table:    "sales_orders s JOIN delivery_orders d ON d.sales_order_id = s.id JOIN delivery_order_details dd ON d.id = dd.delivery_order_id",
+			ReqField: "sales-order_id",
+			Clause:   fmt.Sprintf("dd.id = %d AND s.deleted_at IS NULL", detailId),
+		},
+		{
+			Table:    "delivery_order_details",
+			ReqField: "delivery_order_detail_id",
+			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", insertRequest.ID),
+		},
+		{
+			Table:    "sales_order_details s JOIN delivery_order_details d ON d.so_detail_id = s.id",
+			ReqField: "sales-order_id",
+			Clause:   fmt.Sprintf("d.id = %d AND s.deleted_at IS NULL", insertRequest.ID),
+		},
+	}
+	mustEmpties := []*models.MustEmptyValidationRequest{
+		{
+			Table:           "delivery_orders d JOIN order_statuses s ON d.order_status_id = s.id JOIN delivery_order_details dd ON d.id = dd.delivery_order_id",
+			SelectedCollumn: "s.name",
+			Clause:          fmt.Sprintf("dd.id = %d AND d.order_status_id NOT IN (17)", detailId),
+			MessageFormat:   "Status Delivery Order <result>",
+		},
+		{
+			Table:           "sales_orders s JOIN delivery_orders d JOIN order_statuses o ON d.sales_order_id = s.id AND o.id = s.order_status_id JOIN delivery_order_details dd ON d.id = dd.delivery_order_id",
+			SelectedCollumn: "o.name",
+			Clause:          fmt.Sprintf("dd.id = %d AND s.order_status_id NOT IN (5,7,8)", detailId),
+			MessageFormat:   "Status Sales Order <result>",
+		},
+		{
+			Table:           "sales_order_details s JOIN delivery_order_details d ON s.id = d.so_detail_id",
+			SelectedCollumn: "s.id",
+			Clause:          fmt.Sprintf("d.id = %d AND s.qty < %d", insertRequest.ID, insertRequest.Qty),
+			MessageFormat:   fmt.Sprintf("Qty SO Detail <result> FROM DO Detail %d must be higher than or equal delivery order qty", insertRequest.ID),
+		},
+	}
+	if insertRequest.Qty < 0 {
+		err := helper.NewError("qty must be higher or equal 0")
+		result := &baseModel.Response{
+			Error: helper.NewWriteLog(baseModel.ErrorLog{
+				Message:       err.Error(),
+				SystemMessage: err,
+				StatusCode:    422,
+			}),
+		}
+		ctx.JSON(result.StatusCode, result)
+		return err
 	}
 
 	err := d.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField417)

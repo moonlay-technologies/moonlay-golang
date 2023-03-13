@@ -6,9 +6,10 @@ const (
 	DELETE_SALES_ORDER_CONSUMER        = "delete-sales-order-consumer"
 	UPDATE_SALES_ORDER_DETAIL_CONSUMER = "update-sales-order-detail-consumer"
 
-	CREATE_DELIVERY_ORDER_CONSUMER = "create-delivery-order-consumer"
-	UPDATE_DELIVERY_ORDER_CONSUMER = "update-delivery-order-consumer"
-	DELETE_DELIVERY_ORDER_CONSUMER = "delete-delivery-order-consumer"
+	CREATE_DELIVERY_ORDER_CONSUMER        = "create-delivery-order-consumer"
+	UPDATE_DELIVERY_ORDER_CONSUMER        = "update-delivery-order-consumer"
+	UPDATE_DELIVERY_ORDER_DETAIL_CONSUMER = "update-delivery-order-detail-consumer"
+	DELETE_DELIVERY_ORDER_CONSUMER        = "delete-delivery-order-consumer"
 
 	DELETE_DELIVERY_ORDER_DETAIL_CONSUMER = "delete-delivery-order-detail-consumer"
 

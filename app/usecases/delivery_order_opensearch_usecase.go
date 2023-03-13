@@ -95,7 +95,17 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(deliver
 		}
 
 		v.EndDateSyncToEs = &now
+		v.UpdatedAt = &now
+		v.CreatedAt = &now
 		v.IsDoneSyncToEs = "1"
+
+		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
+		go u.deliveryOrderDetailOpenSearchRepository.Create(v, createDeliveryOrderDetailResultChan)
+		createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
+
+		if createDeliveryOrderDetailResult.Error != nil {
+			return createDeliveryOrderDetailResult.ErrorLog
+		}
 	}
 
 	removeCacheSalesOrderResultChan := make(chan *models.SalesOrderChan)
@@ -154,6 +164,14 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(request
 		v.UpdatedAt = &now
 		v.IsDoneSyncToEs = "1"
 		v.EndDateSyncToEs = &now
+
+		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
+		go u.deliveryOrderDetailOpenSearchRepository.Create(v, createDeliveryOrderDetailResultChan)
+		createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
+
+		if createDeliveryOrderDetailResult.Error != nil {
+			return createDeliveryOrderDetailResult.ErrorLog
+		}
 	}
 
 	updateDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
@@ -191,6 +209,16 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromDeleteEvent(deliver
 
 	for _, v := range deliveryOrder.DeliveryOrderDetails {
 		v.DeletedAt = &now
+		v.IsDoneSyncToEs = "1"
+		v.EndDateSyncToEs = &now
+
+		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
+		go u.deliveryOrderDetailOpenSearchRepository.Create(v, createDeliveryOrderDetailResultChan)
+		createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
+
+		if createDeliveryOrderDetailResult.Error != nil {
+			return createDeliveryOrderDetailResult.ErrorLog
+		}
 	}
 
 	deliveryOrder.DeletedAt = &now
@@ -223,6 +251,7 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromDeleteEvent(deliver
 		v.SentQty -= deliveryOrder.DeliveryOrderDetails[k].Qty
 		v.ResidualQty += deliveryOrder.DeliveryOrderDetails[k].Qty
 	}
+
 	deleteDeliveryOrderResult.DeliveryOrder.SalesOrder = salesOrderWithDetail
 	deleteDeliveryOrderResult.ErrorLog = u.SalesOrderOpenSearchUseCase.SyncToOpenSearchFromUpdateEvent(salesOrderWithDetail, ctx)
 
