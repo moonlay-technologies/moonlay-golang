@@ -14,7 +14,6 @@ import (
 	"order-service/global/utils/helper"
 	kafkadbo "order-service/global/utils/kafka"
 	"order-service/global/utils/model"
-	baseModel "order-service/global/utils/model"
 	"strconv"
 	"strings"
 	"time"
@@ -24,7 +23,7 @@ import (
 
 type UploadUseCaseInterface interface {
 	UploadSOSJ(ctx context.Context) *model.ErrorLog
-	UploadDO(ctx context.Context) *model.ErrorLog
+	UploadDO(request *models.UploadDORequest, ctx context.Context) *model.ErrorLog
 	UploadSO(request *models.UploadSORequest, ctx context.Context) *model.ErrorLog
 }
 
@@ -459,158 +458,196 @@ func (u *uploadUseCase) UploadSOSJ(ctx context.Context) *model.ErrorLog {
 	return nil
 }
 
-func (u *uploadUseCase) UploadDO(ctx context.Context) *model.ErrorLog {
-	now := time.Now()
+// func (u *uploadUseCase) UploadDO(ctx context.Context) *model.ErrorLog {
+// 	now := time.Now()
 
-	uploadDOResultChan := make(chan *models.UploadDOFieldsChan)
-	go u.uploadRepository.UploadDO("be-so-service", "upload-service/do/format-file-upload-data-DO-V2 (1).csv", "ap-southeast-1", uploadDOResultChan)
-	uploadDOResult := <-uploadDOResultChan
+// 	uploadDOResultChan := make(chan *models.UploadDOFieldsChan)
+// 	go u.uploadRepository.UploadDO("be-so-service", "upload-service/do/format-file-upload-data-DO-V2 (1).csv", "ap-southeast-1", uploadDOResultChan)
+// 	uploadDOResult := <-uploadDOResultChan
 
-	// Get Order Source Status By Name
-	getOrderSourceResultChan := make(chan *models.OrderSourceChan)
-	go u.orderSourceRepository.GetBySourceName("upload_sj", false, ctx, getOrderSourceResultChan)
-	getOrderSourceResult := <-getOrderSourceResultChan
+// 	// Get Order Source Status By Name
+// 	getOrderSourceResultChan := make(chan *models.OrderSourceChan)
+// 	go u.orderSourceRepository.GetBySourceName("upload_sj", false, ctx, getOrderSourceResultChan)
+// 	getOrderSourceResult := <-getOrderSourceResultChan
 
-	if getOrderSourceResult.Error != nil {
-		return getOrderSourceResult.ErrorLog
+// 	if getOrderSourceResult.Error != nil {
+// 		return getOrderSourceResult.ErrorLog
+// 	}
+
+// 	for _, v := range uploadDOResult.UploadDOFields {
+// 		a, _ := json.Marshal(v)
+// 		fmt.Println("test", string(a))
+
+// 		// Get Sales Order By So Code
+// 		getSalesOrderResultChan := make(chan *models.SalesOrderChan)
+// 		go u.salesOrderRepository.GetByCode(v.NoOrder, false, ctx, getSalesOrderResultChan)
+// 		getSalesOrderResult := <-getSalesOrderResultChan
+
+// 		if getSalesOrderResult.Error != nil {
+// 			return getSalesOrderResult.ErrorLog
+// 		}
+
+// 		errorDOValidation := u.uploadDOValidation(getSalesOrderResult.SalesOrder.ID, getSalesOrderResult.SalesOrder.OrderStatusName, v.KodeProduk, v.Unit, v.QTYShip, ctx)
+
+// 		if errorDOValidation != nil {
+// 			errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
+// 				Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPLOAD, errorDOValidation.Error())},
+// 				SystemMessage: []string{"Invalid Process"},
+// 				StatusCode:    http.StatusUnprocessableEntity,
+// 			})
+// 			return errorLogData
+// 		}
+
+// 		// Get Brand By KodeMerk/brand_id
+// 		getBrandResultChan := make(chan *models.BrandChan)
+// 		go u.brandRepository.GetByID(v.KodeMerk, false, ctx, getBrandResultChan)
+// 		getBrandResult := <-getBrandResultChan
+
+// 		// Get Order Status By Name and Type
+// 		getOrderStatusResultChan := make(chan *models.OrderStatusChan)
+// 		go u.orderStatusRepository.GetByNameAndType("open", "delivery_order", false, ctx, getOrderStatusResultChan)
+// 		getOrderStatusResult := <-getOrderStatusResultChan
+
+// 		// Get Warehouse By KodeGudang/id
+// 		getWarehouseResultChan := make(chan *models.WarehouseChan)
+// 		go u.warehouseRepository.GetByID(v.KodeGudang, false, ctx, getWarehouseResultChan)
+// 		getWarehouseResult := <-getWarehouseResultChan
+// 		// if v.KodeGudang > 0 {
+// 		// 	getWarehouseResultChan := make(chan *models.WarehouseChan)
+// 		// 	go u.warehouseRepository.GetByID(v.KodeGudang, false, ctx, getWarehouseResultChan)
+// 		// 	getWarehouseResult := <-getWarehouseResultChan
+
+// 		// } else {
+// 		// 	getWarehouseResultChan := make(chan *models.WarehouseChan)
+// 		// 	go u.warehouseRepository.GetByID(10, false, ctx, getWarehouseResultChan)
+// 		// 	getWarehouseResult := <-getWarehouseResultChan
+
+// 		// }
+
+// 		// Get Sales Order Source By ID
+// 		// getSalesOrderSourceResultChan := make(chan *models.OrderSourceChan)
+// 		// go u.orderSourceRepository.GetByID(getSalesOrderResult.SalesOrder.OrderSourceID, false, ctx, getSalesOrderSourceResultChan)
+// 		// getSalesOrderSourceResult := <-getSalesOrderSourceResultChan
+
+// 		// Get Sales Order Status by ID
+// 		// getSalesOrderStatusResultChan := make(chan *models.OrderStatusChan)
+// 		// go u.orderStatusRepository.GetByID(getSalesOrderResult.SalesOrder.OrderStatusID, false, ctx, getSalesOrderStatusResultChan)
+// 		// getSalesOrderStatusResult := <-getSalesOrderStatusResultChan
+
+// 		// Get Agent By IDDistributor/id
+// 		getAgentResultChan := make(chan *models.AgentChan)
+// 		go u.agentRepository.GetByID(v.IDDistributor, false, ctx, getAgentResultChan)
+// 		getAgentResult := <-getAgentResultChan
+
+// 		// Get Store By ID
+// 		getStoreResultChan := make(chan *models.StoreChan)
+// 		go u.storeRepository.GetByID(getSalesOrderResult.SalesOrder.StoreID, false, ctx, getStoreResultChan)
+// 		getStoreResult := <-getStoreResultChan
+
+// 		// Get User By Email
+// 		getUserResultChan := make(chan *models.UserChan)
+// 		go u.userRepository.GetByID(getSalesOrderResult.SalesOrder.UserID, false, ctx, getUserResultChan)
+// 		getUserResult := <-getUserResultChan
+
+// 		getSalesmanResultChan := make(chan *models.SalesmanChan)
+// 		go u.salesmanRepository.GetByEmail(getUserResult.User.Email, false, ctx, getSalesmanResultChan)
+// 		getSalesmanResult := <-getSalesmanResultChan
+
+// 		deliveryOrder := &models.DeliveryOrder{}
+// 		latestUpdatedBy := ctx.Value("user").(*models.UserClaims)
+// 		deliveryOrder.SalesOrderID = getSalesOrderResult.SalesOrder.ID
+// 		deliveryOrder.DoRefCode = models.NullString{NullString: sql.NullString{String: v.NoSJ, Valid: true}}
+// 		deliveryOrder.DoRefDate = models.NullString{NullString: sql.NullString{String: v.TanggalSJ, Valid: true}}
+// 		deliveryOrder.DriverName = models.NullString{NullString: sql.NullString{String: v.NamaSupir, Valid: true}}
+// 		deliveryOrder.PlatNumber = models.NullString{NullString: sql.NullString{String: v.PlatNo, Valid: true}}
+// 		deliveryOrder.Note = models.NullString{NullString: sql.NullString{String: v.Catatan, Valid: true}}
+// 		deliveryOrder.IsDoneSyncToEs = "0"
+// 		deliveryOrder.StartDateSyncToEs = &now
+// 		deliveryOrder.EndDateSyncToEs = &now
+// 		deliveryOrder.StartCreatedDate = &now
+// 		deliveryOrder.EndCreatedDate = &now
+// 		deliveryOrder.LatestUpdatedBy = latestUpdatedBy.UserID
+// 		deliveryOrder.CreatedAt = &now
+// 		deliveryOrder.UpdatedAt = &now
+// 		deliveryOrder.DeletedAt = nil
+
+// 		deliveryOrder.WarehouseChanMap(getWarehouseResult)
+// 		deliveryOrder.AgentMap(getAgentResult.Agent)
+// 		deliveryOrder.DoCode = helper.GenerateDOCode(getAgentResult.Agent.ID, getOrderSourceResult.OrderSource.Code)
+// 		deliveryOrder.DoDate = now.Format("2006-01-02")
+// 		deliveryOrder.OrderStatus = getOrderStatusResult.OrderStatus
+// 		deliveryOrder.OrderStatusID = getOrderStatusResult.OrderStatus.ID
+// 		deliveryOrder.OrderSource = getOrderSourceResult.OrderSource
+// 		deliveryOrder.OrderSourceID = getOrderSourceResult.OrderSource.ID
+// 		deliveryOrder.Store = getStoreResult.Store
+// 		deliveryOrder.CreatedBy = ctx.Value("user").(*models.UserClaims).UserID
+// 		deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
+// 		deliveryOrder.Brand = getBrandResult.Brand
+// 		if getSalesmanResult.Salesman != nil {
+// 			deliveryOrder.Salesman = getSalesmanResult.Salesman
+// 		}
+
+// 		sqlTransaction, _ := u.db.BeginTx(ctx, nil)
+
+// 		// Insert to DB, table delivery_orders
+// 		createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
+// 		go u.deliveryOrderRepository.Insert(deliveryOrder, sqlTransaction, ctx, createDeliveryOrderResultChan)
+// 		createDeliveryOrderResult := <-createDeliveryOrderResultChan
+
+// 		if createDeliveryOrderResult.Error != nil {
+// 			sqlTransaction.Rollback()
+// 			return createDeliveryOrderResult.ErrorLog
+// 		}
+
+// 		// getSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailsChan)
+// 		// go u.salesOrderDetailRepository.GetBySalesOrderID(getSalesOrderResult.SalesOrder.ID, false, ctx, getSalesOrderDetailResultChan)
+// 		// getSalesOrderDetailResult := <- getSalesOrderDetailResultChan
+
+// 		// for _, x := range getSalesOrderDetailResult.SalesOrderDetails {
+// 		// 	x.ID = v
+// 		// }
+// 	}
+
+// 	// Get Sales Order Detail
+// 	// Get SO Detail Product
+
+// 	return nil
+// }
+
+func (u *uploadUseCase) UploadDO(request *models.UploadDORequest, ctx context.Context) *model.ErrorLog {
+
+	user := ctx.Value("user").(*models.UserClaims)
+
+	// Check Agent By Id
+	getAgentResultChan := make(chan *models.AgentChan)
+	go u.agentRepository.GetByID(4, false, ctx, getAgentResultChan)
+	getAgentResult := <-getAgentResultChan
+
+	if getAgentResult.Error != nil {
+		errorLogData := helper.WriteLog(getAgentResult.Error, http.StatusInternalServerError, nil)
+		return errorLogData
 	}
 
-	for _, v := range uploadDOResult.UploadDOFields {
-		a, _ := json.Marshal(v)
-		fmt.Println("test", string(a))
-
-		// Get Sales Order By So Code
-		getSalesOrderResultChan := make(chan *models.SalesOrderChan)
-		go u.salesOrderRepository.GetByCode(v.NoOrder, false, ctx, getSalesOrderResultChan)
-		getSalesOrderResult := <-getSalesOrderResultChan
-
-		if getSalesOrderResult.Error != nil {
-			return getSalesOrderResult.ErrorLog
-		}
-
-		errorDOValidation := u.uploadDOValidation(getSalesOrderResult.SalesOrder.ID, getSalesOrderResult.SalesOrder.OrderStatusName, v.KodeProduk, v.Unit, v.QTYShip, ctx)
-
-		if errorDOValidation != nil {
-			errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
-				Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPLOAD, errorDOValidation.Error())},
-				SystemMessage: []string{"Invalid Process"},
-				StatusCode:    http.StatusUnprocessableEntity,
-			})
-			return errorLogData
-		}
-
-		// Get Brand By KodeMerk/brand_id
-		getBrandResultChan := make(chan *models.BrandChan)
-		go u.brandRepository.GetByID(v.KodeMerk, false, ctx, getBrandResultChan)
-		getBrandResult := <-getBrandResultChan
-
-		// Get Order Status By Name and Type
-		getOrderStatusResultChan := make(chan *models.OrderStatusChan)
-		go u.orderStatusRepository.GetByNameAndType("open", "delivery_order", false, ctx, getOrderStatusResultChan)
-		getOrderStatusResult := <-getOrderStatusResultChan
-
-		// Get Warehouse By KodeGudang/id
-		getWarehouseResultChan := make(chan *models.WarehouseChan)
-		go u.warehouseRepository.GetByID(v.KodeGudang, false, ctx, getWarehouseResultChan)
-		getWarehouseResult := <-getWarehouseResultChan
-		// if v.KodeGudang > 0 {
-		// 	getWarehouseResultChan := make(chan *models.WarehouseChan)
-		// 	go u.warehouseRepository.GetByID(v.KodeGudang, false, ctx, getWarehouseResultChan)
-		// 	getWarehouseResult := <-getWarehouseResultChan
-
-		// } else {
-		// 	getWarehouseResultChan := make(chan *models.WarehouseChan)
-		// 	go u.warehouseRepository.GetByID(10, false, ctx, getWarehouseResultChan)
-		// 	getWarehouseResult := <-getWarehouseResultChan
-
-		// }
-
-		// Get Sales Order Source By ID
-		// getSalesOrderSourceResultChan := make(chan *models.OrderSourceChan)
-		// go u.orderSourceRepository.GetByID(getSalesOrderResult.SalesOrder.OrderSourceID, false, ctx, getSalesOrderSourceResultChan)
-		// getSalesOrderSourceResult := <-getSalesOrderSourceResultChan
-
-		// Get Sales Order Status by ID
-		// getSalesOrderStatusResultChan := make(chan *models.OrderStatusChan)
-		// go u.orderStatusRepository.GetByID(getSalesOrderResult.SalesOrder.OrderStatusID, false, ctx, getSalesOrderStatusResultChan)
-		// getSalesOrderStatusResult := <-getSalesOrderStatusResultChan
-
-		// Get Agent By IDDistributor/id
-		getAgentResultChan := make(chan *models.AgentChan)
-		go u.agentRepository.GetByID(v.IDDistributor, false, ctx, getAgentResultChan)
-		getAgentResult := <-getAgentResultChan
-
-		// Get Store By ID
-		getStoreResultChan := make(chan *models.StoreChan)
-		go u.storeRepository.GetByID(getSalesOrderResult.SalesOrder.StoreID, false, ctx, getStoreResultChan)
-		getStoreResult := <-getStoreResultChan
-
-		// Get User By Email
-		getUserResultChan := make(chan *models.UserChan)
-		go u.userRepository.GetByID(getSalesOrderResult.SalesOrder.UserID, false, ctx, getUserResultChan)
-		getUserResult := <-getUserResultChan
-
-		getSalesmanResultChan := make(chan *models.SalesmanChan)
-		go u.salesmanRepository.GetByEmail(getUserResult.User.Email, false, ctx, getSalesmanResultChan)
-		getSalesmanResult := <-getSalesmanResultChan
-
-		deliveryOrder := &models.DeliveryOrder{}
-		latestUpdatedBy := ctx.Value("user").(*models.UserClaims)
-		deliveryOrder.SalesOrderID = getSalesOrderResult.SalesOrder.ID
-		deliveryOrder.DoRefCode = models.NullString{NullString: sql.NullString{String: v.NoSJ, Valid: true}}
-		deliveryOrder.DoRefDate = models.NullString{NullString: sql.NullString{String: v.TanggalSJ, Valid: true}}
-		deliveryOrder.DriverName = models.NullString{NullString: sql.NullString{String: v.NamaSupir, Valid: true}}
-		deliveryOrder.PlatNumber = models.NullString{NullString: sql.NullString{String: v.PlatNo, Valid: true}}
-		deliveryOrder.Note = models.NullString{NullString: sql.NullString{String: v.Catatan, Valid: true}}
-		deliveryOrder.IsDoneSyncToEs = "0"
-		deliveryOrder.StartDateSyncToEs = &now
-		deliveryOrder.EndDateSyncToEs = &now
-		deliveryOrder.StartCreatedDate = &now
-		deliveryOrder.EndCreatedDate = &now
-		deliveryOrder.LatestUpdatedBy = latestUpdatedBy.UserID
-		deliveryOrder.CreatedAt = &now
-		deliveryOrder.UpdatedAt = &now
-		deliveryOrder.DeletedAt = nil
-
-		deliveryOrder.WarehouseChanMap(getWarehouseResult)
-		deliveryOrder.AgentMap(getAgentResult.Agent)
-		deliveryOrder.DoCode = helper.GenerateDOCode(getAgentResult.Agent.ID, getOrderSourceResult.OrderSource.Code)
-		deliveryOrder.DoDate = now.Format("2006-01-02")
-		deliveryOrder.OrderStatus = getOrderStatusResult.OrderStatus
-		deliveryOrder.OrderStatusID = getOrderStatusResult.OrderStatus.ID
-		deliveryOrder.OrderSource = getOrderSourceResult.OrderSource
-		deliveryOrder.OrderSourceID = getOrderSourceResult.OrderSource.ID
-		deliveryOrder.Store = getStoreResult.Store
-		deliveryOrder.CreatedBy = ctx.Value("user").(*models.UserClaims).UserID
-		deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
-		deliveryOrder.Brand = getBrandResult.Brand
-		if getSalesmanResult.Salesman != nil {
-			deliveryOrder.Salesman = getSalesmanResult.Salesman
-		}
-
-		sqlTransaction, _ := u.db.BeginTx(ctx, nil)
-
-		// Insert to DB, table delivery_orders
-		createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-		go u.deliveryOrderRepository.Insert(deliveryOrder, sqlTransaction, ctx, createDeliveryOrderResultChan)
-		createDeliveryOrderResult := <-createDeliveryOrderResultChan
-
-		if createDeliveryOrderResult.Error != nil {
-			sqlTransaction.Rollback()
-			return createDeliveryOrderResult.ErrorLog
-		}
-
-		// getSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailsChan)
-		// go u.salesOrderDetailRepository.GetBySalesOrderID(getSalesOrderResult.SalesOrder.ID, false, ctx, getSalesOrderDetailResultChan)
-		// getSalesOrderDetailResult := <- getSalesOrderDetailResultChan
-
-		// for _, x := range getSalesOrderDetailResult.SalesOrderDetails {
-		// 	x.ID = v
-		// }
+	message := &models.UploadSJHistory{
+		RequestId:       ctx.Value("RequestId").(string),
+		FileName:        request.File,
+		FilePath:        "upload-service/do/" + request.File,
+		AgentId:         int64(user.AgentID),
+		AgentName:       getAgentResult.Agent.Name,
+		UploadedBy:      int64(user.UserID),
+		UploadedByName:  user.FirstName + " " + user.LastName,
+		UploadedByEmail: user.UserEmail,
 	}
 
-	// Get Sales Order Detail
-	// Get SO Detail Product
+	keyKafka := []byte(ctx.Value("RequestId").(string))
+	messageKafka, _ := json.Marshal(message)
+
+	err := u.kafkaClient.WriteToTopic(constants.UPLOAD_DO_FILE_TOPIC, keyKafka, messageKafka)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		return errorLogData
+	}
 
 	return nil
 }

@@ -2,6 +2,10 @@ package models
 
 import "order-service/global/utils/model"
 
+type UploadDORequest struct {
+	File string `json:"file,omitempty" binding:"required"`
+}
+
 type UploadDOField struct {
 	IDDistributor   int
 	NoOrder         string
