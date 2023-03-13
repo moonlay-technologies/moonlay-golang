@@ -22,9 +22,6 @@ type UpdateDeliveryOrderConsumerHandlerInterface interface {
 
 type UpdateDeliveryOrderConsumerHandler struct {
 	kafkaClient                    kafkadbo.KafkaClientInterface
-	salesOrderUseCase              usecases.SalesOrderUseCaseInterface
-	salesOrderOpenSearchUseCase    usecases.SalesOrderOpenSearchUseCaseInterface
-	deliveryOrderUseCase           usecases.DeliveryOrderUseCaseInterface
 	DeliveryOrderOpenSearchUseCase usecases.DeliveryOrderOpenSearchUseCaseInterface
 	ctx                            context.Context
 	args                           []interface{}
@@ -32,12 +29,9 @@ type UpdateDeliveryOrderConsumerHandler struct {
 	deliveryOrderLogRepository     mongoRepositories.DeliveryOrderLogRepositoryInterface
 }
 
-func InitUpdateDeliveryOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, salesOrderUseCase usecases.SalesOrderUseCaseInterface, salesOrderOpenSearchUseCase usecases.SalesOrderOpenSearchUseCaseInterface, deliveryOrderUseCase usecases.DeliveryOrderUseCaseInterface, DeliveryOrderOpenSearchUseCase usecases.DeliveryOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UpdateDeliveryOrderConsumerHandlerInterface {
+func InitUpdateDeliveryOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, DeliveryOrderOpenSearchUseCase usecases.DeliveryOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UpdateDeliveryOrderConsumerHandlerInterface {
 	return &UpdateDeliveryOrderConsumerHandler{
 		kafkaClient:                    kafkaClient,
-		salesOrderUseCase:              salesOrderUseCase,
-		salesOrderOpenSearchUseCase:    salesOrderOpenSearchUseCase,
-		deliveryOrderUseCase:           deliveryOrderUseCase,
 		DeliveryOrderOpenSearchUseCase: DeliveryOrderOpenSearchUseCase,
 		ctx:                            ctx,
 		args:                           args,

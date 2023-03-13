@@ -17,46 +17,48 @@ import (
 )
 
 type DeliveryOrderOpenSearchUseCaseInterface interface {
-	SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, salesOrderUseCase SalesOrderUseCaseInterface, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
+	SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromUpdateEvent(deliveryOrder *models.DeliveryOrder, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, ctx context.Context) *model.ErrorLog
 }
 
 type deliveryOrderOpenSearchUseCase struct {
-	salesOrderRepository              repositories.SalesOrderRepositoryInterface
-	salesOrderDetailRepository        repositories.SalesOrderDetailRepositoryInterface
-	orderStatusRepository             repositories.OrderStatusRepositoryInterface
-	brandRepository                   repositories.BrandRepositoryInterface
-	uomRepository                     repositories.UomRepositoryInterface
-	agentRepository                   repositories.AgentRepositoryInterface
-	storeRepository                   repositories.StoreRepositoryInterface
-	productRepository                 repositories.ProductRepositoryInterface
-	deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface
-	salesOrderOpenSearchRepository    openSearchRepositories.SalesOrderOpenSearchRepositoryInterface
-	SalesOrderOpenSearchUseCase       SalesOrderOpenSearchUseCaseInterface
-	db                                dbresolver.DB
-	ctx                               context.Context
+	salesOrderRepository                    repositories.SalesOrderRepositoryInterface
+	salesOrderDetailRepository              repositories.SalesOrderDetailRepositoryInterface
+	orderStatusRepository                   repositories.OrderStatusRepositoryInterface
+	brandRepository                         repositories.BrandRepositoryInterface
+	uomRepository                           repositories.UomRepositoryInterface
+	agentRepository                         repositories.AgentRepositoryInterface
+	storeRepository                         repositories.StoreRepositoryInterface
+	productRepository                       repositories.ProductRepositoryInterface
+	deliveryOrderOpenSearchRepository       openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface
+	deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface
+	salesOrderOpenSearchRepository          openSearchRepositories.SalesOrderOpenSearchRepositoryInterface
+	SalesOrderOpenSearchUseCase             SalesOrderOpenSearchUseCaseInterface
+	db                                      dbresolver.DB
+	ctx                                     context.Context
 }
 
-func InitDeliveryOrderOpenSearchUseCaseInterface(salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderOpenSearchUseCaseInterface {
+func InitDeliveryOrderOpenSearchUseCaseInterface(salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderOpenSearchUseCaseInterface {
 	return &deliveryOrderOpenSearchUseCase{
-		salesOrderRepository:              salesOrderRepository,
-		salesOrderDetailRepository:        salesOrderDetailRepository,
-		orderStatusRepository:             orderStatusRepository,
-		brandRepository:                   brandRepository,
-		uomRepository:                     uomRepository,
-		productRepository:                 productRepository,
-		agentRepository:                   agentRepository,
-		storeRepository:                   storeRepository,
-		deliveryOrderOpenSearchRepository: deliveryOrderOpenSearchRepository,
-		salesOrderOpenSearchRepository:    salesOrderOpenSearchRepository,
-		SalesOrderOpenSearchUseCase:       salesOrderOpenSearchUseCase,
-		db:                                db,
-		ctx:                               ctx,
+		salesOrderRepository:                    salesOrderRepository,
+		salesOrderDetailRepository:              salesOrderDetailRepository,
+		orderStatusRepository:                   orderStatusRepository,
+		brandRepository:                         brandRepository,
+		uomRepository:                           uomRepository,
+		productRepository:                       productRepository,
+		agentRepository:                         agentRepository,
+		storeRepository:                         storeRepository,
+		deliveryOrderOpenSearchRepository:       deliveryOrderOpenSearchRepository,
+		deliveryOrderDetailOpenSearchRepository: deliveryOrderDetailOpenSearchRepository,
+		salesOrderOpenSearchRepository:          salesOrderOpenSearchRepository,
+		SalesOrderOpenSearchUseCase:             salesOrderOpenSearchUseCase,
+		db:                                      db,
+		ctx:                                     ctx,
 	}
 }
 
-func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, salesOrderUseCase SalesOrderUseCaseInterface, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
+func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
 	now := time.Now()
 
 	getAgentResultChan := make(chan *models.AgentChan)
