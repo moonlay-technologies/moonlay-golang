@@ -200,37 +200,10 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromDeleteEvent(deliver
 	getDeliveryOrdersResult := <-getDeliveryOrdersResultChan
 
 	if getDeliveryOrdersResult.Error != nil {
-		if !strings.Contains(getDeliveryOrdersResult.Error.Error(), "not found") {
-			errorLogData := helper.WriteLog(getDeliveryOrdersResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
+		errorLogData := helper.WriteLog(getDeliveryOrdersResult.Error, http.StatusInternalServerError, nil)
+		return errorLogData
 	}
 	deliveryOrder := getDeliveryOrdersResult.DeliveryOrder
-
-	for _, v := range deliveryOrder.DeliveryOrderDetails {
-		v.DeletedAt = &now
-		v.IsDoneSyncToEs = "1"
-		v.EndDateSyncToEs = &now
-
-		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
-		go u.deliveryOrderDetailOpenSearchRepository.Create(v, createDeliveryOrderDetailResultChan)
-		createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
-
-		if createDeliveryOrderDetailResult.Error != nil {
-			return createDeliveryOrderDetailResult.ErrorLog
-		}
-	}
-
-	deliveryOrder.DeletedAt = &now
-
-	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderOpenSearchRepository.Create(deliveryOrder, createDeliveryOrderResultChan)
-	deleteDeliveryOrderResult := <-createDeliveryOrderResultChan
-
-	if deleteDeliveryOrderResult.Error != nil {
-		fmt.Println(deleteDeliveryOrderResult.ErrorLog.Err.Error())
-		return deleteDeliveryOrderResult.ErrorLog
-	}
 
 	salesOrderRequest := &models.SalesOrderRequest{
 		ID:            deliveryOrder.SalesOrderID,
@@ -252,10 +225,52 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromDeleteEvent(deliver
 		v.ResidualQty += deliveryOrder.DeliveryOrderDetails[k].Qty
 	}
 
-	deleteDeliveryOrderResult.DeliveryOrder.SalesOrder = salesOrderWithDetail
-	deleteDeliveryOrderResult.ErrorLog = u.SalesOrderOpenSearchUseCase.SyncToOpenSearchFromUpdateEvent(salesOrderWithDetail, ctx)
+	errorLog := u.SalesOrderOpenSearchUseCase.SyncToOpenSearchFromUpdateEvent(salesOrderWithDetail, ctx)
 
-	if deleteDeliveryOrderResult.ErrorLog != nil {
+	if errorLog != nil {
+		fmt.Println(errorLog.Err.Error())
+		return errorLog
+	}
+
+	for _, v := range deliveryOrder.DeliveryOrderDetails {
+		v.DeletedAt = &now
+		v.Qty = 0
+		v.IsDoneSyncToEs = "1"
+		v.EndDateSyncToEs = &now
+
+		v.OrderStatusID = 17
+
+		getOrderStatusDetailChan := make(chan *models.OrderStatusChan)
+		go u.orderStatusRepository.GetByID(v.OrderStatusID, false, ctx, getOrderStatusDetailChan)
+		getOrderStatusDetailResult := <-getOrderStatusDetailChan
+
+		v.OrderStatus = getOrderStatusDetailResult.OrderStatus
+		v.OrderStatusName = getOrderStatusDetailResult.OrderStatus.Name
+
+		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
+		go u.deliveryOrderDetailOpenSearchRepository.Create(v, createDeliveryOrderDetailResultChan)
+		createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
+
+		if createDeliveryOrderDetailResult.Error != nil {
+			return createDeliveryOrderDetailResult.ErrorLog
+		}
+	}
+
+	deliveryOrder.DeletedAt = &now
+	deliveryOrder.OrderStatusID = 17
+
+	getOrderStatusChan := make(chan *models.OrderStatusChan)
+	go u.orderStatusRepository.GetByID(deliveryOrder.OrderStatusID, false, ctx, getOrderStatusChan)
+	getOrderStatusResult := <-getOrderStatusChan
+
+	deliveryOrder.OrderStatusName = getOrderStatusResult.OrderStatus.Name
+	deliveryOrder.OrderStatus = getOrderStatusResult.OrderStatus
+
+	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
+	go u.deliveryOrderOpenSearchRepository.Create(deliveryOrder, createDeliveryOrderResultChan)
+	deleteDeliveryOrderResult := <-createDeliveryOrderResultChan
+
+	if deleteDeliveryOrderResult.Error != nil {
 		fmt.Println(deleteDeliveryOrderResult.ErrorLog.Err.Error())
 		return deleteDeliveryOrderResult.ErrorLog
 	}

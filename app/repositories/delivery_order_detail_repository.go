@@ -506,7 +506,13 @@ func (r *deliveryOrderDetail) DeleteByID(request *models.DeliveryOrderDetail, sq
 	response := &models.DeliveryOrderDetailChan{}
 	rawSqlQueries := []string{}
 
-	query := fmt.Sprintf("%s='%v'", "deleted_at", request.DeletedAt.Format("2006-01-02 15:04:05"))
+	query := fmt.Sprintf("%s=%v", "qty", "0")
+	rawSqlQueries = append(rawSqlQueries, query)
+
+	query = fmt.Sprintf("%s=%v", "order_status_id", "17")
+	rawSqlQueries = append(rawSqlQueries, query)
+
+	query = fmt.Sprintf("%s='%v'", "deleted_at", request.DeletedAt.Format("2006-01-02 15:04:05"))
 	rawSqlQueries = append(rawSqlQueries, query)
 
 	query = fmt.Sprintf("%s='%v'", "updated_at", request.UpdatedAt.Format("2006-01-02 15:04:05"))

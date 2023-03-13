@@ -421,11 +421,24 @@ func (d *DeliveryOrderValidator) DeleteDeliveryOrderByIDValidator(sId string, ct
 		{
 			Table:    "delivery_orders",
 			ReqField: "id",
-			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", id),
+			Clause:   fmt.Sprintf("id = %d", id),
+		},
+	}
+	mustActiveField422 := []*models.MustActiveRequest{
+		{
+			Table:         "delivery_orders",
+			ReqField:      "id",
+			Clause:        fmt.Sprintf("id = %d AND deleted_at IS NULL", id),
+			CustomMessage: fmt.Sprintf("DO id = %d was deleted", id),
 		},
 	}
 
 	err = d.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
+	if err != nil {
+		return err
+	}
+
+	err = d.requestValidationMiddleware.MustActiveValidation422(ctx, mustActiveField422)
 	if err != nil {
 		return err
 	}
