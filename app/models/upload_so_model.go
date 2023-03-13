@@ -25,6 +25,7 @@ type UploadSOField struct {
 	UnitProduk       string
 	IDAlamat         int
 	NamaAlamat       string
+	IDUser           int
 }
 
 type UploadSOFieldsChan struct {

@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func (result *UploadSOField) UploadSOFieldMap(request map[string]string) {
+func (result *UploadSOField) UploadSOFieldMap(request map[string]string, userId int) {
 	result.IDDistributor, _ = strconv.Atoi(request["IDDistributor"])
 	result.KodeToko, _ = strconv.Atoi(request["KodeToko"])
 	result.NamaToko = request["NamaToko"]
@@ -22,4 +22,5 @@ func (result *UploadSOField) UploadSOFieldMap(request map[string]string) {
 	result.UnitProduk = request["UnitProduk"]
 	result.IDAlamat, _ = strconv.Atoi(request["IDAlamat"])
 	result.NamaAlamat = strings.ReplaceAll(request["NamaAlamat"], "\r", "")
+	result.IDUser = userId
 }

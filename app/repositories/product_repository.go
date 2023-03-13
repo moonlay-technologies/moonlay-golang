@@ -139,9 +139,8 @@ func (r *product) GetBySKU(SKU string, countOnly bool, ctx context.Context, resu
 
 		if countOnly == false {
 			product = models.Product{}
-			err = r.db.QueryRow(""+
-				"SELECT id, SKU, productName, category_id, unitMeasurementSmall, unitMeasurementMedium, unitMeasurementBig, priceSmall, priceMedium, priceBig, isActive, nettWeight  from products as p "+
-				"WHERE p.deleted_at IS NULL AND p.SKU = ?", SKU).
+			query := fmt.Sprintf("SELECT id, IF(SKU = '%s', SKU, aliasSKU) AS SKU, IF(SKU = '%s', productName, aliasName) AS productName, category_id, unitMeasurementSmall, unitMeasurementMedium, unitMeasurementBig, priceSmall, priceMedium, priceBig, isActive, nettWeight FROM products AS p WHERE p.deleted_at IS NULL AND IF((SELECT COUNT(SKU) FROM products WHERE SKU = '%s'), p.SKU = '%s', p.aliasSku = '%s')", SKU, SKU, SKU, SKU, SKU)
+			err = r.db.QueryRow(query).
 				Scan(&product.ID, &product.Sku, &product.ProductName, &product.CategoryID, &product.UnitMeasurementSmall, &product.UnitMeasurementMedium, &product.UnitMeasurementBig, &product.PriceSmall, &product.PriceMedium, &product.PriceBig, &product.IsActive, &product.NettWeight)
 
 			if err != nil {
