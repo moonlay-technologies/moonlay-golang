@@ -50,14 +50,10 @@ type SalesOrderDetailStoreRequest struct {
 }
 
 type SalesOrderDetailStoreResponse struct {
-	ID int `json:"id,omitempty" bson:"id,omitempty"`
-	SalesOrderDetailStoreRequest
-	SentQty               NullInt64  `json:"sent_qty,omitempty"`
-	ResidualQty           NullInt64  `json:"residual_qty,omitempty"`
+	ID                    int        `json:"id,omitempty" bson:"id,omitempty"`
 	SalesOrderId          int        `json:"sales_order_id,omitempty"`
-	OrderStatusId         int        `json:"order_status_id,omitempty"`
-	OrderStatusName       string     `json:"order_status_name,omitempty"`
-	SoDetailCode          string     `json:"so_detail_code,omitempty"`
+	BrandID               int        `json:"brand_id,omitempty" bson:"brand_id,omitempty" binding:"required"`
+	ProductID             int        `json:"product_id,omitempty" binding:"required"`
 	ProductSKU            string     `json:"product_sku,omitempty"`
 	ProductName           string     `json:"product_name,omitempty"`
 	CategoryId            int        `json:"category_id,omitempty"`
@@ -65,7 +61,16 @@ type SalesOrderDetailStoreResponse struct {
 	UnitMeasurementSmall  string     `json:"unit_measurement_small,omitempty" bson:"unit_measurement_small,omitempty"`
 	UnitMeasurementMedium string     `json:"unit_measurement_medium,omitempty" bson:"unit_measurement_medium,omitempty"`
 	UnitMeasurementBig    string     `json:"unit_measurement_big,omitempty" bson:"unit_measurement_big,omitempty"`
+	UomID                 int        `json:"uom_id,omitempty" binding:"required"`
 	UomCode               string     `json:"uom_code,omitempty"`
+	OrderStatusId         int        `json:"order_status_id,omitempty"`
+	OrderStatusName       string     `json:"order_status_name,omitempty"`
+	SoDetailCode          string     `json:"so_detail_code,omitempty"`
+	Qty                   int        `json:"qty,omitempty" binding:"required"`
+	SentQty               NullInt64  `json:"sent_qty,omitempty"`
+	ResidualQty           NullInt64  `json:"residual_qty,omitempty"`
+	Price                 float64    `json:"price,omitempty" binding:"required"`
+	Note                  string     `json:"note,omitempty"`
 	CreatedAt             *time.Time `json:"created_at,omitempty" bson:"created_at,omitempty"`
 }
 

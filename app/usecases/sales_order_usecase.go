@@ -127,7 +127,10 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 
 	soDate := parseSoDate.UTC().Add(duration)
 	soRefDate := parseSoRefDate.UTC().Add(duration)
-	nowUTC := now.UTC().Add(7 * time.Hour)
+	nowUTC := now.UTC()
+	if now.UTC().Hour() <= soRefDate.Hour() {
+		nowUTC = nowUTC.Add(7 * time.Hour)
+	}
 	sourceName := getOrderSourceResult.OrderSource.SourceName
 
 	if sourceName == "manager" && !(soDate.Add(1*time.Minute).After(soRefDate) && soRefDate.Add(-1*time.Minute).Before(nowUTC) && soDate.Add(-1*time.Minute).Before(nowUTC) && soRefDate.Month() == nowUTC.Month() && soRefDate.UTC().Year() == nowUTC.Year()) {
@@ -359,7 +362,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 			salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{
 				SoDetailId:   createSalesOrderDetailResult.SalesOrderDetail.ID,
 				SoDetailCode: soDetailCode,
-				Status:       constants.LOG_STATUS_MONGO_DEFAULT,
+				Status:       constants.UPDATE_SO_STATUS_OPEN,
 				Remark:       "",
 				Reason:       "",
 				CreatedAt:    &now,
@@ -381,7 +384,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		salesOrdersResponse = append(salesOrdersResponse, salesOrderResponse)
 
 		salesOrderLog := &models.SalesOrderLog{
-			RequestID: request.RequestID,
+			RequestID: ctx.Value("RequestId").(string),
 			SoCode:    v.SoCode,
 			Data:      v,
 			Status:    constants.LOG_STATUS_MONGO_DEFAULT,
@@ -402,7 +405,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 			SoCode:    salesOrderResponse.SoCode,
 			SoId:      createSalesOrderResult.SalesOrder.ID,
 			SoDate:    createSalesOrderResult.SalesOrder.SoDate,
-			Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+			Status:    constants.UPDATE_SO_STATUS_APPV,
 			Remark:    "",
 			Reason:    "",
 			CreatedAt: &now,
@@ -1302,7 +1305,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 	salesOrdersResponse.SalesOrderDetails = salesOrderDetailResponses
 
 	salesOrderLog := &models.SalesOrderLog{
-		RequestID: "",
+		RequestID: ctx.Value("RequestId").(string),
 		SoCode:    salesOrder.SoCode,
 		Data:      salesOrder,
 		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
@@ -1709,7 +1712,7 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 	}
 
 	salesOrderLog := &models.SalesOrderLog{
-		RequestID: "",
+		RequestID: ctx.Value("RequestId").(string),
 		SoCode:    salesOrder.SoCode,
 		Data:      salesOrder,
 		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
@@ -1974,7 +1977,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 	salesOrdersResponse.SalesOrderDetails = salesOrderDetailResponses
 
 	salesOrderLog := &models.SalesOrderLog{
-		RequestID: "",
+		RequestID: ctx.Value("RequestId").(string),
 		SoCode:    salesOrder.SoCode,
 		Data:      salesOrder,
 		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
