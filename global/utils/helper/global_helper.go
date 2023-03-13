@@ -119,7 +119,7 @@ func parseLength(s string) (int, error) {
 }
 
 func ParseDDYYMMtoYYYYMMDD(request string) (string, error) {
-	date, err := time.Parse("02/01/06", request)
+	date, err := time.Parse("02/01/2006", request)
 	return date.Format("2006-01-02"), err
 }
 

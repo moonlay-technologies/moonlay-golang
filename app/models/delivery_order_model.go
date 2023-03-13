@@ -49,7 +49,7 @@ type DeliveryOrder struct {
 	StartDateSyncToEs     *time.Time             `json:"start_date_sync_to_es,omitempty" bson:"start_date_sync_to_es"`
 	EndDateSyncToEs       *time.Time             `json:"end_date_sync_to_es,omitempty" bson:"end_date_sync_to_es"`
 	CreatedBy             int                    `json:"created_by,omitempty" bson:"created_by"`
-	LatestUpdatedBy       *time.Time             `json:"latest_updated_by" bson:"latest_updated_by"`
+	LatestUpdatedBy       int                    `json:"latest_updated_by" bson:"latest_updated_by"`
 	StartCreatedDate      *time.Time             `json:"start_created_date,omitempty" bson:"start_created_date,omitempty"`
 	EndCreatedDate        *time.Time             `json:"end_created_date,omitempty" bson:"end_created_date,omitempty"`
 	CreatedAt             *time.Time             `json:"created_at,omitempty" bson:"created_at"`

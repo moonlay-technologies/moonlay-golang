@@ -25,6 +25,7 @@ import (
 type UploadUseCaseInterface interface {
 	UploadSOSJ(ctx context.Context) *model.ErrorLog
 	UploadDO(ctx context.Context) *model.ErrorLog
+	UploadSO(request *models.UploadSORequest, ctx context.Context) *model.ErrorLog
 }
 
 type uploadUseCase struct {
@@ -88,7 +89,7 @@ func (u *uploadUseCase) UploadSOSJ(ctx context.Context) *model.ErrorLog {
 	var user_id = ctx.Value("user").(*models.UserClaims).UserID
 
 	uploadSOSJResultChan := make(chan *models.UploadSOSJFieldChan)
-	go u.uploadRepository.UploadSOSJ("be-so-service", "upload-service/sosj/format-file-upload-data-SOSJ-V2.csv", "ap-southeast-1", uploadSOSJResultChan)
+	go u.uploadRepository.UploadSOSJ("be-so-service", "upload-service/sosj/format-file-upload-data-SOSJ-V2.csv", "ap-southeast-1", user_id, uploadSOSJResultChan)
 	uploadSOSJResult := <-uploadSOSJResultChan
 
 	// Get Order Source Status By Id
@@ -105,6 +106,7 @@ func (u *uploadUseCase) UploadSOSJ(ctx context.Context) *model.ErrorLog {
 
 	salesOrders := []*models.SalesOrder{}
 	for _, v := range uploadSOSJResult.UploadSOSJFields {
+
 		var noSuratJalan = v.NoSuratJalan
 
 		checkIfSoRefCodeExist := helper.InSliceString(soRefCodes, noSuratJalan)
@@ -322,6 +324,7 @@ func (u *uploadUseCase) UploadSOSJ(ctx context.Context) *model.ErrorLog {
 			deliveryOrder.Store = getStoreResult.Store
 			deliveryOrder.StoreID = getStoreResult.Store.ID
 			deliveryOrder.CreatedBy = ctx.Value("user").(*models.UserClaims).UserID
+			deliveryOrder.LatestUpdatedBy = ctx.Value("user").(*models.UserClaims).UserID
 			deliveryOrder.Brand = getBrandResult.Brand
 			if getSalesmanResult.Salesman != nil {
 				deliveryOrder.Salesman = getSalesmanResult.Salesman
@@ -663,6 +666,44 @@ func (u *uploadUseCase) uploadDOValidation(salesOrderId int, orderStatusName str
 				return fmt.Errorf("uom code %s from database doesn't match with unitProduk %s to be uploaded", getUomResult.Uom.Code.String, unitProduk)
 			}
 		}
+	}
+
+	return nil
+}
+
+func (u *uploadUseCase) UploadSO(request *models.UploadSORequest, ctx context.Context) *model.ErrorLog {
+
+	user := ctx.Value("user").(*models.UserClaims)
+
+	// Check Agent By Id
+	getAgentResultChan := make(chan *models.AgentChan)
+	go u.agentRepository.GetByID(4, false, ctx, getAgentResultChan)
+	getAgentResult := <-getAgentResultChan
+
+	if getAgentResult.Error != nil {
+		errorLogData := helper.WriteLog(getAgentResult.Error, http.StatusInternalServerError, nil)
+		return errorLogData
+	}
+
+	message := &models.UploadSOHistory{
+		RequestId:       ctx.Value("RequestId").(string),
+		FileName:        request.File,
+		FilePath:        "upload-service/so/" + request.File,
+		AgentId:         int64(user.AgentID),
+		AgentName:       getAgentResult.Agent.Name,
+		UploadedBy:      int64(user.UserID),
+		UploadedByName:  user.FirstName + " " + user.LastName,
+		UploadedByEmail: user.UserEmail,
+	}
+
+	keyKafka := []byte(ctx.Value("RequestId").(string))
+	messageKafka, _ := json.Marshal(message)
+
+	err := u.kafkaClient.WriteToTopic(constants.UPLOAD_SO_FILE_TOPIC, keyKafka, messageKafka)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		return errorLogData
 	}
 
 	return nil

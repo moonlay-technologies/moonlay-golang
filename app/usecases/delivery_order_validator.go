@@ -22,6 +22,7 @@ type DeliveryOrderValidatorInterface interface {
 	GetDeliveryOrderValidator(*gin.Context) (*models.DeliveryOrderRequest, error)
 	GetDeliveryOrderBySalesmanIDValidator(*gin.Context) (*models.DeliveryOrderRequest, error)
 	UpdateDeliveryOrderByIDValidator(int, *models.DeliveryOrderUpdateByIDRequest, *gin.Context) error
+	UpdateDeliveryOrderDetailByDoIDValidator(int, []*models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest, *gin.Context) error
 	DeleteDeliveryOrderByIDValidator(string, *gin.Context) error
 }
 
@@ -175,6 +176,7 @@ func (d *DeliveryOrderValidator) CreateDeliveryOrderValidator(insertRequest *mod
 	}
 	return nil
 }
+
 func (d *DeliveryOrderValidator) UpdateDeliveryOrderByIDValidator(id int, insertRequest *models.DeliveryOrderUpdateByIDRequest, ctx *gin.Context) error {
 	uniqueField := []*models.UniqueRequest{
 		{
@@ -218,6 +220,91 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderByIDValidator(id int, insert
 	}
 
 	for _, v := range insertRequest.DeliveryOrderDetails {
+		if v.Qty < 0 {
+			err := helper.NewError("qty must be higher or equal 0")
+			result := &baseModel.Response{
+				Error: helper.NewWriteLog(baseModel.ErrorLog{
+					Message:       err.Error(),
+					SystemMessage: err,
+					StatusCode:    422,
+				}),
+			}
+			ctx.JSON(result.StatusCode, result)
+			return err
+		}
+		mustActiveField417 = append(mustActiveField417, &models.MustActiveRequest{
+			Table:         "delivery_order_details",
+			ReqField:      "delivery_order_detail_id",
+			Clause:        fmt.Sprintf("id = %d AND delivery_order_id = %d AND deleted_at IS NULL", v.ID, id),
+			CustomMessage: fmt.Sprintf("delivery_order_detail_id %d not found in delivery_order id %d", v.ID, id),
+		})
+		mustActiveField417 = append(mustActiveField417, &models.MustActiveRequest{
+			Table:    "sales_order_details s JOIN delivery_order_details d ON d.so_detail_id = s.id",
+			ReqField: "sales-order_id",
+			Clause:   fmt.Sprintf("d.id = %d AND s.deleted_at IS NULL", v.ID),
+		})
+		mustEmpties = append(mustEmpties, &models.MustEmptyValidationRequest{
+			Table:           "sales_order_details s JOIN delivery_order_details d ON s.id = d.so_detail_id",
+			SelectedCollumn: "s.residual_qty+d.qty",
+			Clause:          fmt.Sprintf("d.id = %[1]d AND s.residual_qty+d.qty < %[2]d", v.ID, v.Qty),
+			MessageFormat:   fmt.Sprintf("DO Detail %d must be lower than or equal residual qty (<result>)", v.ID),
+		})
+	}
+
+	err = d.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField417)
+	if err != nil {
+		return err
+	}
+
+	err = d.requestValidationMiddleware.MustEmptyValidation(ctx, mustEmpties)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByDoIDValidator(id int, insertRequest []*models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest, ctx *gin.Context) error {
+	mustActiveField417 := []*models.MustActiveRequest{
+		{
+			Table:    "delivery_orders",
+			ReqField: "delivery_order_id",
+			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", id),
+		},
+		{
+			Table:    "sales_orders s JOIN delivery_orders d ON d.sales_order_id = s.id",
+			ReqField: "sales-order_id",
+			Clause:   fmt.Sprintf("d.id = %d AND s.deleted_at IS NULL", id),
+		},
+	}
+	mustEmpties := []*models.MustEmptyValidationRequest{
+		{
+			Table:           "delivery_orders d JOIN order_statuses s ON d.order_status_id = s.id",
+			SelectedCollumn: "s.name",
+			Clause:          fmt.Sprintf("d.id = %d AND d.order_status_id NOT IN (17)", id),
+			MessageFormat:   "Status Delivery Order <result>",
+		},
+		{
+			Table:           "sales_orders s JOIN delivery_orders d JOIN order_statuses o ON d.sales_order_id = s.id AND o.id = s.order_status_id",
+			SelectedCollumn: "o.name",
+			Clause:          fmt.Sprintf("d.id = %d AND s.order_status_id NOT IN (5,7,8)", id),
+			MessageFormat:   "Status Sales Order <result>",
+		},
+	}
+
+	for _, v := range insertRequest {
+		if v.Qty < 0 {
+			err := helper.NewError("qty must be higher or equal 0")
+			result := &baseModel.Response{
+				Error: helper.NewWriteLog(baseModel.ErrorLog{
+					Message:       err.Error(),
+					SystemMessage: err,
+					StatusCode:    422,
+				}),
+			}
+			ctx.JSON(result.StatusCode, result)
+			return err
+		}
 		mustActiveField417 = append(mustActiveField417, &models.MustActiveRequest{
 			Table:    "delivery_order_details",
 			ReqField: "delivery_order_detail_id",
@@ -236,7 +323,7 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderByIDValidator(id int, insert
 		})
 	}
 
-	err = d.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField417)
+	err := d.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField417)
 	if err != nil {
 		return err
 	}

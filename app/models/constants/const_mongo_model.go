@@ -8,6 +8,7 @@ const (
 	DELIVERY_ORDER_TABLE_LOGS            = "delivery_order_event_logs"
 	DELIVERY_ORDER_TABLE_JOURNEYS        = "delivery_order_journeys"
 	DELIVERY_ORDER_DETAIL_TABLE_JOURNEYS = "delivery_order_detail_journeys"
+	UPLOAD_SO_TABLE_HISTORIES            = "upload_so_histories"
 
 	COLUMN_SALES_ORDER_CODE    = "so_code"
 	COLUMN_DELIVERY_ORDER_CODE = "do_code"

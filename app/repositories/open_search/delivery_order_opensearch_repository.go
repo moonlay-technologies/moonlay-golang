@@ -352,7 +352,7 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 		if request.CategoryID != 0 {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
-					"category_id": request.CategoryID,
+					"delivery_order_details.product.category_id": request.CategoryID,
 				},
 			}
 

@@ -38,7 +38,7 @@ func InitHTTPSalesOrderController(database dbresolver.DB, redisdb redisdb.RedisI
 	salesOrderDetailOpenSearchRepository := openSearchRepo.InitSalesOrderDetailOpenSearchRepository(opensearchClient)
 	cartUseCase := usecases.InitCartUseCaseInterface(cartRepository, cartDetailRepository, orderStatusRepository, database, ctx)
 	salesOrderUseCase := usecases.InitSalesOrderUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, agentRepository, brandRepository, storeRepository, productRepository, uomRepository, deliveryOrderRepository, salesOrderLogRepository, salesOrderJourneysRepository, salesOrderDetailJourneysRepository, userRepository, salesmanRepository, categoryRepository, salesOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, kafkaClient, database, ctx)
-	requestValidationRepository := repositories.InitUniqueRequestValidationRepository(database)
+	requestValidationRepository := repositories.InitRequestValidationRepository(database)
 	requestValidationMiddleware := middlewares.InitRequestValidationMiddlewareInterface(requestValidationRepository, orderSourceRepository)
 	handler := InitSalesOrderController(cartUseCase, salesOrderUseCase, requestValidationMiddleware, database, ctx)
 	return handler
@@ -65,7 +65,7 @@ func InitHTTPDeliveryOrderController(database dbresolver.DB, redisdb redisdb.Red
 	deliveryOrderLogRepository := mongoRepo.InitDeliveryOrderLogRepository(mongodbClient)
 	salesOrderOpenSearchUseCase := usecases.InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, productRepository, uomRepository, salesOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, deliveryOrderOpenSearchRepository)
 	deliveryOrderUseCase := usecases.InitDeliveryOrderUseCaseInterface(deliveryOrderRepository, deliveryOrderDetailRepository, salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, warehouseRepository, brandRepository, uomRepository, agentRepository, storeRepository, productRepository, userRepository, salesmanRepository, deliveryOrderLogRepository, deliveryOrderOpenSearchRepository, salesOrderOpenSearchUseCase, kafkaClient, database, ctx)
-	requestValidationRepository := repositories.InitUniqueRequestValidationRepository(database)
+	requestValidationRepository := repositories.InitRequestValidationRepository(database)
 	requestValidationMiddleware := middlewares.InitRequestValidationMiddlewareInterface(requestValidationRepository, orderSourceRepository)
 	deliveryOrderValidator := usecases.InitDeliveryOrderValidator(requestValidationMiddleware, database, ctx)
 	handler := InitDeliveryOrderController(deliveryOrderUseCase, deliveryOrderValidator, requestValidationMiddleware, database, ctx)
@@ -192,7 +192,7 @@ func InitHTTPHostToHostController(database dbresolver.DB, redisdb redisdb.RedisI
 	cartUseCase := usecases.InitCartUseCaseInterface(cartRepository, cartDetailRepository, orderStatusRepository, database, ctx)
 	salesOrderUseCase := usecases.InitSalesOrderUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, agentRepository, brandRepository, storeRepository, productRepository, uomRepository, deliveryOrderRepository, salesOrderLogRepository, salesOrderJourneysRepository, salesOrderDetailJourneysRepository, userRepository, salesmanRepository, categoryRepository, salesOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, kafkaClient, database, ctx)
 	salesOrderOpenSearchUseCase := usecases.InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, productRepository, uomRepository, salesOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, deliveryOrderOpenSearchRepository)
-	requestValidationRepository := repositories.InitUniqueRequestValidationRepository(database)
+	requestValidationRepository := repositories.InitRequestValidationRepository(database)
 	requestValidationMiddleware := middlewares.InitRequestValidationMiddlewareInterface(requestValidationRepository, orderSourceRepository)
 	deliveryOrderUseCase := usecases.InitDeliveryOrderUseCaseInterface(deliveryOrderRepository, deliveryOrderDetailRepository, salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, warehouseRepository, brandRepository, uomRepository, agentRepository, storeRepository, productRepository, userRepository, salesmanRepository, deliveryOrderLogRepository, deliveryOrderOpenSearchRepository, salesOrderOpenSearchUseCase, kafkaClient, database, ctx)
 	handler := InitHostToHostController(cartUseCase, salesOrderUseCase, deliveryOrderUseCase, requestValidationMiddleware, database, ctx)
@@ -204,8 +204,8 @@ func InitHTTPUploadController(database dbresolver.DB, redisdb redisdb.RedisInter
 	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(database, redisdb)
 	orderStatusRepository := repositories.InitOrderStatusRepository(database, redisdb)
 	orderSourceRepository := repositories.InitOrderSourceRepository(database, redisdb)
-
-	uploadRepositories := repositories.InitUploadRepository()
+	requestValidationRepository := repositories.InitRequestValidationRepository(database)
+	uploadRepositories := repositories.InitUploadRepository(requestValidationRepository)
 	agentRepository := repositories.InitAgentRepository(database, redisdb)
 	brandRepository := repositories.InitBrandRepository(database, redisdb)
 	storeRepository := repositories.InitStoreRepository(database, redisdb)
@@ -222,7 +222,8 @@ func InitHTTPUploadController(database dbresolver.DB, redisdb redisdb.RedisInter
 	categoryRepository := repositories.InitCategoryRepository(database, redisdb)
 	salesOrderOpenSearchRepository := openSearchRepo.InitSalesOrderOpenSearchRepository(opensearchClient)
 	salesOrderDetailOpenSearchRepository := openSearchRepo.InitSalesOrderDetailOpenSearchRepository(opensearchClient)
+	requestValidationMiddleware := middlewares.InitRequestValidationMiddlewareInterface(requestValidationRepository, orderSourceRepository)
 	uploadUseCase := usecases.InitUploadUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, agentRepository, brandRepository, storeRepository, productRepository, uomRepository, deliveryOrderRepository, deliveryOrderDetailRepository, salesOrderLogRepository, salesOrderJourneysRepository, salesOrderDetailJourneysRepository, userRepository, salesmanRepository, categoryRepository, salesOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, uploadRepositories, warehouseRepository, kafkaClient, database, ctx)
-	handler := InitUploadController(uploadUseCase, ctx)
+	handler := InitUploadController(uploadUseCase, requestValidationMiddleware, ctx)
 	return handler
 }

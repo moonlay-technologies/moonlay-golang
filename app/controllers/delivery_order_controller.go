@@ -195,28 +195,7 @@ func (c *deliveryOrderController) UpdateByID(ctx *gin.Context) {
 		return
 	}
 
-	deliveryOrderDetailResults := []*models.DeliveryOrderDetailUpdateByIDRequest{}
-	for _, v := range deliveryOrder.DeliveryOrderDetails {
-		deliveryOrderDetailResult := models.DeliveryOrderDetailUpdateByIDRequest{
-			Qty:  v.Qty,
-			Note: v.Note.String,
-		}
-		deliveryOrderDetailResults = append(deliveryOrderDetailResults, &deliveryOrderDetailResult)
-	}
-
-	deliveryOrderResult := &models.DeliveryOrderUpdateByIDRequest{
-		WarehouseID:          deliveryOrder.WarehouseID,
-		OrderSourceID:        deliveryOrder.OrderSourceID,
-		OrderStatusID:        deliveryOrder.OrderStatusID,
-		DoRefCode:            deliveryOrder.DoRefCode.String,
-		DoRefDate:            deliveryOrder.DoRefDate.String,
-		DriverName:           deliveryOrder.DriverName.String,
-		PlatNumber:           deliveryOrder.PlatNumber.String,
-		Note:                 deliveryOrder.Note.String,
-		DeliveryOrderDetails: deliveryOrderDetailResults,
-	}
-
-	result.Data = deliveryOrderResult
+	result.Data = deliveryOrder
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
 	return
@@ -301,7 +280,7 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByID(ctx *gin.Context
 func (c *deliveryOrderController) UpdateDeliveryOrderDetailByDeliveryOrderID(ctx *gin.Context) {
 	var result baseModel.Response
 	var resultErrorLog *baseModel.ErrorLog
-	insertRequest := []*models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest{}
+	updateRequest := []*models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest{}
 
 	ctx.Set("full_path", ctx.FullPath())
 	ctx.Set("method", ctx.Request.Method)
@@ -317,7 +296,7 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByDeliveryOrderID(ctx
 		return
 	}
 
-	err = ctx.BindJSON(&insertRequest)
+	err = ctx.BindJSON(&updateRequest)
 
 	if err != nil {
 		var unmarshalTypeError *json.UnmarshalTypeError
@@ -330,7 +309,10 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByDeliveryOrderID(ctx
 			return
 		}
 	}
-
+	err = c.deliveryOrderValidator.UpdateDeliveryOrderDetailByDoIDValidator(intID, updateRequest, ctx)
+	if err != nil {
+		return
+	}
 	dbTransaction, err := c.db.BeginTx(ctx, nil)
 
 	if err != nil {
@@ -342,7 +324,7 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByDeliveryOrderID(ctx
 		return
 	}
 
-	deliveryOrderDetail, errorLog := c.deliveryOrderUseCase.UpdateDoDetailByDeliveryOrderID(intID, insertRequest, dbTransaction, ctx)
+	deliveryOrderDetail, errorLog := c.deliveryOrderUseCase.UpdateDoDetailByDeliveryOrderID(intID, updateRequest, dbTransaction, ctx)
 	if errorLog != nil {
 		err = dbTransaction.Rollback()
 
