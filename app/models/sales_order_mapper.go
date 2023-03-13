@@ -29,6 +29,7 @@ func (salesOrder *SalesOrder) SalesOrderRequestMap(request *SalesOrderStoreReque
 	salesOrder.StartDateSyncToEs = &now
 	salesOrder.StartCreatedDate = &now
 	salesOrder.CreatedBy = request.UserID
+	salesOrder.LatestUpdatedBy = request.UserID
 	return
 }
 
