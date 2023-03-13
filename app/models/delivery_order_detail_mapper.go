@@ -1,10 +1,13 @@
 package models
 
-import "strconv"
+import (
+	"database/sql"
+	"strconv"
+)
 
 func (deliveryOrderDetail *DeliveryOrderDetailOpenSearchDetailResponse) DeliveryOrderDetailOpenSearchResponseMap(request *DeliveryOrderDetail) {
 	deliveryOrderDetail.SoDetailID = request.SoDetailID
-	deliveryOrderDetail.Qty = request.Qty
+	deliveryOrderDetail.Qty = NullInt64{sql.NullInt64{Int64: int64(request.Qty), Valid: true}}
 	return
 }
 
