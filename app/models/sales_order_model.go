@@ -116,8 +116,9 @@ type SalesOrderStoreRequest struct {
 }
 
 type SalesOrderResponse struct {
-	ID int `json:"id,omitempty" bson:"id,omitempty"`
-	SalesOrderStoreRequest
+	ID                   int                              `json:"id,omitempty" bson:"id,omitempty"`
+	CartID               int                              `json:"cart_id,omitempty" bson:"cart_id,omitempty"`
+	AgentID              int                              `json:"agent_id,omitempty" bson:"agent_id,omitempty" binding:"required"`
 	AgentName            string                           `json:"agent_name,omitempty" bson:"agent_name,omitempty"`
 	AgentEmail           string                           `json:"agent_email,omitempty" bson:"agent_email,omitempty"`
 	AgentProvinceName    string                           `json:"agent_province_name,omitempty" bson:"agent_province_name,omitempty"`
@@ -127,6 +128,7 @@ type SalesOrderResponse struct {
 	AgentAddress         string                           `json:"agent_address,omitempty" bson:"agent_address,omitempty"`
 	AgentPhone           string                           `json:"agent_phone,omitempty" bson:"agent_phone,omitempty"`
 	AgentMainMobilePhone string                           `json:"agent_main_mobile_phone,omitempty" bson:"agent_main_mobile_phone,omitempty"`
+	StoreID              int                              `json:"store_id,omitempty" bson:"store_id,omitempty" binding:"required"`
 	StoreCode            string                           `json:"store_code,omitempty" bson:"store_code,omitempty"`
 	StoreName            string                           `json:"store_name,omitempty" bson:"store_name,omitempty"`
 	StoreStatus          string                           `json:"store_status,omitempty" bson:"store_status,omitempty"`
@@ -144,15 +146,31 @@ type SalesOrderResponse struct {
 	StoreMainMobilePhone string                           `json:"store_main_mobile_phone,omitempty" bson:"store_main_mobile_phone,omitempty"`
 	BrandID              int                              `json:"brand_id,omitempty" bson:"brand_id,omitempty" binding:"required"`
 	BrandName            string                           `json:"brand_name,omitempty" bson:"brand_name,omitempty"`
+	UserID               int                              `json:"user_id,omitempty" bson:"user_id,omitempty" binding:"required"`
 	UserFirstName        string                           `json:"user_first_name,omitempty" bson:"user_first_name,omitempty"`
 	UserLastName         string                           `json:"user_last_name,omitempty" bson:"user_last_name,omitempty"`
 	UserEmail            string                           `json:"user_email,omitempty" bson:"user_email,omitempty"`
-	SoCode               string                           `json:"so_code,omitempty" bson:"so_code,omitempty"`
-	OrderSourceName      string                           `json:"order_source_name,omitempty" bson:"order_source_name,omitempty"`
-	OrderStatusName      string                           `json:"order_status_name,omitempty" bson:"order_status_name,omitempty"`
-	StartCreatedDate     *time.Time                       `json:"start_created_date,omitempty" bson:"start_created_date,omitempty"`
+	SalesmanID           int                              `json:"salesman_id,omitempty" bson:"salesman_id,omitempty"`
 	SalesmanName         string                           `json:"salesman_name,omitempty" bson:"salesman_name,omitempty"`
 	SalesmanEmail        string                           `json:"salesman_email,omitempty" bson:"salesman_email,omitempty"`
+	VisitationID         int                              `json:"visitation_id,omitempty" bson:"visitation_id,omitempty"`
+	OrderSourceID        int                              `json:"order_source_id,omitempty" bson:"order_source_id,omitempty" binding:"required"`
+	OrderSourceName      string                           `json:"order_source_name,omitempty" bson:"order_source_name,omitempty"`
+	OrderStatusID        int                              `json:"order_status_id,omitempty" bson:"order_status_id,omitempty"`
+	OrderStatusName      string                           `json:"order_status_name,omitempty" bson:"order_status_name,omitempty"`
+	SoCode               string                           `json:"so_code,omitempty" bson:"so_code,omitempty"`
+	SoDate               string                           `json:"so_date,omitempty" bson:"so_date,omitempty" binding:"required"`
+	SoRefCode            string                           `json:"so_ref_code,omitempty" bson:"so_ref_code,omitempty"`
+	SoRefDate            string                           `json:"so_ref_date,omitempty" bson:"so_ref_date,omitempty" binding:"required"`
+	GLong                float64                          `json:"g_long,omitempty" bson:"g_long,omitempty"`
+	GLat                 float64                          `json:"g_lat,omitempty" bson:"g_lat,omitempty"`
+	Note                 string                           `json:"note,omitempty" bson:"note,omitempty"`
+	InternalComment      string                           `json:"internal_comment,omitempty" bson:"internal_comment,omitempty"`
+	TotalAmount          float64                          `json:"total_amount,omitempty" bson:"total_amount,omitempty" binding:"required"`
+	TotalTonase          float64                          `json:"total_tonase,omitempty" bson:"total_tonase,omitempty" binding:"required"`
+	DeviceId             string                           `json:"device_id,omitempty" bson:"device_id,omitempty" binding:"required"`
+	ReferralCode         string                           `json:"referral_code,omitempty" bson:"referral_code,omitempty"`
+	StartCreatedDate     *time.Time                       `json:"start_created_date,omitempty" bson:"start_created_date,omitempty"`
 	SalesOrderDetails    []*SalesOrderDetailStoreResponse `json:"sales_order_details" bson:"sales_order_details,omitempty"`
 	CreatedAt            *time.Time                       `json:"created_at,omitempty" bson:"created_at,omitempty"`
 }
