@@ -345,7 +345,7 @@ func (r *upload) UploadDO(bucket, object, region string, resultChan chan *models
 		// }
 
 		var uploadDOField models.UploadDOField
-		uploadDOField.UploadDOFieldMap(v)
+		uploadDOField.UploadDOFieldMap(v, 3)
 		// uploadDOField.TanggalSJ, _ = helper.ParseDDYYMMtoYYYYMMDD(uploadDOField.TanggalSJ)
 
 		uploadDOFields = append(uploadDOFields, &uploadDOField)

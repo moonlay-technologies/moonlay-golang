@@ -22,6 +22,7 @@ type UploadDOField struct {
 	QTYShip         int
 	Unit            string
 	KodeGudang      int
+	IDUser          int
 }
 
 type UploadDOFieldsChan struct {
