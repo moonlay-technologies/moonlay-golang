@@ -13,7 +13,7 @@ import (
 type DeliveryOrderDetailOpenSearchRepositoryInterface interface {
 	Create(request *models.DeliveryOrderDetail, result chan *models.DeliveryOrderDetailChan)
 	Get(request *models.DeliveryOrderDetailOpenSearchRequest, result chan *models.DeliveryOrderDetailsChan)
-	GetByDoID(request *models.DeliveryOrderRequest, resultChan chan *models.DeliveryOrderDetailsChan)
+	GetByID(request *models.DeliveryOrderRequest, resultChan chan *models.DeliveryOrderDetailChan)
 	generateDeliveryOrderQueryOpenSearchResult(openSearchQueryJson []byte) (*models.DeliveryOrderDetails, *model.ErrorLog)
 	generateDeliveryOrderQueryOpenSearchTermRequest(term_field string, term_value interface{}, request *models.DeliveryOrderDetailOpenSearchRequest) []byte
 }
@@ -64,8 +64,8 @@ func (r *deliveryOrderDetailOpenSearch) Get(request *models.DeliveryOrderDetailO
 	return
 }
 
-func (r *deliveryOrderDetailOpenSearch) GetByDoID(request *models.DeliveryOrderRequest, resultChan chan *models.DeliveryOrderDetailsChan) {
-	response := &models.DeliveryOrderDetailsChan{}
+func (r *deliveryOrderDetailOpenSearch) GetByID(request *models.DeliveryOrderRequest, resultChan chan *models.DeliveryOrderDetailChan) {
+	response := &models.DeliveryOrderDetailChan{}
 	requestQuery := r.generateDeliveryOrderQueryOpenSearchTermRequest("id", request.ID, nil)
 	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery)
 
@@ -76,7 +76,7 @@ func (r *deliveryOrderDetailOpenSearch) GetByDoID(request *models.DeliveryOrderR
 		return
 	}
 
-	response.DeliveryOrderDetails = result.DeliveryOrderDetails
+	response.DeliveryOrderDetail = result.DeliveryOrderDetails[0]
 	resultChan <- response
 	return
 }

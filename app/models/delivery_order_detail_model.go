@@ -258,3 +258,26 @@ type DeliveryOrderDetailOpenSearchRequest struct {
 	StartCreatedAt    string            `json:"start_created_at,omitempty"`
 	EndCreatedAt      string            `json:"end_created_at,omitempty"`
 }
+
+type DeliveryOrderDetailLogData struct {
+	ID            int        `json:"id,omitempty" bson:"id"`
+	AgentID       int        `json:"agent_id,omitempty" bson:"agent_id"`
+	AgentName     string     `json:"agent_name,omitempty" bson:"agent_name"`
+	DoRefCode     NullString `json:"do_ref_code,omitempty" bson:"do_ref_code"`
+	DoDate        string     `json:"do_date,omitempty" bson:"do_date"`
+	DoNumber      string     `json:"do_number,omitempty" bson:"do_number"`
+	DoDetailCode  string     `json:"do_detail_code,omitempty" bson:"do_detail_code"`
+	SoDetailID    int        `json:"so_detail_id,omitempty" bson:"so_detail_id"`
+	Note          NullString `json:"note,omitempty" bson:"note"`
+	InternalNote  NullString `json:"internal_note,omitempty" bson:"internal_note"`
+	DriverName    NullString `json:"driver_name,omitempty" bson:"driver_name"`
+	PlatNumber    NullString `json:"plat_number,omitempty" bson:"plat_number"`
+	BrandID       int        `json:"brand_id,omitempty" bson:"brand_id"`
+	BrandName     string     `json:"brand_name,omitempty"  bson:"brand_name"`
+	ProductID     int        `json:"product_id,omitempty" bson:"product_id"`
+	ProductName   string     `json:"product_name,omitempty" bson:"product_name,omitempty"`
+	DeliveryQty   int        `json:"delivery_qty,omitempty" bson:"delivery_qty"`
+	UomCode       string     `json:"uom_code,omitempty" bson:"uom_code,omitempty"`
+	WarehouseID   int        `json:"warehouse_id,omitempty" bson:"warehouse_id"`
+	WarehouseName string     `json:"warehouse_name,omitempty" bson:"warehouse_name"`
+}
