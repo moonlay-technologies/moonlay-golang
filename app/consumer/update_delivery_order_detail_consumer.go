@@ -16,11 +16,11 @@ import (
 	"github.com/bxcodec/dbresolver"
 )
 
-type UpdateDeliveryOrderConsumerHandlerInterface interface {
+type UpdateDeliveryOrderDetailConsumerHandlerInterface interface {
 	ProcessMessage()
 }
 
-type UpdateDeliveryOrderConsumerHandler struct {
+type UpdateDeliveryOrderDetailConsumerHandler struct {
 	kafkaClient                    kafkadbo.KafkaClientInterface
 	DeliveryOrderOpenSearchUseCase usecases.DeliveryOrderOpenSearchUseCaseInterface
 	ctx                            context.Context
@@ -29,8 +29,8 @@ type UpdateDeliveryOrderConsumerHandler struct {
 	deliveryOrderLogRepository     mongoRepositories.DeliveryOrderLogRepositoryInterface
 }
 
-func InitUpdateDeliveryOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, DeliveryOrderOpenSearchUseCase usecases.DeliveryOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UpdateDeliveryOrderConsumerHandlerInterface {
-	return &UpdateDeliveryOrderConsumerHandler{
+func InitUpdateDeliveryOrderDetailConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, DeliveryOrderOpenSearchUseCase usecases.DeliveryOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UpdateDeliveryOrderDetailConsumerHandlerInterface {
+	return &UpdateDeliveryOrderDetailConsumerHandler{
 		kafkaClient:                    kafkaClient,
 		DeliveryOrderOpenSearchUseCase: DeliveryOrderOpenSearchUseCase,
 		ctx:                            ctx,
@@ -40,8 +40,8 @@ func InitUpdateDeliveryOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaC
 	}
 }
 
-func (c *UpdateDeliveryOrderConsumerHandler) ProcessMessage() {
-	fmt.Println("process ", constants.UPDATE_DELIVERY_ORDER_TOPIC)
+func (c *UpdateDeliveryOrderDetailConsumerHandler) ProcessMessage() {
+	fmt.Println("process ", constants.UPDATE_DELIVERY_ORDER_DETAIL_TOPIC)
 	topic := c.args[1].(string)
 	groupID := c.args[2].(string)
 	reader := c.kafkaClient.SetConsumerGroupReader(topic, groupID)
@@ -70,7 +70,7 @@ func (c *UpdateDeliveryOrderConsumerHandler) ProcessMessage() {
 		}
 
 		if err != nil {
-			errorLogData := helper.WriteLogConsumer(constants.UPDATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
+			errorLogData := helper.WriteLogConsumer(constants.UPDATE_DELIVERY_ORDER_DETAIL_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
 			go c.deliveryOrderLogRepository.Insert(deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
 			fmt.Println(errorLogData)
 			continue
@@ -89,14 +89,14 @@ func (c *UpdateDeliveryOrderConsumerHandler) ProcessMessage() {
 
 		if errorLog.Err != nil {
 			dbTransaction.Rollback()
-			errorLogData := helper.WriteLogConsumer(constants.UPDATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, nil)
+			errorLogData := helper.WriteLogConsumer(constants.UPDATE_DELIVERY_ORDER_DETAIL_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, nil)
 			go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
 			fmt.Println(errorLogData)
 			continue
 		}
 		err = dbTransaction.Commit()
 		if err != nil {
-			errorLogData := helper.WriteLogConsumer(constants.UPDATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
+			errorLogData := helper.WriteLogConsumer(constants.UPDATE_DELIVERY_ORDER_DETAIL_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
 			go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
 			fmt.Println(errorLogData)
 			continue

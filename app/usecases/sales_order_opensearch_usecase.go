@@ -193,6 +193,17 @@ func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(salesOrder
 		salesOrder.SalesOrderDetails[k].OrderStatus = getOrderStatusDetailResult.OrderStatus
 		v.IsDoneSyncToEs = "1"
 		v.EndDateSyncToEs = &now
+
+		salesOrderDetail := &models.SalesOrderDetailOpenSearch{}
+		salesOrderDetail.SalesOrderDetailOpenSearchMap(salesOrder, v)
+
+		createSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailOpenSearchChan)
+		go u.salesOrderDetailOpenSearchRepository.Create(salesOrderDetail, createSalesOrderDetailResultChan)
+		createSalesOrderDetailResult := <-createSalesOrderDetailResultChan
+
+		if createSalesOrderDetailResult.Error != nil {
+			return createSalesOrderDetailResult.ErrorLog
+		}
 	}
 
 	salesOrder.UpdatedAt = &now

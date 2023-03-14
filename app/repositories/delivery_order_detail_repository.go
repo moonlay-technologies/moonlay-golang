@@ -18,7 +18,7 @@ import (
 )
 
 type DeliveryOrderDetailRepositoryInterface interface {
-	GetByID(ID int, countOnly bool, ctx context.Context, result chan *models.DeliveryOrderDetailsChan)
+	GetByID(ID int, countOnly bool, ctx context.Context, result chan *models.DeliveryOrderDetailChan)
 	GetByDeliveryOrderID(deliveryOrderID int, countOnly bool, ctx context.Context, result chan *models.DeliveryOrderDetailsChan)
 	GetBySalesOrderID(salesOrderID int, countOnly bool, ctx context.Context, result chan *models.SalesOrderDetailsChan)
 	Insert(request *models.DeliveryOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.DeliveryOrderDetailChan)
@@ -38,9 +38,9 @@ func InitDeliveryOrderDetailRepository(db dbresolver.DB, redisdb redisdb.RedisIn
 	}
 }
 
-func (r *deliveryOrderDetail) GetByID(ID int, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderDetailsChan) {
-	response := &models.DeliveryOrderDetailsChan{}
-	var deliveryOrderDetails []*models.DeliveryOrderDetail
+func (r *deliveryOrderDetail) GetByID(ID int, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderDetailChan) {
+	response := &models.DeliveryOrderDetailChan{}
+	var deliveryOrderDetail models.DeliveryOrderDetail
 	var total int64
 
 	deliveryOrderDetailRedisKey := fmt.Sprintf("%s:%d", constants.DELIVERY_ORDER_DETAIL_BY_ID, ID)
@@ -86,7 +86,6 @@ func (r *deliveryOrderDetail) GetByID(ID int, countOnly bool, ctx context.Contex
 			}
 
 			for query.Next() {
-				var deliveryOrderDetail models.DeliveryOrderDetail
 				err = query.Scan(&deliveryOrderDetail.ID, &deliveryOrderDetail.DeliveryOrderID, &deliveryOrderDetail.SoDetailID, &deliveryOrderDetail.BrandID, &deliveryOrderDetail.ProductID, &deliveryOrderDetail.UomID, &deliveryOrderDetail.OrderStatusID, &deliveryOrderDetail.DoDetailCode, &deliveryOrderDetail.Qty, &deliveryOrderDetail.Note, &deliveryOrderDetail.IsDoneSyncToEs, &deliveryOrderDetail.StartDateSyncToEs, &deliveryOrderDetail.EndDateSyncToEs, &deliveryOrderDetail.CreatedAt, &deliveryOrderDetail.UpdatedAt)
 
 				if err != nil {
@@ -96,11 +95,9 @@ func (r *deliveryOrderDetail) GetByID(ID int, countOnly bool, ctx context.Contex
 					resultChan <- response
 					return
 				}
-
-				deliveryOrderDetails = append(deliveryOrderDetails, &deliveryOrderDetail)
 			}
 
-			deliveryOrderDetailsJson, _ := json.Marshal(deliveryOrderDetails)
+			deliveryOrderDetailsJson, _ := json.Marshal(deliveryOrderDetail)
 			setDeliveryOrderDetailsOnRedis := r.redisdb.Client().Set(ctx, deliveryOrderDetailsRedis, deliveryOrderDetailsJson, 1*time.Hour)
 
 			if setDeliveryOrderDetailsOnRedis.Err() != nil {
@@ -111,8 +108,7 @@ func (r *deliveryOrderDetail) GetByID(ID int, countOnly bool, ctx context.Contex
 				return
 			}
 
-			response.Total = total
-			response.DeliveryOrderDetails = deliveryOrderDetails
+			response.DeliveryOrderDetail = &deliveryOrderDetail
 			resultChan <- response
 			return
 		}
@@ -124,9 +120,8 @@ func (r *deliveryOrderDetail) GetByID(ID int, countOnly bool, ctx context.Contex
 		resultChan <- response
 		return
 	} else {
-		_ = json.Unmarshal([]byte(deliveryOrderDetailsRedis), &deliveryOrderDetails)
-		response.DeliveryOrderDetails = deliveryOrderDetails
-		response.Total = total
+		_ = json.Unmarshal([]byte(deliveryOrderDetailsRedis), &deliveryOrderDetail)
+		response.DeliveryOrderDetail = &deliveryOrderDetail
 		resultChan <- response
 		return
 	}
@@ -511,7 +506,13 @@ func (r *deliveryOrderDetail) DeleteByID(request *models.DeliveryOrderDetail, sq
 	response := &models.DeliveryOrderDetailChan{}
 	rawSqlQueries := []string{}
 
-	query := fmt.Sprintf("%s='%v'", "deleted_at", request.DeletedAt.Format("2006-01-02 15:04:05"))
+	query := fmt.Sprintf("%s=%v", "qty", "0")
+	rawSqlQueries = append(rawSqlQueries, query)
+
+	query = fmt.Sprintf("%s=%v", "order_status_id", "17")
+	rawSqlQueries = append(rawSqlQueries, query)
+
+	query = fmt.Sprintf("%s='%v'", "deleted_at", request.DeletedAt.Format("2006-01-02 15:04:05"))
 	rawSqlQueries = append(rawSqlQueries, query)
 
 	query = fmt.Sprintf("%s='%v'", "updated_at", request.UpdatedAt.Format("2006-01-02 15:04:05"))
