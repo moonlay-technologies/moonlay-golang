@@ -207,12 +207,12 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByID(ctx *gin.Context
 
 	var result baseModel.Response
 	var resultErrorLog *baseModel.ErrorLog
-	insertRequest := &models.DeliveryOrderDetailUpdateByIDRequest{}
+	updateRequest := &models.DeliveryOrderDetailUpdateByIDRequest{}
 
 	ctx.Set("full_path", ctx.FullPath())
 	ctx.Set("method", ctx.Request.Method)
 
-	err := ctx.ShouldBindJSON(insertRequest)
+	err := ctx.ShouldBindJSON(updateRequest)
 	if err != nil {
 		var unmarshalTypeError *json.UnmarshalTypeError
 
@@ -223,6 +223,11 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByID(ctx *gin.Context
 			c.requestValidationMiddleware.MandatoryValidation(ctx, err)
 			return
 		}
+	}
+
+	err = c.deliveryOrderValidator.UpdateDeliveryOrderDetailByIDValidator(intID, updateRequest, ctx)
+	if err != nil {
+		return
 	}
 
 	dbTransaction, err := c.db.BeginTx(ctx, nil)
@@ -236,7 +241,7 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByID(ctx *gin.Context
 		return
 	}
 
-	deliveryOrderDetail, errorLog := c.deliveryOrderUseCase.UpdateDODetailByID(intID, insertRequest, dbTransaction, ctx)
+	deliveryOrderDetail, errorLog := c.deliveryOrderUseCase.UpdateDODetailByID(intID, updateRequest, dbTransaction, ctx)
 	if errorLog != nil {
 		err = dbTransaction.Rollback()
 
@@ -266,12 +271,7 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByID(ctx *gin.Context
 		return
 	}
 
-	deliveryOrderDetailResult := models.DeliveryOrderDetailUpdateByIDRequest{
-		Qty:  deliveryOrderDetail.Qty,
-		Note: deliveryOrderDetail.Note.String,
-	}
-
-	result.Data = deliveryOrderDetailResult
+	result.Data = deliveryOrderDetail
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
 	return

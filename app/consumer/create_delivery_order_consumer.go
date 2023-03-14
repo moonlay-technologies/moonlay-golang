@@ -22,8 +22,6 @@ type CreateDeliveryOrderConsumerHandlerInterface interface {
 
 type createDeliveryOrderConsumerHandler struct {
 	kafkaClient                    kafkadbo.KafkaClientInterface
-	salesOrderUseCase              usecases.SalesOrderUseCaseInterface
-	salesOrderOpenSearchUseCase    usecases.SalesOrderOpenSearchUseCaseInterface
 	DeliveryOrderOpenSearchUseCase usecases.DeliveryOrderOpenSearchUseCaseInterface
 	ctx                            context.Context
 	args                           []interface{}
@@ -31,11 +29,9 @@ type createDeliveryOrderConsumerHandler struct {
 	deliveryOrderLogRepository     mongoRepositories.DeliveryOrderLogRepositoryInterface
 }
 
-func InitCreateDeliveryOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, salesOrderUseCase usecases.SalesOrderUseCaseInterface, salesOrderOpenSearchUseCase usecases.SalesOrderOpenSearchUseCaseInterface, DeliveryOrderOpenSearchUseCase usecases.DeliveryOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) CreateDeliveryOrderConsumerHandlerInterface {
+func InitCreateDeliveryOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, DeliveryOrderOpenSearchUseCase usecases.DeliveryOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) CreateDeliveryOrderConsumerHandlerInterface {
 	return &createDeliveryOrderConsumerHandler{
 		kafkaClient:                    kafkaClient,
-		salesOrderUseCase:              salesOrderUseCase,
-		salesOrderOpenSearchUseCase:    salesOrderOpenSearchUseCase,
 		DeliveryOrderOpenSearchUseCase: DeliveryOrderOpenSearchUseCase,
 		ctx:                            ctx,
 		args:                           args,
@@ -90,7 +86,7 @@ func (c *createDeliveryOrderConsumerHandler) ProcessMessage() {
 		deliveryOrderLog.Status = constants.LOG_STATUS_MONGO_ERROR
 		deliveryOrderLog.UpdatedAt = &now
 
-		errorLog := c.DeliveryOrderOpenSearchUseCase.SyncToOpenSearchFromCreateEvent(&deliveryOrder, c.salesOrderUseCase, dbTransaction, c.ctx)
+		errorLog := c.DeliveryOrderOpenSearchUseCase.SyncToOpenSearchFromCreateEvent(&deliveryOrder, dbTransaction, c.ctx)
 
 		if errorLog.Err != nil {
 			dbTransaction.Rollback()

@@ -167,8 +167,8 @@ type DeliveryOrderDetails struct {
 }
 
 type DeliveryOrderDetailOpenSearchDetailResponse struct {
-	SoDetailID int `json:"so_detail_id,omitempty" bson:"so_detail_id,omitempty"`
-	Qty        int `json:"qty,omitempty" bson:"qty,omitempty"`
+	SoDetailID int       `json:"so_detail_id,omitempty" bson:"so_detail_id,omitempty"`
+	Qty        NullInt64 `json:"qty,omitempty" bson:"qty,omitempty"`
 }
 
 type DeliveryOrderDetailOpenSearchResponse struct {
