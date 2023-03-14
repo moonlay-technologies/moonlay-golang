@@ -2,6 +2,10 @@ package models
 
 import "order-service/global/utils/model"
 
+type UploadSOSJRequest struct {
+	File string `json:"file,omitempty" binding:"required"`
+}
+
 type UploadSOSJField struct {
 	IDDistributor   int
 	Status          string

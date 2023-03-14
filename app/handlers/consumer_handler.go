@@ -68,6 +68,11 @@ func MainConsumerHandler(kafkaClient kafkadbo.KafkaClientInterface, mongodbClien
 		uploadSOItemConsumer := consumer.InitUploadSOItemConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
 		go uploadSOItemConsumer.ProcessMessage()
 		break
+	case constants.UPLOAD_SOSJ_FILE_TOPIC:
+		wg.Add(1)
+		uploadSOSJFileConsumer := consumer.InitUploadSOSJFileConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
+		go uploadSOSJFileConsumer.ProcessMessage()
+		break
 	default:
 		fmt.Println("Choose Command Type You Want")
 		os.Exit(0)

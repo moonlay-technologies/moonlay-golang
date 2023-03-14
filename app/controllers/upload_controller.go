@@ -35,7 +35,42 @@ func InitUploadController(uploadUseCase usecases.UploadUseCaseInterface, request
 
 func (c *uploadController) UploadSOSJ(ctx *gin.Context) {
 
-	c.uploadUseCase.UploadSOSJ(ctx)
+	var result baseModel.Response
+	uploadRequest := &models.UploadSOSJRequest{}
+
+	ctx.Set("full_path", ctx.FullPath())
+	ctx.Set("method", ctx.Request.Method)
+
+	err := ctx.BindJSON(uploadRequest)
+
+	if err != nil {
+		var unmarshalTypeError *json.UnmarshalTypeError
+
+		if errors.As(err, &unmarshalTypeError) {
+			c.requestValidationMiddleware.DataTypeValidation(ctx, err, unmarshalTypeError)
+			return
+		} else {
+			c.requestValidationMiddleware.MandatoryValidation(ctx, err)
+			return
+		}
+	}
+
+	errorLog := c.uploadUseCase.UploadSOSJ(uploadRequest, ctx)
+
+	if errorLog != nil {
+		result.StatusCode = errorLog.StatusCode
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	result.Data = map[string]string{
+		"request_id": ctx.Value("RequestId").(string),
+	}
+
+	result.StatusCode = http.StatusOK
+	ctx.JSON(http.StatusOK, result)
+	return
 
 }
 

@@ -9,6 +9,7 @@ const (
 	DELIVERY_ORDER_TABLE_JOURNEYS        = "delivery_order_journeys"
 	DELIVERY_ORDER_DETAIL_TABLE_JOURNEYS = "delivery_order_detail_journeys"
 	UPLOAD_SO_TABLE_HISTORIES            = "upload_so_histories"
+	UPLOAD_SOSJ_TABLE_HISTORIES          = "upload_sosj_histories"
 
 	COLUMN_SALES_ORDER_CODE    = "so_code"
 	COLUMN_DELIVERY_ORDER_CODE = "do_code"
@@ -22,4 +23,7 @@ const (
 	LOG_ACTION_MONGO_INSERT = "insert"
 	LOG_ACTION_MONGO_UPDATE = "update"
 	LOG_ACTION_MONGO_DELETE = "delete"
+
+	UPLOAD_STATUS_HISTORY_UPLOADED   = "uploaded"
+	UPLOAD_STATUS_HISTORY_ERR_UPLOAD = "err_upload"
 )

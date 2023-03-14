@@ -17,6 +17,8 @@ const (
 	UPDATE_DELIVERY_ORDER_DETAIL_TOPIC = "update-delivery-order-detail"
 	DELETE_DELIVERY_ORDER_DETAIL_TOPIC = "delete-delivery-order-detail"
 
-	UPLOAD_SO_FILE_TOPIC = "upload-so-file"
-	UPLOAD_SO_ITEM_TOPIC = "upload-so-item"
+	UPLOAD_SO_FILE_TOPIC   = "upload-so-file"
+	UPLOAD_SO_ITEM_TOPIC   = "upload-so-item"
+	UPLOAD_SOSJ_FILE_TOPIC = "upload-sosj-file"
+	UPLOAD_SOSJ_ITEM_TOPIC = "upload-sosj-item"
 )
