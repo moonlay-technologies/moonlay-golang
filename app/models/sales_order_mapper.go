@@ -453,7 +453,9 @@ func (salesOrder *SalesOrderOpenSearchResponse) SalesOrderOpenSearchResponseMap(
 	salesOrder.AgentName = request.AgentName
 	salesOrder.AgentEmail = request.AgentEmail
 	salesOrder.AgentName = request.AgentName
+	salesOrder.AgentProvinceName = request.AgentProvinceName
 	salesOrder.AgentCityName = request.AgentCityName
+	salesOrder.AgentDistrictName = request.AgentDistrictName
 	salesOrder.AgentVillageName = request.AgentVillageName
 	salesOrder.AgentAddress = request.AgentAddress
 	salesOrder.AgentPhone = request.AgentPhone
@@ -463,6 +465,7 @@ func (salesOrder *SalesOrderOpenSearchResponse) SalesOrderOpenSearchResponseMap(
 	salesOrder.StoreCode = request.StoreCode
 	salesOrder.StoreEmail = request.StoreEmail
 	salesOrder.StoreName = request.StoreName
+	salesOrder.StoreProvinceName = request.StoreProvinceName
 	salesOrder.StoreCityName = request.StoreCityName
 	salesOrder.StoreDistrictName = request.StoreDistrictName
 	salesOrder.StoreVillageName = request.StoreVillageName
