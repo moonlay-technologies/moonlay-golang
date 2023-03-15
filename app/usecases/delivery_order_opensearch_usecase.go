@@ -19,7 +19,8 @@ import (
 type DeliveryOrderOpenSearchUseCaseInterface interface {
 	SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromUpdateEvent(deliveryOrder *models.DeliveryOrder, ctx context.Context) *model.ErrorLog
-	SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, ctx context.Context) *model.ErrorLog
+	SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, deliveryOrderDetailId *int, ctx context.Context) *model.ErrorLog
+	SyncToOpenSearchFromDeleteDetailEvent(deliveryOrderId *int, ctx context.Context) *model.ErrorLog
 }
 
 type deliveryOrderOpenSearchUseCase struct {
@@ -193,7 +194,7 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(request
 	return &model.ErrorLog{}
 }
 
-func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, ctx context.Context) *model.ErrorLog {
+func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, deliveryOrderDetailId *int, ctx context.Context) *model.ErrorLog {
 	now := time.Now()
 	getDeliveryOrdersResultChan := make(chan *models.DeliveryOrderChan)
 	go u.deliveryOrderOpenSearchRepository.GetByID(&models.DeliveryOrderRequest{ID: *deliveryOrderId}, getDeliveryOrdersResultChan)
@@ -221,8 +222,10 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromDeleteEvent(deliver
 
 	salesOrderWithDetail := getSalesOrderResult.SalesOrder
 	for k, v := range salesOrderWithDetail.SalesOrderDetails {
-		v.SentQty -= deliveryOrder.DeliveryOrderDetails[k].Qty
-		v.ResidualQty += deliveryOrder.DeliveryOrderDetails[k].Qty
+		if deliveryOrderDetailId == nil || deliveryOrderDetailId == &deliveryOrder.DeliveryOrderDetails[k].ID {
+			v.SentQty -= deliveryOrder.DeliveryOrderDetails[k].Qty
+			v.ResidualQty += deliveryOrder.DeliveryOrderDetails[k].Qty
+		}
 	}
 
 	errorLog := u.SalesOrderOpenSearchUseCase.SyncToOpenSearchFromUpdateEvent(salesOrderWithDetail, ctx)
@@ -233,26 +236,28 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromDeleteEvent(deliver
 	}
 
 	for _, v := range deliveryOrder.DeliveryOrderDetails {
-		v.DeletedAt = &now
-		v.Qty = 0
-		v.IsDoneSyncToEs = "1"
-		v.EndDateSyncToEs = &now
+		if deliveryOrderDetailId == nil || *deliveryOrderDetailId == v.ID {
+			v.DeletedAt = &now
+			v.Qty = 0
+			v.IsDoneSyncToEs = "1"
+			v.EndDateSyncToEs = &now
 
-		v.OrderStatusID = 17
+			v.OrderStatusID = 17
 
-		getOrderStatusDetailChan := make(chan *models.OrderStatusChan)
-		go u.orderStatusRepository.GetByID(v.OrderStatusID, false, ctx, getOrderStatusDetailChan)
-		getOrderStatusDetailResult := <-getOrderStatusDetailChan
+			getOrderStatusDetailChan := make(chan *models.OrderStatusChan)
+			go u.orderStatusRepository.GetByID(v.OrderStatusID, false, ctx, getOrderStatusDetailChan)
+			getOrderStatusDetailResult := <-getOrderStatusDetailChan
 
-		v.OrderStatus = getOrderStatusDetailResult.OrderStatus
-		v.OrderStatusName = getOrderStatusDetailResult.OrderStatus.Name
+			v.OrderStatus = getOrderStatusDetailResult.OrderStatus
+			v.OrderStatusName = getOrderStatusDetailResult.OrderStatus.Name
 
-		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
-		go u.deliveryOrderDetailOpenSearchRepository.Create(v, createDeliveryOrderDetailResultChan)
-		createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
+			createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
+			go u.deliveryOrderDetailOpenSearchRepository.Create(v, createDeliveryOrderDetailResultChan)
+			createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
 
-		if createDeliveryOrderDetailResult.Error != nil {
-			return createDeliveryOrderDetailResult.ErrorLog
+			if createDeliveryOrderDetailResult.Error != nil {
+				return createDeliveryOrderDetailResult.ErrorLog
+			}
 		}
 	}
 
@@ -283,4 +288,8 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromDeleteEvent(deliver
 	// }
 
 	return &model.ErrorLog{}
+}
+
+func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromDeleteDetailEvent(deliveryOrderDetailId *int, ctx context.Context) *model.ErrorLog {
+	return nil
 }

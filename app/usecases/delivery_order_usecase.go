@@ -33,6 +33,7 @@ type DeliveryOrderUseCaseInterface interface {
 	GetByOrderStatusID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
 	GetByOrderSourceID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
 	DeleteByID(deliveryOrderId int, sqlTransaction *sql.Tx) *model.ErrorLog
+	DeleteDetailByID(deliveryOrderDetailId int, sqlTransaction *sql.Tx) *model.ErrorLog
 }
 
 type deliveryOrderUseCase struct {
@@ -1465,7 +1466,7 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 	for _, v := range getDeliveryOrderDetailsByIDResult.DeliveryOrderDetails {
 
 		getSalesOrderDetailByIDResultChan := make(chan *models.SalesOrderDetailChan)
-		go u.salesOrderDetailRepository.GetByID(getSalesOrderByIDResult.SalesOrder.ID, false, u.ctx, getSalesOrderDetailByIDResultChan)
+		go u.salesOrderDetailRepository.GetByID(v.SoDetailID, false, u.ctx, getSalesOrderDetailByIDResultChan)
 		getSalesOrderDetailsByIDResult := <-getSalesOrderDetailByIDResultChan
 
 		if getSalesOrderDetailsByIDResult.Error != nil {
@@ -1545,13 +1546,13 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 		return createDeliveryOrderJourneysResult.ErrorLog
 	}
 
-	keyKafka := []byte(getSalesOrderByIDResult.SalesOrder.SoCode)
+	keyKafka := []byte(getDeliveryOrderByIDResult.DeliveryOrder.DoCode)
 	messageKafka, _ := json.Marshal(
 		&models.DeliveryOrder{
 			ID:        id,
 			DoCode:    deiveryOrderLog.DoCode,
-			UpdatedAt: getSalesOrderByIDResult.SalesOrder.UpdatedAt,
-			DeletedAt: getSalesOrderByIDResult.SalesOrder.DeletedAt,
+			UpdatedAt: getDeliveryOrderByIDResult.DeliveryOrder.UpdatedAt,
+			DeletedAt: getDeliveryOrderByIDResult.DeliveryOrder.DeletedAt,
 		},
 	)
 	err := u.kafkaClient.WriteToTopic(constants.DELETE_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
@@ -1563,6 +1564,109 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 
 	if updateSalesOrderResult.ErrorLog != nil {
 		return updateSalesOrderResult.ErrorLog
+	}
+
+	return nil
+}
+
+func (u deliveryOrderUseCase) DeleteDetailByID(id int, sqlTransaction *sql.Tx) *model.ErrorLog {
+	now := time.Now()
+	getDeliveryOrderDetailByIDResultChan := make(chan *models.DeliveryOrderDetailChan)
+	go u.deliveryOrderDetailRepository.GetByID(id, false, u.ctx, getDeliveryOrderDetailByIDResultChan)
+	getDeliveryOrderDetailByIDResult := <-getDeliveryOrderDetailByIDResultChan
+
+	if getDeliveryOrderDetailByIDResult.Error != nil {
+		return getDeliveryOrderDetailByIDResult.ErrorLog
+	}
+
+	getDeliveryOrderByIDResultChan := make(chan *models.DeliveryOrderChan)
+	go u.deliveryOrderRepository.GetByID(getDeliveryOrderDetailByIDResult.DeliveryOrderDetail.DeliveryOrderID, false, u.ctx, getDeliveryOrderByIDResultChan)
+	getDeliveryOrderByIDResult := <-getDeliveryOrderByIDResultChan
+
+	if getDeliveryOrderByIDResult.Error != nil {
+		return getDeliveryOrderByIDResult.ErrorLog
+	}
+
+	getSalesOrderDetailByIDResultChan := make(chan *models.SalesOrderDetailChan)
+	go u.salesOrderDetailRepository.GetByID(getDeliveryOrderDetailByIDResult.DeliveryOrderDetail.SoDetailID, false, u.ctx, getSalesOrderDetailByIDResultChan)
+	getSalesOrderDetailsByIDResult := <-getSalesOrderDetailByIDResultChan
+
+	if getSalesOrderDetailsByIDResult.Error != nil {
+		return getSalesOrderDetailsByIDResult.ErrorLog
+	}
+
+	getSalesOrderDetailsByIDResult.SalesOrderDetail.SentQty -= getDeliveryOrderDetailByIDResult.DeliveryOrderDetail.Qty
+	getSalesOrderDetailsByIDResult.SalesOrderDetail.ResidualQty += getDeliveryOrderDetailByIDResult.DeliveryOrderDetail.Qty
+	getSalesOrderDetailsByIDResult.SalesOrderDetail.UpdatedAt = &now
+
+	updateSalesOrderDetailChan := make(chan *models.SalesOrderDetailChan)
+	go u.salesOrderDetailRepository.UpdateByID(getDeliveryOrderDetailByIDResult.DeliveryOrderDetail.SoDetailID, getSalesOrderDetailsByIDResult.SalesOrderDetail, sqlTransaction, u.ctx, updateSalesOrderDetailChan)
+	updateSalesOrderDetailResult := <-updateSalesOrderDetailChan
+
+	if updateSalesOrderDetailResult.ErrorLog != nil {
+		return updateSalesOrderDetailResult.ErrorLog
+	}
+
+	deleteDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
+	go u.deliveryOrderDetailRepository.DeleteByID(getDeliveryOrderDetailByIDResult.DeliveryOrderDetail, sqlTransaction, u.ctx, deleteDeliveryOrderDetailResultChan)
+	deleteDeliveryOrderDetailResult := <-deleteDeliveryOrderDetailResultChan
+
+	if deleteDeliveryOrderDetailResult.ErrorLog != nil {
+		return deleteDeliveryOrderDetailResult.ErrorLog
+	}
+
+	doDetailLogData := &models.DeliveryOrderDetailLogData{}
+	doDetailLogData.DoDetailMap(getDeliveryOrderByIDResult.DeliveryOrder, getDeliveryOrderDetailByIDResult.DeliveryOrderDetail)
+
+	deiveryOrderLog := &models.DeliveryOrderLog{
+		RequestID: "",
+		DoCode:    getDeliveryOrderByIDResult.DeliveryOrder.DoCode,
+		Data:      doDetailLogData,
+		Action:    constants.LOG_ACTION_MONGO_DELETE,
+		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		CreatedAt: &now,
+	}
+	createDeliveryOrderLogResultChan := make(chan *models.DeliveryOrderLogChan)
+	go u.deliveryOrderLogRepository.Insert(deiveryOrderLog, u.ctx, createDeliveryOrderLogResultChan)
+	createDeliveryOrderLogResult := <-createDeliveryOrderLogResultChan
+
+	if createDeliveryOrderLogResult.Error != nil {
+		return createDeliveryOrderLogResult.ErrorLog
+	}
+
+	deliveryOrderJourney := &models.DeliveryOrderJourney{
+		DoId:      getDeliveryOrderByIDResult.DeliveryOrder.ID,
+		DoCode:    getDeliveryOrderByIDResult.DeliveryOrder.DoCode,
+		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		Remark:    "",
+		Reason:    "",
+		CreatedAt: &now,
+		UpdatedAt: &now,
+	}
+
+	createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
+	go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, u.ctx, createDeliveryOrderJourneyChan)
+	createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
+
+	if createDeliveryOrderJourneysResult.Error != nil {
+		return createDeliveryOrderJourneysResult.ErrorLog
+	}
+
+	keyKafka := []byte(getDeliveryOrderDetailByIDResult.DeliveryOrderDetail.DoDetailCode)
+	messageKafka, _ := json.Marshal(
+		&models.DeliveryOrderDetail{
+			ID:              id,
+			DeliveryOrderID: getDeliveryOrderByIDResult.DeliveryOrder.ID,
+			DoDetailCode:    doDetailLogData.DoDetailCode,
+			UpdatedAt:       getDeliveryOrderDetailByIDResult.DeliveryOrderDetail.UpdatedAt,
+			DeletedAt:       getDeliveryOrderDetailByIDResult.DeliveryOrderDetail.DeletedAt,
+		},
+	)
+	err := u.kafkaClient.WriteToTopic(constants.DELETE_DELIVERY_ORDER_DETAIL_TOPIC, keyKafka, messageKafka)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		return errorLogData
 	}
 
 	return nil

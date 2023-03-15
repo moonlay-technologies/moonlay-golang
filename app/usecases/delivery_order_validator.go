@@ -25,6 +25,7 @@ type DeliveryOrderValidatorInterface interface {
 	UpdateDeliveryOrderDetailByDoIDValidator(int, []*models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest, *gin.Context) error
 	UpdateDeliveryOrderDetailByIDValidator(int, *models.DeliveryOrderDetailUpdateByIDRequest, *gin.Context) error
 	DeleteDeliveryOrderByIDValidator(string, *gin.Context) error
+	DeleteDeliveryOrderDetailByIDValidator(string, *gin.Context) error
 }
 
 type DeliveryOrderValidator struct {
@@ -445,6 +446,47 @@ func (d *DeliveryOrderValidator) DeleteDeliveryOrderByIDValidator(sId string, ct
 
 	return nil
 }
+
+func (d *DeliveryOrderValidator) DeleteDeliveryOrderDetailByIDValidator(sId string, ctx *gin.Context) error {
+	var result baseModel.Response
+	id, err := strconv.Atoi(sId)
+
+	if err != nil {
+		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		result.StatusCode = http.StatusBadRequest
+		result.Error = helper.WriteLog(err, result.StatusCode, err.Error())
+		ctx.JSON(result.StatusCode, result)
+		return err
+	}
+	mustActiveField := []*models.MustActiveRequest{
+		{
+			Table:    "delivery_order_details",
+			ReqField: "id",
+			Clause:   fmt.Sprintf("id = %d", id),
+		},
+	}
+	mustActiveField422 := []*models.MustActiveRequest{
+		{
+			Table:         "delivery_order_details",
+			ReqField:      "id",
+			Clause:        fmt.Sprintf("id = %d AND deleted_at IS NULL", id),
+			CustomMessage: fmt.Sprintf("DO detail id = %d was deleted", id),
+		},
+	}
+
+	err = d.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
+	if err != nil {
+		return err
+	}
+
+	err = d.requestValidationMiddleware.MustActiveValidation422(ctx, mustActiveField422)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c *DeliveryOrderValidator) GetDeliveryOrderValidator(ctx *gin.Context) (*models.DeliveryOrderRequest, error) {
 	var result baseModel.Response
 

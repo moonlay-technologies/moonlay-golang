@@ -21,22 +21,22 @@ type DeleteDeliveryOrderDetailConsumerHandlerInterface interface {
 }
 
 type DeleteDeliveryOrderDetailConsumerHandler struct {
-	kafkaClient                          kafkadbo.KafkaClientInterface
-	DeliveryOrderDetailOpenSearchUseCase usecases.DeliveryOrderDetailOpenSearchUseCaseInterface
-	ctx                                  context.Context
-	args                                 []interface{}
-	db                                   dbresolver.DB
-	deliveryOrderDetailLogRepository     mongoRepositories.DeliveryOrderDetailLogRepositoryInterface
+	kafkaClient                      kafkadbo.KafkaClientInterface
+	DeliveryOrderOpenSearchUseCase   usecases.DeliveryOrderOpenSearchUseCaseInterface
+	ctx                              context.Context
+	args                             []interface{}
+	db                               dbresolver.DB
+	deliveryOrderDetailLogRepository mongoRepositories.DeliveryOrderDetailLogRepositoryInterface
 }
 
-func InitDeleteDeliveryOrderDetailConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderDetailLogRepositoryInterface, DeliveryOrderDetailOpenSearchUseCase usecases.DeliveryOrderDetailOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) DeleteDeliveryOrderDetailConsumerHandlerInterface {
+func InitDeleteDeliveryOrderDetailConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderDetailLogRepositoryInterface, DeliveryOrderOpenSearchUseCase usecases.DeliveryOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) DeleteDeliveryOrderDetailConsumerHandlerInterface {
 	return &DeleteDeliveryOrderDetailConsumerHandler{
-		kafkaClient:                          kafkaClient,
-		DeliveryOrderDetailOpenSearchUseCase: DeliveryOrderDetailOpenSearchUseCase,
-		ctx:                                  ctx,
-		args:                                 args,
-		db:                                   db,
-		deliveryOrderDetailLogRepository:     deliveryOrderLogRepository,
+		kafkaClient:                      kafkaClient,
+		DeliveryOrderOpenSearchUseCase:   DeliveryOrderOpenSearchUseCase,
+		ctx:                              ctx,
+		args:                             args,
+		db:                               db,
+		deliveryOrderDetailLogRepository: deliveryOrderLogRepository,
 	}
 }
 
@@ -89,7 +89,7 @@ func (c *DeleteDeliveryOrderDetailConsumerHandler) ProcessMessage() {
 		deliveryOrderDetailLog.Status = constants.LOG_STATUS_MONGO_ERROR
 		deliveryOrderDetailLog.UpdatedAt = &now
 
-		errorLog := c.DeliveryOrderDetailOpenSearchUseCase.SyncToOpenSearchFromDeleteEvent(&deliveryOrderDetail.ID, c.ctx)
+		errorLog := c.DeliveryOrderOpenSearchUseCase.SyncToOpenSearchFromDeleteEvent(&deliveryOrderDetail.DeliveryOrderID, &deliveryOrderDetail.ID, c.ctx)
 
 		if errorLog.Err != nil {
 			dbTransaction.Rollback()
