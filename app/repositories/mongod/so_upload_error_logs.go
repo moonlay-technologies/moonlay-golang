@@ -13,25 +13,25 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type UploadSOHistoriesRepositoryInterface interface {
-	Insert(request *models.UploadSOHistory, ctx context.Context, resultChan chan *models.UploadSOHistoryChan)
+type SoUploadErrorLogsRepositoryInterface interface {
+	Insert(request *models.SoUploadErrorLog, ctx context.Context, resultChan chan *models.SoUploadErrorLogChan)
 }
 
-type uploadSOHistoriesRepository struct {
+type soUploadErrorLogsRepository struct {
 	logger     log.Logger
 	mongod     mongodb.MongoDBInterface
 	collection string
 }
 
-func InitUploadSOHistoriesRepositoryInterface(mongod mongodb.MongoDBInterface) UploadSOHistoriesRepositoryInterface {
-	return &uploadSOHistoriesRepository{
+func InitSoUploadErrorLogsRepositoryInterface(mongod mongodb.MongoDBInterface) SoUploadErrorLogsRepositoryInterface {
+	return &soUploadErrorLogsRepository{
 		mongod:     mongod,
-		collection: constants.UPLOAD_SO_TABLE_HISTORIES,
+		collection: constants.SO_UPLOAD_ERROR_TABLE_LOGS,
 	}
 }
 
-func (r *uploadSOHistoriesRepository) Insert(request *models.UploadSOHistory, ctx context.Context, resultChan chan *models.UploadSOHistoryChan) {
-	response := &models.UploadSOHistoryChan{}
+func (r *soUploadErrorLogsRepository) Insert(request *models.SoUploadErrorLog, ctx context.Context, resultChan chan *models.SoUploadErrorLogChan) {
+	response := &models.SoUploadErrorLogChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
 	result, err := collection.InsertOne(ctx, request)
 
@@ -42,8 +42,9 @@ func (r *uploadSOHistoriesRepository) Insert(request *models.UploadSOHistory, ct
 		resultChan <- response
 		return
 	}
+
 	request.ID, _ = result.InsertedID.(primitive.ObjectID)
-	response.UploadSOHistory = request
+	response.SoUploadErrorLog = request
 	response.Error = nil
 	resultChan <- response
 	return

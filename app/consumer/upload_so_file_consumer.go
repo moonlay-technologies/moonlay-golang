@@ -27,18 +27,20 @@ type uploadSOFileConsumerHandler struct {
 	requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface
 	requestValidationRepository repositories.RequestValidationRepositoryInterface
 	uploadSOHistoriesRepository mongoRepositories.UploadSOHistoriesRepositoryInterface
+	soUploadErrorLogsRepository mongoRepositories.SoUploadErrorLogsRepositoryInterface
 	ctx                         context.Context
 	args                        []interface{}
 	db                          dbresolver.DB
 }
 
-func InitUploadSOFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, uploadRepository repositories.UploadRepositoryInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, requestValidationRepository repositories.RequestValidationRepositoryInterface, uploadSOHistoriesRepository mongoRepositories.UploadSOHistoriesRepositoryInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UploadSOFileConsumerHandlerInterface {
+func InitUploadSOFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, uploadRepository repositories.UploadRepositoryInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, requestValidationRepository repositories.RequestValidationRepositoryInterface, uploadSOHistoriesRepository mongoRepositories.UploadSOHistoriesRepositoryInterface, soUploadErrorLogsRepository mongoRepositories.SoUploadErrorLogsRepositoryInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UploadSOFileConsumerHandlerInterface {
 	return &uploadSOFileConsumerHandler{
 		kafkaClient:                 kafkaClient,
 		uploadRepository:            uploadRepository,
 		requestValidationMiddleware: requestValidationMiddleware,
 		requestValidationRepository: requestValidationRepository,
 		uploadSOHistoriesRepository: uploadSOHistoriesRepository,
+		soUploadErrorLogsRepository: soUploadErrorLogsRepository,
 		ctx:                         ctx,
 		args:                        args,
 		db:                          db,
@@ -69,17 +71,22 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 
 		results, err := c.uploadRepository.ReadFile("be-so-service", message.FilePath, "ap-southeast-1", s3.FileHeaderInfoUse)
 
+		uploadSOHistoryJourneysResult := &models.UploadSOHistoryChan{}
 		if err != nil {
-			fmt.Println(err.Error())
-			message.Status = "Error"
+			message.Status = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
 			uploadSOHistoryJourneysResultChan := make(chan *models.UploadSOHistoryChan)
 			go c.uploadSOHistoriesRepository.Insert(&message, c.ctx, uploadSOHistoryJourneysResultChan)
 			continue
+		} else {
+			message.Status = constants.UPLOAD_STATUS_HISTORY_UPLOADED
+			uploadSOHistoryJourneysResultChan := make(chan *models.UploadSOHistoryChan)
+			go c.uploadSOHistoriesRepository.Insert(&message, c.ctx, uploadSOHistoryJourneysResultChan)
+			uploadSOHistoryJourneysResult = <-uploadSOHistoryJourneysResultChan
 		}
 
 		brandIds := map[string][]map[string]string{}
 		var uploadSOFields []*models.UploadSOField
-		for _, v := range results {
+		for i, v := range results {
 
 			mandatoryError := c.requestValidationMiddleware.UploadMandatoryValidation([]*models.TemplateRequest{
 				{
@@ -125,6 +132,13 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 			})
 			if len(mandatoryError) > 1 {
 				errors = append(errors, mandatoryError...)
+
+				soUploadErrorLogs := &models.SoUploadErrorLog{}
+				soUploadErrorLogs.SoUploadErrorLogsMap(v, message.AgentName, i+2, errors, &now)
+				soUploadErrorLogs.SoUploadHistoryId = uploadSOHistoryJourneysResult.UploadSOHistory.ID
+
+				soUploadErrorLogssResultChan := make(chan *models.SoUploadErrorLogChan)
+				go c.soUploadErrorLogsRepository.Insert(soUploadErrorLogs, c.ctx, soUploadErrorLogssResultChan)
 				continue
 			}
 
@@ -133,7 +147,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 
 				if brandIds[v["NoOrder"]][0]["KodeMerk"] != v["KodeMerk"] {
 					fmt.Println("Error satu file!")
-					message.Status = "Error"
+					message.Status = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
 					uploadSOHistoryJourneysResultChan := make(chan *models.UploadSOHistoryChan)
 					go c.uploadSOHistoriesRepository.Insert(&message, c.ctx, uploadSOHistoryJourneysResultChan)
 					break
@@ -142,6 +156,13 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				for _, x := range brandIds[v["NoOrder"]] {
 					if x["KodeProduk"] == v["KodeProduk"] && x["UnitProduk"] == v["UnitProduk"] {
 						error = fmt.Sprintf("Duplikat row untuk No Order %s", v["NoOrder"])
+
+						soUploadErrorLogs := &models.SoUploadErrorLog{}
+						soUploadErrorLogs.SoUploadErrorLogsMap(v, message.AgentName, i+2, errors, &now)
+						soUploadErrorLogs.SoUploadHistoryId = uploadSOHistoryJourneysResult.UploadSOHistory.ID
+
+						soUploadErrorLogssResultChan := make(chan *models.SoUploadErrorLogChan)
+						go c.soUploadErrorLogsRepository.Insert(soUploadErrorLogs, c.ctx, soUploadErrorLogssResultChan)
 						break
 					}
 				}
@@ -189,6 +210,14 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 			intTypeResult, intTypeError := c.requestValidationMiddleware.UploadIntTypeValidation(intType)
 			if len(intTypeError) > 1 {
 				errors = append(errors, intTypeError...)
+
+				soUploadErrorLogs := &models.SoUploadErrorLog{}
+				soUploadErrorLogs.SoUploadErrorLogsMap(v, message.AgentName, i+2, errors, &now)
+				soUploadErrorLogs.SoUploadHistoryId = uploadSOHistoryJourneysResult.UploadSOHistory.ID
+
+				soUploadErrorLogssResultChan := make(chan *models.SoUploadErrorLogChan)
+				go c.soUploadErrorLogsRepository.Insert(soUploadErrorLogs, c.ctx, soUploadErrorLogssResultChan)
+
 				continue
 			}
 
@@ -230,6 +259,14 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 			mustActiveError := c.requestValidationMiddleware.UploadMustActiveValidation(mustActiveField)
 			if len(mustActiveError) > 1 {
 				errors = append(errors, mustActiveError...)
+
+				soUploadErrorLogs := &models.SoUploadErrorLog{}
+				soUploadErrorLogs.SoUploadErrorLogsMap(v, message.AgentName, i+2, errors, &now)
+				soUploadErrorLogs.SoUploadHistoryId = uploadSOHistoryJourneysResult.UploadSOHistory.ID
+
+				soUploadErrorLogssResultChan := make(chan *models.SoUploadErrorLogChan)
+				go c.soUploadErrorLogsRepository.Insert(soUploadErrorLogs, c.ctx, soUploadErrorLogssResultChan)
+
 				continue
 			}
 
@@ -241,6 +278,13 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				errors = append(errors, fmt.Sprintf("Kode Merek = %d Tidak Terdaftar pada Distributor <nama_agent>. Silahkan gunakan Kode Merek yang lain.", intTypeResult["KodeMerk"]))
 				errors = append(errors, fmt.Sprintf("ID Salesman = %d Tidak Terdaftar pada Distributor <nama_agent>. Silahkan gunakan ID Salesman yang lain.", intTypeResult["IDSalesman"]))
 				errors = append(errors, fmt.Sprintf("Salesman di Kode Toko = %d untuk Merek <Nama Merk> Tidak Terdaftar. Silahkan gunakan ID Salesman yang terdaftar.", intTypeResult["KodeToko"]))
+
+				soUploadErrorLogs := &models.SoUploadErrorLog{}
+				soUploadErrorLogs.SoUploadErrorLogsMap(v, message.AgentName, i+2, errors, &now)
+
+				soUploadErrorLogssResultChan := make(chan *models.SoUploadErrorLogChan)
+				go c.soUploadErrorLogsRepository.Insert(soUploadErrorLogs, c.ctx, soUploadErrorLogssResultChan)
+
 				continue
 			}
 
@@ -250,6 +294,14 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 
 			if storeAddressesResult.Total < 1 {
 				errors = append(errors, fmt.Sprintf("Alamat Utama pada Kode Toko = %s Tidak Ditemukan. Silahkan gunakan Alamat Toko yang lain.", v["KodeToko"]))
+
+				soUploadErrorLogs := &models.SoUploadErrorLog{}
+				soUploadErrorLogs.SoUploadErrorLogsMap(v, message.AgentName, i+2, errors, &now)
+				soUploadErrorLogs.SoUploadHistoryId = uploadSOHistoryJourneysResult.UploadSOHistory.ID
+
+				soUploadErrorLogssResultChan := make(chan *models.SoUploadErrorLogChan)
+				go c.soUploadErrorLogsRepository.Insert(soUploadErrorLogs, c.ctx, soUploadErrorLogssResultChan)
+
 				continue
 			}
 
@@ -257,11 +309,27 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 			uploadSOField.TanggalOrder, err = helper.ParseDDYYMMtoYYYYMMDD(v["TanggalOrder"])
 			if err != nil {
 				errors = append(errors, fmt.Sprintf("Format Tanggal Order = %s Salah, silahkan sesuaikan dengan format DD-MMM-YYYY, contoh 15/12/2021", v["TanggalOrder"]))
+
+				soUploadErrorLogs := &models.SoUploadErrorLog{}
+				soUploadErrorLogs.SoUploadErrorLogsMap(v, message.AgentName, i+2, errors, &now)
+				soUploadErrorLogs.SoUploadHistoryId = uploadSOHistoryJourneysResult.UploadSOHistory.ID
+
+				soUploadErrorLogssResultChan := make(chan *models.SoUploadErrorLogChan)
+				go c.soUploadErrorLogsRepository.Insert(soUploadErrorLogs, c.ctx, soUploadErrorLogssResultChan)
+
 				continue
 			}
 			uploadSOField.TanggalTokoOrder, err = helper.ParseDDYYMMtoYYYYMMDD(v["TanggalTokoOrder"])
 			if err != nil {
 				errors = append(errors, fmt.Sprintf("Format Tanggal Toko Order = %s Salah, silahkan sesuaikan dengan format DD-MMM-YYYY, contoh 15/12/2021", v["TanggalTokoOrder"]))
+
+				soUploadErrorLogs := &models.SoUploadErrorLog{}
+				soUploadErrorLogs.SoUploadErrorLogsMap(v, message.AgentName, i+2, errors, &now)
+				soUploadErrorLogs.SoUploadHistoryId = uploadSOHistoryJourneysResult.UploadSOHistory.ID
+
+				soUploadErrorLogssResultChan := make(chan *models.SoUploadErrorLogChan)
+				go c.soUploadErrorLogsRepository.Insert(soUploadErrorLogs, c.ctx, soUploadErrorLogssResultChan)
+
 				continue
 			}
 			uploadSOField.UploadSOFieldMap(v, int(message.UploadedBy))
@@ -275,15 +343,11 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 		err = c.kafkaClient.WriteToTopic(constants.UPLOAD_SO_ITEM_TOPIC, keyKafka, messageKafka)
 
 		if err != nil {
-			message.Status = "Error"
+			message.Status = constants.UPLOAD_STATUS_HISTORY_UPLOADED
 			uploadSOHistoryJourneysResultChan := make(chan *models.UploadSOHistoryChan)
 			go c.uploadSOHistoriesRepository.Insert(&message, c.ctx, uploadSOHistoryJourneysResultChan)
 			continue
 		}
-
-		message.Status = "Uploaded"
-		uploadSOHistoryJourneysResultChan := make(chan *models.UploadSOHistoryChan)
-		go c.uploadSOHistoriesRepository.Insert(&message, c.ctx, uploadSOHistoryJourneysResultChan)
 
 	}
 

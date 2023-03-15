@@ -22,6 +22,9 @@ type UploadSOHistory struct {
 	TotalRows       string             `json:"total_rows,omitempty" bson:"total_rows,omitempty"`
 	CreatedAt       time.Time          `json:"created_at,omitempty" bson:"created_at,omitempty"`
 	UpdatedAt       time.Time          `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
+	UpdatedBy       int64              `json:"updated_by,omitempty" bson:"updated_by,omitempty"`
+	UpdatedByName   string             `json:"updated_by_name,omitempty" bson:"updated_by_name,omitempty"`
+	UpdatedByEmail  string             `json:"updated_by_email,omitempty" bson:"updated_by_email,omitempty"`
 }
 
 type UploadSOHistoryChan struct {

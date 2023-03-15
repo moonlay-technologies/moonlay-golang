@@ -153,6 +153,9 @@ func (u *uploadUseCase) UploadSO(request *models.UploadSORequest, ctx context.Co
 		UploadedBy:      int64(user.UserID),
 		UploadedByName:  user.FirstName + " " + user.LastName,
 		UploadedByEmail: user.UserEmail,
+		UpdatedBy:       int64(user.UserID),
+		UpdatedByName:   user.FirstName + " " + user.LastName,
+		UpdatedByEmail:  user.UserEmail,
 	}
 
 	keyKafka := []byte(ctx.Value("RequestId").(string))

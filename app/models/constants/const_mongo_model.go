@@ -10,6 +10,7 @@ const (
 	DELIVERY_ORDER_DETAIL_TABLE_JOURNEYS = "delivery_order_detail_journeys"
 	UPLOAD_SO_TABLE_HISTORIES            = "upload_so_histories"
 	UPLOAD_SOSJ_TABLE_HISTORIES          = "upload_sosj_histories"
+	SO_UPLOAD_ERROR_TABLE_LOGS           = "so_upload_error_logs"
 
 	COLUMN_SALES_ORDER_CODE    = "so_code"
 	COLUMN_DELIVERY_ORDER_CODE = "do_code"
