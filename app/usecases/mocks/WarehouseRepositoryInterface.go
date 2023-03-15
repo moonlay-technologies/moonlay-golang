@@ -19,6 +19,16 @@ func (_m *WarehouseRepositoryInterface) GetByID(ID int, countOnly bool, ctx cont
 	_m.Called(ID, countOnly, ctx, result)
 }
 
+// GetByCode provides a mock function with given fields: code, countOnly, ctx, result
+func (_m *WarehouseRepositoryInterface) GetByCode(code string, countOnly bool, ctx context.Context, result chan *models.WarehouseChan) {
+	_m.Called(code, countOnly, ctx, result)
+}
+
+// GetByAgentID provides a mock function with given fields: AgentID, countOnly, ctx, result
+func (_m *WarehouseRepositoryInterface) GetByAgentID(agentID int, countOnly bool, ctx context.Context, result chan *models.WarehouseChan) {
+	_m.Called(agentID, countOnly, ctx, result)
+}
+
 type mockConstructorTestingTNewWarehouseRepositoryInterface interface {
 	mock.TestingT
 	Cleanup(func())

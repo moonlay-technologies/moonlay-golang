@@ -17,11 +17,11 @@ type UploadDOField struct {
 	PlatNo          string
 	KodeMerk        int
 	NamaMerk        string
-	KodeProduk      int
+	KodeProduk      string
 	NamaProduk      string
 	QTYShip         int
 	Unit            string
-	KodeGudang      int
+	KodeGudang      string
 	IDUser          int
 }
 

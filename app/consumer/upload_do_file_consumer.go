@@ -128,10 +128,10 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 					Field: "KodeMerk",
 					Value: v["KodeMerk"],
 				},
-				{
-					Field: "KodeProduk",
-					Value: v["KodeProduk"],
-				},
+				// {
+				// 	Field: "KodeProduk",
+				// 	Value: v["KodeProduk"],
+				// },
 				{
 					Field: "QTYShip",
 					Value: v["QTYShip"],

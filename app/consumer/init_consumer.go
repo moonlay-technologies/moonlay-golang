@@ -193,3 +193,23 @@ func InitUploadSOItemConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodb
 	handler := InitUploadSOItemConsumerHandlerInterface(orderSourceRepository, orderStatusRepository, productRepository, uomRepository, agentRepository, storeRepository, userRepository, salesmanRepository, brandRepository, salesOrderRepository, salesOrderDetailRepository, salesOrderLogRepository, salesOrderJourneysRepository, salesOrderDetailJourneysRepository, kafkaClient, database, ctx, args)
 	return handler
 }
+
+func InitUploadDOItemConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodbClient mongodb.MongoDBInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, database dbresolver.DB, redisdb redisdb.RedisInterface, ctx context.Context, args []interface{}) UploadDOItemConsumerHandlerInterface {
+	salesOrderRepository := repositories.InitSalesOrderRepository(database, redisdb)
+	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(database, redisdb)
+	orderStatusRepository := repositories.InitOrderStatusRepository(database, redisdb)
+	orderSourceRepository := repositories.InitOrderSourceRepository(database, redisdb)
+	deliveryOrderRepository := repositories.InitDeliveryRepository(database, redisdb)
+	deliveryOrderDetailRepository := repositories.InitDeliveryOrderDetailRepository(database, redisdb)
+	warehouseRepository := repositories.InitWarehouseRepository(database, redisdb)
+	brandRepository := repositories.InitBrandRepository(database, redisdb)
+	uomRepository := repositories.InitUomRepository(database, redisdb)
+	productRepository := repositories.InitProductRepository(database, redisdb)
+	agentRepository := repositories.InitAgentRepository(database, redisdb)
+	storeRepository := repositories.InitStoreRepository(database, redisdb)
+	userRepository := repositories.InitUserRepository(database, redisdb)
+	salesmanRepository := repositories.InitSalesmanRepository(database, redisdb)
+	deliveryOrderLogRepository := mongoRepo.InitDeliveryOrderLogRepository(mongodbClient)
+	handler := InitUploadDOItemConsumerHandlerInterface(deliveryOrderRepository, deliveryOrderDetailRepository, salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, warehouseRepository, brandRepository, uomRepository, agentRepository, storeRepository, productRepository, userRepository, salesmanRepository, deliveryOrderLogRepository, kafkaClient, ctx, args, database)
+	return handler
+}
