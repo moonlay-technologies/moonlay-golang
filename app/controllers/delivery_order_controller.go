@@ -23,6 +23,7 @@ type DeliveryOrderControllerInterface interface {
 	UpdateDeliveryOrderDetailByDeliveryOrderID(ctx *gin.Context)
 	Get(ctx *gin.Context)
 	GetByID(ctx *gin.Context)
+
 	GetBySalesmanID(ctx *gin.Context)
 	DeleteByID(ctx *gin.Context)
 }
@@ -459,6 +460,7 @@ func (c *deliveryOrderController) GetByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, result)
 	return
 }
+
 func (c *deliveryOrderController) DeleteByID(ctx *gin.Context) {
 	var result baseModel.Response
 	var id int
@@ -482,6 +484,50 @@ func (c *deliveryOrderController) DeleteByID(ctx *gin.Context) {
 	}
 
 	errorLog := c.deliveryOrderUseCase.DeleteByID(id, dbTransaction)
+
+	if errorLog != nil {
+		err = dbTransaction.Rollback()
+
+		if err != nil {
+			result.StatusCode = http.StatusInternalServerError
+			result.Error = helper.WriteLog(err, result.StatusCode, nil)
+			ctx.JSON(result.StatusCode, result)
+			return
+		}
+
+		result.StatusCode = errorLog.StatusCode
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	result.StatusCode = http.StatusOK
+	ctx.JSON(http.StatusOK, result)
+}
+
+func (c *deliveryOrderController) DeleteDetailByID(ctx *gin.Context) {
+	var result baseModel.Response
+	var id int
+
+	ctx.Set("full_path", ctx.FullPath())
+	ctx.Set("method", ctx.Request.Method)
+
+	sId := ctx.Param("id")
+	err := c.deliveryOrderValidator.DeleteDeliveryOrderDetailByIDValidator(sId, ctx)
+	if err != nil {
+		return
+	}
+
+	dbTransaction, err := c.db.BeginTx(ctx, nil)
+
+	if err != nil {
+		result.StatusCode = http.StatusInternalServerError
+		result.Error = helper.WriteLog(err, result.StatusCode, nil)
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	errorLog := c.deliveryOrderUseCase.DeleteDetailByID(id, dbTransaction)
 
 	if errorLog != nil {
 		err = dbTransaction.Rollback()

@@ -23,6 +23,7 @@ type UploadSOSJField struct {
 	IDAlamat        string
 	Catatan         string
 	CatatanInternal string
+	IDUser          int
 }
 
 type UploadSOSJFieldChan struct {

@@ -71,3 +71,25 @@ func (deliveryOrderResponse *DeliveryOrderStoreResponse) DeliveryOrderMap(delive
 		deliveryOrderResponse.SalesmanName = deliveryOrder.Salesman.Name
 	}
 }
+func (d *DeliveryOrderDetailLogData) DoDetailMap(r *DeliveryOrder, rd *DeliveryOrderDetail) {
+	d.ID = rd.ID
+	d.AgentID = r.AgentID
+	d.AgentName = r.AgentName
+	d.DoRefCode = r.DoRefCode
+	d.DoDate = r.DoDate
+	d.DoNumber = r.DoRefCode.String
+	d.DoDetailCode = rd.DoDetailCode
+	d.SoDetailID = rd.SoDetailID
+	d.Note = r.Note
+	d.InternalNote = rd.Note
+	d.DriverName = r.DriverName
+	d.PlatNumber = r.PlatNumber
+	d.BrandID = rd.BrandID
+	d.BrandName = rd.BrandName
+	d.ProductID = rd.ProductID
+	d.ProductName = rd.ProductName
+	d.DeliveryQty = rd.Qty
+	d.UomCode = rd.UomCode
+	d.WarehouseID = r.WarehouseID
+	d.WarehouseName = r.WarehouseName
+}

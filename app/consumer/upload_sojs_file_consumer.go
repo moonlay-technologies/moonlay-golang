@@ -72,7 +72,6 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 		resultsWithHeader, err := c.uploadRepository.ReadFile("be-so-service", message.FPath, "ap-southeast-1", s3.FileHeaderInfoUse)
 
 		if err != nil {
-			fmt.Println("Ini error", err.Error())
 			message.UploadStatus = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
 			uploadSOSJHistoryJourneysResultChan := make(chan *models.UploadHistoryChan)
 			go c.uploadSOSJHistoriesRepository.Insert(&message, c.ctx, uploadSOSJHistoryJourneysResultChan)
@@ -91,7 +90,6 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 		results, err := c.uploadRepository.ReadFile("be-so-service", message.FPath, "ap-southeast-1", s3.FileHeaderInfoIgnore)
 
 		if err != nil {
-			fmt.Println("Ini error 2", err.Error())
 			message.UploadStatus = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
 			uploadSOSJHistoryJourneysResultChan := make(chan *models.UploadHistoryChan)
 			go c.uploadSOSJHistoriesRepository.Insert(&message, c.ctx, uploadSOSJHistoryJourneysResultChan)
@@ -240,7 +238,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 					errors = append(errors, fmt.Sprintf("Format Tanggal Order = %s Salah, silahkan sesuaikan dengan format DD-MMM-YYYY, contoh 15/12/2021", v["_3"]))
 					continue
 				}
-				uploadSOSJField.UploadSOSJFieldMap(v, idDistributor)
+				uploadSOSJField.UploadSOSJFieldMap(v, idDistributor, message.UploadById)
 
 				checkIfNoSuratJalanExist := helper.InSliceString(noSuratJalan, v["_2"])
 				if checkIfNoSuratJalanExist {

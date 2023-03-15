@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func (result *UploadSOSJField) UploadSOSJFieldMap(request map[string]string, idDistributor int) {
+func (result *UploadSOSJField) UploadSOSJFieldMap(request map[string]string, idDistributor int, userId int) {
 	result.IDDistributor = idDistributor
 	result.Status = request["_1"]
 	result.KodeTokoDBO, _ = strconv.Atoi(request["_4"])
@@ -20,4 +20,5 @@ func (result *UploadSOSJField) UploadSOSJFieldMap(request map[string]string, idD
 	result.IDAlamat = request["_13"]
 	result.Catatan = request["_14"]
 	result.CatatanInternal = strings.ReplaceAll(request["_15"], "\r", "")
+	result.IDUser = userId
 }
