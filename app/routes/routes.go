@@ -7,6 +7,7 @@ import (
 	"order-service/app/middlewares"
 	"order-service/app/models/constants"
 	kafkadbo "order-service/global/utils/kafka"
+	baseModel "order-service/global/utils/model"
 	"order-service/global/utils/mongodb"
 	"order-service/global/utils/opensearch_dbo"
 	"order-service/global/utils/redisdb"
@@ -114,6 +115,15 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 		}
 	}
 
+	g.NoRoute(func(c *gin.Context) {
+		c.JSON(http.StatusNotFound, baseModel.Response{
+			StatusCode: http.StatusNotFound,
+			Error: &baseModel.ErrorLog{
+				Message:       "Not Found",
+				SystemMessage: "Not Found",
+			},
+		})
+	})
 	//
 	//oauthRootGroup.Use(middlewares.OauthMiddleware(mongod))
 	//{
