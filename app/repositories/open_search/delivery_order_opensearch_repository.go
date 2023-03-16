@@ -14,7 +14,7 @@ type DeliveryOrderOpenSearchRepositoryInterface interface {
 	Create(request *models.DeliveryOrder, result chan *models.DeliveryOrderChan)
 	Get(request *models.DeliveryOrderRequest, result chan *models.DeliveryOrdersChan)
 	GetByID(request *models.DeliveryOrderRequest, result chan *models.DeliveryOrderChan)
-	GetByDoID(request *models.DeliveryOrderDetailRequest, result chan *models.DeliveryOrdersChan)
+	GetByDoID(request *models.DeliveryOrderDetailRequest, result chan *models.DeliveryOrderChan)
 	GetBySalesOrderID(request *models.DeliveryOrderRequest, result chan *models.DeliveryOrdersChan)
 	GetBySalesmanID(request *models.DeliveryOrderRequest, result chan *models.DeliveryOrdersChan)
 	GetBySalesmansID(request *models.DeliveryOrderRequest, result chan *models.DeliveryOrdersChan)
@@ -90,8 +90,8 @@ func (r *deliveryOrderOpenSearch) GetByID(request *models.DeliveryOrderRequest, 
 	return
 }
 
-func (r *deliveryOrderOpenSearch) GetByDoID(request *models.DeliveryOrderDetailRequest, resultChan chan *models.DeliveryOrdersChan) {
-	response := &models.DeliveryOrdersChan{}
+func (r *deliveryOrderOpenSearch) GetByDoID(request *models.DeliveryOrderDetailRequest, resultChan chan *models.DeliveryOrderChan) {
+	response := &models.DeliveryOrderChan{}
 	requestQuery := r.generateDeliveryOrderDetailQueryOpenSearchTermRequest("", "", request)
 	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery, true)
 
@@ -102,7 +102,7 @@ func (r *deliveryOrderOpenSearch) GetByDoID(request *models.DeliveryOrderDetailR
 		return
 	}
 
-	response.DeliveryOrders = result.DeliveryOrders
+	response.DeliveryOrder = result.DeliveryOrders[0]
 	response.Total = result.Total
 	resultChan <- response
 	return

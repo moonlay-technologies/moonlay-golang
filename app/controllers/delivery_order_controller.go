@@ -432,8 +432,7 @@ func (c *deliveryOrderController) GetDetailsByDoId(ctx *gin.Context) {
 		return
 	}
 
-	result.Data = deliveryOrders.DeliveryOrders
-	result.Total = deliveryOrders.Total
+	result.Data = deliveryOrders
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
 	return
