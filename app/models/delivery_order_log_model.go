@@ -27,26 +27,6 @@ type DeliveryOrderLogChan struct {
 	ID               primitive.ObjectID `json:"_id" bson:"_id"`
 }
 
-type DeliveryOrderDetailLog struct {
-	ID           primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
-	RequestID    string             `json:"request_id,omitempty" bson:"request_id,omitempty"`
-	DoDetailCode string             `json:"do_detail_code,omitempty" bson:"do_detail_code"`
-	Data         interface{}        `json:"data,omitempty" bson:"data,omitempty"`
-	Error        interface{}        `json:"error,omitempty" bson:"error,omitempty"`
-	Action       string             `json:"action,omitempty" bson:"action,omitempty"`
-	Status       string             `json:"status,omitempty" bson:"status,omitempty"`
-	CreatedAt    *time.Time         `json:"created_at,omitempty" bson:"created_at,omitempty"`
-	UpdatedAt    *time.Time         `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
-}
-
-type DeliveryOrderDetailLogChan struct {
-	DeliveryOrderDetailLog *DeliveryOrderDetailLog
-	Error                  error
-	ErrorLog               *model.ErrorLog
-	Total                  int64
-	ID                     primitive.ObjectID `json:"_id" bson:"_id"`
-}
-
 type DeliveryOrderLogsChan struct {
 	DeliveryOrderLogs []*DeliveryOrderLog
 	Total             int64

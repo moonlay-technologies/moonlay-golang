@@ -11,6 +11,7 @@ import (
 	"order-service/app/usecases"
 	"order-service/global/utils/helper"
 	kafkadbo "order-service/global/utils/kafka"
+	"order-service/global/utils/model"
 	"time"
 
 	"github.com/bxcodec/dbresolver"
@@ -88,8 +89,16 @@ func (c *DeleteDeliveryOrderConsumerHandler) ProcessMessage() {
 		deliveryOrderLog = deliveryOrderDetailResult.DeliveryOrderLog
 		deliveryOrderLog.Status = constants.LOG_STATUS_MONGO_ERROR
 		deliveryOrderLog.UpdatedAt = &now
-
-		errorLog := c.DeliveryOrderOpenSearchUseCase.SyncToOpenSearchFromDeleteEvent(&deliveryOrder.ID, nil, c.ctx)
+		errorLog := &model.ErrorLog{}
+		if deliveryOrder.DeliveryOrderDetails == nil {
+			errorLog = c.DeliveryOrderOpenSearchUseCase.SyncToOpenSearchFromDeleteEvent(&deliveryOrder.ID, nil, c.ctx)
+		} else {
+			deliveryOrderDetailIds := []*int{}
+			for _, v := range deliveryOrder.DeliveryOrderDetails {
+				deliveryOrderDetailIds = append(deliveryOrderDetailIds, &v.ID)
+			}
+			errorLog = c.DeliveryOrderOpenSearchUseCase.SyncToOpenSearchFromDeleteEvent(&deliveryOrder.ID, deliveryOrderDetailIds, c.ctx)
+		}
 
 		if errorLog.Err != nil {
 			dbTransaction.Rollback()
