@@ -14,6 +14,7 @@ type DeliveryOrderOpenSearchRepositoryInterface interface {
 	Create(request *models.DeliveryOrder, result chan *models.DeliveryOrderChan)
 	Get(request *models.DeliveryOrderRequest, result chan *models.DeliveryOrdersChan)
 	GetByID(request *models.DeliveryOrderRequest, result chan *models.DeliveryOrderChan)
+	GetByDoID(request *models.DeliveryOrderDetailRequest, result chan *models.DeliveryOrderChan)
 	GetBySalesOrderID(request *models.DeliveryOrderRequest, result chan *models.DeliveryOrdersChan)
 	GetBySalesmanID(request *models.DeliveryOrderRequest, result chan *models.DeliveryOrdersChan)
 	GetBySalesmansID(request *models.DeliveryOrderRequest, result chan *models.DeliveryOrdersChan)
@@ -21,6 +22,7 @@ type DeliveryOrderOpenSearchRepositoryInterface interface {
 	GetByAgentID(request *models.DeliveryOrderRequest, result chan *models.DeliveryOrdersChan)
 	generateDeliveryOrderQueryOpenSearchResult(openSearchQueryJson []byte, withDeliveryOrderDetails bool) (*models.DeliveryOrders, *model.ErrorLog)
 	generateDeliveryOrderQueryOpenSearchTermRequest(term_field string, term_value interface{}, request *models.DeliveryOrderRequest) []byte
+	generateDeliveryOrderDetailQueryOpenSearchTermRequest(term_field string, term_value interface{}, request *models.DeliveryOrderDetailRequest) []byte
 	generateDeliveryOrderQueryOpenSearchByQueryParamTermRequest(term_field string, term_value interface{}, request *models.DeliveryOrderRequest) []byte
 }
 
@@ -84,6 +86,24 @@ func (r *deliveryOrderOpenSearch) GetByID(request *models.DeliveryOrderRequest, 
 	}
 
 	response.DeliveryOrder = result.DeliveryOrders[0]
+	resultChan <- response
+	return
+}
+
+func (r *deliveryOrderOpenSearch) GetByDoID(request *models.DeliveryOrderDetailRequest, resultChan chan *models.DeliveryOrderChan) {
+	response := &models.DeliveryOrderChan{}
+	requestQuery := r.generateDeliveryOrderDetailQueryOpenSearchTermRequest("", "", request)
+	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery, true)
+
+	if err.Err != nil {
+		response.Error = err.Err
+		response.ErrorLog = err
+		resultChan <- response
+		return
+	}
+
+	response.DeliveryOrder = result.DeliveryOrders[0]
+	response.Total = result.Total
 	resultChan <- response
 	return
 }
@@ -403,6 +423,340 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
 					"store.village_id": request.VillageID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if len(request.StartCreatedAt) > 0 && len(request.EndCreatedAt) > 0 {
+			filter := map[string]interface{}{
+				"range": map[string]interface{}{
+					"created_at": map[string]interface{}{
+						"gte": request.StartCreatedAt,
+						"lte": request.EndCreatedAt,
+					},
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if len(request.StartDoDate) > 0 && len(request.EndDoDate) > 0 {
+			filter := map[string]interface{}{
+				"range": map[string]interface{}{
+					"do_date": map[string]interface{}{
+						"gte": request.StartDoDate,
+						"lte": request.EndDoDate,
+					},
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.GlobalSearchValue != "" {
+			match := map[string]interface{}{
+				"query_string": map[string]interface{}{
+					"query":            "*" + request.GlobalSearchValue + "*",
+					"fields":           []string{"do_code", "do_ref_code", "sales_order.so_code", "store.store_code", "store.name"},
+					"default_operator": "AND",
+				},
+			}
+
+			musts = append(musts, match)
+		}
+
+		if request.SortField != "" && request.SortValue != "" {
+			sortValue := map[string]interface{}{
+				"order": request.SortValue,
+			}
+
+			if request.SortField == "created_at" {
+				sortValue["unmapped_type"] = "date"
+			}
+
+			if request.SortField == "updated_at" {
+				sortValue["unmapped_type"] = "date"
+			}
+
+			if request.SortField == "do_date" || request.SortField == "order_status_id" || request.SortField == "created_at" || request.SortField == "updated_at" {
+				openSearchQuery["sort"] = []map[string]interface{}{
+					{
+						request.SortField: sortValue,
+					},
+				}
+			}
+
+			if request.SortField == "do_ref_code" {
+				openSearchQuery["sort"] = []map[string]interface{}{
+					{
+						request.SortField + ".keyword": sortValue,
+					},
+				}
+			}
+		}
+	}
+
+	openSearchDetailBoolQuery["filter"] = filters
+	openSearchDetailBoolQuery["must"] = musts
+	openSearchDetailQuery["bool"] = openSearchDetailBoolQuery
+	openSearchQuery["query"] = openSearchDetailQuery
+	openSearchQueryJson, _ := json.Marshal(openSearchQuery)
+
+	return openSearchQueryJson
+}
+
+func (r *deliveryOrderOpenSearch) generateDeliveryOrderDetailQueryOpenSearchTermRequest(term_field string, term_value interface{}, request *models.DeliveryOrderDetailRequest) []byte {
+	openSearchQuery := map[string]interface{}{}
+	openSearchDetailQuery := map[string]interface{}{}
+	openSearchDetailBoolQuery := map[string]interface{}{}
+
+	filters := []map[string]interface{}{}
+	musts := []map[string]interface{}{}
+
+	if len(term_field) > 0 && term_value != nil {
+		filter := map[string]interface{}{
+			"term": map[string]interface{}{
+				term_field: term_value,
+			},
+		}
+
+		filters = append(filters, filter)
+	}
+
+	if request != nil {
+
+		if request.Page > 0 {
+			page := request.PerPage * (request.Page - 1)
+			openSearchQuery["size"] = request.PerPage
+			openSearchQuery["from"] = page
+		}
+
+		if len(request.StartDoDate) > 0 && len(request.EndDoDate) == 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"do_date": request.StartDoDate,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if len(request.EndDoDate) > 0 && len(request.StartDoDate) == 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"do_date": request.EndDoDate,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if len(request.StartCreatedAt) > 0 && len(request.EndCreatedAt) == 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"created_at": request.StartCreatedAt,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if len(request.EndCreatedAt) > 0 && len(request.StartCreatedAt) == 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"created_at": request.EndCreatedAt,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.DoDetailID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"delivery_order_details.id": request.DoDetailID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.AgentID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"agent_id": request.AgentID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.StoreID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"store_id": request.StoreID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.BrandID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"sales_order.brand_id": request.BrandID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.OrderStatusID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"order_status_id": request.OrderStatusID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.DoCode != "" {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"do_code.keyword": request.DoCode,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.SoCode != "" {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"sales_order.so_code.keyword": request.SoCode,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.DoRefCode != "" {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"do_ref_code.keyword": request.DoRefCode,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.DoRefDate != "" {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"do_ref_date": request.DoRefDate,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.ProductID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"delivery_order_details.product_id": request.ProductID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.ID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"id": request.ID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.SalesOrderID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"sales_order_id": request.SalesOrderID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.CategoryID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"delivery_order_details.product.category_id": request.CategoryID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.SalesmanID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"sales_order.salesman_id": request.SalesmanID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.ProvinceID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"store.province_id": request.ProvinceID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.CityID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"store.city_id": request.CityID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.DistrictID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"store.district_id": request.DistrictID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.VillageID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"store.village_id": request.VillageID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.Qty != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"delivery_order_details.qty": request.Qty,
 				},
 			}
 

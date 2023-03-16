@@ -156,9 +156,54 @@ type DeliveryOrderDetailsChan struct {
 }
 
 type DeliveryOrderDetailRequest struct {
-	PerPage int    `json:"per_page,omitempty" bson:"per_page,omitempty"`
-	Page    int    `json:"page,omitempty" bson:"page,omitempty"`
-	Keyword string `json:"keyword,omitempty" bson:"keyword,omitempty"`
+	ID                int     `json:"id,omitempty"`
+	DoDetailID        int     `json:"do_detail_id,omitempty"`
+	PerPage           int     `json:"per_page,omitempty"`
+	Page              int     `json:"page,omitempty"`
+	SortField         string  `json:"sort_field,omitempty" bson:"sort_field,omitempty"`
+	SortValue         string  `json:"sort_value,omitempty" bson:"sort_value,omitempty"`
+	GlobalSearchValue string  `json:"global_search_value,omitempty" bson:"global_search_value,omitempty"`
+	Keyword           string  `json:"keyword,omitempty"`
+	AgentID           int     `json:"agentID,omitempty"`
+	AgentName         string  `json:"agent_name,omitempty"`
+	StoreID           int     `json:"storeID,omitempty"`
+	StoreName         string  `json:"store_name,omitempty"`
+	BrandID           int     `json:"brand_id,omitempty"`
+	BrandName         string  `json:"brand_name,omitempty"`
+	ProductID         int     `json:"product_id,omitempty"`
+	OrderSourceID     int     `json:"order_source_id,omitempty"`
+	OrderStatusID     int     `json:"order_status_id,omitempty"`
+	SalesOrderID      int     `json:"sales_order_id,omitempty"`
+	SoCode            string  `json:"so_code,omitempty"`
+	WarehouseID       int     `json:"warehouse_id,omitempty"`
+	WarehouseCode     string  `json:"warehouse_code,omitempty"`
+	DoCode            string  `json:"do_code,omitempty"`
+	DoDate            string  `json:"do_date,omitempty"`
+	DoRefCode         string  `json:"do_ref_code,omitempty"`
+	DoRefDate         string  `json:"do_ref_date,omitempty"`
+	DoRefferalCode    string  `json:"do_refferal_code,omitempty"`
+	TotalAmount       float64 `json:"total_amount,omitempty"`
+	TotalTonase       float64 `json:"total_tonase,omitempty"`
+	ProductSKU        string  `json:"product_sku,omitempty"`
+	ProductCode       string  `json:"product_code,omitempty"`
+	ProductName       string  `json:"product_name,omitempty"`
+	CategoryID        int     `json:"category_id,omitempty"`
+	SalesmanID        int     `json:"salesman_id,omitempty"`
+	ProvinceID        int     `json:"province_id,omitempty"`
+	CityID            int     `json:"city_id,omitempty"`
+	DistrictID        int     `json:"district_id,omitempty"`
+	VillageID         int     `json:"village_id,omitempty"`
+	StoreProvinceID   int     `json:"store_province_id,omitempty"`
+	StoreCityID       int     `json:"store_city_id,omitempty"`
+	StoreDistrictID   int     `json:"store_district_id,omitempty"`
+	StoreVillageID    int     `json:"store_village_id,omitempty"`
+	StoreCode         string  `json:"store_code,omitempty"`
+	Qty               int     `json:"qty,omitempty"`
+	StartCreatedAt    string  `json:"start_created_at,omitempty"`
+	EndCreatedAt      string  `json:"end_created_at,omitempty"`
+	UpdatedAt         string  `json:"updated_at,omitempty"`
+	StartDoDate       string  `json:"start_do_date,omitempty"`
+	EndDoDate         string  `json:"end_do_date,omitempty"`
 }
 
 type DeliveryOrderDetails struct {
