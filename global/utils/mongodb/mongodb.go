@@ -26,6 +26,8 @@ func InitMongoDB(host, database, username, password, port string, context contex
 	if usedMongoReplica == "0" {
 		portInt, _ := strconv.Atoi(port)
 		mongoURL = fmt.Sprintf("mongodb://%s:%s@%s:%d/%s?authSource=admin", username, password, host, portInt, database)
+	} else if usedMongoReplica == "2" {
+		mongoURL = host
 	} else {
 		mongoURL = fmt.Sprintf("mongodb+srv://%s:%s@%s", username, password, host)
 	}
