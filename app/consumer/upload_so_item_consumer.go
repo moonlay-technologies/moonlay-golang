@@ -35,13 +35,15 @@ type uploadSOItemConsumerHandler struct {
 	salesOrderLogRepository            mongoRepositories.SalesOrderLogRepositoryInterface
 	salesOrderJourneysRepository       mongoRepositories.SalesOrderJourneysRepositoryInterface
 	salesOrderDetailJourneysRepository mongoRepositories.SalesOrderDetailJourneysRepositoryInterface
+	uploadSOHistoriesRepository        mongoRepositories.UploadSOHistoriesRepositoryInterface
+	soUploadErrorLogsRepository        mongoRepositories.SoUploadErrorLogsRepositoryInterface
 	kafkaClient                        kafkadbo.KafkaClientInterface
 	ctx                                context.Context
 	args                               []interface{}
 	db                                 dbresolver.DB
 }
 
-func InitUploadSOItemConsumerHandlerInterface(orderSourceRepository repositories.OrderSourceRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, productRepository repositories.ProductRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface, salesOrderJourneysRepository mongoRepositories.SalesOrderJourneysRepositoryInterface, salesOrderDetailJourneysRepository mongoRepositories.SalesOrderDetailJourneysRepositoryInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UploadSOItemConsumerHandlerInterface {
+func InitUploadSOItemConsumerHandlerInterface(orderSourceRepository repositories.OrderSourceRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, productRepository repositories.ProductRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface, salesOrderJourneysRepository mongoRepositories.SalesOrderJourneysRepositoryInterface, salesOrderDetailJourneysRepository mongoRepositories.SalesOrderDetailJourneysRepositoryInterface, uploadSOHistoriesRepository mongoRepositories.UploadSOHistoriesRepositoryInterface, soUploadErrorLogsRepository mongoRepositories.SoUploadErrorLogsRepositoryInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UploadSOItemConsumerHandlerInterface {
 	return &uploadSOItemConsumerHandler{
 		orderSourceRepository:              orderSourceRepository,
 		orderStatusRepository:              orderStatusRepository,
@@ -57,6 +59,8 @@ func InitUploadSOItemConsumerHandlerInterface(orderSourceRepository repositories
 		salesOrderLogRepository:            salesOrderLogRepository,
 		salesOrderJourneysRepository:       salesOrderJourneysRepository,
 		salesOrderDetailJourneysRepository: salesOrderDetailJourneysRepository,
+		uploadSOHistoriesRepository:        uploadSOHistoriesRepository,
+		soUploadErrorLogsRepository:        soUploadErrorLogsRepository,
 		kafkaClient:                        kafkaClient,
 		ctx:                                ctx,
 		args:                               args,
@@ -84,19 +88,21 @@ func (c *uploadSOItemConsumerHandler) ProcessMessage() {
 
 		requestId := string(m.Key[:])
 
-		// Get Order Source Status By Id
-		getOrderSourceResultChan := make(chan *models.OrderSourceChan)
-		go c.orderSourceRepository.GetBySourceName("upload_sosj", false, c.ctx, getOrderSourceResultChan)
-		getOrderSourceResult := <-getOrderSourceResultChan
-
-		// if getOrderSourceResult.Error != nil {
-		// 	return getOrderSourceResult.ErrorLog
-		// }
-
 		soRefCodes := []string{}
 		salesOrderSoRefCodes := map[string]*models.SalesOrder{}
 
-		for _, v := range uploadSOFields {
+		// Get Order Source Status By Id
+		getOrderSourceResultChan := make(chan *models.OrderSourceChan)
+		go c.orderSourceRepository.GetBySourceName("upload_so", false, c.ctx, getOrderSourceResultChan)
+		getOrderSourceResult := <-getOrderSourceResultChan
+
+		for i, v := range uploadSOFields {
+
+			var errors []string
+
+			if getOrderSourceResult.Error != nil {
+				errors = append(errors, getOrderSourceResult.Error.Error())
+			}
 
 			checkIfSoRefCodeExist := helper.InSliceString(soRefCodes, v.NoOrder)
 
@@ -105,38 +111,36 @@ func (c *uploadSOItemConsumerHandler) ProcessMessage() {
 			go c.orderStatusRepository.GetByNameAndType("open", "sales_order", false, c.ctx, getSalesOrderStatusResultChan)
 			getSalesOrderStatusResult := <-getSalesOrderStatusResultChan
 
-			// if getSalesOrderStatusResult.Error != nil {
-			// 	return getSalesOrderStatusResult.ErrorLog
-			// }
+			if getSalesOrderStatusResult.Error != nil {
+				errors = append(errors, getOrderSourceResult.Error.Error())
+			}
 
 			// Get SO Detail Status By Name
 			getSalesOrderDetailStatusResultChan := make(chan *models.OrderStatusChan)
 			go c.orderStatusRepository.GetByNameAndType("open", "sales_order_detail", false, c.ctx, getSalesOrderDetailStatusResultChan)
 			getSalesOrderDetailStatusResult := <-getSalesOrderDetailStatusResultChan
 
-			// if getSalesOrderDetailStatusResult.Error != nil {
-			// 	return getSalesOrderDetailStatusResult.ErrorLog
-			// }
+			if getSalesOrderDetailStatusResult.Error != nil {
+				errors = append(errors, getOrderSourceResult.Error.Error())
+			}
 
 			// Check Product By Id
 			getProductResultChan := make(chan *models.ProductChan)
 			go c.productRepository.GetBySKU(v.KodeProduk, false, c.ctx, getProductResultChan)
 			getProductResult := <-getProductResultChan
 
-			// if getProductResult.Error != nil {
-			// 	errorLogData := helper.WriteLog(getProductResult.Error, http.StatusInternalServerError, nil)
-			// 	return errorLogData
-			// }
+			if getProductResult.Error != nil {
+				errors = append(errors, fmt.Sprintf("Kode SKU = %s dengan Merek %s Tidak Ditemukan. Silahkan gunakan Kode SKU yang lain", v.KodeProduk, v.NamaMerk))
+			}
 
 			// Check Uom By Id
 			getUomResultChan := make(chan *models.UomChan)
 			go c.uomRepository.GetByCode(v.UnitProduk, false, c.ctx, getUomResultChan)
 			getUomResult := <-getUomResultChan
 
-			// if getUomResult.Error != nil {
-			// 	errorLogData := helper.WriteLog(getUomResult.Error, http.StatusInternalServerError, nil)
-			// 	return errorLogData
-			// }
+			if getUomResult.Error != nil {
+				errors = append(errors, getOrderSourceResult.Error.Error())
+			}
 
 			var price float64
 
@@ -146,6 +150,10 @@ func (c *uploadSOItemConsumerHandler) ProcessMessage() {
 				price = getProductResult.Product.PriceMedium
 			} else {
 				price = getProductResult.Product.PriceBig
+			}
+
+			if price < 1 {
+				errors = append(errors, fmt.Sprintf("Produk dengan Kode SKU %s Belum Ada Harga atau Harga = 0. Silahkan gunakan Kode SKU Produk yang lain.", getProductResult.Product.Sku.String))
 			}
 
 			if checkIfSoRefCodeExist {
@@ -179,50 +187,45 @@ func (c *uploadSOItemConsumerHandler) ProcessMessage() {
 				go c.agentRepository.GetByID(v.IDDistributor, false, c.ctx, getAgentResultChan)
 				getAgentResult := <-getAgentResultChan
 
-				// if getAgentResult.Error != nil {
-				// 	errorLogData := helper.WriteLog(getAgentResult.Error, http.StatusInternalServerError, nil)
-				// 	return errorLogData
-				// }
+				if getAgentResult.Error != nil {
+					errors = append(errors, getAgentResult.Error.Error())
+				}
 
 				// Check Store By Id
 				getStoreResultChan := make(chan *models.StoreChan)
 				go c.storeRepository.GetByID(v.KodeToko, false, c.ctx, getStoreResultChan)
 				getStoreResult := <-getStoreResultChan
 
-				// if getStoreResult.Error != nil {
-				// 	errorLogData := helper.WriteLog(getStoreResult.Error, http.StatusInternalServerError, nil)
-				// 	return errorLogData
-				// }
+				if getStoreResult.Error != nil {
+					errors = append(errors, getAgentResult.Error.Error())
+				}
 
 				// Check User By Id
 				getUserResultChan := make(chan *models.UserChan)
 				go c.userRepository.GetByID(v.IDUser, false, c.ctx, getUserResultChan)
 				getUserResult := <-getUserResultChan
 
-				// if getUserResult.Error != nil {
-				// 	errorLogData := helper.WriteLog(getUserResult.Error, http.StatusInternalServerError, nil)
-				// 	return errorLogData
-				// }
+				if getUserResult.Error != nil {
+					errors = append(errors, getAgentResult.Error.Error())
+				}
 
 				// Check Salesman By Id
-
 				getSalesmanResultChan := make(chan *models.SalesmanChan)
 				go c.salesmanRepository.GetByID(v.IDSalesman, false, c.ctx, getSalesmanResultChan)
 				getSalesmanResult := <-getSalesmanResultChan
 
-				// if getSalesmanResult.Error != nil {
-				// 	errorLogData := helper.WriteLog(getSalesmanResult.Error, http.StatusInternalServerError, nil)
-				// 	return errorLogData
-				// }
+				if getSalesmanResult.Error != nil {
+					errors = append(errors, getAgentResult.Error.Error())
+				}
 
 				// Check Brand By Id
 				getBrandResultChan := make(chan *models.BrandChan)
 				go c.brandRepository.GetByID(v.KodeMerk, false, c.ctx, getBrandResultChan)
 				getBrandResult := <-getBrandResultChan
 
-				// 		// if getBrandResult.Error != nil {
-				// 		// 	return getBrandResult.ErrorLog
-				// 		// }
+				if getBrandResult.Error != nil {
+					errors = append(errors, getAgentResult.Error.Error())
+				}
 
 				// ### Sales Order ###
 				salesOrder := &models.SalesOrder{}
@@ -265,7 +268,39 @@ func (c *uploadSOItemConsumerHandler) ProcessMessage() {
 
 				salesOrder.SalesOrderDetails = salesOrderDetails
 
-				salesOrderSoRefCodes[v.NoOrder] = salesOrder
+				if len(errors) < 1 {
+					salesOrderSoRefCodes[v.NoOrder] = salesOrder
+				} else {
+
+					getUploadSOHistoriesResultChan := make(chan *models.SoUploadHistoryChan)
+					go c.uploadSOHistoriesRepository.GetByID(v.SoUploadHistoryId, false, c.ctx, getUploadSOHistoriesResultChan)
+					getUploadSOHistoriesResult := <-getUploadSOHistoriesResultChan
+					message := getUploadSOHistoriesResult.SoUploadHistory
+
+					if v.UploadType == "retry" {
+
+						message.Status = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
+						uploadSOHistoryJourneysResultChan := make(chan *models.SoUploadHistoryChan)
+						go c.uploadSOHistoriesRepository.UpdateByID(message.ID.Hex(), message, c.ctx, uploadSOHistoryJourneysResultChan)
+
+						break
+
+					} else {
+
+						var myMap map[string]string
+						data, _ := json.Marshal(v)
+						json.Unmarshal(data, &myMap)
+
+						soUploadErrorLogs := &models.SoUploadErrorLog{}
+						soUploadErrorLogs.SoUploadErrorLogsMap(myMap, message.AgentName, i+2, errors, &now)
+						soUploadErrorLogs.SoUploadHistoryId = message.ID
+
+						soUploadErrorLogssResultChan := make(chan *models.SoUploadErrorLogChan)
+						go c.soUploadErrorLogsRepository.Insert(soUploadErrorLogs, c.ctx, soUploadErrorLogssResultChan)
+
+						continue
+					}
+				}
 			}
 		}
 
@@ -376,5 +411,10 @@ func (c *uploadSOItemConsumerHandler) ProcessMessage() {
 			}
 		}
 
+	}
+
+	if err := reader.Close(); err != nil {
+		fmt.Println("error")
+		fmt.Println(err)
 	}
 }

@@ -7,7 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type UploadSOHistory struct {
+type SoUploadHistory struct {
 	ID              primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	RequestId       string             `json:"request_id,omitempty" bson:"request_id,omitempty"`
 	BulkCode        string             `json:"bulk_code,omitempty" bson:"bulk_code,omitempty"`
@@ -27,10 +27,28 @@ type UploadSOHistory struct {
 	UpdatedByEmail  string             `json:"updated_by_email,omitempty" bson:"updated_by_email,omitempty"`
 }
 
-type UploadSOHistoryChan struct {
-	UploadSOHistory *UploadSOHistory
+type SoUploadHistoryChan struct {
+	SoUploadHistory *SoUploadHistory
 	Error           error
 	ErrorLog        *model.ErrorLog
 	Total           int64
 	ID              primitive.ObjectID `json:"_id" bson:"_id"`
+}
+
+type SoUploadHistoriesChan struct {
+	SoUploadHistories []*SoUploadHistory
+	Error             error
+	ErrorLog          *model.ErrorLog
+	Total             int64
+	ID                primitive.ObjectID `json:"_id" bson:"_id"`
+}
+
+type GetSoUploadHistoriesRequest struct {
+	ID        string `json:"_id,omitempty" bson:"_id,omitempty"`
+	Page      int    `json:"page,omitempty" bson:"page,omitempty"`
+	PerPage   int    `json:"per_page,omitempty" bson:"per_page,omitempty"`
+	SortField string `json:"sort_field,omitempty" bson:"sort_field,omitempty"`
+	SortValue string `json:"sort_value,omitempty" bson:"sort_value,omitempty"`
+	RequestID string `json:"request_id,omitempty" bson:"request_id,omitempty"`
+	Status    string `json:"status,omitempty" bson:"status,omitempty"`
 }

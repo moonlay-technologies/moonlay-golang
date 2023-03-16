@@ -17,6 +17,7 @@ type UploadControllerInterface interface {
 	UploadSOSJ(ctx *gin.Context)
 	UploadDO(ctx *gin.Context)
 	UploadSO(ctx *gin.Context)
+	RetryUploadSO(ctx *gin.Context)
 }
 
 type uploadController struct {
@@ -113,6 +114,35 @@ func (c *uploadController) UploadSO(ctx *gin.Context) {
 
 	result.Data = map[string]string{
 		"request_id": ctx.Value("RequestId").(string),
+	}
+
+	result.StatusCode = http.StatusOK
+	ctx.JSON(http.StatusOK, result)
+	return
+
+}
+
+func (c *uploadController) RetryUploadSO(ctx *gin.Context) {
+
+	var result baseModel.Response
+
+	ctx.Set("full_path", ctx.FullPath())
+	ctx.Set("method", ctx.Request.Method)
+
+	id := ctx.Param("so-upload-history-id")
+
+	errorLog := c.uploadUseCase.RetryUploadSO(id, ctx)
+
+	if errorLog != nil {
+		result.StatusCode = errorLog.StatusCode
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	result.Data = map[string]string{
+		"so_upload_history_id": id,
+		"message":              "upload on progress",
 	}
 
 	result.StatusCode = http.StatusOK

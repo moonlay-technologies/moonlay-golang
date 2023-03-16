@@ -7,25 +7,27 @@ type UploadSORequest struct {
 }
 
 type UploadSOField struct {
-	IDDistributor    int
-	KodeToko         int
-	NamaToko         string
-	IDSalesman       int
-	NamaSalesman     string
-	TanggalOrder     string
-	NoOrder          string
-	TanggalTokoOrder string
-	CatatanOrder     string
-	CatatanInternal  string
-	KodeMerk         int
-	NamaMerk         string
-	KodeProduk       string
-	NamaProduk       string
-	QTYOrder         int
-	UnitProduk       string
-	IDAlamat         int
-	NamaAlamat       string
-	IDUser           int
+	IDDistributor     int
+	KodeToko          int
+	NamaToko          string
+	IDSalesman        int
+	NamaSalesman      string
+	TanggalOrder      string
+	NoOrder           string
+	TanggalTokoOrder  string
+	CatatanOrder      string
+	CatatanInternal   string
+	KodeMerk          int
+	NamaMerk          string
+	KodeProduk        string
+	NamaProduk        string
+	QTYOrder          int
+	UnitProduk        string
+	IDAlamat          int
+	NamaAlamat        string
+	IDUser            int
+	SoUploadHistoryId string
+	UploadType        string
 }
 
 type UploadSOFieldsChan struct {

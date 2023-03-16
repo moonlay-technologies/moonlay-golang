@@ -181,7 +181,9 @@ func InitUploadSOItemConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodb
 	salesOrderLogRepository := mongoRepo.InitSalesOrderLogRepository(mongodbClient)
 	salesOrderJourneysRepository := mongoRepo.InitSalesOrderJourneysRepository(mongodbClient)
 	salesOrderDetailJourneysRepository := mongoRepo.InitSalesOrderDetailJourneysRepository(mongodbClient)
-	handler := InitUploadSOItemConsumerHandlerInterface(orderSourceRepository, orderStatusRepository, productRepository, uomRepository, agentRepository, storeRepository, userRepository, salesmanRepository, brandRepository, salesOrderRepository, salesOrderDetailRepository, salesOrderLogRepository, salesOrderJourneysRepository, salesOrderDetailJourneysRepository, kafkaClient, database, ctx, args)
+	uploadSOHistoriesRepository := mongoRepo.InitUploadSOHistoriesRepositoryInterface(mongodbClient)
+	soUploadErrorLogsRepository := mongoRepo.InitSoUploadErrorLogsRepositoryInterface(mongodbClient)
+	handler := InitUploadSOItemConsumerHandlerInterface(orderSourceRepository, orderStatusRepository, productRepository, uomRepository, agentRepository, storeRepository, userRepository, salesmanRepository, brandRepository, salesOrderRepository, salesOrderDetailRepository, salesOrderLogRepository, salesOrderJourneysRepository, salesOrderDetailJourneysRepository, uploadSOHistoriesRepository, soUploadErrorLogsRepository, kafkaClient, database, ctx, args)
 	return handler
 }
 

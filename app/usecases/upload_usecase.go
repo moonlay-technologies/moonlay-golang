@@ -21,6 +21,7 @@ type UploadUseCaseInterface interface {
 	UploadSOSJ(request *models.UploadSOSJRequest, ctx context.Context) *model.ErrorLog
 	UploadDO(ctx context.Context) *model.ErrorLog
 	UploadSO(request *models.UploadSORequest, ctx context.Context) *model.ErrorLog
+	RetryUploadSO(soUploadHistoryId string, ctx context.Context) *model.ErrorLog
 }
 
 type uploadUseCase struct {
@@ -45,12 +46,13 @@ type uploadUseCase struct {
 	salesOrderOpenSearchRepository       openSearchRepositories.SalesOrderOpenSearchRepositoryInterface
 	salesOrderDetailOpenSearchRepository openSearchRepositories.SalesOrderDetailOpenSearchRepositoryInterface
 	warehouseRepository                  repositories.WarehouseRepositoryInterface
+	uploadSOHistoriesRepository          mongoRepositories.UploadSOHistoriesRepositoryInterface
 	kafkaClient                          kafkadbo.KafkaClientInterface
 	db                                   dbresolver.DB
 	ctx                                  context.Context
 }
 
-func InitUploadUseCaseInterface(salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, uomRepository repositories.UomRepositoryInterface, deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, deliveryOrderDetailRepository repositories.DeliveryOrderDetailRepositoryInterface, salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface, salesOrderJourneysRepository mongoRepositories.SalesOrderJourneysRepositoryInterface, salesOrderDetailJourneysRepository mongoRepositories.SalesOrderDetailJourneysRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, categoryRepository repositories.CategoryRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderDetailOpenSearchRepository openSearchRepositories.SalesOrderDetailOpenSearchRepositoryInterface, uploadRepository repositories.UploadRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context) UploadUseCaseInterface {
+func InitUploadUseCaseInterface(salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, uomRepository repositories.UomRepositoryInterface, deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, deliveryOrderDetailRepository repositories.DeliveryOrderDetailRepositoryInterface, salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface, salesOrderJourneysRepository mongoRepositories.SalesOrderJourneysRepositoryInterface, salesOrderDetailJourneysRepository mongoRepositories.SalesOrderDetailJourneysRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, categoryRepository repositories.CategoryRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderDetailOpenSearchRepository openSearchRepositories.SalesOrderDetailOpenSearchRepositoryInterface, uploadRepository repositories.UploadRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, uploadSOHistoriesRepository mongoRepositories.UploadSOHistoriesRepositoryInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context) UploadUseCaseInterface {
 	return &uploadUseCase{
 		salesOrderRepository:                 salesOrderRepository,
 		salesOrderDetailRepository:           salesOrderDetailRepository,
@@ -73,6 +75,7 @@ func InitUploadUseCaseInterface(salesOrderRepository repositories.SalesOrderRepo
 		salesOrderDetailOpenSearchRepository: salesOrderDetailOpenSearchRepository,
 		uploadRepository:                     uploadRepository,
 		warehouseRepository:                  warehouseRepository,
+		uploadSOHistoriesRepository:          uploadSOHistoriesRepository,
 		kafkaClient:                          kafkaClient,
 		db:                                   db,
 		ctx:                                  ctx,
@@ -144,7 +147,7 @@ func (u *uploadUseCase) UploadSO(request *models.UploadSORequest, ctx context.Co
 		return errorLogData
 	}
 
-	message := &models.UploadSOHistory{
+	message := &models.SoUploadHistory{
 		RequestId:       ctx.Value("RequestId").(string),
 		FileName:        request.File,
 		FilePath:        "upload-service/so/" + request.File,
@@ -158,8 +161,40 @@ func (u *uploadUseCase) UploadSO(request *models.UploadSORequest, ctx context.Co
 		UpdatedByEmail:  user.UserEmail,
 	}
 
-	keyKafka := []byte(ctx.Value("RequestId").(string))
+	keyKafka := []byte("upload")
 	messageKafka, _ := json.Marshal(message)
+
+	err := u.kafkaClient.WriteToTopic(constants.UPLOAD_SO_FILE_TOPIC, keyKafka, messageKafka)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		return errorLogData
+	}
+
+	return nil
+}
+
+func (u *uploadUseCase) RetryUploadSO(soUploadHistoryId string, ctx context.Context) *model.ErrorLog {
+
+	user := ctx.Value("user").(*models.UserClaims)
+
+	getUploadSOHistoriesResultChan := make(chan *models.SoUploadHistoryChan)
+	go u.uploadSOHistoriesRepository.GetByID(soUploadHistoryId, false, ctx, getUploadSOHistoriesResultChan)
+	getUploadSOHistoriesResult := <-getUploadSOHistoriesResultChan
+
+	if getUploadSOHistoriesResult.Error != nil {
+		return getUploadSOHistoriesResult.ErrorLog
+	}
+
+	getUploadSOHistoriesResult.SoUploadHistory.UpdatedBy = int64(user.UserID)
+	getUploadSOHistoriesResult.SoUploadHistory.UpdatedByName = user.FirstName + " " + user.LastName
+	getUploadSOHistoriesResult.SoUploadHistory.UpdatedByEmail = user.UserEmail
+
+	a, _ := json.Marshal(getUploadSOHistoriesResult.SoUploadHistory)
+	fmt.Println(string(a))
+
+	keyKafka := []byte("retry")
+	messageKafka, _ := json.Marshal(getUploadSOHistoriesResult.SoUploadHistory)
 
 	err := u.kafkaClient.WriteToTopic(constants.UPLOAD_SO_FILE_TOPIC, keyKafka, messageKafka)
 
