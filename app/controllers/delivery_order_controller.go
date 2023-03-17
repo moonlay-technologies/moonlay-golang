@@ -28,6 +28,7 @@ type DeliveryOrderControllerInterface interface {
 	Get(ctx *gin.Context)
 	GetByID(ctx *gin.Context)
 	GetDetailsByDoId(ctx *gin.Context)
+	GetDetailById(ctx *gin.Context)
 	GetBySalesmanID(ctx *gin.Context)
 }
 
@@ -422,7 +423,51 @@ func (c *deliveryOrderController) GetDetailsByDoId(ctx *gin.Context) {
 
 	deliveryOrderRequest.ID = id
 
-	deliveryOrders, errorLog := c.deliveryOrderUseCase.GetByDoID(deliveryOrderRequest)
+	deliveryOrders, errorLog := c.deliveryOrderUseCase.GetDetailsByDoID(deliveryOrderRequest)
+
+	if errorLog.Err != nil {
+		resultErrorLog = errorLog
+		result.StatusCode = resultErrorLog.StatusCode
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	result.Data = deliveryOrders
+	result.StatusCode = http.StatusOK
+	ctx.JSON(http.StatusOK, result)
+	return
+}
+
+func (c *deliveryOrderController) GetDetailById(ctx *gin.Context) {
+	var result baseModel.Response
+	var resultErrorLog *baseModel.ErrorLog
+
+	doDetailIds := ctx.Param("do-detail-id")
+	doDetailId, err := strconv.Atoi(doDetailIds)
+
+	if err != nil {
+		err = helper.NewError("Parameter 'delivery order detail id' harus bernilai integer")
+		resultErrorLog.Message = err.Error()
+		result.StatusCode = http.StatusBadRequest
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	doIds := ctx.Param("id")
+	doId, err := strconv.Atoi(doIds)
+
+	if err != nil {
+		err = helper.NewError("Parameter 'delivery order id' harus bernilai integer")
+		resultErrorLog.Message = err.Error()
+		result.StatusCode = http.StatusBadRequest
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	deliveryOrders, errorLog := c.deliveryOrderUseCase.GetDetailByID(doDetailId, doId)
 
 	if errorLog.Err != nil {
 		resultErrorLog = errorLog

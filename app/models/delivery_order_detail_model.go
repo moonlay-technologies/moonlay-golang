@@ -216,6 +216,13 @@ type DeliveryOrderDetailOpenSearchDetailResponse struct {
 	Qty        NullInt64 `json:"qty,omitempty" bson:"qty,omitempty"`
 }
 
+type DeliveryOrderDetailsOpenSearchResponse struct {
+	ID              int       `json:"id,omitempty" bson:"id,omitempty"`
+	DeliveryOrderID int       `json:"do_id,omitempty" bson:"delivery_order_id,omitempty"`
+	SoDetailID      int       `json:"so_detail_id,omitempty" bson:"so_detail_id,omitempty"`
+	Qty             NullInt64 `json:"qty,omitempty" bson:"qty,omitempty"`
+}
+
 type DeliveryOrderDetailOpenSearchResponse struct {
 	ID              int                                     `json:"id,omitempty" bson:"id,omitempty"`
 	DeliveryOrderID int                                     `json:"delivery_order_id,omitempty" bson:"delivery_order_id,omitempty"`
