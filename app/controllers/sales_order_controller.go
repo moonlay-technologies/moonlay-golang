@@ -1259,7 +1259,7 @@ func (c *salesOrderController) DeleteByID(ctx *gin.Context) {
 			MessageFormat:   "Status Sales Order <result>",
 		},
 		{
-			Table:           "delivery_orders d JOIN sales_orders s ON d.sales_orderid = s.id",
+			Table:           "delivery_orders d JOIN sales_orders s ON d.sales_order_id = s.id",
 			SelectedCollumn: "d.id",
 			Clause:          fmt.Sprintf("s.id = %d AND d.deleted_at IS NULL", id),
 			MessageFormat:   "Sales Order Has Delivery Order <result>, Please Delete it First",
