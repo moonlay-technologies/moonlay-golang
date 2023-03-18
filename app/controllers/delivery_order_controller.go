@@ -9,7 +9,8 @@ import (
 	"order-service/app/models"
 	"order-service/app/usecases"
 	"order-service/global/utils/helper"
-	baseModel "order-service/global/utils/model"
+	"order-service/global/utils/model"
+
 	"strconv"
 
 	"github.com/bxcodec/dbresolver"
@@ -51,8 +52,8 @@ func InitDeliveryOrderController(deliveryOrderUseCase usecases.DeliveryOrderUseC
 }
 
 func (c *deliveryOrderController) Create(ctx *gin.Context) {
-	var result baseModel.Response
-	var resultErrorLog *baseModel.ErrorLog
+	var result model.Response
+	var resultErrorLog *model.ErrorLog
 	insertRequest := &models.DeliveryOrderStoreRequest{}
 
 	ctx.Set("full_path", ctx.FullPath())
@@ -126,8 +127,8 @@ func (c *deliveryOrderController) UpdateByID(ctx *gin.Context) {
 	id := ctx.Param("id")
 	intID, _ := strconv.Atoi(id)
 
-	var result baseModel.Response
-	var resultErrorLog *baseModel.ErrorLog
+	var result model.Response
+	var resultErrorLog *model.ErrorLog
 	updateRequest := &models.DeliveryOrderUpdateByIDRequest{}
 
 	ctx.Set("full_path", ctx.FullPath())
@@ -210,8 +211,8 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByID(ctx *gin.Context
 	id := ctx.Param("id")
 	intID, _ := strconv.Atoi(id)
 
-	var result baseModel.Response
-	var resultErrorLog *baseModel.ErrorLog
+	var result model.Response
+	var resultErrorLog *model.ErrorLog
 	updateRequest := &models.DeliveryOrderDetailUpdateByIDRequest{}
 
 	ctx.Set("full_path", ctx.FullPath())
@@ -283,8 +284,8 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByID(ctx *gin.Context
 }
 
 func (c *deliveryOrderController) UpdateDeliveryOrderDetailByDeliveryOrderID(ctx *gin.Context) {
-	var result baseModel.Response
-	var resultErrorLog *baseModel.ErrorLog
+	var result model.Response
+	var resultErrorLog *model.ErrorLog
 	updateRequest := []*models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest{}
 
 	ctx.Set("full_path", ctx.FullPath())
@@ -375,8 +376,8 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByDeliveryOrderID(ctx
 }
 
 func (c *deliveryOrderController) Get(ctx *gin.Context) {
-	var result baseModel.Response
-	var resultErrorLog *baseModel.ErrorLog
+	var result model.Response
+	var resultErrorLog *model.ErrorLog
 
 	deliveryOrderRequest, err := c.deliveryOrderValidator.GetDeliveryOrderValidator(ctx)
 	if err != nil {
@@ -401,11 +402,11 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 }
 
 func (c *deliveryOrderController) GetDetailsByDoId(ctx *gin.Context) {
-	var result baseModel.Response
-	var resultErrorLog *baseModel.ErrorLog
+	var result model.Response
+	var resultErrorLog *model.ErrorLog
 
-	doIds := ctx.Param("id")
-	doId, err := strconv.Atoi(doIds)
+	ids := ctx.Param("id")
+	id, err := strconv.Atoi(ids)
 
 	if err != nil {
 		err = helper.NewError("Parameter 'delivery order id' harus bernilai integer")
@@ -422,7 +423,7 @@ func (c *deliveryOrderController) GetDetailsByDoId(ctx *gin.Context) {
 		return
 	}
 
-	deliveryOrderRequest.ID = doId
+	deliveryOrderRequest.ID = id
 
 	deliveryOrders, errorLog := c.deliveryOrderUseCase.GetDetailsByDoID(deliveryOrderRequest)
 
@@ -441,8 +442,8 @@ func (c *deliveryOrderController) GetDetailsByDoId(ctx *gin.Context) {
 }
 
 func (c *deliveryOrderController) GetDetailById(ctx *gin.Context) {
-	var result baseModel.Response
-	var resultErrorLog *baseModel.ErrorLog
+	var result model.Response
+	var resultErrorLog *model.ErrorLog
 
 	doDetailIds := ctx.Param("do-detail-id")
 	doDetailId, err := strconv.Atoi(doDetailIds)
@@ -487,8 +488,8 @@ func (c *deliveryOrderController) GetDetailById(ctx *gin.Context) {
 }
 
 func (c *deliveryOrderController) GetBySalesmanID(ctx *gin.Context) {
-	var result baseModel.Response
-	var resultErrorLog *baseModel.ErrorLog
+	var result model.Response
+	var resultErrorLog *model.ErrorLog
 
 	deliveryOrderReqeuest, err := c.deliveryOrderValidator.GetDeliveryOrderBySalesmanIDValidator(ctx)
 	if err != nil {
@@ -513,8 +514,8 @@ func (c *deliveryOrderController) GetBySalesmanID(ctx *gin.Context) {
 }
 
 func (c *deliveryOrderController) GetByID(ctx *gin.Context) {
-	var result baseModel.Response
-	var resultErrorLog *baseModel.ErrorLog
+	var result model.Response
+	var resultErrorLog *model.ErrorLog
 	var id int
 
 	ctx.Set("full_path", ctx.FullPath())
@@ -553,7 +554,7 @@ func (c *deliveryOrderController) GetByID(ctx *gin.Context) {
 }
 
 func (c *deliveryOrderController) DeleteByID(ctx *gin.Context) {
-	var result baseModel.Response
+	var result model.Response
 	var id int
 
 	ctx.Set("full_path", ctx.FullPath())
@@ -597,7 +598,7 @@ func (c *deliveryOrderController) DeleteByID(ctx *gin.Context) {
 }
 
 func (c *deliveryOrderController) DeleteDetailByID(ctx *gin.Context) {
-	var result baseModel.Response
+	var result model.Response
 	var id int
 
 	ctx.Set("full_path", ctx.FullPath())
@@ -641,7 +642,7 @@ func (c *deliveryOrderController) DeleteDetailByID(ctx *gin.Context) {
 }
 
 func (c *deliveryOrderController) DeleteDetailByDoID(ctx *gin.Context) {
-	var result baseModel.Response
+	var result model.Response
 	var id int
 
 	ctx.Set("full_path", ctx.FullPath())
