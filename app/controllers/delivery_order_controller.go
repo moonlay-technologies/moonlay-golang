@@ -404,14 +404,15 @@ func (c *deliveryOrderController) GetDetailsByDoId(ctx *gin.Context) {
 	var result baseModel.Response
 	var resultErrorLog *baseModel.ErrorLog
 
-	ids := ctx.Param("id")
-	id, err := strconv.Atoi(ids)
+	doIds := ctx.Param("id")
+	doId, err := strconv.Atoi(doIds)
 
 	if err != nil {
-		err = helper.NewError("Parameter 'id' harus bernilai integer")
-		resultErrorLog.Message = err.Error()
+		err = helper.NewError("Parameter 'delivery order id' harus bernilai integer")
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		errorLogData.Message = "Ada kesalahan pada request data, silahkan dicek kembali"
 		result.StatusCode = http.StatusBadRequest
-		result.Error = resultErrorLog
+		result.Error = errorLogData
 		ctx.JSON(result.StatusCode, result)
 		return
 	}
@@ -421,7 +422,7 @@ func (c *deliveryOrderController) GetDetailsByDoId(ctx *gin.Context) {
 		return
 	}
 
-	deliveryOrderRequest.ID = id
+	deliveryOrderRequest.ID = doId
 
 	deliveryOrders, errorLog := c.deliveryOrderUseCase.GetDetailsByDoID(deliveryOrderRequest)
 
@@ -448,9 +449,10 @@ func (c *deliveryOrderController) GetDetailById(ctx *gin.Context) {
 
 	if err != nil {
 		err = helper.NewError("Parameter 'delivery order detail id' harus bernilai integer")
-		resultErrorLog.Message = err.Error()
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		errorLogData.Message = "Ada kesalahan pada request data, silahkan dicek kembali"
 		result.StatusCode = http.StatusBadRequest
-		result.Error = resultErrorLog
+		result.Error = errorLogData
 		ctx.JSON(result.StatusCode, result)
 		return
 	}
@@ -460,9 +462,10 @@ func (c *deliveryOrderController) GetDetailById(ctx *gin.Context) {
 
 	if err != nil {
 		err = helper.NewError("Parameter 'delivery order id' harus bernilai integer")
-		resultErrorLog.Message = err.Error()
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		errorLogData.Message = "Ada kesalahan pada request data, silahkan dicek kembali"
 		result.StatusCode = http.StatusBadRequest
-		result.Error = resultErrorLog
+		result.Error = errorLogData
 		ctx.JSON(result.StatusCode, result)
 		return
 	}

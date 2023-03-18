@@ -28,7 +28,7 @@ type DeliveryOrderUseCaseInterface interface {
 	Get(request *models.DeliveryOrderRequest) (*models.DeliveryOrdersOpenSearchResponse, *model.ErrorLog)
 	GetByID(request *models.DeliveryOrderRequest, ctx context.Context) (*models.DeliveryOrder, *model.ErrorLog)
 	GetDetailsByDoID(request *models.DeliveryOrderDetailRequest) (*models.DeliveryOrderOpenSearchResponse, *model.ErrorLog)
-	GetDetailByID(ID int, doID int) (*models.DeliveryOrderDetailsOpenSearchResponse, *model.ErrorLog)
+	GetDetailByID(doDetailID int, doID int) (*models.DeliveryOrderDetailsOpenSearchResponse, *model.ErrorLog)
 	GetByIDWithDetail(request *models.DeliveryOrderRequest, ctx context.Context) (*models.DeliveryOrderOpenSearchResponse, *model.ErrorLog)
 	GetByAgentID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
 	GetByStoreID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
@@ -1239,9 +1239,9 @@ func (u *deliveryOrderUseCase) GetDetailsByDoID(request *models.DeliveryOrderDet
 	return &deliveryOrder, &model.ErrorLog{}
 }
 
-func (u *deliveryOrderUseCase) GetDetailByID(ID int, doID int) (*models.DeliveryOrderDetailsOpenSearchResponse, *model.ErrorLog) {
+func (u *deliveryOrderUseCase) GetDetailByID(doDetailID int, doID int) (*models.DeliveryOrderDetailsOpenSearchResponse, *model.ErrorLog) {
 	getDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderOpenSearchRepository.GetDetailByID(ID, getDeliveryOrderResultChan)
+	go u.deliveryOrderOpenSearchRepository.GetDetailByID(doDetailID, getDeliveryOrderResultChan)
 	getDeliveryOrdersResult := <-getDeliveryOrderResultChan
 
 	if getDeliveryOrdersResult.Error != nil {
@@ -1250,9 +1250,9 @@ func (u *deliveryOrderUseCase) GetDetailByID(ID int, doID int) (*models.Delivery
 
 	if doID != getDeliveryOrdersResult.DeliveryOrder.ID {
 		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_GET, fmt.Sprintf("DO Detail Id %d tidak terdaftar di DO Id %d", ID, doID))},
-			SystemMessage: []string{"Invalid Process"},
-			StatusCode:    http.StatusUnprocessableEntity,
+			Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
+			SystemMessage: helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_GET, fmt.Sprintf("DO Detail Id %d tidak terdaftar di DO Id %d", doDetailID, doID)),
+			StatusCode:    http.StatusBadRequest,
 			Err:           fmt.Errorf("invalid Process"),
 		})
 		return &models.DeliveryOrderDetailsOpenSearchResponse{}, errorLogData
@@ -1260,11 +1260,8 @@ func (u *deliveryOrderUseCase) GetDetailByID(ID int, doID int) (*models.Delivery
 
 	deliveryOrderDetail := &models.DeliveryOrderDetailsOpenSearchResponse{}
 	for _, v := range getDeliveryOrdersResult.DeliveryOrder.DeliveryOrderDetails {
-		if v.ID == ID {
-			deliveryOrderDetail.ID = v.ID
-			deliveryOrderDetail.DeliveryOrderID = v.DeliveryOrderID
-			deliveryOrderDetail.SoDetailID = v.SoDetailID
-			deliveryOrderDetail.Qty = models.NullInt64{sql.NullInt64{Int64: int64(v.Qty), Valid: true}}
+		if v.ID == doDetailID {
+			deliveryOrderDetail.DeliveryOrderDetailsOpenSearchResponseMap(v)
 		}
 	}
 

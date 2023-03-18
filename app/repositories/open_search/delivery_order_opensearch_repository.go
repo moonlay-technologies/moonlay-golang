@@ -15,7 +15,7 @@ type DeliveryOrderOpenSearchRepositoryInterface interface {
 	Get(request *models.DeliveryOrderRequest, result chan *models.DeliveryOrdersChan)
 	GetByID(request *models.DeliveryOrderRequest, result chan *models.DeliveryOrderChan)
 	GetDetailsByDoID(request *models.DeliveryOrderDetailRequest, result chan *models.DeliveryOrderChan)
-	GetDetailByID(id int, result chan *models.DeliveryOrderChan)
+	GetDetailByID(doDetailID int, result chan *models.DeliveryOrderChan)
 	GetBySalesOrderID(request *models.DeliveryOrderRequest, result chan *models.DeliveryOrdersChan)
 	GetBySalesmanID(request *models.DeliveryOrderRequest, result chan *models.DeliveryOrdersChan)
 	GetBySalesmansID(request *models.DeliveryOrderRequest, result chan *models.DeliveryOrdersChan)
@@ -109,9 +109,9 @@ func (r *deliveryOrderOpenSearch) GetDetailsByDoID(request *models.DeliveryOrder
 	return
 }
 
-func (r *deliveryOrderOpenSearch) GetDetailByID(id int, resultChan chan *models.DeliveryOrderChan) {
+func (r *deliveryOrderOpenSearch) GetDetailByID(doDetailID int, resultChan chan *models.DeliveryOrderChan) {
 	response := &models.DeliveryOrderChan{}
-	requestQuery := r.generateDeliveryOrderDetailQueryOpenSearchTermRequest("delivery_order_details.id", id, nil)
+	requestQuery := r.generateDeliveryOrderDetailQueryOpenSearchTermRequest("delivery_order_details.id", doDetailID, nil)
 	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery, true)
 
 	if err.Err != nil {
