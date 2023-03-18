@@ -29,7 +29,7 @@ type DeliveryOrderControllerInterface interface {
 	Get(ctx *gin.Context)
 	GetByID(ctx *gin.Context)
 	GetDetailsByDoId(ctx *gin.Context)
-	GetDetailById(ctx *gin.Context)
+	// GetDetailById(ctx *gin.Context)
 	GetBySalesmanID(ctx *gin.Context)
 }
 
@@ -441,51 +441,51 @@ func (c *deliveryOrderController) GetDetailsByDoId(ctx *gin.Context) {
 	return
 }
 
-func (c *deliveryOrderController) GetDetailById(ctx *gin.Context) {
-	var result model.Response
-	var resultErrorLog *model.ErrorLog
+// func (c *deliveryOrderController) GetDetailById(ctx *gin.Context) {
+// 	var result model.Response
+// 	var resultErrorLog *model.ErrorLog
 
-	doDetailIds := ctx.Param("do-detail-id")
-	doDetailId, err := strconv.Atoi(doDetailIds)
+// 	doDetailIds := ctx.Param("do-detail-id")
+// 	doDetailId, err := strconv.Atoi(doDetailIds)
 
-	if err != nil {
-		err = helper.NewError("Parameter 'delivery order detail id' harus bernilai integer")
-		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		errorLogData.Message = "Ada kesalahan pada request data, silahkan dicek kembali"
-		result.StatusCode = http.StatusBadRequest
-		result.Error = errorLogData
-		ctx.JSON(result.StatusCode, result)
-		return
-	}
+// 	if err != nil {
+// 		err = helper.NewError("Parameter 'delivery order detail id' harus bernilai integer")
+// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+// 		errorLogData.Message = "Ada kesalahan pada request data, silahkan dicek kembali"
+// 		result.StatusCode = http.StatusBadRequest
+// 		result.Error = errorLogData
+// 		ctx.JSON(result.StatusCode, result)
+// 		return
+// 	}
 
-	doIds := ctx.Param("id")
-	doId, err := strconv.Atoi(doIds)
+// 	doIds := ctx.Param("id")
+// 	doId, err := strconv.Atoi(doIds)
 
-	if err != nil {
-		err = helper.NewError("Parameter 'delivery order id' harus bernilai integer")
-		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		errorLogData.Message = "Ada kesalahan pada request data, silahkan dicek kembali"
-		result.StatusCode = http.StatusBadRequest
-		result.Error = errorLogData
-		ctx.JSON(result.StatusCode, result)
-		return
-	}
+// 	if err != nil {
+// 		err = helper.NewError("Parameter 'delivery order id' harus bernilai integer")
+// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
+// 		errorLogData.Message = "Ada kesalahan pada request data, silahkan dicek kembali"
+// 		result.StatusCode = http.StatusBadRequest
+// 		result.Error = errorLogData
+// 		ctx.JSON(result.StatusCode, result)
+// 		return
+// 	}
 
-	deliveryOrders, errorLog := c.deliveryOrderUseCase.GetDetailByID(doDetailId, doId)
+// 	deliveryOrders, errorLog := c.deliveryOrderUseCase.GetDetailByID(doDetailId, doId)
 
-	if errorLog.Err != nil {
-		resultErrorLog = errorLog
-		result.StatusCode = resultErrorLog.StatusCode
-		result.Error = resultErrorLog
-		ctx.JSON(result.StatusCode, result)
-		return
-	}
+// 	if errorLog.Err != nil {
+// 		resultErrorLog = errorLog
+// 		result.StatusCode = resultErrorLog.StatusCode
+// 		result.Error = resultErrorLog
+// 		ctx.JSON(result.StatusCode, result)
+// 		return
+// 	}
 
-	result.Data = deliveryOrders
-	result.StatusCode = http.StatusOK
-	ctx.JSON(http.StatusOK, result)
-	return
-}
+// 	result.Data = deliveryOrders
+// 	result.StatusCode = http.StatusOK
+// 	ctx.JSON(http.StatusOK, result)
+// 	return
+// }
 
 func (c *deliveryOrderController) GetBySalesmanID(ctx *gin.Context) {
 	var result model.Response
