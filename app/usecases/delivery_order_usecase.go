@@ -27,6 +27,7 @@ type DeliveryOrderUseCaseInterface interface {
 	UpdateDoDetailByDeliveryOrderID(deliveryOrderID int, request []*models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.DeliveryOrderDetails, *model.ErrorLog)
 	Get(request *models.DeliveryOrderRequest) (*models.DeliveryOrdersOpenSearchResponse, *model.ErrorLog)
 	GetByID(request *models.DeliveryOrderRequest, ctx context.Context) (*models.DeliveryOrder, *model.ErrorLog)
+	GetDetails(request *models.DeliveryOrderDetailRequest) (*models.DeliveryOrderDetailsOpenSearchResponses, *model.ErrorLog)
 	GetDetailsByDoID(request *models.DeliveryOrderDetailRequest) (*models.DeliveryOrderOpenSearchResponse, *model.ErrorLog)
 	GetDetailByID(doDetailID int, doID int) (*models.DeliveryOrderDetailsOpenSearchResponse, *model.ErrorLog)
 	GetByIDWithDetail(request *models.DeliveryOrderRequest, ctx context.Context) (*models.DeliveryOrderOpenSearchResponse, *model.ErrorLog)
@@ -42,50 +43,52 @@ type DeliveryOrderUseCaseInterface interface {
 }
 
 type deliveryOrderUseCase struct {
-	deliveryOrderRepository           repositories.DeliveryOrderRepositoryInterface
-	deliveryOrderDetailRepository     repositories.DeliveryOrderDetailRepositoryInterface
-	salesOrderRepository              repositories.SalesOrderRepositoryInterface
-	salesOrderDetailRepository        repositories.SalesOrderDetailRepositoryInterface
-	orderStatusRepository             repositories.OrderStatusRepositoryInterface
-	orderSourceRepository             repositories.OrderSourceRepositoryInterface
-	warehouseRepository               repositories.WarehouseRepositoryInterface
-	brandRepository                   repositories.BrandRepositoryInterface
-	uomRepository                     repositories.UomRepositoryInterface
-	agentRepository                   repositories.AgentRepositoryInterface
-	storeRepository                   repositories.StoreRepositoryInterface
-	productRepository                 repositories.ProductRepositoryInterface
-	userRepository                    repositories.UserRepositoryInterface
-	salesmanRepository                repositories.SalesmanRepositoryInterface
-	deliveryOrderLogRepository        mongoRepositories.DeliveryOrderLogRepositoryInterface
-	deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface
-	SalesOrderOpenSearchUseCase       SalesOrderOpenSearchUseCaseInterface
-	kafkaClient                       kafkadbo.KafkaClientInterface
-	db                                dbresolver.DB
-	ctx                               context.Context
+	deliveryOrderRepository                 repositories.DeliveryOrderRepositoryInterface
+	deliveryOrderDetailRepository           repositories.DeliveryOrderDetailRepositoryInterface
+	salesOrderRepository                    repositories.SalesOrderRepositoryInterface
+	salesOrderDetailRepository              repositories.SalesOrderDetailRepositoryInterface
+	orderStatusRepository                   repositories.OrderStatusRepositoryInterface
+	orderSourceRepository                   repositories.OrderSourceRepositoryInterface
+	warehouseRepository                     repositories.WarehouseRepositoryInterface
+	brandRepository                         repositories.BrandRepositoryInterface
+	uomRepository                           repositories.UomRepositoryInterface
+	agentRepository                         repositories.AgentRepositoryInterface
+	storeRepository                         repositories.StoreRepositoryInterface
+	productRepository                       repositories.ProductRepositoryInterface
+	userRepository                          repositories.UserRepositoryInterface
+	salesmanRepository                      repositories.SalesmanRepositoryInterface
+	deliveryOrderLogRepository              mongoRepositories.DeliveryOrderLogRepositoryInterface
+	deliveryOrderOpenSearchRepository       openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface
+	deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface
+	SalesOrderOpenSearchUseCase             SalesOrderOpenSearchUseCaseInterface
+	kafkaClient                             kafkadbo.KafkaClientInterface
+	db                                      dbresolver.DB
+	ctx                                     context.Context
 }
 
-func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, deliveryOrderDetailRepository repositories.DeliveryOrderDetailRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderUseCaseInterface {
+func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, deliveryOrderDetailRepository repositories.DeliveryOrderDetailRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderUseCaseInterface {
 	return &deliveryOrderUseCase{
-		deliveryOrderRepository:           deliveryOrderRepository,
-		deliveryOrderDetailRepository:     deliveryOrderDetailRepository,
-		salesOrderRepository:              salesOrderRepository,
-		salesOrderDetailRepository:        salesOrderDetailRepository,
-		orderStatusRepository:             orderStatusRepository,
-		orderSourceRepository:             orderSourceRepository,
-		warehouseRepository:               warehouseRepository,
-		brandRepository:                   brandRepository,
-		uomRepository:                     uomRepository,
-		productRepository:                 productRepository,
-		userRepository:                    userRepository,
-		salesmanRepository:                salesmanRepository,
-		agentRepository:                   agentRepository,
-		storeRepository:                   storeRepository,
-		deliveryOrderLogRepository:        deliveryOrderLogRepository,
-		deliveryOrderOpenSearchRepository: deliveryOrderOpenSearchRepository,
-		SalesOrderOpenSearchUseCase:       salesOrderOpenSearchUseCase,
-		kafkaClient:                       kafkaClient,
-		db:                                db,
-		ctx:                               ctx,
+		deliveryOrderRepository:                 deliveryOrderRepository,
+		deliveryOrderDetailRepository:           deliveryOrderDetailRepository,
+		salesOrderRepository:                    salesOrderRepository,
+		salesOrderDetailRepository:              salesOrderDetailRepository,
+		orderStatusRepository:                   orderStatusRepository,
+		orderSourceRepository:                   orderSourceRepository,
+		warehouseRepository:                     warehouseRepository,
+		brandRepository:                         brandRepository,
+		uomRepository:                           uomRepository,
+		productRepository:                       productRepository,
+		userRepository:                          userRepository,
+		salesmanRepository:                      salesmanRepository,
+		agentRepository:                         agentRepository,
+		storeRepository:                         storeRepository,
+		deliveryOrderLogRepository:              deliveryOrderLogRepository,
+		deliveryOrderOpenSearchRepository:       deliveryOrderOpenSearchRepository,
+		deliveryOrderDetailOpenSearchRepository: deliveryOrderDetailOpenSearchRepository,
+		SalesOrderOpenSearchUseCase:             salesOrderOpenSearchUseCase,
+		kafkaClient:                             kafkaClient,
+		db:                                      db,
+		ctx:                                     ctx,
 	}
 }
 
@@ -1213,6 +1216,31 @@ func (u *deliveryOrderUseCase) Get(request *models.DeliveryOrderRequest) (*model
 	}
 
 	return deliveryOrders, &model.ErrorLog{}
+}
+
+func (u *deliveryOrderUseCase) GetDetails(request *models.DeliveryOrderDetailRequest) (*models.DeliveryOrderDetailsOpenSearchResponses, *model.ErrorLog) {
+	getDeliveryOrderDetailsResultChan := make(chan *models.DeliveryOrderDetailsChan)
+	go u.deliveryOrderDetailOpenSearchRepository.Get(request, getDeliveryOrderDetailsResultChan)
+	getDeliveryOrderDetailsResult := <-getDeliveryOrderDetailsResultChan
+
+	if getDeliveryOrderDetailsResult.Error != nil {
+		return &models.DeliveryOrderDetailsOpenSearchResponses{}, getDeliveryOrderDetailsResult.ErrorLog
+	}
+
+	deliveryOrderDetails := []*models.DeliveryOrderDetailsOpenSearchResponse{}
+	for _, v := range getDeliveryOrderDetailsResult.DeliveryOrderDetails {
+		deliveryOrderDetail := models.DeliveryOrderDetailsOpenSearchResponse{}
+		deliveryOrderDetail.DeliveryOrderDetailsOpenSearchResponseMap(v)
+
+		deliveryOrderDetails = append(deliveryOrderDetails, &deliveryOrderDetail)
+	}
+
+	deliveryOrderDetailsResult := &models.DeliveryOrderDetailsOpenSearchResponses{
+		DeliveryOrderDetails: deliveryOrderDetails,
+		Total:                getDeliveryOrderDetailsResult.Total,
+	}
+
+	return deliveryOrderDetailsResult, &model.ErrorLog{}
 }
 
 func (u *deliveryOrderUseCase) GetDetailsByDoID(request *models.DeliveryOrderDetailRequest) (*models.DeliveryOrderOpenSearchResponse, *model.ErrorLog) {

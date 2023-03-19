@@ -12,10 +12,10 @@ import (
 
 type DeliveryOrderDetailOpenSearchRepositoryInterface interface {
 	Create(request *models.DeliveryOrderDetail, result chan *models.DeliveryOrderDetailChan)
-	Get(request *models.DeliveryOrderDetailOpenSearchRequest, result chan *models.DeliveryOrderDetailsChan)
+	Get(request *models.DeliveryOrderDetailRequest, result chan *models.DeliveryOrderDetailsChan)
 	GetByID(request *models.DeliveryOrderRequest, resultChan chan *models.DeliveryOrderDetailChan)
 	generateDeliveryOrderQueryOpenSearchResult(openSearchQueryJson []byte) (*models.DeliveryOrderDetails, *model.ErrorLog)
-	generateDeliveryOrderQueryOpenSearchTermRequest(term_field string, term_value interface{}, request *models.DeliveryOrderDetailOpenSearchRequest) []byte
+	generateDeliveryOrderQueryOpenSearchTermRequest(term_field string, term_value interface{}, request *models.DeliveryOrderDetailRequest) []byte
 }
 
 type deliveryOrderDetailOpenSearch struct {
@@ -46,7 +46,7 @@ func (r *deliveryOrderDetailOpenSearch) Create(request *models.DeliveryOrderDeta
 	return
 }
 
-func (r *deliveryOrderDetailOpenSearch) Get(request *models.DeliveryOrderDetailOpenSearchRequest, resultChan chan *models.DeliveryOrderDetailsChan) {
+func (r *deliveryOrderDetailOpenSearch) Get(request *models.DeliveryOrderDetailRequest, resultChan chan *models.DeliveryOrderDetailsChan) {
 	response := &models.DeliveryOrderDetailsChan{}
 	requestQuery := r.generateDeliveryOrderQueryOpenSearchTermRequest("", "", request)
 	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery)
@@ -80,7 +80,7 @@ func (r *deliveryOrderDetailOpenSearch) GetByID(request *models.DeliveryOrderReq
 	resultChan <- response
 	return
 }
-func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTermRequest(term_field string, term_value interface{}, request *models.DeliveryOrderDetailOpenSearchRequest) []byte {
+func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTermRequest(term_field string, term_value interface{}, request *models.DeliveryOrderDetailRequest) []byte {
 	openSearchQuery := map[string]interface{}{}
 	openSearchDetailQuery := map[string]interface{}{}
 	openSearchDetailBoolQuery := map[string]interface{}{}
@@ -106,50 +106,10 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 			openSearchQuery["from"] = page
 		}
 
-		if request.DeliveryOrderID != 0 {
-			filter := map[string]interface{}{
-				"term": map[string]interface{}{
-					"delivery_order_id": request.DeliveryOrderID,
-				},
-			}
-
-			filters = append(filters, filter)
-		}
-
 		if request.ProductID != 0 {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
 					"product_id": request.ProductID,
-				},
-			}
-
-			filters = append(filters, filter)
-		}
-
-		if request.UomID != 0 {
-			filter := map[string]interface{}{
-				"term": map[string]interface{}{
-					"uom_id": request.UomID,
-				},
-			}
-
-			filters = append(filters, filter)
-		}
-
-		if request.UomName != "" {
-			filter := map[string]interface{}{
-				"term": map[string]interface{}{
-					"uom_name": request.UomName,
-				},
-			}
-
-			filters = append(filters, filter)
-		}
-
-		if request.UomCode != "" {
-			filter := map[string]interface{}{
-				"term": map[string]interface{}{
-					"uom_code": request.UomCode,
 				},
 			}
 
@@ -166,60 +126,10 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 			filters = append(filters, filter)
 		}
 
-		if request.OrderStatusName != "" {
-			filter := map[string]interface{}{
-				"term": map[string]interface{}{
-					"order_status_name": request.UomCode,
-				},
-			}
-
-			filters = append(filters, filter)
-		}
-
-		if request.DoDetailCode != "" {
-			filter := map[string]interface{}{
-				"term": map[string]interface{}{
-					"do_detail_code": request.DoDetailCode,
-				},
-			}
-
-			filters = append(filters, filter)
-		}
-
 		if request.Qty != 0 {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
 					"qty": request.Qty,
-				},
-			}
-
-			filters = append(filters, filter)
-		}
-
-		if request.SoDetail.SentQty != 0 {
-			filter := map[string]interface{}{
-				"term": map[string]interface{}{
-					"sent_qty": request.SoDetail.SentQty,
-				},
-			}
-
-			filters = append(filters, filter)
-		}
-
-		if request.SoDetail.ResidualQty != 0 {
-			filter := map[string]interface{}{
-				"term": map[string]interface{}{
-					"residual_qty": request.SoDetail.ResidualQty,
-				},
-			}
-
-			filters = append(filters, filter)
-		}
-
-		if request.SoDetail.Price != 0 {
-			filter := map[string]interface{}{
-				"term": map[string]interface{}{
-					"price": request.SoDetail.Price,
 				},
 			}
 
