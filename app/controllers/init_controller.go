@@ -40,7 +40,8 @@ func InitHTTPSalesOrderController(database dbresolver.DB, redisdb redisdb.RedisI
 	salesOrderUseCase := usecases.InitSalesOrderUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, agentRepository, brandRepository, storeRepository, productRepository, uomRepository, deliveryOrderRepository, salesOrderLogRepository, salesOrderJourneysRepository, salesOrderDetailJourneysRepository, userRepository, salesmanRepository, categoryRepository, salesOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, kafkaClient, database, ctx)
 	requestValidationRepository := repositories.InitUniqueRequestValidationRepository(database)
 	requestValidationMiddleware := middlewares.InitRequestValidationMiddlewareInterface(requestValidationRepository, orderSourceRepository)
-	handler := InitSalesOrderController(cartUseCase, salesOrderUseCase, requestValidationMiddleware, database, ctx)
+	salesOrderValidator := usecases.InitSalesOrderValidator(requestValidationMiddleware, database, ctx)
+	handler := InitSalesOrderController(cartUseCase, salesOrderUseCase, salesOrderValidator, requestValidationMiddleware, database, ctx)
 	return handler
 }
 
