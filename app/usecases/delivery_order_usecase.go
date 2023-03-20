@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
@@ -13,6 +14,7 @@ import (
 	"order-service/global/utils/helper"
 	kafkadbo "order-service/global/utils/kafka"
 	"order-service/global/utils/model"
+	baseModel "order-service/global/utils/model"
 	"time"
 
 	"github.com/bxcodec/dbresolver"
@@ -25,7 +27,8 @@ type DeliveryOrderUseCaseInterface interface {
 	UpdateDoDetailByDeliveryOrderID(deliveryOrderID int, request []*models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.DeliveryOrderDetails, *model.ErrorLog)
 	Get(request *models.DeliveryOrderRequest) (*models.DeliveryOrdersOpenSearchResponse, *model.ErrorLog)
 	GetByID(request *models.DeliveryOrderRequest, ctx context.Context) (*models.DeliveryOrder, *model.ErrorLog)
-	GetByDoID(request *models.DeliveryOrderDetailRequest) (*models.DeliveryOrderOpenSearchResponse, *model.ErrorLog)
+	GetDetailsByDoID(request *models.DeliveryOrderDetailRequest) (*models.DeliveryOrderOpenSearchResponse, *model.ErrorLog)
+	GetDetailByID(doDetailID int, doID int) (*models.DeliveryOrderDetailsOpenSearchResponse, *model.ErrorLog)
 	GetByIDWithDetail(request *models.DeliveryOrderRequest, ctx context.Context) (*models.DeliveryOrderOpenSearchResponse, *model.ErrorLog)
 	GetByAgentID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
 	GetByStoreID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
@@ -1212,9 +1215,9 @@ func (u *deliveryOrderUseCase) Get(request *models.DeliveryOrderRequest) (*model
 	return deliveryOrders, &model.ErrorLog{}
 }
 
-func (u *deliveryOrderUseCase) GetByDoID(request *models.DeliveryOrderDetailRequest) (*models.DeliveryOrderOpenSearchResponse, *model.ErrorLog) {
+func (u *deliveryOrderUseCase) GetDetailsByDoID(request *models.DeliveryOrderDetailRequest) (*models.DeliveryOrderOpenSearchResponse, *model.ErrorLog) {
 	getDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderOpenSearchRepository.GetByDoID(request, getDeliveryOrderResultChan)
+	go u.deliveryOrderOpenSearchRepository.GetDetailsByDoID(request, getDeliveryOrderResultChan)
 	getDeliveryOrdersResult := <-getDeliveryOrderResultChan
 
 	if getDeliveryOrdersResult.Error != nil {
@@ -1234,6 +1237,35 @@ func (u *deliveryOrderUseCase) GetByDoID(request *models.DeliveryOrderDetailRequ
 	deliveryOrder.DeliveryOrderDetail = deliveryOrderDetails
 
 	return &deliveryOrder, &model.ErrorLog{}
+}
+
+func (u *deliveryOrderUseCase) GetDetailByID(doDetailID int, doID int) (*models.DeliveryOrderDetailsOpenSearchResponse, *model.ErrorLog) {
+	getDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
+	go u.deliveryOrderOpenSearchRepository.GetDetailByID(doDetailID, getDeliveryOrderResultChan)
+	getDeliveryOrdersResult := <-getDeliveryOrderResultChan
+
+	if getDeliveryOrdersResult.Error != nil {
+		return &models.DeliveryOrderDetailsOpenSearchResponse{}, getDeliveryOrdersResult.ErrorLog
+	}
+
+	if doID != getDeliveryOrdersResult.DeliveryOrder.ID {
+		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
+			SystemMessage: helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_GET, fmt.Sprintf("DO Detail Id %d tidak terdaftar di DO Id %d", doDetailID, doID)),
+			StatusCode:    http.StatusBadRequest,
+			Err:           fmt.Errorf("invalid Process"),
+		})
+		return &models.DeliveryOrderDetailsOpenSearchResponse{}, errorLogData
+	}
+
+	deliveryOrderDetail := &models.DeliveryOrderDetailsOpenSearchResponse{}
+	for _, v := range getDeliveryOrdersResult.DeliveryOrder.DeliveryOrderDetails {
+		if v.ID == doDetailID {
+			deliveryOrderDetail.DeliveryOrderDetailsOpenSearchResponseMap(v)
+		}
+	}
+
+	return deliveryOrderDetail, &model.ErrorLog{}
 }
 
 func (u *deliveryOrderUseCase) GetByID(request *models.DeliveryOrderRequest, ctx context.Context) (*models.DeliveryOrder, *model.ErrorLog) {
