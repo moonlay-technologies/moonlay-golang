@@ -27,7 +27,7 @@ type DeliveryOrderControllerInterface interface {
 
 	Get(ctx *gin.Context)
 	GetByID(ctx *gin.Context)
-	GetDetails(ctx *gin.Context)
+	// GetDetails(ctx *gin.Context)
 	GetDetailsByDoId(ctx *gin.Context)
 	GetDetailById(ctx *gin.Context)
 	GetBySalesmanID(ctx *gin.Context)
@@ -329,22 +329,22 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 	return
 }
 
-func (c *deliveryOrderController) GetDetails(ctx *gin.Context) {
-	deliveryOrderDetailRequest, err := c.deliveryOrderValidator.GetDeliveryOrderDetailValidator(ctx)
-	if err != nil {
-		return
-	}
+// func (c *deliveryOrderController) GetDetails(ctx *gin.Context) {
+// 	deliveryOrderDetailRequest, err := c.deliveryOrderValidator.GetDeliveryOrderDetailValidator(ctx)
+// 	if err != nil {
+// 		return
+// 	}
 
-	deliveryOrderDetails, errorLog := c.deliveryOrderUseCase.GetDetails(deliveryOrderDetailRequest)
+// 	deliveryOrderDetails, errorLog := c.deliveryOrderUseCase.GetDetails(deliveryOrderDetailRequest)
 
-	if errorLog.Err != nil {
-		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
-		return
-	}
+// 	if errorLog.Err != nil {
+// 		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+// 		return
+// 	}
 
-	ctx.JSON(http.StatusOK, model.Response{Data: deliveryOrderDetails.DeliveryOrderDetails, Total: deliveryOrderDetails.Total, StatusCode: http.StatusOK})
-	return
-}
+// 	ctx.JSON(http.StatusOK, model.Response{Data: deliveryOrderDetails.DeliveryOrderDetails, Total: deliveryOrderDetails.Total, StatusCode: http.StatusOK})
+// 	return
+// }
 
 func (c *deliveryOrderController) GetDetailsByDoId(ctx *gin.Context) {
 	doIds := ctx.Param("id")
