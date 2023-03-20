@@ -32,6 +32,7 @@ type SalesOrderControllerInterface interface {
 	GetSyncToKafkaHistories(ctx *gin.Context)
 	GetSOJourneyBySoId(ctx *gin.Context)
 	DeleteByID(ctx *gin.Context)
+	DeleteDetailByID(ctx *gin.Context)
 }
 
 type salesOrderController struct {
@@ -1844,6 +1845,94 @@ func (c *salesOrderController) GetSOJourneyBySoId(ctx *gin.Context) {
 
 	result.Data = salesOrderJourney.SalesOrderJourneys
 	result.Total = salesOrderJourney.Total
+	result.StatusCode = http.StatusOK
+	ctx.JSON(http.StatusOK, result)
+	return
+}
+
+func (c *salesOrderController) DeleteDetailByID(ctx *gin.Context) {
+	var result baseModel.Response
+	var id int
+
+	ctx.Set("full_path", ctx.FullPath())
+	ctx.Set("method", ctx.Request.Method)
+
+	sId := ctx.Param("so-detail-id")
+	id, err := strconv.Atoi(sId)
+
+	if err != nil {
+		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		result.StatusCode = http.StatusBadRequest
+		result.Error = helper.WriteLog(err, result.StatusCode, nil)
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+	mustActiveField := []*models.MustActiveRequest{
+		{
+			Table:    "sales_orders",
+			ReqField: "id",
+			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", id),
+		},
+	}
+
+	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
+	if err != nil {
+		return
+	}
+	mustEmpties := []*models.MustEmptyValidationRequest{
+		{
+			Table:           "sales_order_details s JOIN order_statuses o ON s.order_status_id = o.id",
+			SelectedCollumn: "o.name",
+			Clause:          fmt.Sprintf("o.id = %d AND s.order_status_id NOT IN (16)", id),
+			MessageFormat:   "Hanya status cancelled pada Sales Order Detail yang dapat di delete",
+		},
+		// {
+		// 	Table:           "delivery_orders d JOIN sales_orders s ON d.sales_order_id = s.id",
+		// 	SelectedCollumn: "d.id",
+		// 	Clause:          fmt.Sprintf("s.id = %d AND d.deleted_at IS NULL", id),
+		// 	MessageFormat:   "Sales Order Has Delivery Order <result>, Please Delete it First",
+		// },
+	}
+	err = c.requestValidationMiddleware.MustEmptyValidation(ctx, mustEmpties)
+	if err != nil {
+		return
+	}
+
+	dbTransaction, err := c.db.BeginTx(ctx, nil)
+
+	if err != nil {
+		result.StatusCode = http.StatusInternalServerError
+		result.Error = helper.WriteLog(err, result.StatusCode, nil)
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+	errorLog := c.salesOrderUseCase.DeleteDetailById(id, dbTransaction)
+
+	if errorLog != nil {
+		err = dbTransaction.Rollback()
+
+		if err != nil {
+			result.StatusCode = http.StatusInternalServerError
+			result.Error = helper.WriteLog(err, result.StatusCode, nil)
+			ctx.JSON(result.StatusCode, result)
+			return
+		}
+
+		result.StatusCode = errorLog.StatusCode
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	err = dbTransaction.Commit()
+
+	if err != nil {
+		result.StatusCode = http.StatusInternalServerError
+		result.Error = helper.WriteLog(err, result.StatusCode, "Ada kesalahan, silahkan coba lagi nanti")
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
 	return
