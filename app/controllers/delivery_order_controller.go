@@ -28,6 +28,7 @@ type DeliveryOrderControllerInterface interface {
 	Get(ctx *gin.Context)
 	GetByID(ctx *gin.Context)
 	GetDetailsByDoId(ctx *gin.Context)
+	GetDetailById(ctx *gin.Context)
 	GetBySalesmanID(ctx *gin.Context)
 }
 
@@ -328,12 +329,12 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 }
 
 func (c *deliveryOrderController) GetDetailsByDoId(ctx *gin.Context) {
-	ids := ctx.Param("id")
-	id, err := strconv.Atoi(ids)
+	doIds := ctx.Param("id")
+	doId, err := strconv.Atoi(doIds)
 
 	if err != nil {
-		err = helper.NewError("Parameter 'id' harus bernilai integer")
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		err = helper.NewError("Parameter 'delivery order id' harus bernilai integer")
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByErrorWithMessage(err, http.StatusBadRequest, nil))
 		return
 	}
 
@@ -342,9 +343,39 @@ func (c *deliveryOrderController) GetDetailsByDoId(ctx *gin.Context) {
 		return
 	}
 
-	deliveryOrderRequest.ID = id
+	deliveryOrderRequest.ID = doId
 
-	deliveryOrders, errorLog := c.deliveryOrderUseCase.GetByDoID(deliveryOrderRequest)
+	deliveryOrders, errorLog := c.deliveryOrderUseCase.GetDetailsByDoID(deliveryOrderRequest)
+
+	if errorLog.Err != nil {
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, model.Response{Data: deliveryOrders, StatusCode: http.StatusOK})
+	return
+}
+
+func (c *deliveryOrderController) GetDetailById(ctx *gin.Context) {
+	doDetailIds := ctx.Param("do-detail-id")
+	doDetailId, err := strconv.Atoi(doDetailIds)
+
+	if err != nil {
+		err = helper.NewError("Parameter 'delivery order detail id' harus bernilai integer")
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByErrorWithMessage(err, http.StatusBadRequest, nil))
+		return
+	}
+
+	doIds := ctx.Param("id")
+	doId, err := strconv.Atoi(doIds)
+
+	if err != nil {
+		err = helper.NewError("Parameter 'delivery order id' harus bernilai integer")
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByErrorWithMessage(err, http.StatusBadRequest, nil))
+		return
+	}
+
+	deliveryOrders, errorLog := c.deliveryOrderUseCase.GetDetailByID(doDetailId, doId)
 
 	if errorLog.Err != nil {
 		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))

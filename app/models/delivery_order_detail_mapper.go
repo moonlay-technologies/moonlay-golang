@@ -11,6 +11,14 @@ func (deliveryOrderDetail *DeliveryOrderDetailOpenSearchDetailResponse) Delivery
 	return
 }
 
+func (deliveryOrderDetail *DeliveryOrderDetailsOpenSearchResponse) DeliveryOrderDetailsOpenSearchResponseMap(request *DeliveryOrderDetail) {
+	deliveryOrderDetail.ID = request.ID
+	deliveryOrderDetail.DeliveryOrderID = request.DeliveryOrderID
+	deliveryOrderDetail.SoDetailID = request.SoDetailID
+	deliveryOrderDetail.Qty = NullInt64{sql.NullInt64{Int64: int64(request.Qty), Valid: true}}
+	return
+}
+
 func (deliveryOrder *DeliveryOrder) AgentMap(request *Agent) {
 	deliveryOrder.Agent = request
 	deliveryOrder.AgentID = request.ID

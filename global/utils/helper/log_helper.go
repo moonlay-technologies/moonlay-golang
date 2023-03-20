@@ -18,6 +18,7 @@ import (
 var DefaultStatusText = map[int]string{
 	http.StatusInternalServerError: "Terjadi Kesalahan, Silahkan Coba lagi Nanti",
 	http.StatusNotFound:            "Data tidak Ditemukan",
+	http.StatusBadRequest:          "Ada kesalahan pada request data, silahkan dicek kembali",
 }
 
 func WriteLog(err error, errorCode int, message interface{}) *model.ErrorLog {
