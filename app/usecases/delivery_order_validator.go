@@ -20,6 +20,7 @@ import (
 type DeliveryOrderValidatorInterface interface {
 	CreateDeliveryOrderValidator(*models.DeliveryOrderStoreRequest, *gin.Context) error
 	GetDeliveryOrderValidator(*gin.Context) (*models.DeliveryOrderRequest, error)
+	GetDeliveryOrderDetailValidator(*gin.Context) (*models.DeliveryOrderDetailRequest, error)
 	GetDeliveryOrderBySalesmanIDValidator(*gin.Context) (*models.DeliveryOrderRequest, error)
 	UpdateDeliveryOrderByIDValidator(int, *models.DeliveryOrderUpdateByIDRequest, *gin.Context) error
 	UpdateDeliveryOrderDetailByDoIDValidator(int, []*models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest, *gin.Context) error
@@ -491,8 +492,14 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderValidator(ctx *gin.Context) (*m
 	var result baseModel.Response
 
 	pageInt, err := c.getIntQueryWithDefault("page", "1", true, ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	perPageInt, err := c.getIntQueryWithDefault("per_page", "10", true, ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	sortField := c.getQueryWithDefault("sort_field", "created_at", ctx)
 
@@ -569,6 +576,21 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderValidator(ctx *gin.Context) (*m
 		return nil, err
 	}
 
+	dateFields := []*models.DateInputRequest{}
+
+	startDoDate, dateFields := c.getQueryWithDateValidation("start_do_date", "", dateFields, ctx)
+
+	endDoDate, dateFields := c.getQueryWithDateValidation("end_do_date", "", dateFields, ctx)
+
+	startCreatedAt, dateFields := c.getQueryWithDateValidation("start_created_at", "", dateFields, ctx)
+
+	endCreatedAt, dateFields := c.getQueryWithDateValidation("end_created_at", "", dateFields, ctx)
+
+	err = c.requestValidationMiddleware.DateInputValidation(ctx, dateFields, constants.ERROR_ACTION_NAME_GET)
+	if err != nil {
+		return nil, err
+	}
+
 	deliveryOrderReqeuest := &models.DeliveryOrderRequest{
 		Page:              pageInt,
 		PerPage:           perPageInt,
@@ -583,8 +605,8 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderValidator(ctx *gin.Context) (*m
 		OrderStatusID:     intOrderStatusID,
 		DoCode:            c.getQueryWithDefault("do_code", "", ctx),
 		SoCode:            c.getQueryWithDefault("so_code", "", ctx),
-		StartDoDate:       c.getQueryWithDefault("start_do_date", "", ctx),
-		EndDoDate:         c.getQueryWithDefault("end_do_date", "", ctx),
+		StartDoDate:       startDoDate,
+		EndDoDate:         endDoDate,
 		DoRefCode:         c.getQueryWithDefault("do_ref_code", "", ctx),
 		DoRefDate:         c.getQueryWithDefault("do_ref_date", "", ctx),
 		ProductID:         intProductID,
@@ -594,12 +616,154 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderValidator(ctx *gin.Context) (*m
 		CityID:            intCityID,
 		DistrictID:        intDistrictID,
 		VillageID:         intVillageID,
-		StartCreatedAt:    c.getQueryWithDefault("start_created_at", "", ctx),
-		EndCreatedAt:      c.getQueryWithDefault("end_created_at", "", ctx),
+		StartCreatedAt:    startCreatedAt,
+		EndCreatedAt:      endCreatedAt,
 		UpdatedAt:         c.getQueryWithDefault("updated_at", "", ctx),
 	}
 	return deliveryOrderReqeuest, nil
 }
+
+func (c *DeliveryOrderValidator) GetDeliveryOrderDetailValidator(ctx *gin.Context) (*models.DeliveryOrderDetailRequest, error) {
+	var result baseModel.Response
+
+	pageInt, err := c.getIntQueryWithDefault("page", "1", true, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	perPageInt, err := c.getIntQueryWithDefault("per_page", "10", true, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	sortField := c.getQueryWithDefault("sort_field", "created_at", ctx)
+
+	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "created_at" && sortField != "updated_at" {
+		err = helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
+		result.StatusCode = http.StatusBadRequest
+		result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		ctx.JSON(result.StatusCode, result)
+		return nil, err
+	}
+
+	intDoDetailID, err := c.getIntQueryWithDefault("do_detail_id", "0", false, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	intSalesOrderID, err := c.getIntQueryWithDefault("sales_order_id", "0", false, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	intAgentID, err := c.getIntQueryWithDefault("agent_id", "0", false, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	intStoreID, err := c.getIntQueryWithDefault("store_id", "0", false, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	intBrandID, err := c.getIntQueryWithDefault("brand_id", "0", false, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	intOrderStatusID, err := c.getIntQueryWithDefault("order_status_id", "0", false, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	intProductID, err := c.getIntQueryWithDefault("product_id", "0", false, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	intCategoryID, err := c.getIntQueryWithDefault("category_id", "0", false, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	intSalesmanID, err := c.getIntQueryWithDefault("salesman_id", "0", false, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	intProvinceID, err := c.getIntQueryWithDefault("province_id", "0", false, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	intCityID, err := c.getIntQueryWithDefault("city_id", "0", false, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	intDistrictID, err := c.getIntQueryWithDefault("district_id", "0", false, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	intVillageID, err := c.getIntQueryWithDefault("village_id", "0", false, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	intQty, err := c.getIntQueryWithDefault("qty", "0", false, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	dateFields := []*models.DateInputRequest{}
+
+	startDoDate, dateFields := c.getQueryWithDateValidation("start_do_date", "", dateFields, ctx)
+
+	endDoDate, dateFields := c.getQueryWithDateValidation("end_do_date", "", dateFields, ctx)
+
+	startCreatedAt, dateFields := c.getQueryWithDateValidation("start_created_at", "", dateFields, ctx)
+
+	endCreatedAt, dateFields := c.getQueryWithDateValidation("end_created_at", "", dateFields, ctx)
+
+	err = c.requestValidationMiddleware.DateInputValidation(ctx, dateFields, constants.ERROR_ACTION_NAME_GET)
+	if err != nil {
+		return nil, err
+	}
+
+	deliveryOrderReqeuest := &models.DeliveryOrderDetailRequest{
+		Page:              pageInt,
+		PerPage:           perPageInt,
+		SortField:         sortField,
+		SortValue:         c.getQueryWithDefault("sort_value", "desc", ctx),
+		GlobalSearchValue: c.getQueryWithDefault("global_search_value", "", ctx),
+		DoDetailID:        intDoDetailID,
+		SalesOrderID:      intSalesOrderID,
+		AgentID:           intAgentID,
+		StoreID:           intStoreID,
+		BrandID:           intBrandID,
+		OrderStatusID:     intOrderStatusID,
+		DoCode:            c.getQueryWithDefault("do_code", "", ctx),
+		SoCode:            c.getQueryWithDefault("so_code", "", ctx),
+		StartDoDate:       startDoDate,
+		EndDoDate:         endDoDate,
+		DoRefCode:         c.getQueryWithDefault("do_ref_code", "", ctx),
+		DoRefDate:         c.getQueryWithDefault("do_ref_date", "", ctx),
+		ProductID:         intProductID,
+		CategoryID:        intCategoryID,
+		SalesmanID:        intSalesmanID,
+		ProvinceID:        intProvinceID,
+		CityID:            intCityID,
+		DistrictID:        intDistrictID,
+		VillageID:         intVillageID,
+		Qty:               intQty,
+		StartCreatedAt:    startCreatedAt,
+		EndCreatedAt:      endCreatedAt,
+		UpdatedAt:         c.getQueryWithDefault("updated_at", "", ctx),
+	}
+	return deliveryOrderReqeuest, nil
+}
+
 func (c *DeliveryOrderValidator) GetDeliveryOrderBySalesmanIDValidator(ctx *gin.Context) (*models.DeliveryOrderRequest, error) {
 	pageInt, err := c.getIntQueryWithDefault("page", "1", true, ctx)
 
@@ -716,6 +880,19 @@ func (d *DeliveryOrderValidator) getQueryWithDefault(param string, empty string,
 		result = empty
 	}
 	return result
+}
+
+func (d *DeliveryOrderValidator) getQueryWithDateValidation(param string, empty string, dateFields []*models.DateInputRequest, ctx *gin.Context) (string, []*models.DateInputRequest) {
+	result, isResultExist := ctx.GetQuery(param)
+	if isResultExist == false {
+		result = empty
+	} else {
+		dateFields = append(dateFields, &models.DateInputRequest{
+			Field: param,
+			Value: result,
+		})
+	}
+	return result, dateFields
 }
 
 func (d *DeliveryOrderValidator) getIntQueryWithDefault(param string, empty string, isNotZero bool, ctx *gin.Context) (int, error) {

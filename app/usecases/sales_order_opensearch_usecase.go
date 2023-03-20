@@ -221,7 +221,13 @@ func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(salesOrder
 
 func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromDeleteEvent(salesOrder *models.SalesOrder, ctx context.Context) *model.ErrorLog {
 	now := time.Now()
+	isParentDelete := salesOrder.SalesOrderDetails == nil
 	salesOrderRequest := &models.SalesOrderRequest{ID: salesOrder.ID}
+
+	if isParentDelete {
+		salesOrder.DeletedAt = &now
+		salesOrder.UpdatedAt = &now
+	}
 
 	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
 	go u.salesOrderOpenSearchRepository.GetByID(salesOrderRequest, getSalesOrderResultChan)
@@ -230,11 +236,12 @@ func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromDeleteEvent(salesOrder
 	salesOrder.SalesOrderOpenSearchChanMap(getSalesOrderResult)
 
 	for k := range salesOrder.SalesOrderDetails {
+		salesOrder.SalesOrderDetails[k].DeletedAt = &now
+		salesOrder.SalesOrderDetails[k].UpdatedAt = &now
 		salesOrder.SalesOrderDetails[k].IsDoneSyncToEs = "1"
 		salesOrder.SalesOrderDetails[k].EndDateSyncToEs = &now
 	}
 
-	salesOrder.UpdatedAt = &now
 	salesOrder.IsDoneSyncToEs = "1"
 	salesOrder.EndDateSyncToEs = &now
 
