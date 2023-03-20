@@ -18,7 +18,7 @@ func (_m *SalesOrderLogRepositoryInterface) Get(request *models.SalesOrderEventL
 }
 
 // GetByID provides a mock function with given fields: ID, countOnly, ctx, resultChan
-func (_m *SalesOrderLogRepositoryInterface) GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.SalesOrderLogChan) {
+func (_m *SalesOrderLogRepositoryInterface) GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.GetSalesOrderLogChan) {
 	_m.Called(ID, countOnly, ctx, resultChan)
 }
 func (_m *SalesOrderLogRepositoryInterface) GetByCollumn(collumnName string, value string, countOnly bool, ctx context.Context, resultChan chan *models.SalesOrderLogChan){
