@@ -27,7 +27,7 @@ type DeliveryOrderUseCaseInterface interface {
 	UpdateDoDetailByDeliveryOrderID(deliveryOrderID int, request []*models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.DeliveryOrderDetails, *model.ErrorLog)
 	Get(request *models.DeliveryOrderRequest) (*models.DeliveryOrdersOpenSearchResponse, *model.ErrorLog)
 	GetByID(request *models.DeliveryOrderRequest, ctx context.Context) (*models.DeliveryOrder, *model.ErrorLog)
-	// GetDetails(request *models.DeliveryOrderDetailRequest) (*models.DeliveryOrderDetailsOpenSearchResponses, *model.ErrorLog)
+	GetDetails(request *models.DeliveryOrderDetailOpenSearchRequest) (*models.DeliveryOrderDetailsOpenSearchResponses, *model.ErrorLog)
 	GetDetailsByDoID(request *models.DeliveryOrderDetailRequest) (*models.DeliveryOrderOpenSearchResponse, *model.ErrorLog)
 	GetDetailByID(doDetailID int, doID int) (*models.DeliveryOrderDetailsOpenSearchResponse, *model.ErrorLog)
 	GetByIDWithDetail(request *models.DeliveryOrderRequest, ctx context.Context) (*models.DeliveryOrderOpenSearchResponse, *model.ErrorLog)
@@ -1218,30 +1218,30 @@ func (u *deliveryOrderUseCase) Get(request *models.DeliveryOrderRequest) (*model
 	return deliveryOrders, &model.ErrorLog{}
 }
 
-// func (u *deliveryOrderUseCase) GetDetails(request *models.DeliveryOrderDetailRequest) (*models.DeliveryOrderDetailsOpenSearchResponses, *model.ErrorLog) {
-// 	getDeliveryOrderDetailsResultChan := make(chan *models.DeliveryOrderDetailsChan)
-// 	go u.deliveryOrderDetailOpenSearchRepository.Get(request, getDeliveryOrderDetailsResultChan)
-// 	getDeliveryOrderDetailsResult := <-getDeliveryOrderDetailsResultChan
+func (u *deliveryOrderUseCase) GetDetails(request *models.DeliveryOrderDetailOpenSearchRequest) (*models.DeliveryOrderDetailsOpenSearchResponses, *model.ErrorLog) {
+	getDeliveryOrderDetailsResultChan := make(chan *models.DeliveryOrderDetailsOpenSearchChan)
+	go u.deliveryOrderDetailOpenSearchRepository.Get(request, getDeliveryOrderDetailsResultChan)
+	getDeliveryOrderDetailsResult := <-getDeliveryOrderDetailsResultChan
 
-// 	if getDeliveryOrderDetailsResult.Error != nil {
-// 		return &models.DeliveryOrderDetailsOpenSearchResponses{}, getDeliveryOrderDetailsResult.ErrorLog
-// 	}
+	if getDeliveryOrderDetailsResult.Error != nil {
+		return &models.DeliveryOrderDetailsOpenSearchResponses{}, getDeliveryOrderDetailsResult.ErrorLog
+	}
 
-// 	deliveryOrderDetails := []*models.DeliveryOrderDetailsOpenSearchResponse{}
-// 	for _, v := range getDeliveryOrderDetailsResult.DeliveryOrderDetails {
-// 		deliveryOrderDetail := models.DeliveryOrderDetailsOpenSearchResponse{}
-// 		deliveryOrderDetail.DeliveryOrderDetailsOpenSearchResponseMap(v)
+	deliveryOrderDetails := []*models.DeliveryOrderDetailsOpenSearchResponse{}
+	for _, v := range getDeliveryOrderDetailsResult.DeliveryOrderDetailOpenSearch {
+		deliveryOrderDetail := models.DeliveryOrderDetailsOpenSearchResponse{}
+		deliveryOrderDetail.DeliveryOrderDetailsOpenSearchResponseMap(v)
 
-// 		deliveryOrderDetails = append(deliveryOrderDetails, &deliveryOrderDetail)
-// 	}
+		deliveryOrderDetails = append(deliveryOrderDetails, &deliveryOrderDetail)
+	}
 
-// 	deliveryOrderDetailsResult := &models.DeliveryOrderDetailsOpenSearchResponses{
-// 		DeliveryOrderDetails: deliveryOrderDetails,
-// 		Total:                getDeliveryOrderDetailsResult.Total,
-// 	}
+	deliveryOrderDetailsResult := &models.DeliveryOrderDetailsOpenSearchResponses{
+		DeliveryOrderDetails: deliveryOrderDetails,
+		Total:                getDeliveryOrderDetailsResult.Total,
+	}
 
-// 	return deliveryOrderDetailsResult, &model.ErrorLog{}
-// }
+	return deliveryOrderDetailsResult, &model.ErrorLog{}
+}
 
 func (u *deliveryOrderUseCase) GetDetailsByDoID(request *models.DeliveryOrderDetailRequest) (*models.DeliveryOrderOpenSearchResponse, *model.ErrorLog) {
 	getDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
@@ -1289,7 +1289,7 @@ func (u *deliveryOrderUseCase) GetDetailByID(doDetailID int, doID int) (*models.
 	deliveryOrderDetail := &models.DeliveryOrderDetailsOpenSearchResponse{}
 	for _, v := range getDeliveryOrdersResult.DeliveryOrder.DeliveryOrderDetails {
 		if v.ID == doDetailID {
-			deliveryOrderDetail.DeliveryOrderDetailsOpenSearchResponseMap(v)
+			deliveryOrderDetail.DeliveryOrderDetailsByDoIDOpenSearchResponseMap(v)
 		}
 	}
 
