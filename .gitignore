@@ -48,7 +48,7 @@ Thumbs.db
 *.mov
 *.wmv
 
-# *.env*
+*.env*
 
 *coverage*
 # Html Output of the go coverage too

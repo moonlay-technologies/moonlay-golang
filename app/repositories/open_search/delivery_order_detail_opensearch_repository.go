@@ -11,10 +11,10 @@ import (
 )
 
 type DeliveryOrderDetailOpenSearchRepositoryInterface interface {
-	Create(request *models.DeliveryOrderDetail, result chan *models.DeliveryOrderDetailChan)
-	Get(request *models.DeliveryOrderDetailOpenSearchRequest, result chan *models.DeliveryOrderDetailsChan)
-	GetByID(request *models.DeliveryOrderRequest, resultChan chan *models.DeliveryOrderDetailChan)
-	generateDeliveryOrderQueryOpenSearchResult(openSearchQueryJson []byte) (*models.DeliveryOrderDetails, *model.ErrorLog)
+	Create(request *models.DeliveryOrderDetailOpenSearch, result chan *models.DeliveryOrderDetailOpenSearchChan)
+	Get(request *models.DeliveryOrderDetailOpenSearchRequest, result chan *models.DeliveryOrderDetailsOpenSearchChan)
+	GetByID(request *models.DeliveryOrderRequest, resultChan chan *models.DeliveryOrderDetailOpenSearchChan)
+	generateDeliveryOrderQueryOpenSearchResult(openSearchQueryJson []byte) (*models.DeliveryOrderDetailsOpenSearch, *model.ErrorLog)
 	generateDeliveryOrderQueryOpenSearchTermRequest(term_field string, term_value interface{}, request *models.DeliveryOrderDetailOpenSearchRequest) []byte
 }
 
@@ -28,8 +28,8 @@ func InitDeliveryOrderDetailOpenSearchRepository(openSearch opensearch_dbo.OpenS
 	}
 }
 
-func (r *deliveryOrderDetailOpenSearch) Create(request *models.DeliveryOrderDetail, resultChan chan *models.DeliveryOrderDetailChan) {
-	response := &models.DeliveryOrderDetailChan{}
+func (r *deliveryOrderDetailOpenSearch) Create(request *models.DeliveryOrderDetailOpenSearch, resultChan chan *models.DeliveryOrderDetailOpenSearchChan) {
+	response := &models.DeliveryOrderDetailOpenSearchChan{}
 	deliveryOrderDetailJson, _ := json.Marshal(request)
 	_, err := r.openSearch.CreateDocument(constants.DELIVERY_ORDER_DETAILS_INDEX, request.DoDetailCode, deliveryOrderDetailJson)
 
@@ -41,13 +41,13 @@ func (r *deliveryOrderDetailOpenSearch) Create(request *models.DeliveryOrderDeta
 		return
 	}
 
-	response.DeliveryOrderDetail = request
+	response.DeliveryOrderDetailOpenSearch = request
 	resultChan <- response
 	return
 }
 
-func (r *deliveryOrderDetailOpenSearch) Get(request *models.DeliveryOrderDetailOpenSearchRequest, resultChan chan *models.DeliveryOrderDetailsChan) {
-	response := &models.DeliveryOrderDetailsChan{}
+func (r *deliveryOrderDetailOpenSearch) Get(request *models.DeliveryOrderDetailOpenSearchRequest, resultChan chan *models.DeliveryOrderDetailsOpenSearchChan) {
+	response := &models.DeliveryOrderDetailsOpenSearchChan{}
 	requestQuery := r.generateDeliveryOrderQueryOpenSearchTermRequest("", "", request)
 	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery)
 
@@ -58,14 +58,14 @@ func (r *deliveryOrderDetailOpenSearch) Get(request *models.DeliveryOrderDetailO
 		return
 	}
 
-	response.DeliveryOrderDetails = result.DeliveryOrderDetails
+	response.DeliveryOrderDetailOpenSearch = result.DeliveryOrderDetails
 	response.Total = result.Total
 	resultChan <- response
 	return
 }
 
-func (r *deliveryOrderDetailOpenSearch) GetByID(request *models.DeliveryOrderRequest, resultChan chan *models.DeliveryOrderDetailChan) {
-	response := &models.DeliveryOrderDetailChan{}
+func (r *deliveryOrderDetailOpenSearch) GetByID(request *models.DeliveryOrderRequest, resultChan chan *models.DeliveryOrderDetailOpenSearchChan) {
+	response := &models.DeliveryOrderDetailOpenSearchChan{}
 	requestQuery := r.generateDeliveryOrderQueryOpenSearchTermRequest("id", request.ID, nil)
 	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery)
 
@@ -76,7 +76,7 @@ func (r *deliveryOrderDetailOpenSearch) GetByID(request *models.DeliveryOrderReq
 		return
 	}
 
-	response.DeliveryOrderDetail = result.DeliveryOrderDetails[0]
+	response.DeliveryOrderDetailOpenSearch = result.DeliveryOrderDetails[0]
 	resultChan <- response
 	return
 }
@@ -303,33 +303,33 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 	return openSearchQueryJson
 }
 
-func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchResult(openSearchQueryJson []byte) (*models.DeliveryOrderDetails, *model.ErrorLog) {
+func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchResult(openSearchQueryJson []byte) (*models.DeliveryOrderDetailsOpenSearch, *model.ErrorLog) {
 	openSearchQueryResult, err := r.openSearch.Query(constants.DELIVERY_ORDER_DETAILS_INDEX, openSearchQueryJson)
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-		return &models.DeliveryOrderDetails{}, errorLogData
+		return &models.DeliveryOrderDetailsOpenSearch{}, errorLogData
 	}
 
 	if openSearchQueryResult.Hits.Total.Value == 0 {
 		err = helper.NewError("delivery_orders_opensearch data not found")
 		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
-		return &models.DeliveryOrderDetails{}, errorLogData
+		return &models.DeliveryOrderDetailsOpenSearch{}, errorLogData
 	}
 
-	deliveryOrderDetails := []*models.DeliveryOrderDetail{}
+	deliveryOrderDetails := []*models.DeliveryOrderDetailOpenSearch{}
 
 	if openSearchQueryResult.Hits.Total.Value > 0 {
 		for _, v := range openSearchQueryResult.Hits.Hits {
 			obj := v.Source.(map[string]interface{})
-			deliveryOrderDetail := models.DeliveryOrderDetail{}
+			deliveryOrderDetail := models.DeliveryOrderDetailOpenSearch{}
 			objJson, _ := json.Marshal(obj)
 			json.Unmarshal(objJson, &deliveryOrderDetail)
 			deliveryOrderDetails = append(deliveryOrderDetails, &deliveryOrderDetail)
 		}
 	}
 
-	result := &models.DeliveryOrderDetails{
+	result := &models.DeliveryOrderDetailsOpenSearch{
 		Total:                int64(openSearchQueryResult.Hits.Total.Value),
 		DeliveryOrderDetails: deliveryOrderDetails,
 	}

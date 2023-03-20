@@ -42,6 +42,8 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 			salesOrderControllerGroup.PUT(":so-id/details", salesOrderController.UpdateSODetailBySOID)
 			salesOrderControllerGroup.PUT(":so-id/details/:so-detail-id", salesOrderController.UpdateSODetailByID)
 			salesOrderControllerGroup.DELETE(":so-id", salesOrderController.DeleteByID)
+			salesOrderControllerGroup.DELETE(":so-id/details", salesOrderController.DeleteByID)
+			salesOrderControllerGroup.DELETE("details/:so-detail-id", salesOrderController.DeleteDetailByID)
 			salesOrderControllerGroup.GET("event-logs", salesOrderController.GetSyncToKafkaHistories)
 			salesOrderControllerGroup.GET(":so-id/journeys", salesOrderController.GetSOJourneyBySoId)
 		}
@@ -65,11 +67,13 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 			// deliveryOrderControllerGroup.GET("/details", deliveryOrderController.GetDetails)
 			deliveryOrderControllerGroup.GET(":id/details", deliveryOrderController.GetDetailsByDoId)
 			deliveryOrderControllerGroup.GET(":id/details/:do-detail-id", deliveryOrderController.GetDetailById)
-			deliveryOrderControllerGroup.GET("/salesmans", deliveryOrderController.GetBySalesmanID)
+			deliveryOrderControllerGroup.GET("salesmans", deliveryOrderController.GetBySalesmanID)
 			deliveryOrderControllerGroup.PUT(":id", deliveryOrderController.UpdateByID)
-			deliveryOrderControllerGroup.PUT("/details/:id", deliveryOrderController.UpdateDeliveryOrderDetailByID)
-			deliveryOrderControllerGroup.PUT("/:id/details", deliveryOrderController.UpdateDeliveryOrderDetailByDeliveryOrderID)
+			deliveryOrderControllerGroup.PUT(":id/details", deliveryOrderController.UpdateDeliveryOrderDetailByDeliveryOrderID)
+			deliveryOrderControllerGroup.PUT("details/:id", deliveryOrderController.UpdateDeliveryOrderDetailByID)
 			deliveryOrderControllerGroup.DELETE(":id", deliveryOrderController.DeleteByID)
+			deliveryOrderControllerGroup.DELETE(":id/details", deliveryOrderController.DeleteByID)
+			deliveryOrderControllerGroup.DELETE("details/:id", deliveryOrderController.DeleteByID)
 		}
 	}
 
