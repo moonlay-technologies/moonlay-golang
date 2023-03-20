@@ -32,6 +32,7 @@ type SalesOrderControllerInterface interface {
 	GetSyncToKafkaHistories(ctx *gin.Context)
 	GetSOJourneyBySoId(ctx *gin.Context)
 	DeleteByID(ctx *gin.Context)
+	RetrySyncToKafka(ctx *gin.Context)
 }
 
 type salesOrderController struct {
@@ -1847,4 +1848,28 @@ func (c *salesOrderController) GetSOJourneyBySoId(ctx *gin.Context) {
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
 	return
+}
+
+func (c *salesOrderController) RetrySyncToKafka(ctx *gin.Context) {
+	var result baseModel.Response
+	var resultErrorLog *baseModel.ErrorLog
+
+	ctx.Set("full_path", ctx.FullPath())
+	ctx.Set("method", ctx.Request.Method)
+
+	logId := ctx.Param("log-id")
+
+	retryToKafka, errorLog := c.salesOrderUseCase.RetrySyncToKafka(logId)
+
+	if errorLog != nil {
+		resultErrorLog = errorLog
+		result.StatusCode = resultErrorLog.StatusCode
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	result.Data = retryToKafka
+	result.StatusCode = http.StatusOK
+	ctx.JSON(http.StatusOK, result)
 }

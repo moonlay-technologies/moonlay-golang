@@ -55,6 +55,14 @@ type GetSalesOrderLogsChan struct {
 	ID             primitive.ObjectID `json:"_id" bson:"_id"`
 }
 
+type GetSalesOrderLogChan struct {
+	SalesOrderLog *GetSalesOrderLog
+	Total         int64
+	Error         error
+	ErrorLog      *model.ErrorLog
+	ID            primitive.ObjectID `json:"_id" bson:"_id"`
+}
+
 type SalesOrderEventLogRequest struct {
 	Page              int    `json:"page,omitempty" bson:"page,omitempty"`
 	PerPage           int    `json:"per_page,omitempty" bson:"per_page,omitempty"`

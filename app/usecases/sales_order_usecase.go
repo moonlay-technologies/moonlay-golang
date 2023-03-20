@@ -38,6 +38,7 @@ type SalesOrderUseCaseInterface interface {
 	GetDetails(request *models.GetSalesOrderDetailRequest) (*models.SalesOrderDetailsOpenSearchResponse, *model.ErrorLog)
 	GetDetailById(id int) (*models.SalesOrderDetailOpenSearchResponse, *model.ErrorLog)
 	DeleteById(id int, sqlTransaction *sql.Tx) *model.ErrorLog
+	RetrySyncToKafka(logId string) (*models.SORetryProcessSyncToKafkaResponse, *model.ErrorLog)
 }
 
 type salesOrderUseCase struct {
@@ -2181,5 +2182,69 @@ func (u *salesOrderUseCase) GetDetailById(id int) (*models.SalesOrderDetailOpenS
 		}
 	}
 	return result, &model.ErrorLog{}
+
+}
+
+func (u *salesOrderUseCase) RetrySyncToKafka(logId string) (*models.SORetryProcessSyncToKafkaResponse, *model.ErrorLog) {
+
+	now := time.Now()
+
+	getSalesOrderLogByIdResultChan := make(chan *models.GetSalesOrderLogChan)
+	go u.salesOrderLogRepository.GetByID(logId, false, u.ctx, getSalesOrderLogByIdResultChan)
+	getSalesOrderLogByIdResult := <-getSalesOrderLogByIdResultChan
+
+	if getSalesOrderLogByIdResult.Error != nil {
+		return &models.SORetryProcessSyncToKafkaResponse{}, getSalesOrderLogByIdResult.ErrorLog
+	}
+
+	if getSalesOrderLogByIdResult.SalesOrderLog.Status != "2" {
+		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       []string{helper.GenerateUnprocessableErrorMessage("retry", fmt.Sprintf("status log dengan id %s bukan gagal", logId))},
+			SystemMessage: []string{"Invalid Process"},
+			StatusCode:    http.StatusUnprocessableEntity,
+		})
+
+		return &models.SORetryProcessSyncToKafkaResponse{}, errorLog
+	}
+
+	keyKafka := []byte(getSalesOrderLogByIdResult.SalesOrderLog.SoCode)
+	messageKafka, _ := json.Marshal(getSalesOrderLogByIdResult.SalesOrderLog.Data)
+
+	var topic string
+	switch getSalesOrderLogByIdResult.SalesOrderLog.Action {
+	case constants.LOG_ACTION_MONGO_INSERT:
+		topic = constants.CREATE_SALES_ORDER_TOPIC
+	case constants.LOG_ACTION_MONGO_UPDATE:
+		topic = constants.UPDATE_SALES_ORDER_TOPIC
+	case constants.LOG_ACTION_MONGO_DELETE:
+		topic = constants.DELETE_SALES_ORDER_TOPIC
+	}
+
+	err := u.kafkaClient.WriteToTopic(topic, keyKafka, messageKafka)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		return &models.SORetryProcessSyncToKafkaResponse{}, errorLogData
+	}
+
+	salesOrderLog := &models.SalesOrderLog{
+		RequestID: getSalesOrderLogByIdResult.SalesOrderLog.RequestID,
+		SoCode:    getSalesOrderLogByIdResult.SalesOrderLog.SoCode,
+		Data:      getSalesOrderLogByIdResult.SalesOrderLog.Data,
+		Action:    getSalesOrderLogByIdResult.SalesOrderLog.Action,
+		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		CreatedAt: getSalesOrderLogByIdResult.SalesOrderLog.CreatedAt,
+		UpdatedAt: &now,
+	}
+
+	salesOrderLogResultChan := make(chan *models.SalesOrderLogChan)
+	go u.salesOrderLogRepository.UpdateByID(logId, salesOrderLog, u.ctx, salesOrderLogResultChan)
+
+	result := models.SORetryProcessSyncToKafkaResponse{
+		SalesOrderLogEventId: logId,
+		Status:               constants.LOG_STATUS_MONGO_DEFAULT,
+		Message:              "on progres",
+	}
+	return &result, nil
 
 }

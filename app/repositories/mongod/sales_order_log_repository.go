@@ -19,7 +19,7 @@ import (
 type SalesOrderLogRepositoryInterface interface {
 	Insert(request *models.SalesOrderLog, ctx context.Context, result chan *models.SalesOrderLogChan)
 	Get(request *models.SalesOrderEventLogRequest, countOnly bool, ctx context.Context, resultChan chan *models.GetSalesOrderLogsChan)
-	GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.SalesOrderLogChan)
+	GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.GetSalesOrderLogChan)
 	GetByCollumn(collumnName string, value string, countOnly bool, ctx context.Context, resultChan chan *models.SalesOrderLogChan)
 	UpdateByID(ID string, request *models.SalesOrderLog, ctx context.Context, result chan *models.SalesOrderLogChan)
 }
@@ -153,8 +153,8 @@ func (r *salesOrderLogRepository) Get(request *models.SalesOrderEventLogRequest,
 	}
 }
 
-func (r *salesOrderLogRepository) GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.SalesOrderLogChan) {
-	response := &models.SalesOrderLogChan{}
+func (r *salesOrderLogRepository) GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.GetSalesOrderLogChan) {
+	response := &models.GetSalesOrderLogChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
 	objectID, _ := primitive.ObjectIDFromHex(ID)
 	filter := bson.M{"_id": objectID}
@@ -178,7 +178,7 @@ func (r *salesOrderLogRepository) GetByID(ID string, countOnly bool, ctx context
 	}
 
 	if countOnly == false {
-		salesOrderLog := &models.SalesOrderLog{}
+		salesOrderLog := &models.GetSalesOrderLog{}
 		err = collection.FindOne(ctx, filter).Decode(salesOrderLog)
 
 		if err != nil {

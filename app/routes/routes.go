@@ -44,6 +44,7 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 			salesOrderControllerGroup.DELETE(":so-id", salesOrderController.DeleteByID)
 			salesOrderControllerGroup.GET("event-logs", salesOrderController.GetSyncToKafkaHistories)
 			salesOrderControllerGroup.GET(":so-id/journeys", salesOrderController.GetSOJourneyBySoId)
+			salesOrderControllerGroup.GET("/retry-to-sync-kafka/:log-id", salesOrderController.RetrySyncToKafka)
 		}
 
 		salesOrderDetailControllerGroup := basicAuthRootGroup.Group(constants.SALES_ORDER_DETAIL)
