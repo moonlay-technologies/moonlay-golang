@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
+	"order-service/app/repositories"
 	mongoRepositories "order-service/app/repositories/mongod"
 	"order-service/app/usecases"
 	"order-service/global/utils/helper"
@@ -23,16 +24,18 @@ type DeleteSalesOrderDetailConsumerHandlerInterface interface {
 type DeleteSalesOrderDetailConsumerHandler struct {
 	kafkaClient                 kafkadbo.KafkaClientInterface
 	salesOrderOpenSearchUseCase usecases.SalesOrderOpenSearchUseCaseInterface
+	salesOrderRepository        repositories.SalesOrderRepositoryInterface
 	ctx                         context.Context
 	args                        []interface{}
 	db                          dbresolver.DB
 	salesOrderLogRepository     mongoRepositories.SalesOrderLogRepositoryInterface
 }
 
-func InitDeleteSalesOrderDetailConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface, salesOrderOpenSearchUseCase usecases.SalesOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) DeleteSalesOrderDetailConsumerHandlerInterface {
+func InitDeleteSalesOrderDetailConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderOpenSearchUseCase usecases.SalesOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) DeleteSalesOrderDetailConsumerHandlerInterface {
 	return &DeleteSalesOrderDetailConsumerHandler{
 		kafkaClient:                 kafkaClient,
 		salesOrderOpenSearchUseCase: salesOrderOpenSearchUseCase,
+		salesOrderRepository:        salesOrderRepository,
 		ctx:                         ctx,
 		args:                        args,
 		db:                          db,
@@ -41,7 +44,7 @@ func InitDeleteSalesOrderDetailConsumerHandlerInterface(kafkaClient kafkadbo.Kaf
 }
 
 func (c *DeleteSalesOrderDetailConsumerHandler) ProcessMessage() {
-	fmt.Println("process", constants.DELETE_SALES_ORDER_TOPIC)
+	fmt.Println("process", constants.DELETE_SALES_ORDER_DETAIL_TOPIC)
 	topic := c.args[1].(string)
 	groupID := c.args[2].(string)
 	reader := c.kafkaClient.SetConsumerGroupReader(topic, groupID)
@@ -70,14 +73,25 @@ func (c *DeleteSalesOrderDetailConsumerHandler) ProcessMessage() {
 		}
 
 		if err != nil {
-			errorLogData := helper.WriteLogConsumer(constants.UPDATE_SALES_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
+			errorLogData := helper.WriteLogConsumer(constants.DELETE_SALES_ORDER_DETAIL_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
 			salesOrderLog.Error = errorLogData
 			go c.salesOrderLogRepository.Insert(salesOrderLog, c.ctx, salesOrderLogResultChan)
 			fmt.Println(errorLogData)
 			continue
 		}
 
-		go c.salesOrderLogRepository.GetByCollumn(constants.COLUMN_SALES_ORDER_CODE, salesOrderDetail.SoDetailCode, false, c.ctx, salesOrderLogResultChan)
+		getSalesOrderByIDResultChan := make(chan *models.SalesOrderChan)
+		go c.salesOrderRepository.GetByID(salesOrderDetail.SalesOrderID, false, c.ctx, getSalesOrderByIDResultChan)
+		getSalesOrderByIDResult := <-getSalesOrderByIDResultChan
+
+		if getSalesOrderByIDResult.Error != nil {
+			salesOrderLog.Error = getSalesOrderByIDResult.Error
+			go c.salesOrderLogRepository.Insert(salesOrderLog, c.ctx, salesOrderLogResultChan)
+			fmt.Println(getSalesOrderByIDResult.ErrorLog)
+			continue
+		}
+
+		go c.salesOrderLogRepository.GetByCollumn(constants.COLUMN_SALES_ORDER_CODE, getSalesOrderByIDResult.SalesOrder.SoCode, false, c.ctx, salesOrderLogResultChan)
 		salesOrderDetailResult := <-salesOrderLogResultChan
 		if salesOrderDetailResult.Error != nil {
 			salesOrderLog.Error = salesOrderDetailResult.Error
@@ -92,7 +106,7 @@ func (c *DeleteSalesOrderDetailConsumerHandler) ProcessMessage() {
 		errorLog := c.salesOrderOpenSearchUseCase.SyncDetailToOpenSearchFromDeleteEvent(&salesOrderDetail, c.ctx)
 		if errorLog.Err != nil {
 			dbTransaction.Rollback()
-			errorLogData := helper.WriteLogConsumer(constants.UPDATE_SALES_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, nil)
+			errorLogData := helper.WriteLogConsumer(constants.DELETE_SALES_ORDER_DETAIL_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, nil)
 			salesOrderLog.Error = errorLogData
 			go c.salesOrderLogRepository.UpdateByID(logId, salesOrderLog, c.ctx, salesOrderLogResultChan)
 			fmt.Println(errorLogData)
@@ -101,7 +115,7 @@ func (c *DeleteSalesOrderDetailConsumerHandler) ProcessMessage() {
 
 		err = dbTransaction.Commit()
 		if err != nil {
-			errorLogData := helper.WriteLogConsumer(constants.UPDATE_SALES_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
+			errorLogData := helper.WriteLogConsumer(constants.DELETE_SALES_ORDER_DETAIL_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
 			salesOrderLog.Error = errorLogData
 			go c.salesOrderLogRepository.UpdateByID(logId, salesOrderLog, c.ctx, salesOrderLogResultChan)
 			fmt.Println(errorLogData)

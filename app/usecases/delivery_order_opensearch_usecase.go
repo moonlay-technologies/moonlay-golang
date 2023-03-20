@@ -94,13 +94,35 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(deliver
 			return errorLogData
 		}
 
+		getBrandResultChan := make(chan *models.BrandChan)
+		go u.brandRepository.GetByID(deliveryOrder.AgentID, false, ctx, getBrandResultChan)
+		getBrandResult := <-getBrandResultChan
+
+		if getBrandResult.Error != nil {
+			errorLogData := helper.WriteLog(getBrandResult.Error, http.StatusInternalServerError, nil)
+			return errorLogData
+		}
+		v.Brand = getBrandResult.Brand
+
+		getProductResultChan := make(chan *models.ProductChan)
+		go u.productRepository.GetByID(deliveryOrder.AgentID, false, ctx, getProductResultChan)
+		getProductResult := <-getProductResultChan
+
+		if getProductResult.Error != nil {
+			errorLogData := helper.WriteLog(getProductResult.Error, http.StatusInternalServerError, nil)
+			return errorLogData
+		}
+		v.Product = getProductResult.Product
+
 		v.EndDateSyncToEs = &now
 		v.UpdatedAt = &now
 		v.CreatedAt = &now
 		v.IsDoneSyncToEs = "1"
 
-		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
-		go u.deliveryOrderDetailOpenSearchRepository.Create(v, createDeliveryOrderDetailResultChan)
+		doDetailOpenSearch := &models.DeliveryOrderDetailOpenSearch{}
+		doDetailOpenSearch.DoDetailMap(deliveryOrder, v)
+		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailOpenSearchChan)
+		go u.deliveryOrderDetailOpenSearchRepository.Create(doDetailOpenSearch, createDeliveryOrderDetailResultChan)
 		createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
 
 		if createDeliveryOrderDetailResult.Error != nil {
@@ -165,8 +187,11 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(request
 		v.IsDoneSyncToEs = "1"
 		v.EndDateSyncToEs = &now
 
-		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
-		go u.deliveryOrderDetailOpenSearchRepository.Create(v, createDeliveryOrderDetailResultChan)
+		doDetailOpenSearch := &models.DeliveryOrderDetailOpenSearch{}
+		doDetailOpenSearch.DoDetailMap(deliveryOrder, v)
+
+		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailOpenSearchChan)
+		go u.deliveryOrderDetailOpenSearchRepository.Create(doDetailOpenSearch, createDeliveryOrderDetailResultChan)
 		createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
 
 		if createDeliveryOrderDetailResult.Error != nil {
@@ -272,8 +297,11 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromDeleteEvent(deliver
 			v.OrderStatus = getOrderStatusDetailResult.OrderStatus
 			v.OrderStatusName = getOrderStatusDetailResult.OrderStatus.Name
 
-			createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
-			go u.deliveryOrderDetailOpenSearchRepository.Create(v, createDeliveryOrderDetailResultChan)
+			doDetailOpenSearch := &models.DeliveryOrderDetailOpenSearch{}
+			doDetailOpenSearch.DoDetailMap(deliveryOrder, v)
+
+			createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailOpenSearchChan)
+			go u.deliveryOrderDetailOpenSearchRepository.Create(doDetailOpenSearch, createDeliveryOrderDetailResultChan)
 			createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
 
 			if createDeliveryOrderDetailResult.Error != nil {
