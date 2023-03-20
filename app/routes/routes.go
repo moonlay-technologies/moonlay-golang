@@ -64,11 +64,13 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 			deliveryOrderControllerGroup.GET(":id", deliveryOrderController.GetByID)
 			deliveryOrderControllerGroup.GET("", deliveryOrderController.Get)
 			deliveryOrderControllerGroup.GET(":id/details", deliveryOrderController.GetDetailsByDoId)
-			deliveryOrderControllerGroup.GET("/salesmans", deliveryOrderController.GetBySalesmanID)
+			deliveryOrderControllerGroup.GET("salesmans", deliveryOrderController.GetBySalesmanID)
 			deliveryOrderControllerGroup.PUT(":id", deliveryOrderController.UpdateByID)
-			deliveryOrderControllerGroup.PUT("/details/:id", deliveryOrderController.UpdateDeliveryOrderDetailByID)
-			deliveryOrderControllerGroup.PUT("/:id/details", deliveryOrderController.UpdateDeliveryOrderDetailByDeliveryOrderID)
+			deliveryOrderControllerGroup.PUT(":id/details", deliveryOrderController.UpdateDeliveryOrderDetailByDeliveryOrderID)
+			deliveryOrderControllerGroup.PUT("details/:id", deliveryOrderController.UpdateDeliveryOrderDetailByID)
 			deliveryOrderControllerGroup.DELETE(":id", deliveryOrderController.DeleteByID)
+			deliveryOrderControllerGroup.DELETE(":id/details", deliveryOrderController.DeleteByID)
+			deliveryOrderControllerGroup.DELETE("details/:id", deliveryOrderController.DeleteByID)
 		}
 	}
 
