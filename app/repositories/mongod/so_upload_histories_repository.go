@@ -113,7 +113,7 @@ func (r *uploadSOHistoriesRepository) Get(request *models.GetSoUploadHistoriesRe
 		return
 	}
 
-	if countOnly == false {
+	if !countOnly {
 		SoUploadHistories := []*models.SoUploadHistory{}
 		cursor, err := collection.Find(ctx, filter, option)
 
@@ -162,7 +162,7 @@ func (r *uploadSOHistoriesRepository) GetByID(ID string, countOnly bool, ctx con
 		return
 	}
 
-	if countOnly == false {
+	if !countOnly {
 		soUploadHistory := &models.SoUploadHistory{}
 		err = collection.FindOne(ctx, filter).Decode(soUploadHistory)
 
@@ -224,5 +224,4 @@ func (r *uploadSOHistoriesRepository) UpdateByID(ID string, request *models.SoUp
 	response.Error = nil
 	response.SoUploadHistory = request
 	resultChan <- response
-	return
 }

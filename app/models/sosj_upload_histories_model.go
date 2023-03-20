@@ -8,23 +8,23 @@ import (
 )
 
 type UploadHistory struct {
-	ID             primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
-	BulkCode       string             `json:"bulk_code,omitempty" bson:"bulk_code,omitempty"`
-	FName          string             `json:"f_name,omitempty" bson:"f_name,omitempty"`
-	FPath          string             `json:"f_path,omitempty" bson:"f_path,omitempty"`
-	AgentId        int                `json:"agent_id,omitempty" bson:"agent_id,omitempty"`
-	AgentName      string             `json:"agent_name,omitempty" bson:"agent_name,omitempty"`
-	UploadById     int                `json:"upload_by_id,omitempty" bson:"upload_by_id,omitempty"`
-	UploadByEmail  string             `json:"upload_by_email,omitempty" bson:"upload_by_email,omitempty"`
-	UploadStatus   string             `json:"upload_status,omitempty" bson:"upload_status,omitempty"`
-	CurrentProcess string             `json:"current_process,omitempty" bson:"current_process,omitempty"`
-	CreatedDate    *time.Time         `json:"created_date,omitempty" bson:"created_date,omitempty"`
-	DoneDate       *time.Time         `json:"done_date,omitempty" bson:"done_date,omitempty"`
-	TotalRow       string             `json:"total_row,omitempty" bson:"total_row,omitempty"`
-	UseMater       string             `json:"use_master,omitempty" bson:"use_master,omitempty"`
-	RequestId      string             `json:"request_id,omitempty" bson:"request_id,omitempty"`
-	UploadedByName string             `json:"uploaded_by_name,omitempty" bson:"uploaded_by_name,omitempty"`
-	UpdatedAt      *time.Time         `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
+	ID              primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	RequestId       string             `json:"request_id,omitempty" bson:"request_id,omitempty"`
+	BulkCode        string             `json:"bulk_code,omitempty" bson:"bulk_code,omitempty"`
+	FileName        string             `json:"file_name,omitempty" bson:"file_name,omitempty"`
+	FilePath        string             `json:"file_path,omitempty" bson:"file_path,omitempty"`
+	AgentId         int64              `json:"agent_id,omitempty" bson:"agent_id,omitempty"`
+	AgentName       string             `json:"agent_name,omitempty" bson:"agent_name,omitempty"`
+	UploadedBy      int64              `json:"uploaded_by,omitempty" bson:"uploaded_by,omitempty"`
+	UploadedByName  string             `json:"uploaded_by_name,omitempty" bson:"uploaded_by_name,omitempty"`
+	UploadedByEmail string             `json:"uploaded_by_email,omitempty" bson:"uploaded_by_email,omitempty"`
+	Status          string             `json:"status,omitempty" bson:"status,omitempty"`
+	TotalRows       string             `json:"total_rows,omitempty" bson:"total_rows,omitempty"`
+	CreatedAt       time.Time          `json:"created_at,omitempty" bson:"created_at,omitempty"`
+	UpdatedAt       time.Time          `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
+	UpdatedBy       int64              `json:"updated_by,omitempty" bson:"updated_by,omitempty"`
+	UpdatedByName   string             `json:"updated_by_name,omitempty" bson:"updated_by_name,omitempty"`
+	UpdatedByEmail  string             `json:"updated_by_email,omitempty" bson:"updated_by_email,omitempty"`
 }
 
 type UploadHistoryChan struct {

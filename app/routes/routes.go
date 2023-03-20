@@ -124,6 +124,7 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 			uploadControllerGroup.GET(constants.UPLOAD_DO_PATH, uploadController.UploadDO)
 			uploadControllerGroup.POST(constants.UPLOAD_SO_PATH, uploadController.UploadSO)
 			uploadControllerGroup.GET(constants.UPLOAD_SO_PATH+"/retry/:so-upload-history-id", uploadController.RetryUploadSO)
+			uploadControllerGroup.GET(constants.UPLOAD_SOSJ_PATH+"/retry/:sosj-upload-history-id", uploadController.RetryUploadSOSJ)
 		}
 	}
 

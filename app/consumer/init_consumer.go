@@ -192,8 +192,9 @@ func InitUploadSOSJFileConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongo
 	requestValidationRepository := repositories.InitRequestValidationRepository(database)
 	uploadRepository := repositories.InitUploadRepository(requestValidationRepository)
 	requestValidationMiddleware := middlewares.InitRequestValidationMiddlewareInterface(requestValidationRepository, orderSourceRepository)
-	uploadSOSJHistoriesRepository := mongoRepo.InitUploadSOSJHistoriesRepositoryInterface(mongodbClient)
-	handler := InitUploadSOSJFileConsumerHandlerInterface(kafkaClient, uploadRepository, requestValidationMiddleware, requestValidationRepository, uploadSOSJHistoriesRepository, database, ctx, args)
+	sosjUploadHistoriesRepository := mongoRepo.InitSOSJUploadHistoriesRepositoryInterface(mongodbClient)
+	sosjUploadErrorLogsRepository := mongoRepo.InitSOSJUploadErrorLogsRepositoryInterface(mongodbClient)
+	handler := InitUploadSOSJFileConsumerHandlerInterface(kafkaClient, uploadRepository, requestValidationMiddleware, requestValidationRepository, sosjUploadHistoriesRepository, sosjUploadErrorLogsRepository, database, ctx, args)
 	return handler
 }
 

@@ -27,19 +27,21 @@ type uploadSOSJFileConsumerHandler struct {
 	uploadRepository              repositories.UploadRepositoryInterface
 	requestValidationMiddleware   middlewares.RequestValidationMiddlewareInterface
 	requestValidationRepository   repositories.RequestValidationRepositoryInterface
-	uploadSOSJHistoriesRepository mongoRepositories.UploadSOSJHistoriesRepositoryInterface
+	uploadSOSJHistoriesRepository mongoRepositories.SOSJUploadHistoriesRepositoryInterface
+	sosjUploadErrorLogsRepository mongoRepositories.SosjUploadErrorLogsRepositoryInterface
 	ctx                           context.Context
 	args                          []interface{}
 	db                            dbresolver.DB
 }
 
-func InitUploadSOSJFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, uploadRepository repositories.UploadRepositoryInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, requestValidationRepository repositories.RequestValidationRepositoryInterface, uploadSOSJHistoriesRepository mongoRepositories.UploadSOSJHistoriesRepositoryInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UploadSOFileConsumerHandlerInterface {
+func InitUploadSOSJFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, uploadRepository repositories.UploadRepositoryInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, requestValidationRepository repositories.RequestValidationRepositoryInterface, uploadSOSJHistoriesRepository mongoRepositories.SOSJUploadHistoriesRepositoryInterface, sosjUploadErrorLogsRepository mongoRepositories.SosjUploadErrorLogsRepositoryInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UploadSOFileConsumerHandlerInterface {
 	return &uploadSOSJFileConsumerHandler{
 		kafkaClient:                   kafkaClient,
 		uploadRepository:              uploadRepository,
 		requestValidationMiddleware:   requestValidationMiddleware,
 		requestValidationRepository:   requestValidationRepository,
 		uploadSOSJHistoriesRepository: uploadSOSJHistoriesRepository,
+		sosjUploadErrorLogsRepository: sosjUploadErrorLogsRepository,
 		ctx:                           ctx,
 		args:                          args,
 		db:                            db,
@@ -63,18 +65,29 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 
 		var message models.UploadHistory
 		err = json.Unmarshal(m.Value, &message)
-		message.CreatedDate = &now
-		message.UpdatedAt = &now
+
+		var key = string(m.Key[:])
+
+		if key == "retry" {
+			message.UpdatedAt = now
+		} else {
+			message.CreatedAt = now
+			message.UpdatedAt = now
+		}
 
 		var errors []string
 
 		var idDistributor int
-		resultsWithHeader, err := c.uploadRepository.ReadFile("be-so-service", message.FPath, "ap-southeast-1", s3.FileHeaderInfoUse)
+		resultsWithHeader, err := c.uploadRepository.ReadFile("be-so-service", message.FilePath, "ap-southeast-1", s3.FileHeaderInfoUse)
 
 		if err != nil {
-			message.UploadStatus = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
-			uploadSOSJHistoryJourneysResultChan := make(chan *models.UploadHistoryChan)
-			go c.uploadSOSJHistoriesRepository.Insert(&message, c.ctx, uploadSOSJHistoryJourneysResultChan)
+			message.Status = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
+			sosjUploadHistoryJourneysResultChan := make(chan *models.UploadHistoryChan)
+			if key == "retry" {
+				go c.uploadSOSJHistoriesRepository.UpdateByID(message.ID.Hex(), &message, c.ctx, sosjUploadHistoryJourneysResultChan)
+			} else {
+				go c.uploadSOSJHistoriesRepository.Insert(&message, c.ctx, sosjUploadHistoryJourneysResultChan)
+			}
 			continue
 		}
 
@@ -82,19 +95,34 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 			for k2, v2 := range v {
 				if v2 == "NoSuratJalan" {
 					idDistributor, _ = strconv.Atoi(k2)
+					break
 				}
 			}
 		}
 
 		var uploadSOSJFields []*models.UploadSOSJField
-		results, err := c.uploadRepository.ReadFile("be-so-service", message.FPath, "ap-southeast-1", s3.FileHeaderInfoIgnore)
+		results, err := c.uploadRepository.ReadFile("be-so-service", message.FilePath, "ap-southeast-1", s3.FileHeaderInfoIgnore)
 
 		if err != nil {
-			message.UploadStatus = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
-			uploadSOSJHistoryJourneysResultChan := make(chan *models.UploadHistoryChan)
-			go c.uploadSOSJHistoriesRepository.Insert(&message, c.ctx, uploadSOSJHistoryJourneysResultChan)
+			message.Status = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
+			sosjUploadHistoryJourneysResultChan := make(chan *models.UploadHistoryChan)
+			if key == "retry" {
+				go c.uploadSOSJHistoriesRepository.UpdateByID(message.ID.Hex(), &message, c.ctx, sosjUploadHistoryJourneysResultChan)
+			} else {
+				go c.uploadSOSJHistoriesRepository.Insert(&message, c.ctx, sosjUploadHistoryJourneysResultChan)
+			}
 			continue
 		}
+
+		message.Status = constants.UPLOAD_STATUS_HISTORY_UPLOADED
+		sosjUploadHistoryJourneysResultChan := make(chan *models.UploadHistoryChan)
+		if key == "retry" {
+			go c.uploadSOSJHistoriesRepository.UpdateByID(message.ID.Hex(), &message, c.ctx, sosjUploadHistoryJourneysResultChan)
+		} else {
+			go c.uploadSOSJHistoriesRepository.Insert(&message, c.ctx, sosjUploadHistoryJourneysResultChan)
+
+		}
+		// sosjUploadHistoryJourneysResult := <-sosjUploadHistoryJourneysResultChan
 
 		noSuratJalan := []string{}
 		for _, v := range results {
@@ -134,7 +162,17 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 					},
 				})
 				if len(mandatoryError) > 1 {
-					errors = append(errors, mandatoryError...)
+					if key == "retry" {
+
+						message.Status = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
+						sosjUploadHistoryJourneysResultChan := make(chan *models.UploadHistoryChan)
+						go c.uploadSOSJHistoriesRepository.UpdateByID(message.ID.Hex(), &message, c.ctx, sosjUploadHistoryJourneysResultChan)
+					} else {
+						// errors := mandatoryError
+
+						// sosjUploadErrorLog := &models.SosjUploadErrorLog{}
+
+					}
 					continue
 				}
 
@@ -185,7 +223,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 
 				mustActiveField := []*models.MustActiveRequest{
 					helper.GenerateMustActive("stores", "KodeTokoDBO", intTypeResult["KodeTokoDBO"], "active"),
-					helper.GenerateMustActive("users", "user_id", message.UploadById, "ACTIVE"),
+					helper.GenerateMustActive("users", "user_id", int(message.UploadedBy), "ACTIVE"),
 					{
 						Table:    "brands",
 						ReqField: "IDMerk",
@@ -238,7 +276,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 					errors = append(errors, fmt.Sprintf("Format Tanggal Order = %s Salah, silahkan sesuaikan dengan format DD-MMM-YYYY, contoh 15/12/2021", v["_3"]))
 					continue
 				}
-				uploadSOSJField.UploadSOSJFieldMap(v, idDistributor, message.UploadById)
+				uploadSOSJField.UploadSOSJFieldMap(v, idDistributor, int(message.UploadedBy))
 
 				checkIfNoSuratJalanExist := helper.InSliceString(noSuratJalan, v["_2"])
 				if checkIfNoSuratJalanExist {
@@ -269,15 +307,12 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 		err = c.kafkaClient.WriteToTopic(constants.UPLOAD_SOSJ_ITEM_TOPIC, keyKafka, messageKafka)
 
 		if err != nil {
-			message.UploadStatus = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
-			uploadSOSJHistoryJourneysResultChan := make(chan *models.UploadHistoryChan)
-			go c.uploadSOSJHistoriesRepository.Insert(&message, c.ctx, uploadSOSJHistoryJourneysResultChan)
+			message.Status = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
+			sosjUploadHistoryJourneysResultChan := make(chan *models.UploadHistoryChan)
+			go c.uploadSOSJHistoriesRepository.Insert(&message, c.ctx, sosjUploadHistoryJourneysResultChan)
 			continue
 		}
 
-		message.UploadStatus = constants.UPLOAD_STATUS_HISTORY_UPLOADED
-		uploadSOSJHistoryJourneysResultChan := make(chan *models.UploadHistoryChan)
-		go c.uploadSOSJHistoriesRepository.Insert(&message, c.ctx, uploadSOSJHistoryJourneysResultChan)
 	}
 
 	if err := reader.Close(); err != nil {

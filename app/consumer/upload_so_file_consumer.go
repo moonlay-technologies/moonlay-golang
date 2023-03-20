@@ -153,8 +153,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 					go c.uploadSOHistoriesRepository.UpdateByID(message.ID.Hex(), &message, c.ctx, uploadSOHistoryJourneysResultChan)
 					break
 				} else {
-					var errors []string
-					errors = append(errors, mandatoryError...)
+					errors := mandatoryError
 
 					soUploadErrorLogs := &models.SoUploadErrorLog{}
 					soUploadErrorLogs.SoUploadErrorLogsMap(v, message.AgentName, i+2, errors, &now)
