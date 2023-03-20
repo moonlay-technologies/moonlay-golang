@@ -38,6 +38,7 @@ type SalesOrderUseCaseInterface interface {
 	GetDetails(request *models.GetSalesOrderDetailRequest) (*models.SalesOrderDetailsOpenSearchResponse, *model.ErrorLog)
 	GetDetailById(id int) (*models.SalesOrderDetailOpenSearchResponse, *model.ErrorLog)
 	DeleteById(id int, sqlTransaction *sql.Tx) *model.ErrorLog
+	DeleteDetailById(id int, sqlTransaction *sql.Tx) *model.ErrorLog
 }
 
 type salesOrderUseCase struct {
@@ -2153,6 +2154,67 @@ func (u *salesOrderUseCase) DeleteById(id int, sqlTransaction *sql.Tx) *model.Er
 		},
 	)
 	err := u.kafkaClient.WriteToTopic(constants.DELETE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		return errorLogData
+	}
+
+	return nil
+}
+
+func (u *salesOrderUseCase) DeleteDetailById(id int, sqlTransaction *sql.Tx) *model.ErrorLog {
+	now := time.Now()
+
+	getSalesOrderDetailByIDResultChan := make(chan *models.SalesOrderDetailChan)
+	go u.salesOrderDetailRepository.GetByID(id, false, u.ctx, getSalesOrderDetailByIDResultChan)
+	getSalesOrderDetailByIDResult := <-getSalesOrderDetailByIDResultChan
+
+	if getSalesOrderDetailByIDResult.Error != nil {
+		return getSalesOrderDetailByIDResult.ErrorLog
+	}
+
+	getSalesOrderByIDResultChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderRepository.GetByID(getSalesOrderDetailByIDResult.SalesOrderDetail.SalesOrderID, false, u.ctx, getSalesOrderByIDResultChan)
+	getSalesOrderByIDResult := <-getSalesOrderByIDResultChan
+
+	if getSalesOrderByIDResult.Error != nil {
+		return getSalesOrderByIDResult.ErrorLog
+	}
+
+	deleteSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
+	go u.salesOrderDetailRepository.DeleteByID(getSalesOrderDetailByIDResult.SalesOrderDetail, sqlTransaction, u.ctx, deleteSalesOrderDetailResultChan)
+	deleteSalesOrderDetailResult := <-deleteSalesOrderDetailResultChan
+
+	if deleteSalesOrderDetailResult.Error != nil {
+		return deleteSalesOrderDetailResult.ErrorLog
+	}
+
+	salesOrderLog := &models.SalesOrderLog{
+		RequestID: "",
+		SoCode:    getSalesOrderByIDResult.SalesOrder.SoCode,
+		Data:      getSalesOrderByIDResult.SalesOrder,
+		Action:    constants.LOG_ACTION_MONGO_DELETE,
+		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		CreatedAt: &now,
+	}
+	createSalesOrderLogResultChan := make(chan *models.SalesOrderLogChan)
+	go u.salesOrderLogRepository.Insert(salesOrderLog, u.ctx, createSalesOrderLogResultChan)
+	createSalesOrderLogResult := <-createSalesOrderLogResultChan
+
+	if createSalesOrderLogResult.Error != nil {
+		return createSalesOrderLogResult.ErrorLog
+	}
+	keyKafka := []byte(getSalesOrderByIDResult.SalesOrder.SoCode)
+	messageKafka, _ := json.Marshal(
+		&models.SalesOrderDetail{
+			ID:           id,
+			SalesOrderID: getSalesOrderByIDResult.SalesOrder.ID,
+			UpdatedAt:    getSalesOrderByIDResult.SalesOrder.UpdatedAt,
+			DeletedAt:    getSalesOrderByIDResult.SalesOrder.DeletedAt,
+		},
+	)
+	err := u.kafkaClient.WriteToTopic(constants.DELETE_SALES_ORDER_DETAIL_TOPIC, keyKafka, messageKafka)
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
