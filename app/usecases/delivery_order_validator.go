@@ -355,12 +355,12 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByIDValidator(detailId
 		{
 			Table:    "delivery_order_details",
 			ReqField: "delivery_order_detail_id",
-			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", insertRequest.ID),
+			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", detailId),
 		},
 		{
 			Table:    "sales_order_details s JOIN delivery_order_details d ON d.so_detail_id = s.id",
 			ReqField: "sales-order_id",
-			Clause:   fmt.Sprintf("d.id = %d AND s.deleted_at IS NULL", insertRequest.ID),
+			Clause:   fmt.Sprintf("d.id = %d AND s.deleted_at IS NULL", detailId),
 		},
 	}
 	mustEmpties := []*models.MustEmptyValidationRequest{
