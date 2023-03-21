@@ -56,7 +56,7 @@ func (r *deliveryOrder) GetByID(id int, countOnly bool, ctx context.Context, res
 			resultChan <- response
 			return
 		}
-
+		fmt.Println("total= ", total)
 		if total == 0 {
 			err = helper.NewError("delivery_order data not found")
 			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
