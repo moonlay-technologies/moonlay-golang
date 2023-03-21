@@ -27,9 +27,11 @@ type DeliveryOrderControllerInterface interface {
 
 	Get(ctx *gin.Context)
 	GetByID(ctx *gin.Context)
+	GetDetails(ctx *gin.Context)
 	GetDetailsByDoId(ctx *gin.Context)
 	GetDetailById(ctx *gin.Context)
 	GetBySalesmanID(ctx *gin.Context)
+	GetDOJourneysByDoID(ctx *gin.Context)
 }
 
 type deliveryOrderController struct {
@@ -328,6 +330,23 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 	return
 }
 
+func (c *deliveryOrderController) GetDetails(ctx *gin.Context) {
+	deliveryOrderDetailRequest, err := c.deliveryOrderValidator.GetDeliveryOrderDetailValidator(ctx)
+	if err != nil {
+		return
+	}
+
+	deliveryOrderDetails, errorLog := c.deliveryOrderUseCase.GetDetails(deliveryOrderDetailRequest)
+
+	if errorLog.Err != nil {
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, model.Response{Data: deliveryOrderDetails.DeliveryOrderDetails, Total: deliveryOrderDetails.Total, StatusCode: http.StatusOK})
+	return
+}
+
 func (c *deliveryOrderController) GetDetailsByDoId(ctx *gin.Context) {
 	doIds := ctx.Param("id")
 	doId, err := strconv.Atoi(doIds)
@@ -338,7 +357,7 @@ func (c *deliveryOrderController) GetDetailsByDoId(ctx *gin.Context) {
 		return
 	}
 
-	deliveryOrderRequest, err := c.deliveryOrderValidator.GetDeliveryOrderDetailValidator(ctx)
+	deliveryOrderRequest, err := c.deliveryOrderValidator.GetDeliveryOrderDetailByDoIDValidator(ctx)
 	if err != nil {
 		return
 	}
@@ -430,6 +449,23 @@ func (c *deliveryOrderController) GetByID(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, model.Response{Data: deliveryOrder, StatusCode: http.StatusOK})
+	return
+}
+
+func (c *deliveryOrderController) GetDOJourneysByDoID(ctx *gin.Context) {
+	doIds := ctx.Param("id")
+	doId, err := strconv.Atoi(doIds)
+	if err != nil {
+		err = helper.NewError("Parameter 'delivery order id' harus bernilai integer")
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByErrorWithMessage(err, http.StatusBadRequest, nil))
+		return
+	}
+	deliveryOrderJourneys, errorLog := c.deliveryOrderUseCase.GetDOJourneysByDoID(doId, ctx)
+	if errorLog != nil {
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+		return
+	}
+	ctx.JSON(http.StatusOK, model.Response{Data: deliveryOrderJourneys.DeliveryOrderJourneys, Total: deliveryOrderJourneys.Total, StatusCode: http.StatusOK})
 	return
 }
 
