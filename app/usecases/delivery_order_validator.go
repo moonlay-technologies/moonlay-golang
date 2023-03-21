@@ -647,7 +647,12 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderDetailValidator(ctx *gin.Contex
 		return nil, err
 	}
 
-	intDoDetailID, err := c.getIntQueryWithDefault("do_detail_id", "0", false, ctx)
+	intID, err := c.getIntQueryWithDefault("id", "0", false, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	intDeliveryOrderID, err := c.getIntQueryWithDefault("do_id", "0", false, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -738,7 +743,8 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderDetailValidator(ctx *gin.Contex
 		SortField:         sortField,
 		SortValue:         c.getQueryWithDefault("sort_value", "desc", ctx),
 		GlobalSearchValue: c.getQueryWithDefault("global_search_value", "", ctx),
-		DoDetailID:        intDoDetailID,
+		ID:                intID,
+		DeliveryOrderID:   intDeliveryOrderID,
 		SalesOrderID:      intSalesOrderID,
 		AgentID:           intAgentID,
 		StoreID:           intStoreID,

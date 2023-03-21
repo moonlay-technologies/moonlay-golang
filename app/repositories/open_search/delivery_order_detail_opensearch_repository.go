@@ -210,7 +210,7 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 		if request.StoreID != 0 {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
-					"store.store_id": request.StoreID,
+					"store_id": request.StoreID,
 				},
 			}
 
@@ -220,7 +220,7 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 		if request.BrandID != 0 {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
-					"brand.brand_id": request.BrandID,
+					"brand_id": request.BrandID,
 				},
 			}
 
@@ -240,7 +240,7 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 		if request.ProductID != 0 {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
-					"delivery_order_details.product_id": request.ProductID,
+					"product_id": request.ProductID,
 				},
 			}
 
@@ -285,11 +285,12 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 
 		if request.GlobalSearchValue != "" {
 			match := map[string]interface{}{
-				"multi_match": map[string]interface{}{
-					"query":   request.GlobalSearchValue,
-					"fields":  []string{"do_code", "so_code", "order_status.name^3", "qty^0.5"},
-					"type":    "best_fields",
-					"lenient": true,
+				"query_string": map[string]interface{}{
+					"query":            "*" + request.GlobalSearchValue + "*",
+					"fields":           []string{"do_code", "so_code", "order_status.name^0.5", "qty^3"},
+					"type":             "best_fields",
+					"default_operator": "AND",
+					"lenient":          true,
 				},
 			}
 
@@ -309,7 +310,7 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 				sortValue["unmapped_type"] = "date"
 			}
 
-			if request.SortField == "order_status_id" || request.SortField == "do_code" || request.SortField == "so_code" || request.SortField == "agent_id" || request.SortField == "store_id" || request.SortField == "product_id" || request.SortField == "qty" {
+			if request.SortField == "order_status_id" || request.SortField == "agent_id" || request.SortField == "store_id" || request.SortField == "product_id" || request.SortField == "qty" {
 				openSearchQuery["sort"] = []map[string]interface{}{
 					{
 						request.SortField: sortValue,
@@ -317,13 +318,13 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 				}
 			}
 
-			// if request.SortField == "do_ref_code" {
-			// 	openSearchQuery["sort"] = []map[string]interface{}{
-			// 		{
-			// 			request.SortField + ".keyword": sortValue,
-			// 		},
-			// 	}
-			// }
+			if request.SortField == "do_code" || request.SortField == "so_code" {
+				openSearchQuery["sort"] = []map[string]interface{}{
+					{
+						request.SortField + ".keyword": sortValue,
+					},
+				}
+			}
 		}
 	}
 
