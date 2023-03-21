@@ -31,6 +31,7 @@ type DeliveryOrderControllerInterface interface {
 	GetDetailsByDoId(ctx *gin.Context)
 	GetDetailById(ctx *gin.Context)
 	GetBySalesmanID(ctx *gin.Context)
+	GetDOJourneysByDoID(ctx *gin.Context)
 }
 
 type deliveryOrderController struct {
@@ -448,6 +449,23 @@ func (c *deliveryOrderController) GetByID(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, model.Response{Data: deliveryOrder, StatusCode: http.StatusOK})
+	return
+}
+
+func (c *deliveryOrderController) GetDOJourneysByDoID(ctx *gin.Context) {
+	doIds := ctx.Param("id")
+	doId, err := strconv.Atoi(doIds)
+	if err != nil {
+		err = helper.NewError("Parameter 'delivery order id' harus bernilai integer")
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByErrorWithMessage(err, http.StatusBadRequest, nil))
+		return
+	}
+	deliveryOrderJourneys, errorLog := c.deliveryOrderUseCase.GetDOJourneysByDoID(doId, ctx)
+	if errorLog != nil {
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+		return
+	}
+	ctx.JSON(http.StatusOK, model.Response{Data: deliveryOrderJourneys.DeliveryOrderJourneys, Total: deliveryOrderJourneys.Total, StatusCode: http.StatusOK})
 	return
 }
 
