@@ -37,6 +37,7 @@ type DeliveryOrderUseCaseInterface interface {
 	GetBySalesmansID(request *models.DeliveryOrderRequest) (*models.DeliveryOrdersOpenSearchResponses, *model.ErrorLog)
 	GetByOrderStatusID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
 	GetByOrderSourceID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
+	GetDOJourneysByDoID(doId int, ctx context.Context) (*models.DeliveryOrderJourneysResponses, *model.ErrorLog)
 	DeleteByID(deliveryOrderId int, sqlTransaction *sql.Tx) *model.ErrorLog
 	DeleteDetailByID(deliveryOrderDetailId int, sqlTransaction *sql.Tx) *model.ErrorLog
 	DeleteDetailByDoID(deliveryOrderId int, sqlTransaction *sql.Tx) *model.ErrorLog
@@ -58,6 +59,7 @@ type deliveryOrderUseCase struct {
 	userRepository                          repositories.UserRepositoryInterface
 	salesmanRepository                      repositories.SalesmanRepositoryInterface
 	deliveryOrderLogRepository              mongoRepositories.DeliveryOrderLogRepositoryInterface
+	deliveryOrderJourneysRepository         mongoRepositories.DeliveryOrderJourneysRepositoryInterface
 	deliveryOrderOpenSearchRepository       openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface
 	deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface
 	SalesOrderOpenSearchUseCase             SalesOrderOpenSearchUseCaseInterface
@@ -66,7 +68,7 @@ type deliveryOrderUseCase struct {
 	ctx                                     context.Context
 }
 
-func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, deliveryOrderDetailRepository repositories.DeliveryOrderDetailRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderUseCaseInterface {
+func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, deliveryOrderDetailRepository repositories.DeliveryOrderDetailRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, deliveryOrderJourneysRepository mongoRepositories.DeliveryOrderJourneysRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderUseCaseInterface {
 	return &deliveryOrderUseCase{
 		deliveryOrderRepository:                 deliveryOrderRepository,
 		deliveryOrderDetailRepository:           deliveryOrderDetailRepository,
@@ -83,6 +85,7 @@ func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.Deli
 		agentRepository:                         agentRepository,
 		storeRepository:                         storeRepository,
 		deliveryOrderLogRepository:              deliveryOrderLogRepository,
+		deliveryOrderJourneysRepository:         deliveryOrderJourneysRepository,
 		deliveryOrderOpenSearchRepository:       deliveryOrderOpenSearchRepository,
 		deliveryOrderDetailOpenSearchRepository: deliveryOrderDetailOpenSearchRepository,
 		SalesOrderOpenSearchUseCase:             salesOrderOpenSearchUseCase,
@@ -1519,6 +1522,31 @@ func (u *deliveryOrderUseCase) GetByOrderSourceID(request *models.DeliveryOrderR
 	}
 
 	return deliveryOrders, &model.ErrorLog{}
+}
+
+func (u *deliveryOrderUseCase) GetDOJourneysByDoID(doId int, ctx context.Context) (*models.DeliveryOrderJourneysResponses, *model.ErrorLog) {
+	getDeliveryOrderJourneysResultChan := make(chan *models.DeliveryOrderJourneysChan)
+	go u.deliveryOrderJourneysRepository.GetByDoID(doId, false, ctx, getDeliveryOrderJourneysResultChan)
+	getDeliveryOrderJourneysResult := <-getDeliveryOrderJourneysResultChan
+
+	if getDeliveryOrderJourneysResult.Error != nil {
+		return &models.DeliveryOrderJourneysResponses{}, getDeliveryOrderJourneysResult.ErrorLog
+	}
+
+	deliveryOrderJourneys := []*models.DeliveryOrderJourneysResponse{}
+	for _, v := range getDeliveryOrderJourneysResult.DeliveryOrderJourney {
+		deliveryOrderJourney := models.DeliveryOrderJourneysResponse{}
+		deliveryOrderJourney.DeliveryOrderJourneyResponseMap(v)
+
+		deliveryOrderJourneys = append(deliveryOrderJourneys, &deliveryOrderJourney)
+	}
+
+	deliveryOrderJourneysResult := &models.DeliveryOrderJourneysResponses{
+		DeliveryOrderJourneys: deliveryOrderJourneys,
+		Total:                 getDeliveryOrderJourneysResult.Total,
+	}
+
+	return deliveryOrderJourneysResult, nil
 }
 
 func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.ErrorLog {
