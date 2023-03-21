@@ -109,7 +109,7 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(deliver
 		}
 
 		getBrandResultChan := make(chan *models.BrandChan)
-		go u.brandRepository.GetByID(deliveryOrder.AgentID, false, ctx, getBrandResultChan)
+		go u.brandRepository.GetByID(deliveryOrder.SalesOrder.BrandID, false, ctx, getBrandResultChan)
 		getBrandResult := <-getBrandResultChan
 
 		if getBrandResult.Error != nil {
