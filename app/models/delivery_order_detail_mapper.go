@@ -119,8 +119,8 @@ func (d *DeliveryOrderDetailOpenSearch) DoDetailMap(r *DeliveryOrder, rd *Delive
 	d.DriverName = r.DriverName
 	d.PlatNumber = r.PlatNumber
 	d.SalesOrderID = r.SalesOrderID
-	d.SoCode = r.SalesOrderCode
-	d.SoDate = r.SalesOrderDate
+	d.SoCode = NullString{sql.NullString{String: r.SalesOrder.SoCode, Valid: true}}
+	d.SoDate = NullString{sql.NullString{String: r.SalesOrder.SoDate, Valid: true}}
 	d.SoRefDate = r.SalesOrder.SoRefDate
 	d.SoDetailID = rd.SoDetail.ID
 	d.SoDetailCode = rd.SoDetail.SoDetailCode
@@ -128,7 +128,7 @@ func (d *DeliveryOrderDetailOpenSearch) DoDetailMap(r *DeliveryOrder, rd *Delive
 	d.AgentID = r.AgentID
 	d.Agent = r.Agent
 	d.StoreID = r.StoreID
-	d.Store = r.SalesOrder.Store
+	d.Store = r.Store
 	d.WarehouseID = r.WarehouseID
 	d.WarehouseCode = r.WarehouseCode
 	d.WarehouseName = r.WarehouseName
