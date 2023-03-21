@@ -33,6 +33,7 @@ type SalesOrderControllerInterface interface {
 	GetSOJourneyBySoId(ctx *gin.Context)
 	DeleteByID(ctx *gin.Context)
 	DeleteDetailByID(ctx *gin.Context)
+	DeleteDetailBySOID(ctx *gin.Context)
 	RetrySyncToKafka(ctx *gin.Context)
 }
 
@@ -1507,7 +1508,7 @@ func (c *salesOrderController) DeleteDetailByID(ctx *gin.Context) {
 	return
 }
 
-func (c *salesOrderController) DeleteDetailByDoID(ctx *gin.Context) {
+func (c *salesOrderController) DeleteDetailBySOID(ctx *gin.Context) {
 	var result baseModel.Response
 	var id int
 
@@ -1563,7 +1564,7 @@ func (c *salesOrderController) DeleteDetailByDoID(ctx *gin.Context) {
 		ctx.JSON(result.StatusCode, result)
 		return
 	}
-	errorLog := c.salesOrderUseCase.DeleteDetailByDOId(id, dbTransaction)
+	errorLog := c.salesOrderUseCase.DeleteDetailBySOId(id, dbTransaction)
 
 	if errorLog != nil {
 		err = dbTransaction.Rollback()

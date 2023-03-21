@@ -38,7 +38,7 @@ type SalesOrderUseCaseInterface interface {
 	GetDetails(request *models.GetSalesOrderDetailRequest) (*models.SalesOrderDetailsOpenSearchResponse, *model.ErrorLog)
 	GetDetailById(id int) (*models.SalesOrderDetailOpenSearchResponse, *model.ErrorLog)
 	DeleteById(id int, sqlTransaction *sql.Tx) *model.ErrorLog
-	DeleteDetailByDOId(id int, sqlTransaction *sql.Tx) *model.ErrorLog
+	DeleteDetailBySOId(id int, sqlTransaction *sql.Tx) *model.ErrorLog
 	DeleteDetailById(id int, sqlTransaction *sql.Tx) *model.ErrorLog
 	RetrySyncToKafka(logId string) (*models.SORetryProcessSyncToKafkaResponse, *model.ErrorLog)
 }
@@ -2312,7 +2312,7 @@ func (u *salesOrderUseCase) RetrySyncToKafka(logId string) (*models.SORetryProce
 
 }
 
-func (u *salesOrderUseCase) DeleteDetailByDOId(id int, sqlTransaction *sql.Tx) *model.ErrorLog {
+func (u *salesOrderUseCase) DeleteDetailBySOId(id int, sqlTransaction *sql.Tx) *model.ErrorLog {
 	now := time.Now()
 
 	getSalesOrderByIDResultChan := make(chan *models.SalesOrderChan)

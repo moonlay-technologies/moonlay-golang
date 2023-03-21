@@ -681,11 +681,11 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 	return deliveryOrderResult, nil
 }
 
-func (u *deliveryOrderUseCase) UpdateDODetailByID(ID int, request *models.DeliveryOrderDetailUpdateByIDRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.DeliveryOrderDetailUpdateByIDRequest, *model.ErrorLog) {
+func (u *deliveryOrderUseCase) UpdateDODetailByID(id int, request *models.DeliveryOrderDetailUpdateByIDRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.DeliveryOrderDetailUpdateByIDRequest, *model.ErrorLog) {
 	now := time.Now()
 
 	getDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
-	go u.deliveryOrderDetailRepository.GetByID(ID, false, ctx, getDeliveryOrderDetailResultChan)
+	go u.deliveryOrderDetailRepository.GetByID(id, false, ctx, getDeliveryOrderDetailResultChan)
 	getDeliveryOrderDetailResult := <-getDeliveryOrderDetailResultChan
 
 	if getDeliveryOrderDetailResult.Error != nil {
