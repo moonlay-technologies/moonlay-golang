@@ -283,25 +283,13 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 			filters = append(filters, filter)
 		}
 
-		// if request.GlobalSearchValue != "" {
-		// 	match := map[string]interface{}{
-		// 		"multi_match": map[string]interface{}{
-		// 			"query":  request.GlobalSearchValue,
-		// 			"fields": []string{"do_code", "so_code", "order_status.name^3", "qty^0.5"},
-		// 			"type":   "best_fields",
-		// 		},
-		// 	}
-
-		// 	musts = append(musts, match)
-		// }
-
 		if request.GlobalSearchValue != "" {
 			match := map[string]interface{}{
-				"query_string": map[string]interface{}{
-					"query":            "*" + request.GlobalSearchValue + "*",
-					"fields":           []string{"do_code", "so_code", "order_status.name", "qty"},
-					"default_operator": "AND",
-					"lenient":          true,
+				"multi_match": map[string]interface{}{
+					"query":   request.GlobalSearchValue,
+					"fields":  []string{"do_code", "so_code", "order_status.name^3", "qty^0.5"},
+					"type":    "best_fields",
+					"lenient": true,
 				},
 			}
 
@@ -338,32 +326,7 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 			// }
 		}
 	}
-	// if request.GlobalSearchValue != "" {
-	// 	query := map[string]interface{}{
-	// 		"bool": map[string]interface{}{
-	// 			"should": []map[string]interface{}{
-	// 				{
-	// 					"multi_match": map[string]interface{}{
-	// 						"query":  request.GlobalSearchValue,
-	// 						"fields": []string{"do_code", "so_code", "order_status.name"},
-	// 					},
-	// 				},
-	// 				{
-	// 					"range": map[string]interface{}{
-	// 						"qty": map[string]interface{}{
-	// 							"gte": request.GlobalSearchValue,
-	// 							"lte": request.GlobalSearchValue,
-	// 						},
-	// 					},
-	// 				},
-	// 			},
-	// 		},
-	// 	}
-	// 	openSearchQuery["query"] = query
-	// 	openSearchQueryJson, _ := json.Marshal(openSearchQuery)
 
-	// 	return openSearchQueryJson
-	// }
 	openSearchDetailBoolQuery["filter"] = filters
 	openSearchDetailBoolQuery["must"] = musts
 	openSearchDetailQuery["bool"] = openSearchDetailBoolQuery
