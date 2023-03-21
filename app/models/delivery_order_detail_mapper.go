@@ -148,9 +148,9 @@ func (d *DeliveryOrderDetailOpenSearch) DoDetailMap(r *DeliveryOrder, rd *Delive
 	d.OrderSourceID = r.OrderSourceID
 	d.OrderSourceName = r.OrderSourceName
 	d.OrderSource = r.OrderSource
-	d.OrderStatusID = rd.OrderStatusID
-	d.OrderStatusName = rd.OrderStatusName
-	d.OrderStatus = rd.OrderStatus
+	d.OrderStatusID = r.OrderStatusID
+	d.OrderStatusName = r.OrderStatusName
+	d.OrderStatus = r.OrderStatus
 	d.Qty = rd.Qty
 	d.Note = rd.Note
 	d.CreatedAt = rd.CreatedAt
