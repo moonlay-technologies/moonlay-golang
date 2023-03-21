@@ -31,6 +31,7 @@ type DeliveryOrderControllerInterface interface {
 	GetDetailsByDoId(ctx *gin.Context)
 	GetDetailById(ctx *gin.Context)
 	GetBySalesmanID(ctx *gin.Context)
+	GetJourneys(ctx *gin.Context)
 	GetDOJourneysByDoID(ctx *gin.Context)
 }
 
@@ -450,6 +451,21 @@ func (c *deliveryOrderController) GetByID(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, model.Response{Data: deliveryOrder, StatusCode: http.StatusOK})
 	return
+}
+
+func (c *deliveryOrderController) GetJourneys(ctx *gin.Context) {
+	deliveryOrderJourneysRequest, err := c.deliveryOrderValidator.GetDeliveryOrderJourneysValidator(ctx)
+	if err != nil {
+		return
+	}
+
+	deliveryOrderJourneys, errorLog := c.deliveryOrderUseCase.GetDOJourneys(deliveryOrderJourneysRequest, ctx)
+
+	if errorLog != nil {
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+	}
+
+	ctx.JSON(http.StatusOK, model.Response{Data: deliveryOrderJourneys.DeliveryOrderJourneys, Total: deliveryOrderJourneys.Total, StatusCode: http.StatusOK})
 }
 
 func (c *deliveryOrderController) GetDOJourneysByDoID(ctx *gin.Context) {

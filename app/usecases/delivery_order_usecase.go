@@ -37,6 +37,7 @@ type DeliveryOrderUseCaseInterface interface {
 	GetBySalesmansID(request *models.DeliveryOrderRequest) (*models.DeliveryOrdersOpenSearchResponses, *model.ErrorLog)
 	GetByOrderStatusID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
 	GetByOrderSourceID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
+	GetDOJourneys(request *models.DeliveryOrderJourneysRequest, ctx context.Context) (*models.DeliveryOrderJourneysResponses, *model.ErrorLog)
 	GetDOJourneysByDoID(doId int, ctx context.Context) (*models.DeliveryOrderJourneysResponses, *model.ErrorLog)
 	DeleteByID(deliveryOrderId int, sqlTransaction *sql.Tx) *model.ErrorLog
 	DeleteDetailByID(deliveryOrderDetailId int, sqlTransaction *sql.Tx) *model.ErrorLog
@@ -1522,6 +1523,31 @@ func (u *deliveryOrderUseCase) GetByOrderSourceID(request *models.DeliveryOrderR
 	}
 
 	return deliveryOrders, &model.ErrorLog{}
+}
+
+func (u *deliveryOrderUseCase) GetDOJourneys(request *models.DeliveryOrderJourneysRequest, ctx context.Context) (*models.DeliveryOrderJourneysResponses, *model.ErrorLog) {
+	getJourneysResultChan := make(chan *models.DeliveryOrderJourneysChan)
+	go u.deliveryOrderJourneysRepository.Get(request, false, ctx, getJourneysResultChan)
+	getJourneysResult := <-getJourneysResultChan
+
+	if getJourneysResult.Error != nil {
+		return &models.DeliveryOrderJourneysResponses{}, getJourneysResult.ErrorLog
+	}
+
+	deliveryOrderJourneys := []*models.DeliveryOrderJourneysResponse{}
+	for _, v := range getJourneysResult.DeliveryOrderJourney {
+		deliveryOrderJourney := models.DeliveryOrderJourneysResponse{}
+		deliveryOrderJourney.DeliveryOrderJourneyResponseMap(v)
+
+		deliveryOrderJourneys = append(deliveryOrderJourneys, &deliveryOrderJourney)
+	}
+
+	deliveryOrderJourneyResult := models.DeliveryOrderJourneysResponses{
+		DeliveryOrderJourneys: deliveryOrderJourneys,
+		Total:                 getJourneysResult.Total,
+	}
+
+	return &deliveryOrderJourneyResult, nil
 }
 
 func (u *deliveryOrderUseCase) GetDOJourneysByDoID(doId int, ctx context.Context) (*models.DeliveryOrderJourneysResponses, *model.ErrorLog) {
