@@ -75,6 +75,19 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(deliver
 	deliveryOrder.SalesOrder.SoDate = getSalesOrderResult.SalesOrder.SoDate
 	deliveryOrder.SalesOrder.SoRefDate = getSalesOrderResult.SalesOrder.SoRefDate
 
+	getOrderStatusResultChan := make(chan *models.OrderStatusChan)
+	go u.orderStatusRepository.GetByID(deliveryOrder.OrderStatusID, false, ctx, getOrderStatusResultChan)
+	getOrderStatusResult := <-getOrderStatusResultChan
+
+	if getOrderStatusResult.Error != nil {
+		errorLogData := helper.WriteLog(getOrderStatusResult.Error, http.StatusInternalServerError, nil)
+		return errorLogData
+	}
+
+	deliveryOrder.OrderStatusID = getOrderStatusResult.OrderStatus.ID
+	deliveryOrder.OrderStatusName = getOrderStatusResult.OrderStatus.Name
+	deliveryOrder.OrderStatus = getOrderStatusResult.OrderStatus
+
 	getAgentResultChan := make(chan *models.AgentChan)
 	go u.agentRepository.GetByID(deliveryOrder.AgentID, false, ctx, getAgentResultChan)
 	getAgentResult := <-getAgentResultChan
