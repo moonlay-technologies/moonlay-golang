@@ -61,6 +61,20 @@ func InitDeliveryOrderOpenSearchUseCaseInterface(salesOrderRepository repositori
 func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
 	now := time.Now()
 
+	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderRepository.GetByID(deliveryOrder.SalesOrderID, false, ctx, getSalesOrderResultChan)
+	getSalesOrderResult := <-getSalesOrderResultChan
+
+	if getSalesOrderResult.Error != nil {
+		errorLogData := helper.WriteLog(getSalesOrderResult.Error, http.StatusInternalServerError, nil)
+		return errorLogData
+	}
+
+	deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
+	deliveryOrder.SalesOrder.SoCode = getSalesOrderResult.SalesOrder.SoCode
+	deliveryOrder.SalesOrder.SoDate = getSalesOrderResult.SalesOrder.SoDate
+	deliveryOrder.SalesOrder.SoRefDate = getSalesOrderResult.SalesOrder.SoRefDate
+
 	getAgentResultChan := make(chan *models.AgentChan)
 	go u.agentRepository.GetByID(deliveryOrder.AgentID, false, ctx, getAgentResultChan)
 	getAgentResult := <-getAgentResultChan
