@@ -16,6 +16,7 @@ import (
 
 type StoreRepositoryInterface interface {
 	GetByID(ID int, countOnly bool, ctx context.Context, result chan *models.StoreChan)
+	GetIdByStoreCode(storeCode string, countOnly bool, ctx context.Context, resultChan chan *models.StoreChan)
 }
 
 type store struct {
@@ -68,6 +69,82 @@ func (r *store) GetByID(ID int, countOnly bool, ctx context.Context, resultChan 
 				"INNEr JOIN villages on villages.id = stores.village_id "+
 				"WHERE stores.deleted_at IS NULL AND stores.id = ?", ID).
 				Scan(&store.ID, &store.StoreCode, &store.StoreCategory, &store.Name, &store.Email, &store.EmailVerified, &store.Description, &store.Address, &store.ProvinceID, &store.CityID, &store.DistrictID, &store.VillageID, &store.DataType, &store.PostalCode, &store.GLat, &store.GLng, &store.ContactName, &store.Website, &store.Phone, &store.MainMobilePhone, &store.Status, &store.AliasName, &store.DBOApprovalStatus, &store.VerifiedDBO, &store.VerifiedDate, &store.ValidationStore, &store.Channel, &store.ProvinceName, &store.CityName, &store.DistrictName, &store.VillageName)
+
+			if err != nil {
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+				response.Error = err
+				response.ErrorLog = errorLogData
+				resultChan <- response
+				return
+			}
+
+			storeJson, _ := json.Marshal(store)
+			setStoreOnRedis := r.redisdb.Client().Set(ctx, storeRedisKey, storeJson, 1*time.Hour)
+
+			if setStoreOnRedis.Err() != nil {
+				errorLogData := helper.WriteLog(setStoreOnRedis.Err(), http.StatusInternalServerError, nil)
+				response.Error = setStoreOnRedis.Err()
+				response.ErrorLog = errorLogData
+				resultChan <- response
+				return
+			}
+
+			response.Total = total
+			response.Store = &store
+			resultChan <- response
+			return
+		}
+
+	} else if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	} else {
+		total = 1
+		_ = json.Unmarshal([]byte(storeOnRedis), &store)
+		response.Store = &store
+		response.Total = total
+		resultChan <- response
+		return
+	}
+}
+
+func (r *store) GetIdByStoreCode(storeCode string, countOnly bool, ctx context.Context, resultChan chan *models.StoreChan) {
+	response := &models.StoreChan{}
+	var store models.Store
+	var total int64
+
+	storeRedisKey := fmt.Sprintf("%s:%s", "store", storeCode)
+	storeOnRedis, err := r.redisdb.Client().Get(ctx, storeRedisKey).Result()
+
+	if err == redis.Nil {
+		err = r.db.QueryRow("SELECT COUNT(*) as total FROM stores WHERE deleted_at IS NULL AND store_code = ?", storeCode).Scan(&total)
+
+		if err != nil {
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+
+		if total == 0 {
+			err = helper.NewError("store data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+
+		if countOnly == false {
+			store = models.Store{}
+			err = r.db.QueryRow(""+
+				"SELECT stores.id FROM stores  "+
+				"WHERE stores.deleted_at IS NULL AND IF((SELECT COUNT(store_code) FROM stores WHERE stores.store_code = ?), stores.store_code = ?, stores.alias_code = ?)", storeCode, storeCode, storeCode).
+				Scan(&store.ID)
 
 			if err != nil {
 				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)

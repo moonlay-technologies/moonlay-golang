@@ -226,7 +226,7 @@ func InitHTTPUploadController(database dbresolver.DB, redisdb redisdb.RedisInter
 	orderStatusRepository := repositories.InitOrderStatusRepository(database, redisdb)
 	orderSourceRepository := repositories.InitOrderSourceRepository(database, redisdb)
 	requestValidationRepository := repositories.InitRequestValidationRepository(database)
-	uploadRepositories := repositories.InitUploadRepository(requestValidationRepository)
+	uploadRepositories := repositories.InitUploadRepository(requestValidationRepository, database)
 	agentRepository := repositories.InitAgentRepository(database, redisdb)
 	brandRepository := repositories.InitBrandRepository(database, redisdb)
 	storeRepository := repositories.InitStoreRepository(database, redisdb)
@@ -245,7 +245,8 @@ func InitHTTPUploadController(database dbresolver.DB, redisdb redisdb.RedisInter
 	salesOrderDetailOpenSearchRepository := openSearchRepo.InitSalesOrderDetailOpenSearchRepository(opensearchClient)
 	requestValidationMiddleware := middlewares.InitRequestValidationMiddlewareInterface(requestValidationRepository, orderSourceRepository)
 	uploadSOHistoriesRepository := mongoRepo.InitUploadSOHistoriesRepositoryInterface(mongodbClient)
-	uploadUseCase := usecases.InitUploadUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, agentRepository, brandRepository, storeRepository, productRepository, uomRepository, deliveryOrderRepository, deliveryOrderDetailRepository, salesOrderLogRepository, salesOrderJourneysRepository, salesOrderDetailJourneysRepository, userRepository, salesmanRepository, categoryRepository, salesOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, uploadRepositories, warehouseRepository, uploadSOHistoriesRepository, kafkaClient, database, ctx)
+	sosjUploadHistoriesRepository := mongoRepo.InitSOSJUploadHistoriesRepositoryInterface(mongodbClient)
+	uploadUseCase := usecases.InitUploadUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, agentRepository, brandRepository, storeRepository, productRepository, uomRepository, deliveryOrderRepository, deliveryOrderDetailRepository, salesOrderLogRepository, salesOrderJourneysRepository, salesOrderDetailJourneysRepository, userRepository, salesmanRepository, categoryRepository, salesOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, uploadRepositories, warehouseRepository, uploadSOHistoriesRepository, sosjUploadHistoriesRepository, kafkaClient, database, ctx)
 	handler := InitUploadController(uploadUseCase, requestValidationMiddleware, ctx)
 	return handler
 }

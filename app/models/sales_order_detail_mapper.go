@@ -242,7 +242,6 @@ func (v *SalesOrderDetailStoreResponse) UpdateSalesOrderDetailByIdResponseMap(re
 }
 
 func (v *SalesOrderDetail) SalesOrderDetailUploadSOSJMap(soDetail *UploadSOSJField, now time.Time) {
-	v.ProductID = soDetail.KodeProdukDBO
 	v.UomID = soDetail.Unit
 	v.Qty = soDetail.Qty
 	v.SentQty = soDetail.Qty

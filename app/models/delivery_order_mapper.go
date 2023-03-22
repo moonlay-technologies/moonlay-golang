@@ -269,7 +269,6 @@ func (deliveryOrder *DeliveryOrder) DeliveryOrderUpdateMap(request *DeliveryOrde
 }
 func (deliveryOrder *DeliveryOrder) DeliveryOrderUploadSOSJMap(request *UploadSOSJField, now time.Time) {
 	deliveryOrder.AgentID = request.IDDistributor
-	deliveryOrder.StoreID = request.KodeTokoDBO
 	deliveryOrder.WarehouseID = request.KodeGudang
 	deliveryOrder.DoDate = request.TglSuratJalan
 	deliveryOrder.DoRefDate = NullString{NullString: sql.NullString{String: request.TglSuratJalan, Valid: true}}

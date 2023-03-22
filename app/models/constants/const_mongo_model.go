@@ -9,7 +9,8 @@ const (
 	DELIVERY_ORDER_TABLE_JOURNEYS        = "delivery_order_journeys"
 	DELIVERY_ORDER_DETAIL_TABLE_JOURNEYS = "delivery_order_detail_journeys"
 	UPLOAD_SO_TABLE_HISTORIES            = "upload_so_histories"
-	UPLOAD_SOSJ_TABLE_HISTORIES          = "upload_sosj_histories"
+	SOSJ_UPLOAD_TABLE_HISTORIES          = "sosj_upload_histories"
+	SOSJ_UPLOAD_ERROR_TABLE_LOGS         = "sosj_upload_error_logs"
 	SO_UPLOAD_ERROR_TABLE_LOGS           = "so_upload_error_logs"
 
 	COLUMN_SALES_ORDER_CODE    = "so_code"
@@ -25,6 +26,9 @@ const (
 	LOG_ACTION_MONGO_UPDATE = "update"
 	LOG_ACTION_MONGO_DELETE = "delete"
 
-	UPLOAD_STATUS_HISTORY_UPLOADED   = "uploaded"
-	UPLOAD_STATUS_HISTORY_ERR_UPLOAD = "err_upload"
+	UPLOAD_STATUS_HISTORY_SUCCESS     = "success"
+	UPLOAD_STATUS_HISTORY_IN_PROGRESS = "in progress"
+	UPLOAD_STATUS_HISTORY_FAILED      = "failed"
+	UPLOAD_STATUS_HISTORY_UPLOADED    = "uploaded"
+	UPLOAD_STATUS_HISTORY_ERR_UPLOAD  = "err_upload"
 )

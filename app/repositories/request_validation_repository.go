@@ -18,7 +18,7 @@ type RequestValidationRepositoryInterface interface {
 	SalesmanIdValidation(salesmanId, agentId int, resultChan chan *models.RequestIdValidationChan)
 	BrandIdValidation(brandId, agentId int, resultChan chan *models.RequestIdValidationChan)
 	BrandSalesmanValidation(brandId, salesmanId, agentId int, resultChan chan *models.RequestIdValidationChan)
-	StoreAddressesValidation(storeId int, resultChan chan *models.RequestIdValidationChan)
+	StoreAddressesValidation(storeCode string, resultChan chan *models.RequestIdValidationChan)
 }
 
 type requestValidationRepository struct {
@@ -55,6 +55,7 @@ func (r *requestValidationRepository) MustActiveValidation(values []*models.Must
 	response := &models.MustActiveRequestChan{}
 	var total int64
 	var query = ""
+	fmt.Println(query)
 	for k, value := range values {
 		if k == len(values)-1 {
 			query += fmt.Sprintf("SELECT COUNT(*) as total FROM %s WHERE %s ", value.Table, value.Clause)
@@ -211,11 +212,11 @@ func (r *requestValidationRepository) BrandSalesmanValidation(brandId, salesmanI
 	}
 }
 
-func (r *requestValidationRepository) StoreAddressesValidation(storeId int, resultChan chan *models.RequestIdValidationChan) {
+func (r *requestValidationRepository) StoreAddressesValidation(storeCode string, resultChan chan *models.RequestIdValidationChan) {
 	response := &models.RequestIdValidationChan{}
 	var total int64
 
-	query := fmt.Sprintf("SELECT COUNT(*) AS total FROM store_addresses WHERE store_id = %d", storeId)
+	query := fmt.Sprintf("SELECT COUNT(*) AS total FROM store_addresses JOIN stores ON store_addresses.store_id = stores.id WHERE stores.store_code = '%s'", storeCode)
 	err := r.db.QueryRow(query).Scan(&total)
 
 	if err != nil {

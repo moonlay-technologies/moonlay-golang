@@ -13,7 +13,6 @@ import (
 	kafkadbo "order-service/global/utils/kafka"
 	"time"
 
-	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/bxcodec/dbresolver"
 )
 
@@ -73,7 +72,8 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 			message.UpdatedAt = now
 		}
 
-		results, err := c.uploadRepository.ReadFile("be-so-service", message.FilePath, "ap-southeast-1", s3.FileHeaderInfoUse)
+		_, err = c.uploadRepository.ReadFile("be-so-service")
+		results := []map[string]string{}
 
 		if err != nil {
 
@@ -153,8 +153,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 					go c.uploadSOHistoriesRepository.UpdateByID(message.ID.Hex(), &message, c.ctx, uploadSOHistoryJourneysResultChan)
 					break
 				} else {
-					var errors []string
-					errors = append(errors, mandatoryError...)
+					errors := mandatoryError
 
 					soUploadErrorLogs := &models.SoUploadErrorLog{}
 					soUploadErrorLogs.SoUploadErrorLogsMap(v, message.AgentName, i+2, errors, &now)
@@ -373,7 +372,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 			}
 
 			storeAddressesResultChan := make(chan *models.RequestIdValidationChan)
-			go c.requestValidationRepository.StoreAddressesValidation(intTypeResult["KodeToko"], storeAddressesResultChan)
+			go c.requestValidationRepository.StoreAddressesValidation(v["KodeToko"], storeAddressesResultChan)
 			storeAddressesResult := <-storeAddressesResultChan
 
 			if storeAddressesResult.Total < 1 {
