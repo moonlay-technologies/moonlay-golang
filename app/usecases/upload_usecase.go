@@ -230,16 +230,27 @@ func (u *uploadUseCase) RetryUploadSOSJ(sosjUploadHistoryId string, ctx context.
 	getUploadSOHistoriesResult := <-getSOSJUploadHistoriesResultChan
 
 	if getUploadSOHistoriesResult.Error != nil {
-		return getUploadSOHistoriesResult.ErrorLog
+		errorLogData := helper.WriteLog(getUploadSOHistoriesResult.Error, http.StatusInternalServerError, nil)
+		return errorLogData
 	}
 
 	userId := int64(user.UserID)
 	getUploadSOHistoriesResult.UploadHistory.UpdatedBy = &userId
 	getUploadSOHistoriesResult.UploadHistory.UpdatedByName = user.FirstName + " " + user.LastName
 	getUploadSOHistoriesResult.UploadHistory.UpdatedByEmail = user.UserEmail
+	getUploadSOHistoriesResult.UploadHistory.Status = constants.UPLOAD_STATUS_HISTORY_IN_PROGRESS
+
+	sosjUploadHistoryJourneysResultChan := make(chan *models.UploadHistoryChan)
+	go u.sosjUploadHistoriesRepository.UpdateByID(sosjUploadHistoryId, getUploadSOHistoriesResult.UploadHistory, ctx, sosjUploadHistoryJourneysResultChan)
+	sosjUploadHistoryJourneysResult := <-sosjUploadHistoryJourneysResultChan
+
+	if sosjUploadHistoryJourneysResult.Error != nil {
+		errorLogData := helper.WriteLog(sosjUploadHistoryJourneysResult.Error, http.StatusInternalServerError, nil)
+		return errorLogData
+	}
 
 	keyKafka := []byte("retry")
-	messageKafka, _ := json.Marshal(getUploadSOHistoriesResult.UploadHistory)
+	messageKafka := []byte(sosjUploadHistoryId)
 
 	err := u.kafkaClient.WriteToTopic(constants.UPLOAD_SOSJ_FILE_TOPIC, keyKafka, messageKafka)
 
