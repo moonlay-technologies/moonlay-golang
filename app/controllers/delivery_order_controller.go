@@ -499,13 +499,18 @@ func (c *deliveryOrderController) DeleteByID(ctx *gin.Context) {
 		return
 	}
 
+	id, err = strconv.Atoi(sId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		return
+	}
+
 	dbTransaction, err := c.db.BeginTx(ctx, nil)
 
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError))
 		return
 	}
-
 	errorLog := c.deliveryOrderUseCase.DeleteByID(id, dbTransaction)
 
 	if errorLog != nil {
@@ -532,6 +537,12 @@ func (c *deliveryOrderController) DeleteDetailByID(ctx *gin.Context) {
 	sId := ctx.Param("id")
 	err := c.deliveryOrderValidator.DeleteDeliveryOrderDetailByIDValidator(sId, ctx)
 	if err != nil {
+		return
+	}
+
+	id, err = strconv.Atoi(sId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
 		return
 	}
 
@@ -568,6 +579,12 @@ func (c *deliveryOrderController) DeleteDetailByDoID(ctx *gin.Context) {
 	sId := ctx.Param("id")
 	err := c.deliveryOrderValidator.DeleteDeliveryOrderByIDValidator(sId, ctx)
 	if err != nil {
+		return
+	}
+
+	id, err = strconv.Atoi(sId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
 		return
 	}
 
