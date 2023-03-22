@@ -1550,7 +1550,6 @@ func (u *deliveryOrderUseCase) GetDOJourneysByDoID(doId int, ctx context.Context
 }
 
 func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.ErrorLog {
-	fmt.Println("id = ", id)
 	now := time.Now()
 	getDeliveryOrderByIDResultChan := make(chan *models.DeliveryOrderChan)
 	go u.deliveryOrderRepository.GetByID(id, false, u.ctx, getDeliveryOrderByIDResultChan)
