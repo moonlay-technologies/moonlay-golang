@@ -403,7 +403,7 @@ func (r *deliveryOrderDetail) Insert(request *models.DeliveryOrderDetail, sqlTra
 	rawSqlFieldsJoin := strings.Join(rawSqlFields, ",")
 	rawSqlDataTypesJoin := strings.Join(rawSqlDataTypes, ",")
 
-	query := fmt.Sprintf("INSERT INTO delivery_order_details (%s) VALUES (%v)", rawSqlFieldsJoin, rawSqlDataTypesJoin)
+	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%v)", constants.DELIVERY_ORDER_DETAILS_TABLE, rawSqlFieldsJoin, rawSqlDataTypesJoin)
 	result, err := sqlTransaction.ExecContext(ctx, query, rawSqlValues...)
 
 	if err != nil {
@@ -473,7 +473,7 @@ func (r *deliveryOrderDetail) UpdateByID(id int, request *models.DeliveryOrderDe
 
 	rawSqlQueriesJoin := strings.Join(rawSqlQueries, ",")
 
-	updateQuery := fmt.Sprintf("UPDATE delivery_order_details set %v WHERE id = ?", rawSqlQueriesJoin)
+	updateQuery := fmt.Sprintf("UPDATE %s set %v WHERE id = ?", constants.DELIVERY_ORDER_DETAILS_TABLE, rawSqlQueriesJoin)
 	result, err := sqlTransaction.ExecContext(ctx, updateQuery, id)
 
 	if err != nil {
@@ -522,7 +522,7 @@ func (r *deliveryOrderDetail) DeleteByID(request *models.DeliveryOrderDetail, sq
 	rawSqlQueries = append(rawSqlQueries, query)
 
 	rawSqlQueriesJoin := strings.Join(rawSqlQueries, ",")
-	updateQuery := fmt.Sprintf("UPDATE "+constants.SALES_ORDERS_TABLE+" set %v WHERE id = ?", rawSqlQueriesJoin)
+	updateQuery := fmt.Sprintf("UPDATE %s set %v WHERE id = ?", constants.DELIVERY_ORDER_DETAILS_TABLE, rawSqlQueriesJoin)
 	result, err := sqlTransaction.ExecContext(ctx, updateQuery, request.ID)
 
 	if err != nil {
