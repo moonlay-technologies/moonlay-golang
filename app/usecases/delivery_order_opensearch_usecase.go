@@ -112,14 +112,6 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(deliver
 	deliveryOrder.Store = getStoreResult.Store
 
 	for _, v := range deliveryOrder.DeliveryOrderDetails {
-		removeCacheSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
-		go u.salesOrderDetailRepository.RemoveCacheByID(v.SoDetailID, ctx, removeCacheSalesOrderDetailResultChan)
-		removeCacheSalesOrderDetailResult := <-removeCacheSalesOrderDetailResultChan
-
-		if removeCacheSalesOrderDetailResult.Error != nil {
-			errorLogData := helper.WriteLog(removeCacheSalesOrderDetailResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
 
 		getBrandResultChan := make(chan *models.BrandChan)
 		go u.brandRepository.GetByID(deliveryOrder.SalesOrder.BrandID, false, ctx, getBrandResultChan)
@@ -132,7 +124,7 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(deliver
 		v.Brand = getBrandResult.Brand
 
 		getProductResultChan := make(chan *models.ProductChan)
-		go u.productRepository.GetByID(deliveryOrder.AgentID, false, ctx, getProductResultChan)
+		go u.productRepository.GetByID(v.ProductID, false, ctx, getProductResultChan)
 		getProductResult := <-getProductResultChan
 
 		if getProductResult.Error != nil {
