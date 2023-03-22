@@ -298,3 +298,16 @@ func (deliveryOrderDetail *DeliveryOrderDetail) DeliveryOrderDetailUploadSOSJMap
 	deliveryOrderDetail.DeletedAt = nil
 	return
 }
+
+func (deliveryOrderJourney *DeliveryOrderJourneysResponse) DeliveryOrderJourneyResponseMap(request *DeliveryOrderJourney) {
+	deliveryOrderJourney.ID = request.ID
+	deliveryOrderJourney.DoId = request.DoId
+	deliveryOrderJourney.DoCode = request.DoCode
+	deliveryOrderJourney.DoDate = request.DoDate
+	deliveryOrderJourney.Status = request.Status
+	deliveryOrderJourney.Remark = NullString{sql.NullString{String: request.Remark, Valid: true}}
+	deliveryOrderJourney.Reason = NullString{sql.NullString{String: request.Reason, Valid: true}}
+	deliveryOrderJourney.CreatedAt = request.CreatedAt
+	deliveryOrderJourney.UpdatedAt = request.UpdatedAt
+	return
+}

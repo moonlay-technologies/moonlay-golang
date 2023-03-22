@@ -11,10 +11,10 @@ import (
 )
 
 type DeliveryOrderDetailOpenSearchRepositoryInterface interface {
-	Create(request *models.DeliveryOrderDetail, result chan *models.DeliveryOrderDetailChan)
-	Get(request *models.DeliveryOrderDetailOpenSearchRequest, result chan *models.DeliveryOrderDetailsChan)
-	GetByID(request *models.DeliveryOrderRequest, resultChan chan *models.DeliveryOrderDetailChan)
-	generateDeliveryOrderQueryOpenSearchResult(openSearchQueryJson []byte) (*models.DeliveryOrderDetails, *model.ErrorLog)
+	Create(request *models.DeliveryOrderDetailOpenSearch, result chan *models.DeliveryOrderDetailOpenSearchChan)
+	Get(request *models.DeliveryOrderDetailOpenSearchRequest, result chan *models.DeliveryOrderDetailsOpenSearchChan)
+	GetByID(request *models.DeliveryOrderRequest, resultChan chan *models.DeliveryOrderDetailOpenSearchChan)
+	generateDeliveryOrderQueryOpenSearchResult(openSearchQueryJson []byte) (*models.DeliveryOrderDetailsOpenSearch, *model.ErrorLog)
 	generateDeliveryOrderQueryOpenSearchTermRequest(term_field string, term_value interface{}, request *models.DeliveryOrderDetailOpenSearchRequest) []byte
 }
 
@@ -28,8 +28,8 @@ func InitDeliveryOrderDetailOpenSearchRepository(openSearch opensearch_dbo.OpenS
 	}
 }
 
-func (r *deliveryOrderDetailOpenSearch) Create(request *models.DeliveryOrderDetail, resultChan chan *models.DeliveryOrderDetailChan) {
-	response := &models.DeliveryOrderDetailChan{}
+func (r *deliveryOrderDetailOpenSearch) Create(request *models.DeliveryOrderDetailOpenSearch, resultChan chan *models.DeliveryOrderDetailOpenSearchChan) {
+	response := &models.DeliveryOrderDetailOpenSearchChan{}
 	deliveryOrderDetailJson, _ := json.Marshal(request)
 	_, err := r.openSearch.CreateDocument(constants.DELIVERY_ORDER_DETAILS_INDEX, request.DoDetailCode, deliveryOrderDetailJson)
 
@@ -41,13 +41,13 @@ func (r *deliveryOrderDetailOpenSearch) Create(request *models.DeliveryOrderDeta
 		return
 	}
 
-	response.DeliveryOrderDetail = request
+	response.DeliveryOrderDetailOpenSearch = request
 	resultChan <- response
 	return
 }
 
-func (r *deliveryOrderDetailOpenSearch) Get(request *models.DeliveryOrderDetailOpenSearchRequest, resultChan chan *models.DeliveryOrderDetailsChan) {
-	response := &models.DeliveryOrderDetailsChan{}
+func (r *deliveryOrderDetailOpenSearch) Get(request *models.DeliveryOrderDetailOpenSearchRequest, resultChan chan *models.DeliveryOrderDetailsOpenSearchChan) {
+	response := &models.DeliveryOrderDetailsOpenSearchChan{}
 	requestQuery := r.generateDeliveryOrderQueryOpenSearchTermRequest("", "", request)
 	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery)
 
@@ -58,14 +58,14 @@ func (r *deliveryOrderDetailOpenSearch) Get(request *models.DeliveryOrderDetailO
 		return
 	}
 
-	response.DeliveryOrderDetails = result.DeliveryOrderDetails
+	response.DeliveryOrderDetailOpenSearch = result.DeliveryOrderDetails
 	response.Total = result.Total
 	resultChan <- response
 	return
 }
 
-func (r *deliveryOrderDetailOpenSearch) GetByID(request *models.DeliveryOrderRequest, resultChan chan *models.DeliveryOrderDetailChan) {
-	response := &models.DeliveryOrderDetailChan{}
+func (r *deliveryOrderDetailOpenSearch) GetByID(request *models.DeliveryOrderRequest, resultChan chan *models.DeliveryOrderDetailOpenSearchChan) {
+	response := &models.DeliveryOrderDetailOpenSearchChan{}
 	requestQuery := r.generateDeliveryOrderQueryOpenSearchTermRequest("id", request.ID, nil)
 	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery)
 
@@ -76,10 +76,11 @@ func (r *deliveryOrderDetailOpenSearch) GetByID(request *models.DeliveryOrderReq
 		return
 	}
 
-	response.DeliveryOrderDetail = result.DeliveryOrderDetails[0]
+	response.DeliveryOrderDetailOpenSearch = result.DeliveryOrderDetails[0]
 	resultChan <- response
 	return
 }
+
 func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTermRequest(term_field string, term_value interface{}, request *models.DeliveryOrderDetailOpenSearchRequest) []byte {
 	openSearchQuery := map[string]interface{}{}
 	openSearchDetailQuery := map[string]interface{}{}
@@ -106,6 +107,56 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 			openSearchQuery["from"] = page
 		}
 
+		if len(request.StartDoDate) > 0 && len(request.EndDoDate) == 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"do_date": request.StartDoDate,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if len(request.EndDoDate) > 0 && len(request.StartDoDate) == 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"do_date": request.EndDoDate,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if len(request.StartCreatedAt) > 0 && len(request.EndCreatedAt) == 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"created_at": request.StartCreatedAt,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if len(request.EndCreatedAt) > 0 && len(request.StartCreatedAt) == 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"created_at": request.EndCreatedAt,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.ID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"id": request.ID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
 		if request.DeliveryOrderID != 0 {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
@@ -116,40 +167,60 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 			filters = append(filters, filter)
 		}
 
-		if request.ProductID != 0 {
+		if request.DoCode != "" {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
-					"product_id": request.ProductID,
+					"do_code.keyword": request.DoCode,
 				},
 			}
 
 			filters = append(filters, filter)
 		}
 
-		if request.UomID != 0 {
+		if request.SalesOrderID != 0 {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
-					"uom_id": request.UomID,
+					"so_detail.sales_order_id": request.SalesOrderID,
 				},
 			}
 
 			filters = append(filters, filter)
 		}
 
-		if request.UomName != "" {
+		if request.SoCode != "" {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
-					"uom_name": request.UomName,
+					"so_code.keyword": request.SoCode,
 				},
 			}
 
 			filters = append(filters, filter)
 		}
 
-		if request.UomCode != "" {
+		if request.AgentID != 0 {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
-					"uom_code": request.UomCode,
+					"agent_id": request.AgentID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.StoreID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"store_id": request.StoreID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.BrandID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"brand_id": request.BrandID,
 				},
 			}
 
@@ -166,20 +237,10 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 			filters = append(filters, filter)
 		}
 
-		if request.OrderStatusName != "" {
+		if request.ProductID != 0 {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
-					"order_status_name": request.UomCode,
-				},
-			}
-
-			filters = append(filters, filter)
-		}
-
-		if request.DoDetailCode != "" {
-			filter := map[string]interface{}{
-				"term": map[string]interface{}{
-					"do_detail_code": request.DoDetailCode,
+					"product_id": request.ProductID,
 				},
 			}
 
@@ -190,36 +251,6 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
 					"qty": request.Qty,
-				},
-			}
-
-			filters = append(filters, filter)
-		}
-
-		if request.SoDetail.SentQty != 0 {
-			filter := map[string]interface{}{
-				"term": map[string]interface{}{
-					"sent_qty": request.SoDetail.SentQty,
-				},
-			}
-
-			filters = append(filters, filter)
-		}
-
-		if request.SoDetail.ResidualQty != 0 {
-			filter := map[string]interface{}{
-				"term": map[string]interface{}{
-					"residual_qty": request.SoDetail.ResidualQty,
-				},
-			}
-
-			filters = append(filters, filter)
-		}
-
-		if request.SoDetail.Price != 0 {
-			filter := map[string]interface{}{
-				"term": map[string]interface{}{
-					"price": request.SoDetail.Price,
 				},
 			}
 
@@ -242,7 +273,7 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 		if len(request.StartDoDate) > 0 && len(request.EndDoDate) > 0 {
 			filter := map[string]interface{}{
 				"range": map[string]interface{}{
-					"so_date": map[string]interface{}{
+					"do_date": map[string]interface{}{
 						"gte": request.StartDoDate,
 						"lte": request.EndDoDate,
 					},
@@ -254,9 +285,12 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 
 		if request.GlobalSearchValue != "" {
 			match := map[string]interface{}{
-				"multi_match": map[string]interface{}{
-					"query":  request.GlobalSearchValue,
-					"fields": []string{"do_code", "do_ref_code", "sales_order.so_code", "store.store_code", "store.name"},
+				"query_string": map[string]interface{}{
+					"query":            "*" + request.GlobalSearchValue + "*",
+					"fields":           []string{"do_code", "so_code", "order_status.name^0.5", "qty^3"},
+					"type":             "best_fields",
+					"default_operator": "AND",
+					"lenient":          true,
 				},
 			}
 
@@ -276,7 +310,7 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 				sortValue["unmapped_type"] = "date"
 			}
 
-			if request.SortField == "do_date" || request.SortField == "order_status_id" || request.SortField == "created_at" || request.SortField == "updated_at" {
+			if request.SortField == "order_status_id" || request.SortField == "agent_id" || request.SortField == "store_id" || request.SortField == "product_id" || request.SortField == "qty" {
 				openSearchQuery["sort"] = []map[string]interface{}{
 					{
 						request.SortField: sortValue,
@@ -284,7 +318,7 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 				}
 			}
 
-			if request.SortField == "do_ref_code" {
+			if request.SortField == "do_code" || request.SortField == "so_code" {
 				openSearchQuery["sort"] = []map[string]interface{}{
 					{
 						request.SortField + ".keyword": sortValue,
@@ -303,33 +337,33 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 	return openSearchQueryJson
 }
 
-func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchResult(openSearchQueryJson []byte) (*models.DeliveryOrderDetails, *model.ErrorLog) {
+func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchResult(openSearchQueryJson []byte) (*models.DeliveryOrderDetailsOpenSearch, *model.ErrorLog) {
 	openSearchQueryResult, err := r.openSearch.Query(constants.DELIVERY_ORDER_DETAILS_INDEX, openSearchQueryJson)
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-		return &models.DeliveryOrderDetails{}, errorLogData
+		return &models.DeliveryOrderDetailsOpenSearch{}, errorLogData
 	}
 
 	if openSearchQueryResult.Hits.Total.Value == 0 {
 		err = helper.NewError("delivery_orders_opensearch data not found")
 		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
-		return &models.DeliveryOrderDetails{}, errorLogData
+		return &models.DeliveryOrderDetailsOpenSearch{}, errorLogData
 	}
 
-	deliveryOrderDetails := []*models.DeliveryOrderDetail{}
+	deliveryOrderDetails := []*models.DeliveryOrderDetailOpenSearch{}
 
 	if openSearchQueryResult.Hits.Total.Value > 0 {
 		for _, v := range openSearchQueryResult.Hits.Hits {
 			obj := v.Source.(map[string]interface{})
-			deliveryOrderDetail := models.DeliveryOrderDetail{}
+			deliveryOrderDetail := models.DeliveryOrderDetailOpenSearch{}
 			objJson, _ := json.Marshal(obj)
 			json.Unmarshal(objJson, &deliveryOrderDetail)
 			deliveryOrderDetails = append(deliveryOrderDetails, &deliveryOrderDetail)
 		}
 	}
 
-	result := &models.DeliveryOrderDetails{
+	result := &models.DeliveryOrderDetailsOpenSearch{
 		Total:                int64(openSearchQueryResult.Hits.Total.Value),
 		DeliveryOrderDetails: deliveryOrderDetails,
 	}

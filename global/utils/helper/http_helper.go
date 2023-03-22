@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"order-service/global/utils/model"
 	"reflect"
 	"strconv"
 	"strings"
@@ -133,4 +134,24 @@ func GetStatusCode(err error, statusCodeDefault int) int {
 	}
 
 	return statusCode
+}
+func GenerateResultByError(err error, statusCode int) model.Response {
+	return model.Response{
+		StatusCode: statusCode,
+		Error:      WriteLog(err, statusCode, err.Error()),
+	}
+}
+
+func GenerateResultByErrorWithMessage(err error, statusCode int, message interface{}) model.Response {
+	return model.Response{
+		StatusCode: statusCode,
+		Error:      WriteLog(err, statusCode, message),
+	}
+}
+
+func GenerateResultByErrorLog(err *model.ErrorLog) model.Response {
+	return model.Response{
+		StatusCode: err.StatusCode,
+		Error:      err,
+	}
 }

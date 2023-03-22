@@ -11,6 +11,22 @@ func (deliveryOrderDetail *DeliveryOrderDetailOpenSearchDetailResponse) Delivery
 	return
 }
 
+func (deliveryOrderDetail *DeliveryOrderDetailsOpenSearchResponse) DeliveryOrderDetailsByDoIDOpenSearchResponseMap(request *DeliveryOrderDetail) {
+	deliveryOrderDetail.ID = request.ID
+	deliveryOrderDetail.DeliveryOrderID = request.DeliveryOrderID
+	deliveryOrderDetail.SoDetailID = request.SoDetailID
+	deliveryOrderDetail.Qty = NullInt64{sql.NullInt64{Int64: int64(request.Qty), Valid: true}}
+	return
+}
+
+func (deliveryOrderDetail *DeliveryOrderDetailsOpenSearchResponse) DeliveryOrderDetailsOpenSearchResponseMap(request *DeliveryOrderDetailOpenSearch) {
+	deliveryOrderDetail.ID = request.ID
+	deliveryOrderDetail.DeliveryOrderID = request.DeliveryOrderID
+	deliveryOrderDetail.SoDetailID = request.SoDetailID
+	deliveryOrderDetail.Qty = NullInt64{sql.NullInt64{Int64: int64(request.Qty), Valid: true}}
+	return
+}
+
 func (deliveryOrder *DeliveryOrder) AgentMap(request *Agent) {
 	deliveryOrder.Agent = request
 	deliveryOrder.AgentID = request.ID
@@ -92,4 +108,52 @@ func (d *DeliveryOrderDetailLogData) DoDetailMap(r *DeliveryOrder, rd *DeliveryO
 	d.UomCode = rd.UomCode
 	d.WarehouseID = r.WarehouseID
 	d.WarehouseName = r.WarehouseName
+}
+func (d *DeliveryOrderDetailOpenSearch) DoDetailMap(r *DeliveryOrder, rd *DeliveryOrderDetail) {
+	d.ID = rd.ID
+	d.DeliveryOrderID = r.ID
+	d.DoCode = r.DoCode
+	d.DoDate = r.DoDate
+	d.DoRefCode = r.DoRefCode.String
+	d.DoRefDate = r.DoRefDate.String
+	d.DriverName = r.DriverName
+	d.PlatNumber = r.PlatNumber
+	d.SalesOrderID = r.SalesOrderID
+	d.SoCode = NullString{sql.NullString{String: r.SalesOrder.SoCode, Valid: true}}
+	d.SoDate = NullString{sql.NullString{String: r.SalesOrder.SoDate, Valid: true}}
+	d.SoRefDate = r.SalesOrder.SoRefDate
+	d.SoDetailID = rd.SoDetail.ID
+	d.SoDetailCode = rd.SoDetail.SoDetailCode
+	d.SoDetail = rd.SoDetail
+	d.AgentID = r.AgentID
+	d.Agent = r.Agent
+	d.StoreID = r.StoreID
+	d.Store = r.Store
+	d.WarehouseID = r.WarehouseID
+	d.WarehouseCode = r.WarehouseCode
+	d.WarehouseName = r.WarehouseName
+	if r.Salesman != nil {
+		d.SalesmanID = r.Salesman.ID
+		d.SalesmanName = r.Salesman.Name
+		d.Salesman = r.Salesman
+	}
+	d.BrandID = rd.Brand.ID
+	d.BrandName = rd.Brand.Name
+	d.Brand = rd.Brand
+	d.ProductID = rd.ProductID
+	d.Product = rd.Product
+	d.UomID = rd.UomID
+	d.Uom = rd.Uom
+	d.DoDetailCode = rd.DoDetailCode
+	d.OrderSourceID = r.OrderSourceID
+	d.OrderSourceName = r.OrderSourceName
+	d.OrderSource = r.OrderSource
+	d.OrderStatusID = r.OrderStatusID
+	d.OrderStatusName = r.OrderStatusName
+	d.OrderStatus = r.OrderStatus
+	d.Qty = rd.Qty
+	d.Note = rd.Note
+	d.CreatedAt = rd.CreatedAt
+	d.UpdatedAt = rd.UpdatedAt
+	d.DeletedAt = rd.DeletedAt
 }

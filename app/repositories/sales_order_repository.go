@@ -351,6 +351,12 @@ func (r *salesOrder) Insert(request *models.SalesOrder, sqlTransaction *sql.Tx, 
 		rawSqlValues = append(rawSqlValues, request.UserID)
 	}
 
+	if request.Salesman != nil {
+		rawSqlFields = append(rawSqlFields, "salesman_id")
+		rawSqlDataTypes = append(rawSqlDataTypes, "?")
+		rawSqlValues = append(rawSqlValues, request.SalesmanID)
+	}
+
 	if request.VisitationID != 0 {
 		rawSqlFields = append(rawSqlFields, "visitation_id")
 		rawSqlDataTypes = append(rawSqlDataTypes, "?")
