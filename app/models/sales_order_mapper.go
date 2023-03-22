@@ -328,6 +328,7 @@ func (salesOrder *SalesOrder) AgentChanMap(request *AgentChan) {
 }
 
 func (salesOrder *SalesOrder) StoreChanMap(request *StoreChan) {
+	salesOrder.StoreID = request.Store.ID
 	salesOrder.Store = request.Store
 	salesOrder.StoreName = request.Store.Name
 	salesOrder.StoreCode = request.Store.StoreCode
@@ -609,7 +610,6 @@ func (salesOrderJourney *SalesOrderJourneyResponse) SalesOrderJourneyResponseMap
 func (salesOrder *SalesOrder) SalesOrderUploadSOSJMap(request *UploadSOSJField, now time.Time) {
 
 	salesOrder.AgentID = request.IDDistributor
-	salesOrder.StoreID = request.KodeTokoDBO
 	salesOrder.BrandID = request.IDMerk
 	salesOrder.SalesmanID = NullInt64{sql.NullInt64{Int64: int64(request.IDSalesman), Valid: true}}
 	salesOrder.SoDate = request.TglSuratJalan

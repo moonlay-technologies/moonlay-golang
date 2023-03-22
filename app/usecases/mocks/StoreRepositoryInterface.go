@@ -19,6 +19,10 @@ func (_m *StoreRepositoryInterface) GetByID(ID int, countOnly bool, ctx context.
 	_m.Called(ID, countOnly, ctx, result)
 }
 
+func (_m *StoreRepositoryInterface) GetIdByStoreCode(storeCode string, countOnly bool, ctx context.Context, result chan *models.StoreChan) {
+	_m.Called(storeCode, countOnly, ctx, result)
+}
+
 type mockConstructorTestingTNewStoreRepositoryInterface interface {
 	mock.TestingT
 	Cleanup(func())

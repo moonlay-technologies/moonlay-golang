@@ -7,23 +7,27 @@ type UploadSOSJRequest struct {
 }
 
 type UploadSOSJField struct {
-	IDDistributor   int
-	Status          string
-	NoSuratJalan    string
-	TglSuratJalan   string
-	KodeTokoDBO     int
-	IDMerk          int
-	KodeProdukDBO   int
-	Qty             int
-	Unit            int
-	NamaSupir       string
-	PlatNo          string
-	KodeGudang      int
-	IDSalesman      int
-	IDAlamat        string
-	Catatan         string
-	CatatanInternal string
-	IDUser          int
+	IDDistributor       int
+	Status              string
+	NoSuratJalan        string
+	TglSuratJalan       string
+	KodeTokoDBO         string
+	IDMerk              int
+	KodeProdukDBO       string
+	Qty                 int
+	Unit                int
+	NamaSupir           string
+	PlatNo              string
+	KodeGudang          int
+	IDSalesman          int
+	IDAlamat            string
+	Catatan             string
+	CatatanInternal     string
+	IDUser              int
+	SosjUploadHistoryId string
+	BulkCode            string
+	UploadType          string
+	ErrorLine           int
 }
 
 type UploadSOSJFieldChan struct {

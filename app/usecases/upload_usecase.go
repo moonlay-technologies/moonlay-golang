@@ -13,6 +13,9 @@ import (
 	"order-service/global/utils/helper"
 	kafkadbo "order-service/global/utils/kafka"
 	"order-service/global/utils/model"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/bxcodec/dbresolver"
 )
@@ -87,6 +90,7 @@ func InitUploadUseCaseInterface(salesOrderRepository repositories.SalesOrderRepo
 
 func (u *uploadUseCase) UploadSOSJ(request *models.UploadSOSJRequest, ctx context.Context) *model.ErrorLog {
 
+	now := time.Now()
 	user := ctx.Value("user").(*models.UserClaims)
 
 	// Check Agent By Id
@@ -99,22 +103,38 @@ func (u *uploadUseCase) UploadSOSJ(request *models.UploadSOSJRequest, ctx contex
 		return errorLogData
 	}
 
+	agentId := int64(user.AgentID)
+	userId := int64(user.UserID)
+	url := strings.Split(request.File, "/")
 	message := &models.UploadHistory{
 		RequestId:       ctx.Value("RequestId").(string),
-		FileName:        request.File,
-		FilePath:        "upload-service/sosj/" + request.File,
-		AgentId:         int64(user.AgentID),
+		BulkCode:        "SOSJ-" + strconv.Itoa(user.AgentID) + "-" + fmt.Sprint(now.Unix()),
+		FileName:        url[len(url)-1],
+		FilePath:        request.File,
+		AgentId:         &agentId,
 		AgentName:       getAgentResult.Agent.Name,
-		UploadedBy:      int64(user.UserID),
+		UploadedBy:      &userId,
 		UploadedByName:  user.FirstName + " " + user.LastName,
 		UploadedByEmail: user.UserEmail,
-		UpdatedBy:       int64(user.UserID),
+		Status:          constants.UPLOAD_STATUS_HISTORY_IN_PROGRESS,
+		UpdatedBy:       &userId,
 		UpdatedByName:   user.FirstName + " " + user.LastName,
 		UpdatedByEmail:  user.UserEmail,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+	}
+
+	sosjUploadHistoryJourneysResultChan := make(chan *models.UploadHistoryChan)
+	go u.sosjUploadHistoriesRepository.Insert(message, ctx, sosjUploadHistoryJourneysResultChan)
+	sosjUploadHistoryJourneysResult := <-sosjUploadHistoryJourneysResultChan
+
+	if sosjUploadHistoryJourneysResult.Error != nil {
+		errorLogData := helper.WriteLog(sosjUploadHistoryJourneysResult.Error, http.StatusInternalServerError, nil)
+		return errorLogData
 	}
 
 	keyKafka := []byte(ctx.Value("RequestId").(string))
-	messageKafka, _ := json.Marshal(message)
+	messageKafka := []byte(sosjUploadHistoryJourneysResult.UploadHistory.ID.Hex())
 
 	err := u.kafkaClient.WriteToTopic(constants.UPLOAD_SOSJ_FILE_TOPIC, keyKafka, messageKafka)
 
@@ -128,14 +148,6 @@ func (u *uploadUseCase) UploadSOSJ(request *models.UploadSOSJRequest, ctx contex
 
 func (u *uploadUseCase) UploadDO(ctx context.Context) *model.ErrorLog {
 
-	uploadDOResultChan := make(chan *models.UploadDOFieldsChan)
-	go u.uploadRepository.UploadDO("be-so-service", "upload-service/do/format-file-upload-data-DO-V2 (1).csv", "ap-southeast-1", uploadDOResultChan)
-	uploadDOResult := <-uploadDOResultChan
-
-	for _, v := range uploadDOResult.UploadDOFields {
-		a, _ := json.Marshal(v)
-		fmt.Println(string(a))
-	}
 	return nil
 }
 
@@ -221,7 +233,8 @@ func (u *uploadUseCase) RetryUploadSOSJ(sosjUploadHistoryId string, ctx context.
 		return getUploadSOHistoriesResult.ErrorLog
 	}
 
-	getUploadSOHistoriesResult.UploadHistory.UpdatedBy = int64(user.UserID)
+	userId := int64(user.UserID)
+	getUploadSOHistoriesResult.UploadHistory.UpdatedBy = &userId
 	getUploadSOHistoriesResult.UploadHistory.UpdatedByName = user.FirstName + " " + user.LastName
 	getUploadSOHistoriesResult.UploadHistory.UpdatedByEmail = user.UserEmail
 

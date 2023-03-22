@@ -13,6 +13,7 @@ import (
 	openSearchRepositories "order-service/app/repositories/open_search"
 	"order-service/global/utils/helper"
 	kafkadbo "order-service/global/utils/kafka"
+	"order-service/global/utils/model"
 	baseModel "order-service/global/utils/model"
 	"time"
 
