@@ -12,6 +12,7 @@ const (
 	CREATE_DELIVERY_ORDER_TOPIC = "create-delivery-order"
 	UPDATE_DELIVERY_ORDER_TOPIC = "update-delivery-order"
 	DELETE_DELIVERY_ORDER_TOPIC = "delete-delivery-order"
+	EXPORT_DELIVERY_ORDER_TOPIC = "export-delivery-order"
 
 	CREATE_DELIVERY_ORDER_DETAIL_TOPIC = "create-delivery-order-detail"
 	UPDATE_DELIVERY_ORDER_DETAIL_TOPIC = "update-delivery-order-detail"

@@ -32,6 +32,8 @@ type DeliveryOrderControllerInterface interface {
 	GetDetailById(ctx *gin.Context)
 	GetBySalesmanID(ctx *gin.Context)
 	GetDOJourneysByDoID(ctx *gin.Context)
+
+	Export(ctx *gin.Context)
 }
 
 type deliveryOrderController struct {
@@ -327,6 +329,23 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, model.Response{Data: deliveryOrders.DeliveryOrders, Total: deliveryOrders.Total, StatusCode: http.StatusOK})
+	return
+}
+
+func (c *deliveryOrderController) Export(ctx *gin.Context) {
+	deliveryOrderRequest, err := c.deliveryOrderValidator.GetDeliveryOrderValidator(ctx)
+	if err != nil {
+		return
+	}
+
+	errorLog := c.deliveryOrderUseCase.Export(deliveryOrderRequest)
+
+	if errorLog.Err != nil {
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, "apis.dbo.dev/noncore-assets/download/excel/delivery_order_27_january_2023.xlsx") // Makesure dor response pattern
 	return
 }
 

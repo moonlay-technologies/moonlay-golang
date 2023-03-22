@@ -41,6 +41,7 @@ type DeliveryOrderUseCaseInterface interface {
 	DeleteByID(deliveryOrderId int, sqlTransaction *sql.Tx) *model.ErrorLog
 	DeleteDetailByID(deliveryOrderDetailId int, sqlTransaction *sql.Tx) *model.ErrorLog
 	DeleteDetailByDoID(deliveryOrderId int, sqlTransaction *sql.Tx) *model.ErrorLog
+	Export(request *models.DeliveryOrderRequest) *model.ErrorLog
 }
 
 type deliveryOrderUseCase struct {
@@ -1219,6 +1220,20 @@ func (u *deliveryOrderUseCase) Get(request *models.DeliveryOrderRequest) (*model
 	}
 
 	return deliveryOrders, &model.ErrorLog{}
+}
+
+func (u *deliveryOrderUseCase) Export(request *models.DeliveryOrderRequest) *model.ErrorLog {
+
+	keyKafka := []byte(request.DoCode)
+	messageKafka, _ := json.Marshal(request)
+	err := u.kafkaClient.WriteToTopic(constants.UPDATE_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		return errorLogData
+	}
+
+	return nil
 }
 
 func (u *deliveryOrderUseCase) GetDetails(request *models.DeliveryOrderDetailOpenSearchRequest) (*models.DeliveryOrderDetailsOpenSearchResponses, *model.ErrorLog) {
