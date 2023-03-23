@@ -10,6 +10,7 @@ import (
 	"order-service/global/utils/helper"
 	baseModel "order-service/global/utils/model"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/bxcodec/dbresolver"
@@ -23,6 +24,7 @@ type DeliveryOrderValidatorInterface interface {
 	GetDeliveryOrderDetailValidator(*gin.Context) (*models.DeliveryOrderDetailOpenSearchRequest, error)
 	GetDeliveryOrderDetailByDoIDValidator(*gin.Context) (*models.DeliveryOrderDetailRequest, error)
 	GetDeliveryOrderBySalesmanIDValidator(*gin.Context) (*models.DeliveryOrderRequest, error)
+	GetDeliveryOrderSyncToKafkaHistoriesValidator(*gin.Context) (*models.DeliveryOrderEventLogRequest, error)
 	GetDeliveryOrderJourneysValidator(*gin.Context) (*models.DeliveryOrderJourneysRequest, error)
 	UpdateDeliveryOrderByIDValidator(int, *models.DeliveryOrderUpdateByIDRequest, *gin.Context) error
 	UpdateDeliveryOrderDetailByDoIDValidator(int, []*models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest, *gin.Context) error
@@ -1023,6 +1025,38 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderBySalesmanIDValidator(ctx *gin.
 		UpdatedAt:         c.getQueryWithDefault("updated_at", "", ctx),
 	}
 	return deliveryOrderRequest, nil
+}
+
+func (c *DeliveryOrderValidator) GetDeliveryOrderSyncToKafkaHistoriesValidator(ctx *gin.Context) (*models.DeliveryOrderEventLogRequest, error) {
+	pageInt, err := c.getIntQueryWithDefault("page", "1", true, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	perPageInt, err := c.getIntQueryWithDefault("per_page", "10", true, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	sortField := c.getQueryWithDefault("sort_field", "created_at", ctx)
+
+	intAgentID, err := c.getIntQueryWithDefault("agent_id", "0", false, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	salesOrderRequest := &models.DeliveryOrderEventLogRequest{
+		Page:              pageInt,
+		PerPage:           perPageInt,
+		SortField:         sortField,
+		SortValue:         strings.ToLower(c.getQueryWithDefault("sort_value", "desc", ctx)),
+		GlobalSearchValue: c.getQueryWithDefault("global_search_value", "", ctx),
+		ID:                c.getQueryWithDefault("id", "", ctx),
+		RequestID:         c.getQueryWithDefault("request_id", "", ctx),
+		AgentID:           intAgentID,
+		Status:            c.getQueryWithDefault("status", "", ctx),
+	}
+	return salesOrderRequest, nil
 }
 
 func (c *DeliveryOrderValidator) GetDeliveryOrderJourneysValidator(ctx *gin.Context) (*models.DeliveryOrderJourneysRequest, error) {

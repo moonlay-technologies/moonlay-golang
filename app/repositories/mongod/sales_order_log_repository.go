@@ -37,6 +37,26 @@ func InitSalesOrderLogRepository(mongod mongodb.MongoDBInterface) SalesOrderLogR
 	}
 }
 
+func (r *salesOrderLogRepository) Insert(request *models.SalesOrderLog, ctx context.Context, resultChan chan *models.SalesOrderLogChan) {
+	response := &models.SalesOrderLogChan{}
+	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
+	result, err := collection.InsertOne(ctx, request)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	request.ID, _ = result.InsertedID.(primitive.ObjectID)
+	response.SalesOrderLog = request
+	response.Error = nil
+	resultChan <- response
+	return
+}
+
 func (r *salesOrderLogRepository) Get(request *models.SalesOrderEventLogRequest, countOnly bool, ctx context.Context, resultChan chan *models.GetSalesOrderLogsChan) {
 	response := &models.GetSalesOrderLogsChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
@@ -247,26 +267,6 @@ func (r *salesOrderLogRepository) GetByCollumn(collumnName string, value string,
 		resultChan <- response
 		return
 	}
-}
-
-func (r *salesOrderLogRepository) Insert(request *models.SalesOrderLog, ctx context.Context, resultChan chan *models.SalesOrderLogChan) {
-	response := &models.SalesOrderLogChan{}
-	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
-	result, err := collection.InsertOne(ctx, request)
-
-	if err != nil {
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-		response.Error = err
-		response.ErrorLog = errorLogData
-		resultChan <- response
-		return
-	}
-
-	request.ID, _ = result.InsertedID.(primitive.ObjectID)
-	response.SalesOrderLog = request
-	response.Error = nil
-	resultChan <- response
-	return
 }
 
 func (r *salesOrderLogRepository) UpdateByID(ID string, request *models.SalesOrderLog, ctx context.Context, resultChan chan *models.SalesOrderLogChan) {
