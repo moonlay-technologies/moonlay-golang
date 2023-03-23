@@ -175,7 +175,7 @@ func InitUploadSOFileConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodb
 	requestValidationRepository := repositories.InitRequestValidationRepository(database)
 	uploadRepository := repositories.InitUploadRepository(requestValidationRepository, database)
 	requestValidationMiddleware := middlewares.InitRequestValidationMiddlewareInterface(requestValidationRepository, orderSourceRepository)
-	uploadSOHistoriesRepository := mongoRepo.InitUploadSOHistoriesRepositoryInterface(mongodbClient)
+	uploadSOHistoriesRepository := mongoRepo.InitSoUploadHistoriesRepositoryInterface(mongodbClient)
 	soUploadErrorLogsRepository := mongoRepo.InitSoUploadErrorLogsRepositoryInterface(mongodbClient)
 	handler := InitUploadSOFileConsumerHandlerInterface(kafkaClient, uploadRepository, requestValidationMiddleware, requestValidationRepository, uploadSOHistoriesRepository, soUploadErrorLogsRepository, database, ctx, args)
 	return handler
@@ -196,7 +196,7 @@ func InitUploadSOItemConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodb
 	salesOrderLogRepository := mongoRepo.InitSalesOrderLogRepository(mongodbClient)
 	salesOrderJourneysRepository := mongoRepo.InitSalesOrderJourneysRepository(mongodbClient)
 	salesOrderDetailJourneysRepository := mongoRepo.InitSalesOrderDetailJourneysRepository(mongodbClient)
-	uploadSOHistoriesRepository := mongoRepo.InitUploadSOHistoriesRepositoryInterface(mongodbClient)
+	uploadSOHistoriesRepository := mongoRepo.InitSoUploadHistoriesRepositoryInterface(mongodbClient)
 	soUploadErrorLogsRepository := mongoRepo.InitSoUploadErrorLogsRepositoryInterface(mongodbClient)
 	handler := InitUploadSOItemConsumerHandlerInterface(orderSourceRepository, orderStatusRepository, productRepository, uomRepository, agentRepository, storeRepository, userRepository, salesmanRepository, brandRepository, salesOrderRepository, salesOrderDetailRepository, salesOrderLogRepository, salesOrderJourneysRepository, salesOrderDetailJourneysRepository, uploadSOHistoriesRepository, soUploadErrorLogsRepository, kafkaClient, database, ctx, args)
 	return handler

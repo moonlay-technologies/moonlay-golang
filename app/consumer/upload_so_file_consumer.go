@@ -11,6 +11,7 @@ import (
 	mongoRepositories "order-service/app/repositories/mongod"
 	"order-service/global/utils/helper"
 	kafkadbo "order-service/global/utils/kafka"
+	"strings"
 	"time"
 
 	"github.com/bxcodec/dbresolver"
@@ -25,20 +26,20 @@ type uploadSOFileConsumerHandler struct {
 	uploadRepository            repositories.UploadRepositoryInterface
 	requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface
 	requestValidationRepository repositories.RequestValidationRepositoryInterface
-	uploadSOHistoriesRepository mongoRepositories.UploadSOHistoriesRepositoryInterface
+	soUploadHistoriesRepository mongoRepositories.SoUploadHistoriesRepositoryInterface
 	soUploadErrorLogsRepository mongoRepositories.SoUploadErrorLogsRepositoryInterface
 	ctx                         context.Context
 	args                        []interface{}
 	db                          dbresolver.DB
 }
 
-func InitUploadSOFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, uploadRepository repositories.UploadRepositoryInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, requestValidationRepository repositories.RequestValidationRepositoryInterface, uploadSOHistoriesRepository mongoRepositories.UploadSOHistoriesRepositoryInterface, soUploadErrorLogsRepository mongoRepositories.SoUploadErrorLogsRepositoryInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UploadSOFileConsumerHandlerInterface {
+func InitUploadSOFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, uploadRepository repositories.UploadRepositoryInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, requestValidationRepository repositories.RequestValidationRepositoryInterface, soUploadHistoriesRepository mongoRepositories.SoUploadHistoriesRepositoryInterface, soUploadErrorLogsRepository mongoRepositories.SoUploadErrorLogsRepositoryInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UploadSOFileConsumerHandlerInterface {
 	return &uploadSOFileConsumerHandler{
 		kafkaClient:                 kafkaClient,
 		uploadRepository:            uploadRepository,
 		requestValidationMiddleware: requestValidationMiddleware,
 		requestValidationRepository: requestValidationRepository,
-		uploadSOHistoriesRepository: uploadSOHistoriesRepository,
+		soUploadHistoriesRepository: soUploadHistoriesRepository,
 		soUploadErrorLogsRepository: soUploadErrorLogsRepository,
 		ctx:                         ctx,
 		args:                        args,
@@ -61,42 +62,49 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 		fmt.Printf("message so at topic/partition/offset %v/%v/%v \n", m.Topic, m.Partition, m.Offset)
 		now := time.Now()
 
-		var message models.SoUploadHistory
-		err = json.Unmarshal(m.Value, &message)
+		soUploadHistoryId := m.Value
 		var key = string(m.Key[:])
 
-		if key == "retry" {
-			message.UpdatedAt = now
-		} else {
-			message.CreatedAt = now
-			message.UpdatedAt = now
+		var errors []string
+
+		soUploadHistoryJourneysResultChan := make(chan *models.SoUploadHistoryChan)
+		go c.soUploadHistoriesRepository.GetByID(string(soUploadHistoryId), false, c.ctx, soUploadHistoryJourneysResultChan)
+		soUploadHistoryJourneysResult := <-soUploadHistoryJourneysResultChan
+		if soUploadHistoryJourneysResult.Error != nil {
+			fmt.Println(soUploadHistoryJourneysResult.Error.Error())
 		}
 
-		_, err = c.uploadRepository.ReadFile("be-so-service")
-		results := []map[string]string{}
+		message := soUploadHistoryJourneysResult.SoUploadHistory
+		file, err := c.uploadRepository.ReadFile(message.FilePath)
 
 		if err != nil {
-
-			message.Status = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
-			uploadSOHistoryJourneysResultChan := make(chan *models.SoUploadHistoryChan)
-			if key == "retry" {
-				go c.uploadSOHistoriesRepository.UpdateByID(message.ID.Hex(), &message, c.ctx, uploadSOHistoryJourneysResultChan)
-			} else {
-				go c.uploadSOHistoriesRepository.Insert(&message, c.ctx, uploadSOHistoryJourneysResultChan)
-			}
+			c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 			continue
-
 		}
 
-		message.Status = constants.UPLOAD_STATUS_HISTORY_UPLOADED
-		uploadSOHistoryJourneysResultChan := make(chan *models.SoUploadHistoryChan)
-		uploadSOHistoryJourneysResult := &models.SoUploadHistoryChan{}
-		if key == "retry" {
-			go c.uploadSOHistoriesRepository.UpdateByID(message.ID.Hex(), &message, c.ctx, uploadSOHistoryJourneysResultChan)
-			uploadSOHistoryJourneysResult = <-uploadSOHistoryJourneysResultChan
-		} else {
-			go c.uploadSOHistoriesRepository.Insert(&message, c.ctx, uploadSOHistoryJourneysResultChan)
-			uploadSOHistoryJourneysResult = <-uploadSOHistoryJourneysResultChan
+		parseFile := string(file)
+		data := strings.Split(parseFile, "\n")
+		totalRows := int64(len(data) - 1)
+
+		message.TotalRows = &totalRows
+		c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_SUCCESS)
+
+		results := []map[string]string{}
+		for i, v := range data {
+			if i == len(data)-1 {
+				break
+			}
+			if i == 0 {
+				continue
+			}
+
+			headers := strings.Split(data[0], ",")
+			line := strings.Split(v, ",")
+			uploadSOField := map[string]string{}
+			for j, y := range line {
+				uploadSOField[strings.ReplaceAll(headers[j], "\r", "")] = strings.ReplaceAll(y, "\r", "")
+			}
+			results = append(results, uploadSOField)
 		}
 
 		brandIds := map[string][]map[string]string{}
@@ -148,19 +156,11 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 			if len(mandatoryError) > 1 {
 
 				if key == "retry" {
-					message.Status = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
-					uploadSOHistoryJourneysResultChan := make(chan *models.SoUploadHistoryChan)
-					go c.uploadSOHistoriesRepository.UpdateByID(message.ID.Hex(), &message, c.ctx, uploadSOHistoryJourneysResultChan)
+					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 					break
 				} else {
 					errors := mandatoryError
-
-					soUploadErrorLogs := &models.SoUploadErrorLog{}
-					soUploadErrorLogs.SoUploadErrorLogsMap(v, message.AgentName, i+2, errors, &now)
-					soUploadErrorLogs.SoUploadHistoryId = uploadSOHistoryJourneysResult.SoUploadHistory.ID
-
-					soUploadErrorLogssResultChan := make(chan *models.SoUploadErrorLogChan)
-					go c.soUploadErrorLogsRepository.Insert(soUploadErrorLogs, c.ctx, soUploadErrorLogssResultChan)
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
 					continue
 				}
 			}
@@ -170,12 +170,10 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				var isBreak bool
 
 				if brandIds[v["NoOrder"]][0]["KodeMerk"] != v["KodeMerk"] {
-					message.Status = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
-					uploadSOHistoryJourneysResultChan := make(chan *models.SoUploadHistoryChan)
 					if key == "retry" {
-						go c.uploadSOHistoriesRepository.UpdateByID(message.ID.Hex(), &message, c.ctx, uploadSOHistoryJourneysResultChan)
+						c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 					} else {
-						go c.uploadSOHistoriesRepository.Insert(&message, c.ctx, uploadSOHistoryJourneysResultChan)
+						c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
 					}
 					isBreak = true
 					break
@@ -184,9 +182,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				for _, x := range brandIds[v["NoOrder"]] {
 					if x["KodeProduk"] == v["KodeProduk"] && x["UnitProduk"] == v["UnitProduk"] {
 						if key == "retry" {
-							message.Status = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
-							uploadSOHistoryJourneysResultChan := make(chan *models.SoUploadHistoryChan)
-							go c.uploadSOHistoriesRepository.UpdateByID(message.ID.Hex(), &message, c.ctx, uploadSOHistoryJourneysResultChan)
+							c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 
 							isBreak = true
 							break
@@ -194,12 +190,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 							var errors []string
 							errors = append(errors, fmt.Sprintf("Duplikat row untuk No Order %s", v["NoOrder"]))
 
-							soUploadErrorLogs := &models.SoUploadErrorLog{}
-							soUploadErrorLogs.SoUploadErrorLogsMap(v, message.AgentName, i+2, errors, &now)
-							soUploadErrorLogs.SoUploadHistoryId = uploadSOHistoryJourneysResult.SoUploadHistory.ID
-
-							soUploadErrorLogssResultChan := make(chan *models.SoUploadErrorLogChan)
-							go c.soUploadErrorLogsRepository.Insert(soUploadErrorLogs, c.ctx, soUploadErrorLogssResultChan)
+							c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
 
 							isBreak = false
 							break
@@ -226,10 +217,6 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 					Value: v["IDDistributor"],
 				},
 				{
-					Field: "KodeToko",
-					Value: v["KodeToko"],
-				},
-				{
 					Field: "IDSalesman",
 					Value: v["IDSalesman"],
 				},
@@ -252,20 +239,13 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 			if len(intTypeError) > 1 {
 
 				if key == "retry" {
-					message.Status = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
-					uploadSOHistoryJourneysResultChan := make(chan *models.SoUploadHistoryChan)
-					go c.uploadSOHistoriesRepository.UpdateByID(message.ID.Hex(), &message, c.ctx, uploadSOHistoryJourneysResultChan)
+					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 
 					break
 				} else {
 					errors := intTypeError
 
-					soUploadErrorLogs := &models.SoUploadErrorLog{}
-					soUploadErrorLogs.SoUploadErrorLogsMap(v, message.AgentName, i+2, errors, &now)
-					soUploadErrorLogs.SoUploadHistoryId = uploadSOHistoryJourneysResult.SoUploadHistory.ID
-
-					soUploadErrorLogssResultChan := make(chan *models.SoUploadErrorLogChan)
-					go c.soUploadErrorLogsRepository.Insert(soUploadErrorLogs, c.ctx, soUploadErrorLogssResultChan)
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
 
 					continue
 				}
@@ -273,20 +253,13 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 
 			if intTypeResult["QTYOrder"] < 1 {
 				if key == "retry" {
-					message.Status = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
-					uploadSOHistoryJourneysResultChan := make(chan *models.SoUploadHistoryChan)
-					go c.uploadSOHistoriesRepository.UpdateByID(message.ID.Hex(), &message, c.ctx, uploadSOHistoryJourneysResultChan)
+					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 
 					break
 				} else {
 					errors := []string{"Quantity harus lebih dari 0"}
 
-					soUploadErrorLogs := &models.SoUploadErrorLog{}
-					soUploadErrorLogs.SoUploadErrorLogsMap(v, message.AgentName, i+2, errors, &now)
-					soUploadErrorLogs.SoUploadHistoryId = uploadSOHistoryJourneysResult.SoUploadHistory.ID
-
-					soUploadErrorLogssResultChan := make(chan *models.SoUploadErrorLogChan)
-					go c.soUploadErrorLogsRepository.Insert(soUploadErrorLogs, c.ctx, soUploadErrorLogssResultChan)
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
 
 					continue
 				}
@@ -294,7 +267,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 
 			mustActiveField := []*models.MustActiveRequest{
 				helper.GenerateMustActive("agents", "IDDistributor", intTypeResult["IDDistributor"], "active"),
-				helper.GenerateMustActive("users", "user_id", int(message.UploadedBy), "ACTIVE"),
+				helper.GenerateMustActive("users", "user_id", 0, "ACTIVE"),
 				{
 					Table:    "salesmans",
 					ReqField: "IDSalesman",
@@ -306,14 +279,14 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 					ReqField:      "KodeMerk",
 					Clause:        fmt.Sprintf("id = %d AND status_active = %d", intTypeResult["KodeMerk"], 1),
 					Id:            intTypeResult["KodeMerk"],
-					CustomMessage: fmt.Sprintf("Kode Merek = %d Tidak Terdaftar pada Distributor <nama_agent>. Silahkan gunakan Kode Merek yang lain.", intTypeResult["KodeMerk"]),
+					CustomMessage: fmt.Sprintf("Kode Merek = %d Tidak Terdaftar pada Distributor %s. Silahkan gunakan Kode Merek yang lain.", intTypeResult["KodeMerk"], soUploadHistoryJourneysResult.SoUploadHistory.AgentName),
 				},
 				{
 					Table:         "products",
 					ReqField:      "KodeProduk",
 					Clause:        fmt.Sprintf("sku = '%s' AND isActive = %d", v["KodeProduk"], 1),
 					Id:            v["KodeProduk"],
-					CustomMessage: fmt.Sprintf("Kode SKU = %s dengan Merek %ssudah Tidak Aktif. Silahkan gunakan Kode SKU yang lain.", v["KodeProduk"], v["NamaMerk"]),
+					CustomMessage: fmt.Sprintf("Kode SKU = %s dengan Merek %s sudah Tidak Aktif. Silahkan gunakan Kode SKU yang lain.", v["KodeProduk"], v["NamaMerk"]),
 				},
 				{
 					Table:    "uoms",
@@ -325,20 +298,13 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 			mustActiveError := c.requestValidationMiddleware.UploadMustActiveValidation(mustActiveField)
 			if len(mustActiveError) > 1 {
 				if key == "retry" {
-					message.Status = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
-					uploadSOHistoryJourneysResultChan := make(chan *models.SoUploadHistoryChan)
-					go c.uploadSOHistoriesRepository.UpdateByID(message.ID.Hex(), &message, c.ctx, uploadSOHistoryJourneysResultChan)
+					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 
 					break
 				} else {
 					errors := mustActiveError
 
-					soUploadErrorLogs := &models.SoUploadErrorLog{}
-					soUploadErrorLogs.SoUploadErrorLogsMap(v, message.AgentName, i+2, errors, &now)
-					soUploadErrorLogs.SoUploadHistoryId = uploadSOHistoryJourneysResult.SoUploadHistory.ID
-
-					soUploadErrorLogssResultChan := make(chan *models.SoUploadErrorLogChan)
-					go c.soUploadErrorLogsRepository.Insert(soUploadErrorLogs, c.ctx, soUploadErrorLogssResultChan)
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
 
 					continue
 				}
@@ -350,22 +316,16 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 
 			if brandSalesmanResult.Total < 1 {
 				if key == "retry" {
-					message.Status = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
-					uploadSOHistoryJourneysResultChan := make(chan *models.SoUploadHistoryChan)
-					go c.uploadSOHistoriesRepository.UpdateByID(message.ID.Hex(), &message, c.ctx, uploadSOHistoryJourneysResultChan)
+					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 
 					break
 				} else {
 					var errors []string
 
-					errors = append(errors, fmt.Sprintf("Kode Merek = %d Tidak Terdaftar pada Distributor <nama_agent>. Silahkan gunakan Kode Merek yang lain.", intTypeResult["KodeMerk"]))
-					errors = append(errors, fmt.Sprintf("ID Salesman = %d Tidak Terdaftar pada Distributor <nama_agent>. Silahkan gunakan ID Salesman yang lain.", intTypeResult["IDSalesman"]))
+					errors = append(errors, fmt.Sprintf("Kode Merek = %d Tidak Terdaftar pada Distributor %s. Silahkan gunakan Kode Merek yang lain.", intTypeResult["KodeMerk"], soUploadHistoryJourneysResult.SoUploadHistory.AgentName))
+					errors = append(errors, fmt.Sprintf("ID Salesman = %d Tidak Terdaftar pada Distributor %s. Silahkan gunakan ID Salesman yang lain.", intTypeResult["IDSalesman"], soUploadHistoryJourneysResult.SoUploadHistory.AgentName))
 
-					soUploadErrorLogs := &models.SoUploadErrorLog{}
-					soUploadErrorLogs.SoUploadErrorLogsMap(v, message.AgentName, i+2, errors, &now)
-
-					soUploadErrorLogssResultChan := make(chan *models.SoUploadErrorLogChan)
-					go c.soUploadErrorLogsRepository.Insert(soUploadErrorLogs, c.ctx, soUploadErrorLogssResultChan)
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
 
 					continue
 				}
@@ -377,20 +337,13 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 
 			if storeAddressesResult.Total < 1 {
 				if key == "retry" {
-					message.Status = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
-					uploadSOHistoryJourneysResultChan := make(chan *models.SoUploadHistoryChan)
-					go c.uploadSOHistoriesRepository.UpdateByID(message.ID.Hex(), &message, c.ctx, uploadSOHistoryJourneysResultChan)
+					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 
 					break
 				} else {
 					errors := []string{fmt.Sprintf("Alamat Utama pada Kode Toko = %s Tidak Ditemukan. Silahkan gunakan Alamat Toko yang lain.", v["KodeToko"])}
 
-					soUploadErrorLogs := &models.SoUploadErrorLog{}
-					soUploadErrorLogs.SoUploadErrorLogsMap(v, message.AgentName, i+2, errors, &now)
-					soUploadErrorLogs.SoUploadHistoryId = uploadSOHistoryJourneysResult.SoUploadHistory.ID
-
-					soUploadErrorLogssResultChan := make(chan *models.SoUploadErrorLogChan)
-					go c.soUploadErrorLogsRepository.Insert(soUploadErrorLogs, c.ctx, soUploadErrorLogssResultChan)
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
 
 					continue
 				}
@@ -400,20 +353,13 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 			uploadSOField.TanggalOrder, err = helper.ParseDDYYMMtoYYYYMMDD(v["TanggalOrder"])
 			if err != nil {
 				if key == "retry" {
-					message.Status = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
-					uploadSOHistoryJourneysResultChan := make(chan *models.SoUploadHistoryChan)
-					go c.uploadSOHistoriesRepository.UpdateByID(message.ID.Hex(), &message, c.ctx, uploadSOHistoryJourneysResultChan)
+					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 
 					break
 				} else {
 					errors := []string{fmt.Sprintf("Format Tanggal Order = %s Salah, silahkan sesuaikan dengan format DD-MMM-YYYY, contoh 15/12/2021", v["TanggalOrder"])}
 
-					soUploadErrorLogs := &models.SoUploadErrorLog{}
-					soUploadErrorLogs.SoUploadErrorLogsMap(v, message.AgentName, i+2, errors, &now)
-					soUploadErrorLogs.SoUploadHistoryId = uploadSOHistoryJourneysResult.SoUploadHistory.ID
-
-					soUploadErrorLogssResultChan := make(chan *models.SoUploadErrorLogChan)
-					go c.soUploadErrorLogsRepository.Insert(soUploadErrorLogs, c.ctx, soUploadErrorLogssResultChan)
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
 
 					continue
 				}
@@ -422,33 +368,23 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 			uploadSOField.TanggalTokoOrder, err = helper.ParseDDYYMMtoYYYYMMDD(v["TanggalTokoOrder"])
 			if err != nil {
 				if key == "retry" {
-					message.Status = constants.UPLOAD_STATUS_HISTORY_ERR_UPLOAD
-					uploadSOHistoryJourneysResultChan := make(chan *models.SoUploadHistoryChan)
-					go c.uploadSOHistoriesRepository.UpdateByID(message.ID.Hex(), &message, c.ctx, uploadSOHistoryJourneysResultChan)
+					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 
 					break
 				} else {
 					errors := []string{fmt.Sprintf("Format Tanggal Toko Order = %s Salah, silahkan sesuaikan dengan format DD-MMM-YYYY, contoh 15/12/2021", v["TanggalTokoOrder"])}
 
-					soUploadErrorLogs := &models.SoUploadErrorLog{}
-					soUploadErrorLogs.SoUploadErrorLogsMap(v, message.AgentName, i+2, errors, &now)
-					soUploadErrorLogs.SoUploadHistoryId = uploadSOHistoryJourneysResult.SoUploadHistory.ID
-
-					soUploadErrorLogssResultChan := make(chan *models.SoUploadErrorLogChan)
-					go c.soUploadErrorLogsRepository.Insert(soUploadErrorLogs, c.ctx, soUploadErrorLogssResultChan)
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
 
 					continue
 				}
 			}
 
-			if key == "retry" {
-				uploadSOField.UploadType = "retry"
-			} else {
-				uploadSOField.UploadType = "upload"
-			}
-
-			uploadSOField.UploadSOFieldMap(v, int(message.UploadedBy), uploadSOHistoryJourneysResult.SoUploadHistory.ID.Hex())
-
+			uploadSOField.UploadSOFieldMap(v, int(*message.UploadedBy), message.ID.Hex())
+			uploadSOField.BulkCode = message.BulkCode
+			uploadSOField.SoUploadHistoryId = message.ID.Hex()
+			uploadSOField.ErrorLine = i + 3
+			uploadSOField.UploadType = key
 			uploadSOFields = append(uploadSOFields, &uploadSOField)
 		}
 
@@ -458,9 +394,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 		err = c.kafkaClient.WriteToTopic(constants.UPLOAD_SO_ITEM_TOPIC, keyKafka, messageKafka)
 
 		if err != nil {
-			message.Status = constants.UPLOAD_STATUS_HISTORY_UPLOADED
-			uploadSOHistoryJourneysResultChan := make(chan *models.SoUploadHistoryChan)
-			go c.uploadSOHistoriesRepository.Insert(&message, c.ctx, uploadSOHistoryJourneysResultChan)
+			c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 			continue
 		}
 
@@ -470,4 +404,22 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 		fmt.Println("error")
 		fmt.Println(err)
 	}
+}
+
+func (c *uploadSOFileConsumerHandler) createSoUploadErrorLog(errorLine int, agentId, sosjUploadHistoryId, requestId, agentName, bulkCode string, errors []string, now *time.Time, item map[string]string) {
+	soUploadErrorLog := &models.SoUploadErrorLog{}
+	soUploadErrorLog.SoUploadErrorLogsMap(errorLine, sosjUploadHistoryId, requestId, bulkCode, errors, now)
+	rowData := &models.RowDataSoUploadErrorLog{}
+	rowData.RowDataSoUploadErrorLogMap(item)
+	soUploadErrorLog.RowData = *rowData
+
+	soUploadErrorLogResultChan := make(chan *models.SoUploadErrorLogChan)
+	go c.soUploadErrorLogsRepository.Insert(soUploadErrorLog, c.ctx, soUploadErrorLogResultChan)
+}
+
+func (c *uploadSOFileConsumerHandler) updateSoUploadHistories(message *models.SoUploadHistory, status string) {
+	message.UpdatedAt = time.Now()
+	message.Status = status
+	soUploadHistoryJourneysResultChan := make(chan *models.SoUploadHistoryChan)
+	go c.soUploadHistoriesRepository.UpdateByID(message.ID.Hex(), message, c.ctx, soUploadHistoryJourneysResultChan)
 }

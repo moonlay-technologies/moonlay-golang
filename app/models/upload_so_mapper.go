@@ -7,7 +7,7 @@ import (
 
 func (result *UploadSOField) UploadSOFieldMap(request map[string]string, userId int, soUploadHistoryId string) {
 	result.IDDistributor, _ = strconv.Atoi(request["IDDistributor"])
-	result.KodeToko, _ = strconv.Atoi(request["KodeToko"])
+	result.KodeToko = request["KodeToko"]
 	result.NamaToko = request["NamaToko"]
 	result.IDSalesman, _ = strconv.Atoi(request["IDSalesman"])
 	result.NamaSalesman = request["NamaSalesman"]

@@ -477,12 +477,6 @@ func (r *salesOrder) Insert(request *models.SalesOrder, sqlTransaction *sql.Tx, 
 		rawSqlValues = append(rawSqlValues, request.LatestUpdatedBy)
 	}
 
-	if request.SalesmanID.Int64 != 0 {
-		rawSqlFields = append(rawSqlFields, "salesman_id")
-		rawSqlDataTypes = append(rawSqlDataTypes, "?")
-		rawSqlValues = append(rawSqlValues, request.SalesmanID)
-	}
-
 	rawSqlFields = append(rawSqlFields, "created_at")
 	rawSqlDataTypes = append(rawSqlDataTypes, "?")
 	rawSqlValues = append(rawSqlValues, request.CreatedAt.Format("2006-01-02 15:04:05"))

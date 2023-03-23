@@ -16,27 +16,27 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type UploadSOHistoriesRepositoryInterface interface {
+type SoUploadHistoriesRepositoryInterface interface {
 	Insert(request *models.SoUploadHistory, ctx context.Context, resultChan chan *models.SoUploadHistoryChan)
 	Get(request *models.GetSoUploadHistoriesRequest, countOnly bool, ctx context.Context, resultChan chan *models.SoUploadHistoriesChan)
 	GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.SoUploadHistoryChan)
 	UpdateByID(ID string, request *models.SoUploadHistory, ctx context.Context, resultChan chan *models.SoUploadHistoryChan)
 }
 
-type uploadSOHistoriesRepository struct {
+type soUploadHistoriesRepository struct {
 	logger     log.Logger
 	mongod     mongodb.MongoDBInterface
 	collection string
 }
 
-func InitUploadSOHistoriesRepositoryInterface(mongod mongodb.MongoDBInterface) UploadSOHistoriesRepositoryInterface {
-	return &uploadSOHistoriesRepository{
+func InitSoUploadHistoriesRepositoryInterface(mongod mongodb.MongoDBInterface) SoUploadHistoriesRepositoryInterface {
+	return &soUploadHistoriesRepository{
 		mongod:     mongod,
-		collection: constants.UPLOAD_SO_TABLE_HISTORIES,
+		collection: constants.SO_UPLOAD_TABLE_HISTORIES,
 	}
 }
 
-func (r *uploadSOHistoriesRepository) Insert(request *models.SoUploadHistory, ctx context.Context, resultChan chan *models.SoUploadHistoryChan) {
+func (r *soUploadHistoriesRepository) Insert(request *models.SoUploadHistory, ctx context.Context, resultChan chan *models.SoUploadHistoryChan) {
 	response := &models.SoUploadHistoryChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
 	result, err := collection.InsertOne(ctx, request)
@@ -55,7 +55,7 @@ func (r *uploadSOHistoriesRepository) Insert(request *models.SoUploadHistory, ct
 	return
 }
 
-func (r *uploadSOHistoriesRepository) Get(request *models.GetSoUploadHistoriesRequest, countOnly bool, ctx context.Context, resultChan chan *models.SoUploadHistoriesChan) {
+func (r *soUploadHistoriesRepository) Get(request *models.GetSoUploadHistoriesRequest, countOnly bool, ctx context.Context, resultChan chan *models.SoUploadHistoriesChan) {
 	response := &models.SoUploadHistoriesChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
 	filter := bson.M{}
@@ -138,7 +138,7 @@ func (r *uploadSOHistoriesRepository) Get(request *models.GetSoUploadHistoriesRe
 	}
 }
 
-func (r *uploadSOHistoriesRepository) GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.SoUploadHistoryChan) {
+func (r *soUploadHistoriesRepository) GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.SoUploadHistoryChan) {
 	response := &models.SoUploadHistoryChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
 	objectID, _ := primitive.ObjectIDFromHex(ID)
@@ -186,7 +186,7 @@ func (r *uploadSOHistoriesRepository) GetByID(ID string, countOnly bool, ctx con
 	}
 }
 
-func (r *uploadSOHistoriesRepository) UpdateByID(ID string, request *models.SoUploadHistory, ctx context.Context, resultChan chan *models.SoUploadHistoryChan) {
+func (r *soUploadHistoriesRepository) UpdateByID(ID string, request *models.SoUploadHistory, ctx context.Context, resultChan chan *models.SoUploadHistoryChan) {
 	response := &models.SoUploadHistoryChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
 	objectID, _ := primitive.ObjectIDFromHex(ID)

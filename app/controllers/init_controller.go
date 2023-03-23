@@ -244,7 +244,7 @@ func InitHTTPUploadController(database dbresolver.DB, redisdb redisdb.RedisInter
 	salesOrderOpenSearchRepository := openSearchRepo.InitSalesOrderOpenSearchRepository(opensearchClient)
 	salesOrderDetailOpenSearchRepository := openSearchRepo.InitSalesOrderDetailOpenSearchRepository(opensearchClient)
 	requestValidationMiddleware := middlewares.InitRequestValidationMiddlewareInterface(requestValidationRepository, orderSourceRepository)
-	uploadSOHistoriesRepository := mongoRepo.InitUploadSOHistoriesRepositoryInterface(mongodbClient)
+	uploadSOHistoriesRepository := mongoRepo.InitSoUploadHistoriesRepositoryInterface(mongodbClient)
 	sosjUploadHistoriesRepository := mongoRepo.InitSOSJUploadHistoriesRepositoryInterface(mongodbClient)
 	uploadUseCase := usecases.InitUploadUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, agentRepository, brandRepository, storeRepository, productRepository, uomRepository, deliveryOrderRepository, deliveryOrderDetailRepository, salesOrderLogRepository, salesOrderJourneysRepository, salesOrderDetailJourneysRepository, userRepository, salesmanRepository, categoryRepository, salesOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, uploadRepositories, warehouseRepository, uploadSOHistoriesRepository, sosjUploadHistoriesRepository, kafkaClient, database, ctx)
 	handler := InitUploadController(uploadUseCase, requestValidationMiddleware, ctx)

@@ -365,7 +365,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 			salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{
 				SoDetailId:   createSalesOrderDetailResult.SalesOrderDetail.ID,
 				SoDetailCode: soDetailCode,
-				Status:       constants.UPDATE_SO_STATUS_OPEN,
+				Status:       constants.SO_STATUS_OPEN,
 				Remark:       "",
 				Reason:       "",
 				CreatedAt:    &now,
@@ -408,7 +408,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 			SoCode:    salesOrderResponse.SoCode,
 			SoId:      createSalesOrderResult.SalesOrder.ID,
 			SoDate:    createSalesOrderResult.SalesOrder.SoDate,
-			Status:    constants.UPDATE_SO_STATUS_APPV,
+			Status:    constants.SO_STATUS_APPV,
 			Remark:    "",
 			Reason:    "",
 			CreatedAt: &now,
@@ -795,19 +795,19 @@ func (u *salesOrderUseCase) GetSOJourneyBySOId(soId int, ctx context.Context) (*
 	for _, v := range getSalesOrderJourneyResult.SalesOrderJourneys {
 		orderStatusID := 0
 		switch v.Status {
-		case constants.UPDATE_SO_STATUS_APPV:
+		case constants.SO_STATUS_APPV:
 			orderStatusID = 5
-		case constants.UPDATE_SO_STATUS_REAPPV:
+		case constants.SO_STATUS_REAPPV:
 			orderStatusID = 5
-		case constants.UPDATE_SO_STATUS_RJC:
+		case constants.SO_STATUS_RJC:
 			orderStatusID = 9
-		case constants.UPDATE_SO_STATUS_CNCL:
+		case constants.SO_STATUS_CNCL:
 			orderStatusID = 10
-		case constants.UPDATE_SO_STATUS_ORDPRT:
+		case constants.SO_STATUS_ORDPRT:
 			orderStatusID = 7
-		case constants.UPDATE_SO_STATUS_ORDCLS:
+		case constants.SO_STATUS_ORDCLS:
 			orderStatusID = 8
-		case constants.UPDATE_SO_STATUS_PEND:
+		case constants.SO_STATUS_PEND:
 			orderStatusID = 6
 		default:
 			orderStatusID = 0
@@ -1109,11 +1109,11 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 
 	var status string
 	switch request.Status {
-	case constants.UPDATE_SO_STATUS_APPV:
+	case constants.SO_STATUS_APPV:
 		status = "open"
-	case constants.UPDATE_SO_STATUS_RJC:
+	case constants.SO_STATUS_RJC:
 		status = "rejected"
-	case constants.UPDATE_SO_STATUS_CNCL:
+	case constants.SO_STATUS_CNCL:
 		status = "cancelled"
 	default:
 		status = "undefined"
@@ -1274,7 +1274,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 		}
 
 		detailStatus := request.Status
-		if request.Status == constants.UPDATE_SO_STATUS_APPV {
+		if request.Status == constants.SO_STATUS_APPV {
 			detailStatus = "OPEN"
 		}
 		salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{
@@ -1781,11 +1781,11 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 
 	var status string
 	switch request.Status {
-	case constants.UPDATE_SO_STATUS_APPV:
+	case constants.SO_STATUS_APPV:
 		status = "open"
-	case constants.UPDATE_SO_STATUS_RJC:
+	case constants.SO_STATUS_RJC:
 		status = "rejected"
-	case constants.UPDATE_SO_STATUS_CNCL:
+	case constants.SO_STATUS_CNCL:
 		status = "cancelled"
 	default:
 		status = "undefined"
@@ -1946,7 +1946,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 		}
 
 		detailStatus := request.Status
-		if request.Status == constants.UPDATE_SO_STATUS_APPV {
+		if request.Status == constants.SO_STATUS_APPV {
 			detailStatus = "OPEN"
 		}
 		salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{

@@ -8,7 +8,7 @@ type UploadSORequest struct {
 
 type UploadSOField struct {
 	IDDistributor     int
-	KodeToko          int
+	KodeToko          string
 	NamaToko          string
 	IDSalesman        int
 	NamaSalesman      string
@@ -27,7 +27,9 @@ type UploadSOField struct {
 	NamaAlamat        string
 	IDUser            int
 	SoUploadHistoryId string
+	BulkCode          string
 	UploadType        string
+	ErrorLine         int
 }
 
 type UploadSOFieldsChan struct {

@@ -367,9 +367,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 		err = c.kafkaClient.WriteToTopic(constants.UPLOAD_SOSJ_ITEM_TOPIC, keyKafka, messageKafka)
 
 		if err != nil {
-			message.Status = constants.UPLOAD_STATUS_HISTORY_FAILED
-			sosjUploadHistoryJourneysResultChan := make(chan *models.UploadHistoryChan)
-			go c.sosjUploadHistoriesRepository.Insert(message, c.ctx, sosjUploadHistoryJourneysResultChan)
+			c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 			continue
 		}
 

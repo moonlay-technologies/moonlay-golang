@@ -470,7 +470,7 @@ func (c *uploadSOSJItemConsumerHandler) ProcessMessage() {
 				salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{
 					SoDetailId:   createSalesOrderDetailResult.SalesOrderDetail.ID,
 					SoDetailCode: soDetailCode,
-					Status:       constants.UPDATE_SO_STATUS_CLS,
+					Status:       constants.SO_STATUS_CLS,
 					Remark:       "",
 					Reason:       "",
 					CreatedAt:    &now,
@@ -552,7 +552,7 @@ func (c *uploadSOSJItemConsumerHandler) ProcessMessage() {
 				SoCode:    v.SoCode,
 				SoId:      v.ID,
 				SoDate:    v.SoDate,
-				Status:    constants.UPDATE_SO_STATUS_ORDCLS,
+				Status:    constants.SO_STATUS_ORDCLS,
 				Remark:    "",
 				Reason:    "",
 				CreatedAt: &now,
@@ -596,9 +596,9 @@ func (c *uploadSOSJItemConsumerHandler) ProcessMessage() {
 
 				var jorneyStatus string
 				if doStatus == constants.ORDER_STATUS_OPEN {
-					jorneyStatus = constants.UPDATE_SO_STATUS_SJCR
+					jorneyStatus = constants.SO_STATUS_SJCR
 				} else {
-					jorneyStatus = constants.UPDATE_SO_STATUS_SJCLS
+					jorneyStatus = constants.SO_STATUS_SJCLS
 				}
 
 				deliveryOrderJourney := &models.DeliveryOrderJourney{
