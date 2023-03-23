@@ -8,7 +8,7 @@ import (
 )
 
 type SosjUploadErrorLog struct {
-	ID                  primitive.ObjectID        `json:"_id,omitempty" bson:"_id,omitempty"`
+	ID                  primitive.ObjectID        `json:"id,omitempty" bson:"_id,omitempty"`
 	RequestId           string                    `json:"request_id,omitempty" bson:"request_id,omitempty"`
 	SosjUploadHistoryId primitive.ObjectID        `json:"sosj_upload_history_id,omitempty" bson:"sosj_upload_history_id,omitempty"`
 	BulkCode            string                    `json:"bulk_code,omitempty" bson:"bulk_code,omitempty"`
@@ -53,10 +53,33 @@ type SosjUploadErrorLogChan struct {
 	ID                 primitive.ObjectID `json:"_id" bson:"_id"`
 }
 
+type SosjUploadErrorLogsChan struct {
+	SosjUploadErrorLogs []*SosjUploadErrorLog
+	Error               error
+	ErrorLog            *model.ErrorLog
+	Total               int64
+	ID                  primitive.ObjectID `json:"_id" bson:"_id"`
+}
+
 type RowDataSosjUploadErrorLogChan struct {
 	RowDataSosjUploadErrorLog *RowDataSosjUploadErrorLog
 	Error                     error
 	ErrorLog                  *model.ErrorLog
 	Total                     int64
 	ID                        primitive.ObjectID `json:"_id" bson:"_id"`
+}
+
+type GetSosjUploadErrorLogsRequest struct {
+	ID        string `json:"_id,omitempty" bson:"_id,omitempty"`
+	Page      int    `json:"page,omitempty" bson:"page,omitempty"`
+	PerPage   int    `json:"per_page,omitempty" bson:"per_page,omitempty"`
+	SortField string `json:"sort_field,omitempty" bson:"sort_field,omitempty"`
+	SortValue string `json:"sort_value,omitempty" bson:"sort_value,omitempty"`
+	RequestID string `json:"request_id,omitempty" bson:"request_id,omitempty"`
+	Status    string `json:"status,omitempty" bson:"status,omitempty"`
+}
+
+type GetSosjUploadErrorLogsResponse struct {
+	SosjUploadErrorLogs []*SosjUploadErrorLog `json:"sosj_upload_error_logs,omitempty"`
+	Total               int64                 `json:"total,omitempty"`
 }

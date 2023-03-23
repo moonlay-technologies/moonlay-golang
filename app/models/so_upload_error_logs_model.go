@@ -47,3 +47,26 @@ type SoUploadErrorLogChan struct {
 	Total            int64
 	ID               primitive.ObjectID `json:"_id" bson:"_id"`
 }
+
+type SoUploadErrorLogsChan struct {
+	SoUploadErrorLogs []*SoUploadErrorLog
+	Error             error
+	ErrorLog          *model.ErrorLog
+	Total             int64
+	ID                primitive.ObjectID `json:"_id" bson:"_id"`
+}
+
+type GetSoUploadErrorLogsRequest struct {
+	ID        string `json:"_id,omitempty" bson:"_id,omitempty"`
+	Page      int    `json:"page,omitempty" bson:"page,omitempty"`
+	PerPage   int    `json:"per_page,omitempty" bson:"per_page,omitempty"`
+	SortField string `json:"sort_field,omitempty" bson:"sort_field,omitempty"`
+	SortValue string `json:"sort_value,omitempty" bson:"sort_value,omitempty"`
+	RequestID string `json:"request_id,omitempty" bson:"request_id,omitempty"`
+	Status    string `json:"status,omitempty" bson:"status,omitempty"`
+}
+
+type GetSoUploadErrorLogsResponse struct {
+	SoUploadErrosLogs []*SoUploadErrorLog `json:"so_upload_error_logs,omitempty"`
+	Total             int64               `json:"total,omitempty"`
+}
