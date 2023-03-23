@@ -20,6 +20,7 @@ type UploadControllerInterface interface {
 	RetryUploadSO(ctx *gin.Context)
 	RetryUploadSOSJ(ctx *gin.Context)
 	GetSoUploadErrorLogsByReqId(ctx *gin.Context)
+	GetSosjUploadHistoryById(ctx *gin.Context)
 }
 
 type uploadController struct {
@@ -189,7 +190,7 @@ func (c *uploadController) GetSoUploadErrorLogsByReqId(ctx *gin.Context) {
 	ctx.Set("full_path", ctx.FullPath())
 	ctx.Set("method", ctx.Request.Method)
 
-	requestId := ctx.Param("request-id")
+	requestId := ctx.Param("id")
 
 	request := &models.GetSosjUploadErrorLogsRequest{
 		RequestID: requestId,
@@ -206,6 +207,32 @@ func (c *uploadController) GetSoUploadErrorLogsByReqId(ctx *gin.Context) {
 	}
 
 	result.Data = sosjUploadErrorLogs.SosjUploadErrorLogs
+	result.StatusCode = http.StatusOK
+	ctx.JSON(http.StatusOK, result)
+	return
+
+}
+
+func (c *uploadController) GetSosjUploadHistoryById(ctx *gin.Context) {
+	var result baseModel.Response
+	var resultErrorLog *baseModel.ErrorLog
+
+	ctx.Set("full_path", ctx.FullPath())
+	ctx.Set("method", ctx.Request.Method)
+
+	id := ctx.Param("id")
+
+	sosjUploadHistory, errorLog := c.uploadUseCase.GetSosjUploadHistoryById(id, ctx)
+
+	if errorLog != nil {
+		resultErrorLog = errorLog
+		result.StatusCode = resultErrorLog.StatusCode
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	result.Data = sosjUploadHistory
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
 	return

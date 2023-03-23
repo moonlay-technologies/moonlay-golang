@@ -390,10 +390,10 @@ func (c *uploadSOSJItemConsumerHandler) ProcessMessage() {
 				if len(errors) < 1 {
 					salesOrderSoRefCodes[noSuratJalan] = salesOrder
 				} else {
-					sosjUploadHistoryJourneysResultChan := make(chan *models.UploadHistoryChan)
+					sosjUploadHistoryJourneysResultChan := make(chan *models.GetSosjUploadHistoryResponseChan)
 					go c.sosjUploadHistoriesRepository.GetByID(v.SosjUploadHistoryId, false, c.ctx, sosjUploadHistoryJourneysResultChan)
 					sosjUploadHistoryJourneysResult := <-sosjUploadHistoryJourneysResultChan
-					message := sosjUploadHistoryJourneysResult.UploadHistory
+					message := &sosjUploadHistoryJourneysResult.SosjUploadHistories.UploadHistory
 
 					if v.UploadType == "retry" {
 						message.Status = constants.UPLOAD_STATUS_HISTORY_FAILED

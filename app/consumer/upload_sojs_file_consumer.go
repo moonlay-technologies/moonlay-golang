@@ -67,14 +67,14 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 		var key = string(m.Key[:])
 		var errors []string
 
-		sosjUploadHistoryJourneysResultChan := make(chan *models.UploadHistoryChan)
+		sosjUploadHistoryJourneysResultChan := make(chan *models.GetSosjUploadHistoryResponseChan)
 		go c.sosjUploadHistoriesRepository.GetByID(string(sosjUploadHistoryId), false, c.ctx, sosjUploadHistoryJourneysResultChan)
 		sosjUploadHistoryJourneysResult := <-sosjUploadHistoryJourneysResultChan
 		if sosjUploadHistoryJourneysResult.Error != nil {
 			fmt.Println(sosjUploadHistoryJourneysResult.Error.Error())
 		}
 
-		message := sosjUploadHistoryJourneysResult.UploadHistory
+		message := &sosjUploadHistoryJourneysResult.SosjUploadHistories.UploadHistory
 		file, err := c.uploadRepository.ReadFile(message.FilePath)
 
 		if err != nil {

@@ -26,6 +26,7 @@ type UploadUseCaseInterface interface {
 	RetryUploadSO(soUploadHistoryId string, ctx context.Context) *model.ErrorLog
 	RetryUploadSOSJ(soUploadHistoryId string, ctx context.Context) *model.ErrorLog
 	GetSosjUploadErrorLogs(request *models.GetSosjUploadErrorLogsRequest, ctx context.Context) (*models.GetSosjUploadErrorLogsResponse, *model.ErrorLog)
+	GetSosjUploadHistoryById(id string, ctx context.Context) (*models.GetSosjUploadHistoryResponse, *model.ErrorLog)
 }
 
 type uploadUseCase struct {
@@ -257,7 +258,7 @@ func (u *uploadUseCase) RetryUploadSOSJ(sosjUploadHistoryId string, ctx context.
 
 	user := ctx.Value("user").(*models.UserClaims)
 
-	getSOSJUploadHistoriesResultChan := make(chan *models.UploadHistoryChan)
+	getSOSJUploadHistoriesResultChan := make(chan *models.GetSosjUploadHistoryResponseChan)
 	go u.sosjUploadHistoriesRepository.GetByID(sosjUploadHistoryId, false, ctx, getSOSJUploadHistoriesResultChan)
 	getSosjUploadHistoriesResult := <-getSOSJUploadHistoriesResultChan
 
@@ -267,13 +268,13 @@ func (u *uploadUseCase) RetryUploadSOSJ(sosjUploadHistoryId string, ctx context.
 	}
 
 	userId := int64(user.UserID)
-	getSosjUploadHistoriesResult.UploadHistory.UpdatedBy = &userId
-	getSosjUploadHistoriesResult.UploadHistory.UpdatedByName = user.FirstName + " " + user.LastName
-	getSosjUploadHistoriesResult.UploadHistory.UpdatedByEmail = user.UserEmail
-	getSosjUploadHistoriesResult.UploadHistory.Status = constants.UPLOAD_STATUS_HISTORY_IN_PROGRESS
+	getSosjUploadHistoriesResult.SosjUploadHistories.UpdatedBy = &userId
+	getSosjUploadHistoriesResult.SosjUploadHistories.UpdatedByName = user.FirstName + " " + user.LastName
+	getSosjUploadHistoriesResult.SosjUploadHistories.UpdatedByEmail = user.UserEmail
+	getSosjUploadHistoriesResult.SosjUploadHistories.Status = constants.UPLOAD_STATUS_HISTORY_IN_PROGRESS
 
 	sosjUploadHistoryJourneysResultChan := make(chan *models.UploadHistoryChan)
-	go u.sosjUploadHistoriesRepository.UpdateByID(sosjUploadHistoryId, getSosjUploadHistoriesResult.UploadHistory, ctx, sosjUploadHistoryJourneysResultChan)
+	go u.sosjUploadHistoriesRepository.UpdateByID(sosjUploadHistoryId, &getSosjUploadHistoriesResult.SosjUploadHistories.UploadHistory, ctx, sosjUploadHistoryJourneysResultChan)
 	sosjUploadHistoryJourneysResult := <-sosjUploadHistoryJourneysResultChan
 
 	if sosjUploadHistoryJourneysResult.Error != nil {
@@ -310,5 +311,19 @@ func (u *uploadUseCase) GetSosjUploadErrorLogs(request *models.GetSosjUploadErro
 	}
 
 	return &result, nil
+
+}
+
+func (u *uploadUseCase) GetSosjUploadHistoryById(id string, ctx context.Context) (*models.GetSosjUploadHistoryResponse, *model.ErrorLog) {
+
+	getSosjUploadHistoryByIdResultChan := make(chan *models.GetSosjUploadHistoryResponseChan)
+	go u.sosjUploadHistoriesRepository.GetByID(id, false, ctx, getSosjUploadHistoryByIdResultChan)
+	getSosjUploadHistoryByIdResult := <-getSosjUploadHistoryByIdResultChan
+
+	if getSosjUploadHistoryByIdResult.Error != nil {
+		return &models.GetSosjUploadHistoryResponse{}, getSosjUploadHistoryByIdResult.ErrorLog
+	}
+
+	return getSosjUploadHistoryByIdResult.SosjUploadHistories, nil
 
 }

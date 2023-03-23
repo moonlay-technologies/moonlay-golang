@@ -8,7 +8,7 @@ import (
 )
 
 type UploadHistory struct {
-	ID              primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	ID              primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	RequestId       string             `json:"request_id,omitempty" bson:"request_id,omitempty"`
 	BulkCode        string             `json:"bulk_code,omitempty" bson:"bulk_code,omitempty"`
 	FileName        string             `json:"file_name,omitempty" bson:"file_name,omitempty"`
@@ -33,4 +33,27 @@ type UploadHistoryChan struct {
 	ErrorLog      *model.ErrorLog
 	Total         int64
 	ID            primitive.ObjectID `json:"_id" bson:"_id"`
+}
+
+type GetSosjUploadHistoriesRequest struct {
+	ID        string `json:"id,omitempty" bson:"_id,omitempty"`
+	Page      int    `json:"page,omitempty" bson:"page,omitempty"`
+	PerPage   int    `json:"per_page,omitempty" bson:"per_page,omitempty"`
+	SortField string `json:"sort_field,omitempty" bson:"sort_field,omitempty"`
+	SortValue string `json:"sort_value,omitempty" bson:"sort_value,omitempty"`
+	RequestID string `json:"request_id,omitempty" bson:"request_id,omitempty"`
+	Status    string `json:"status,omitempty" bson:"status,omitempty"`
+}
+
+type GetSosjUploadHistoryResponse struct {
+	UploadHistory
+	SosjUploadHistories []*SosjUploadErrorLog `json:"sosj_upload_error_logs,omitempty" bson:"sosj_upload_error_logs,omitempty"`
+}
+
+type GetSosjUploadHistoryResponseChan struct {
+	SosjUploadHistories *GetSosjUploadHistoryResponse
+	Error               error
+	ErrorLog            *model.ErrorLog
+	Total               int64
+	ID                  primitive.ObjectID `json:"_id" bson:"_id"`
 }

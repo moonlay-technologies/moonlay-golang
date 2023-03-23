@@ -2,8 +2,6 @@ package repositories
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
@@ -105,10 +103,6 @@ func (r *soUploadErrorLogsRepository) Get(request *models.GetSoUploadErrorLogsRe
 
 	option := options.Find().SetSkip(int64((page - 1) * perPage)).SetLimit(int64(perPage)).SetSort(sort)
 	total, err := collection.CountDocuments(ctx, filter)
-
-	fmt.Println("total", total)
-	a, _ := json.Marshal(filter)
-	fmt.Println(string(a))
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)

@@ -16,7 +16,7 @@ import (
 
 type SOSJUploadHistoriesRepositoryInterface interface {
 	Insert(request *models.UploadHistory, ctx context.Context, resultChan chan *models.UploadHistoryChan)
-	GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.UploadHistoryChan)
+	GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.GetSosjUploadHistoryResponseChan)
 	UpdateByID(ID string, request *models.UploadHistory, ctx context.Context, resultChan chan *models.UploadHistoryChan)
 }
 
@@ -51,9 +51,9 @@ func (r *sosjUploadHistoriesRepository) Insert(request *models.UploadHistory, ct
 	resultChan <- response
 }
 
-func (r *sosjUploadHistoriesRepository) GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.UploadHistoryChan) {
+func (r *sosjUploadHistoriesRepository) GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.GetSosjUploadHistoryResponseChan) {
 
-	response := &models.UploadHistoryChan{}
+	response := &models.GetSosjUploadHistoryResponseChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
 	objectID, _ := primitive.ObjectIDFromHex(ID)
 	filter := bson.M{"_id": objectID}
@@ -77,8 +77,19 @@ func (r *sosjUploadHistoriesRepository) GetByID(ID string, countOnly bool, ctx c
 	}
 
 	if !countOnly {
-		UploadSOHistory := &models.UploadHistory{}
-		err = collection.FindOne(ctx, filter).Decode(UploadSOHistory)
+		cursor, err := collection.Aggregate(ctx, bson.A{
+			bson.D{{"$match", bson.D{{"_id", objectID}}}},
+			bson.D{
+				{"$lookup",
+					bson.D{
+						{"from", "sosj_upload_error_logs"},
+						{"localField", "_id"},
+						{"foreignField", "sosj_upload_history_id"},
+						{"as", "sosj_upload_error_logs"},
+					},
+				},
+			},
+		})
 
 		if err != nil {
 			fmt.Println(err.Error())
@@ -87,13 +98,31 @@ func (r *sosjUploadHistoriesRepository) GetByID(ID string, countOnly bool, ctx c
 			return
 		}
 
-		response.UploadHistory = UploadSOHistory
+		defer cursor.Close(ctx)
+
+		sosjUploadHistory := &models.GetSosjUploadHistoryResponse{}
+		uploadHistory := &models.UploadHistory{}
+		for cursor.Next(ctx) {
+			if err := cursor.Decode(&sosjUploadHistory); err != nil {
+				response.Error = err
+				resultChan <- response
+				return
+			}
+			if err := cursor.Decode(&uploadHistory); err != nil {
+				response.Error = err
+				resultChan <- response
+				return
+			}
+		}
+		sosjUploadHistory.GetSosjUploadHistoryResponseMap(uploadHistory)
+
+		response.SosjUploadHistories = sosjUploadHistory
 		response.Total = total
 		response.Error = nil
 		resultChan <- response
 		return
 	} else {
-		response.UploadHistory = nil
+		response.SosjUploadHistories = nil
 		response.Total = total
 		resultChan <- response
 		return
