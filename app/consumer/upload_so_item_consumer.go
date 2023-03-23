@@ -326,8 +326,7 @@ func (c *uploadSOItemConsumerHandler) ProcessMessage() {
 				}
 			}
 		}
-		a, _ := json.Marshal(salesOrderSoRefCodes)
-		fmt.Println(string(a))
+
 		if salesOrderSoRefCodes == nil {
 			continue
 		}
