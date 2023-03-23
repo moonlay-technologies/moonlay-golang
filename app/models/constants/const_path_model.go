@@ -9,4 +9,5 @@ const (
 	SALESMANS_PATH           = "salesman"
 	HEALTH_CHECK_PATH        = "health-check"
 	HOST_TO_HOST_PATH        = "h2h"
+	DELIVERY_ORDER_EXPORT_PATH = "apis.dbo.dev/noncore-assets/download/excel/delivery_order"
 )

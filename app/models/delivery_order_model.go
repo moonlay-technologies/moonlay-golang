@@ -183,6 +183,43 @@ type DeliveryOrderRequest struct {
 	EndDoDate         string  `json:"end_do_date,omitempty"`
 }
 
+type DeliveryOrderExportRequest struct {
+	ID                int    `json:"id,omitempty"`
+	SortField         string `json:"sort_field,omitempty" bson:"sort_field,omitempty"`
+	SortValue         string `json:"sort_value,omitempty" bson:"sort_value,omitempty"`
+	GlobalSearchValue string `json:"global_search_value,omitempty" bson:"global_search_value,omitempty"`
+	FileType          string `json:"file_type,omitempty"`
+	AgentID           int    `json:"agentID,omitempty"`
+	StoreID           int    `json:"storeID,omitempty"`
+	BrandID           int    `json:"brand_id,omitempty"`
+	ProductID         int    `json:"product_id,omitempty"`
+	OrderSourceID     int    `json:"order_source_id,omitempty"`
+	OrderStatusID     int    `json:"order_status_id,omitempty"`
+	SalesOrderID      int    `json:"sales_order_id,omitempty"`
+	WarehouseID       int    `json:"warehouse_id,omitempty"`
+	WarehouseCode     string `json:"warehouse_code,omitempty"`
+	DoCode            string `json:"do_code,omitempty"`
+	DoDate            string `json:"do_date,omitempty"`
+	DoRefCode         string `json:"do_ref_code,omitempty"`
+	DoRefDate         string `json:"do_ref_date,omitempty"`
+	CategoryID        int    `json:"category_id,omitempty"`
+	SalesmanID        int    `json:"salesman_id,omitempty"`
+	ProvinceID        int    `json:"province_id,omitempty"`
+	CityID            int    `json:"city_id,omitempty"`
+	DistrictID        int    `json:"district_id,omitempty"`
+	VillageID         int    `json:"village_id,omitempty"`
+	StoreProvinceID   int    `json:"store_province_id,omitempty"`
+	StoreCityID       int    `json:"store_city_id,omitempty"`
+	StoreDistrictID   int    `json:"store_district_id,omitempty"`
+	StoreVillageID    int    `json:"store_village_id,omitempty"`
+	StoreCode         string `json:"store_code,omitempty"`
+	StartCreatedAt    string `json:"start_created_at,omitempty"`
+	EndCreatedAt      string `json:"end_created_at,omitempty"`
+	UpdatedAt         string `json:"updated_at,omitempty"`
+	StartDoDate       string `json:"start_do_date,omitempty"`
+	EndDoDate         string `json:"end_do_date,omitempty"`
+}
+
 type DeliveryOrders struct {
 	DeliveryOrders []*DeliveryOrder `json:"delivery_orders,omitempty"`
 	Total          int64            `json:"total,omitempty"`

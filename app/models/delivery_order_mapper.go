@@ -279,3 +279,53 @@ func (deliveryOrderJourney *DeliveryOrderJourneysResponse) DeliveryOrderJourneyR
 	deliveryOrderJourney.UpdatedAt = request.UpdatedAt
 	return
 }
+
+func (d *DeliveryOrderRequest) DeliveryOrderExportMap(r *DeliveryOrderExportRequest) {
+	d.ID = r.ID
+	d.PerPage = 0
+	d.Page = 0
+	d.SortField = r.SortField
+	d.SortValue = r.SortValue
+	d.GlobalSearchValue = r.GlobalSearchValue
+	d.Keyword = ""
+	d.AgentID = r.AgentID
+	d.AgentName = ""
+	d.StoreID = r.StoreID
+	d.StoreName = ""
+	d.BrandID = r.BrandID
+	d.BrandName = ""
+	d.ProductID = r.ProductID
+	d.OrderSourceID = r.OrderSourceID
+	d.OrderStatusID = r.OrderStatusID
+	d.SalesOrderID = r.SalesOrderID
+	d.SoCode = ""
+	d.WarehouseID = r.WarehouseID
+	d.WarehouseCode = r.WarehouseCode
+	d.DoCode = r.DoCode
+	d.DoDate = r.DoDate
+	d.DoRefCode = r.DoRefCode
+	d.DoRefDate = r.DoRefDate
+	d.DoRefferalCode = ""
+	d.TotalAmount = 0
+	d.TotalTonase = 0
+	d.ProductSKU = ""
+	d.ProductCode = ""
+	d.ProductName = ""
+	d.CategoryID = r.CategoryID
+	d.SalesmanID = r.SalesmanID
+	d.ProvinceID = r.ProvinceID
+	d.CityID = r.CityID
+	d.DistrictID = r.DistrictID
+	d.VillageID = r.VillageID
+	d.StoreProvinceID = r.StoreProvinceID
+	d.StoreCityID = r.StoreCityID
+	d.StoreDistrictID = r.StoreDistrictID
+	d.StoreVillageID = r.StoreVillageID
+	d.StoreCode = r.StoreCode
+	d.StartCreatedAt = r.StartCreatedAt
+	d.EndCreatedAt = r.EndCreatedAt
+	d.UpdatedAt = r.UpdatedAt
+	d.StartDoDate = r.StartDoDate
+	d.EndDoDate = r.EndDoDate
+
+}
