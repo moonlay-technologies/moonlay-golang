@@ -23,6 +23,7 @@ type DeliveryOrderValidatorInterface interface {
 	GetDeliveryOrderDetailValidator(*gin.Context) (*models.DeliveryOrderDetailOpenSearchRequest, error)
 	GetDeliveryOrderDetailByDoIDValidator(*gin.Context) (*models.DeliveryOrderDetailRequest, error)
 	GetDeliveryOrderBySalesmanIDValidator(*gin.Context) (*models.DeliveryOrderRequest, error)
+	GetDeliveryOrderJourneysValidator(*gin.Context) (*models.DeliveryOrderJourneysRequest, error)
 	UpdateDeliveryOrderByIDValidator(int, *models.DeliveryOrderUpdateByIDRequest, *gin.Context) error
 	UpdateDeliveryOrderDetailByDoIDValidator(int, []*models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest, *gin.Context) error
 	UpdateDeliveryOrderDetailByIDValidator(int, *models.DeliveryOrderDetailUpdateByIDRequest, *gin.Context) error
@@ -587,6 +588,8 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderValidator(ctx *gin.Context) (*m
 
 	endCreatedAt, dateFields := c.getQueryWithDateValidation("end_created_at", "", dateFields, ctx)
 
+	updatedAt, dateFields := c.getQueryWithDateValidation("updated_at", "", dateFields, ctx)
+
 	err = c.requestValidationMiddleware.DateInputValidation(ctx, dateFields, constants.ERROR_ACTION_NAME_GET)
 	if err != nil {
 		return nil, err
@@ -619,7 +622,7 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderValidator(ctx *gin.Context) (*m
 		VillageID:         intVillageID,
 		StartCreatedAt:    startCreatedAt,
 		EndCreatedAt:      endCreatedAt,
-		UpdatedAt:         c.getQueryWithDefault("updated_at", "", ctx),
+		UpdatedAt:         updatedAt,
 	}
 	return deliveryOrderReqeuest, nil
 }
@@ -1020,6 +1023,25 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderBySalesmanIDValidator(ctx *gin.
 		UpdatedAt:         c.getQueryWithDefault("updated_at", "", ctx),
 	}
 	return deliveryOrderRequest, nil
+}
+
+func (c *DeliveryOrderValidator) GetDeliveryOrderJourneysValidator(ctx *gin.Context) (*models.DeliveryOrderJourneysRequest, error) {
+
+	intDoID, err := c.getIntQueryWithDefault("do_id", "0", false, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	deliveryOrderJourneysRequest := models.DeliveryOrderJourneysRequest{
+		DoId:      intDoID,
+		DoDate:    c.getQueryWithDefault("do_date", "", ctx),
+		Status:    c.getQueryWithDefault("status", "", ctx),
+		Remark:    c.getQueryWithDefault("remark", "", ctx),
+		Reason:    c.getQueryWithDefault("reason", "", ctx),
+		CreatedAt: c.getQueryWithDefault("created_at", "", ctx),
+	}
+
+	return &deliveryOrderJourneysRequest, nil
 }
 
 func (d *DeliveryOrderValidator) getQueryWithDefault(param string, empty string, ctx *gin.Context) string {

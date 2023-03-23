@@ -40,6 +40,15 @@ type DeliveryOrderJourneysChan struct {
 	ID                   primitive.ObjectID `json:"_id" bson:"_id"`
 }
 
+type DeliveryOrderJourneysRequest struct {
+	DoId      int    `json:"do_id,omitempty" bson:"do_id,omitempty"`
+	DoDate    string `json:"do_date,omitempty" bson:"do_date,omitempty"`
+	Status    string `json:"status,omitempty" bson:"status,omitempty"`
+	Remark    string `json:"remark,omitempty" bson:"remark,omitempty"`
+	Reason    string `json:"reason,omitempty" bson:"reason,omitempty"`
+	CreatedAt string `json:"created_at,omitempty" bson:"created_at,omitempty"`
+}
+
 type DeliveryOrderJourneysResponse struct {
 	ID        primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	DoId      int                `json:"do_id,omitempty" bson:"do_id,omitempty"`
