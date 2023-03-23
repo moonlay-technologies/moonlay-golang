@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/bxcodec/dbresolver"
+	"github.com/google/uuid"
 )
 
 type DeliveryOrderUseCaseInterface interface {
@@ -41,7 +42,7 @@ type DeliveryOrderUseCaseInterface interface {
 	DeleteByID(deliveryOrderId int, sqlTransaction *sql.Tx) *model.ErrorLog
 	DeleteDetailByID(deliveryOrderDetailId int, sqlTransaction *sql.Tx) *model.ErrorLog
 	DeleteDetailByDoID(deliveryOrderId int, sqlTransaction *sql.Tx) *model.ErrorLog
-	Export(request *models.DeliveryOrderRequest) *model.ErrorLog
+	Export(request *models.DeliveryOrderExportRequest) *model.ErrorLog
 }
 
 type deliveryOrderUseCase struct {
@@ -1190,7 +1191,7 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 
 func (u *deliveryOrderUseCase) Get(request *models.DeliveryOrderRequest) (*models.DeliveryOrdersOpenSearchResponse, *model.ErrorLog) {
 	getDeliveryOrdersResultChan := make(chan *models.DeliveryOrdersChan)
-	go u.deliveryOrderOpenSearchRepository.Get(request, getDeliveryOrdersResultChan)
+	go u.deliveryOrderOpenSearchRepository.Get(request, false, getDeliveryOrdersResultChan)
 	getDeliveryOrdersResult := <-getDeliveryOrdersResultChan
 
 	if getDeliveryOrdersResult.Error != nil {
@@ -1222,11 +1223,11 @@ func (u *deliveryOrderUseCase) Get(request *models.DeliveryOrderRequest) (*model
 	return deliveryOrders, &model.ErrorLog{}
 }
 
-func (u *deliveryOrderUseCase) Export(request *models.DeliveryOrderRequest) *model.ErrorLog {
+func (u *deliveryOrderUseCase) Export(request *models.DeliveryOrderExportRequest) *model.ErrorLog {
 
-	keyKafka := []byte(request.DoCode)
+	keyKafka := []byte(uuid.New().String())
 	messageKafka, _ := json.Marshal(request)
-	err := u.kafkaClient.WriteToTopic(constants.UPDATE_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
+	err := u.kafkaClient.WriteToTopic(constants.EXPORT_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
