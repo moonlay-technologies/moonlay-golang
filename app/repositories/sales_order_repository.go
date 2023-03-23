@@ -471,6 +471,12 @@ func (r *salesOrder) Insert(request *models.SalesOrder, sqlTransaction *sql.Tx, 
 		rawSqlValues = append(rawSqlValues, request.CreatedBy)
 	}
 
+	if request.LatestUpdatedBy != 0 {
+		rawSqlFields = append(rawSqlFields, "latest_updated_by")
+		rawSqlDataTypes = append(rawSqlDataTypes, "?")
+		rawSqlValues = append(rawSqlValues, request.LatestUpdatedBy)
+	}
+
 	rawSqlFields = append(rawSqlFields, "created_at")
 	rawSqlDataTypes = append(rawSqlDataTypes, "?")
 	rawSqlValues = append(rawSqlValues, request.CreatedAt.Format("2006-01-02 15:04:05"))

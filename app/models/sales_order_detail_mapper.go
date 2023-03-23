@@ -240,3 +240,26 @@ func (v *SalesOrderDetailStoreResponse) UpdateSalesOrderDetailByIdResponseMap(re
 	v.ResidualQty = NullInt64{NullInt64: sql.NullInt64{Int64: int64(request.ResidualQty), Valid: true}}
 	return
 }
+
+func (v *SalesOrderDetail) SalesOrderDetailUploadSOSJMap(soDetail *UploadSOSJField, now time.Time) {
+	v.UomID = soDetail.Unit
+	v.Qty = soDetail.Qty
+	v.SentQty = soDetail.Qty
+	v.ResidualQty = 0
+	v.Note = NullString{NullString: sql.NullString{String: soDetail.Catatan, Valid: true}}
+	v.IsDoneSyncToEs = "0"
+	v.CreatedAt = &now
+	v.StartDateSyncToEs = &now
+	v.UpdatedAt = &now
+}
+
+func (v *SalesOrderDetail) SalesOrderDetailUploadSOMap(soDetail *UploadSOField, now time.Time) {
+	v.Qty = soDetail.QTYOrder
+	v.SentQty = 0
+	v.ResidualQty = soDetail.QTYOrder
+	v.Note = NullString{NullString: sql.NullString{String: soDetail.CatatanOrder, Valid: true}}
+	v.IsDoneSyncToEs = "0"
+	v.CreatedAt = &now
+	v.StartDateSyncToEs = &now
+	v.UpdatedAt = &now
+}

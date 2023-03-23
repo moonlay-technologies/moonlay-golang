@@ -2,11 +2,13 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
 	"order-service/global/utils/helper"
+	"order-service/global/utils/model"
 	"order-service/global/utils/mongodb"
 	"os"
 	"time"
@@ -80,8 +82,20 @@ func (r *deliveryOrderJourneysRepository) Get(request *models.DeliveryOrderJourn
 	}
 
 	if request.CreatedAt != "" {
-		createdAt, _ := time.Parse("2006-01-02", request.CreatedAt)
-		filter["created_at"] = &createdAt
+		createdAt, err := time.Parse("2006-01-02", request.CreatedAt)
+		if err != nil {
+			errorLogData := helper.NewWriteLog(model.ErrorLog{
+				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
+				SystemMessage: helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_GET, fmt.Sprintf("field %s harus memiliki format yyyy-mm-dd", "created_at")),
+				StatusCode:    http.StatusBadRequest,
+				Err:           fmt.Errorf("invalid Process"),
+			})
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+		filter["created_at"] = bson.M{"$gte": createdAt, "$lte": createdAt.Add(24 * time.Hour)}
 	}
 
 	total, err := collection.CountDocuments(ctx, filter)

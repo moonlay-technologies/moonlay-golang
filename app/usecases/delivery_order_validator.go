@@ -588,6 +588,8 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderValidator(ctx *gin.Context) (*m
 
 	endCreatedAt, dateFields := c.getQueryWithDateValidation("end_created_at", "", dateFields, ctx)
 
+	updatedAt, dateFields := c.getQueryWithDateValidation("updated_at", "", dateFields, ctx)
+
 	err = c.requestValidationMiddleware.DateInputValidation(ctx, dateFields, constants.ERROR_ACTION_NAME_GET)
 	if err != nil {
 		return nil, err
@@ -620,7 +622,7 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderValidator(ctx *gin.Context) (*m
 		VillageID:         intVillageID,
 		StartCreatedAt:    startCreatedAt,
 		EndCreatedAt:      endCreatedAt,
-		UpdatedAt:         c.getQueryWithDefault("updated_at", "", ctx),
+		UpdatedAt:         updatedAt,
 	}
 	return deliveryOrderReqeuest, nil
 }

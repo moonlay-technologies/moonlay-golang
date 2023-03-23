@@ -463,9 +463,11 @@ func (c *deliveryOrderController) GetJourneys(ctx *gin.Context) {
 
 	if errorLog != nil {
 		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+		return
 	}
 
 	ctx.JSON(http.StatusOK, model.Response{Data: deliveryOrderJourneys.DeliveryOrderJourneys, Total: deliveryOrderJourneys.Total, StatusCode: http.StatusOK})
+	return
 }
 
 func (c *deliveryOrderController) GetDOJourneysByDoID(ctx *gin.Context) {
