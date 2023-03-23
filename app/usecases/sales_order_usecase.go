@@ -93,7 +93,7 @@ func InitSalesOrderUseCaseInterface(salesOrderRepository repositories.SalesOrder
 	}
 }
 
-func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTransaction *sql.Tx, ctx context.Context) ([]*models.SalesOrderResponse, *model.ErrorLog) {
+func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTransaction *sql.Tx, ctx context.Context) ([]*models.SalesOrderResponse, *baseModel.ErrorLog) {
 	now := time.Now()
 	var soCode string
 
@@ -365,7 +365,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 			salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{
 				SoDetailId:   createSalesOrderDetailResult.SalesOrderDetail.ID,
 				SoDetailCode: soDetailCode,
-				Status:       constants.UPDATE_SO_STATUS_OPEN,
+				Status:       constants.SO_STATUS_OPEN,
 				Remark:       "",
 				Reason:       "",
 				CreatedAt:    &now,
@@ -408,7 +408,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 			SoCode:    salesOrderResponse.SoCode,
 			SoId:      createSalesOrderResult.SalesOrder.ID,
 			SoDate:    createSalesOrderResult.SalesOrder.SoDate,
-			Status:    constants.UPDATE_SO_STATUS_APPV,
+			Status:    constants.SO_STATUS_APPV,
 			Remark:    "",
 			Reason:    "",
 			CreatedAt: &now,
@@ -438,7 +438,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 	return salesOrdersResponse, nil
 }
 
-func (u *salesOrderUseCase) Get(request *models.SalesOrderRequest) (*models.SalesOrdersOpenSearchResponse, *model.ErrorLog) {
+func (u *salesOrderUseCase) Get(request *models.SalesOrderRequest) (*models.SalesOrdersOpenSearchResponse, *baseModel.ErrorLog) {
 	getSalesOrdersResultChan := make(chan *models.SalesOrdersChan)
 	go u.salesOrderOpenSearchRepository.Get(request, getSalesOrdersResultChan)
 	getSalesOrdersResult := <-getSalesOrdersResultChan
@@ -471,10 +471,10 @@ func (u *salesOrderUseCase) Get(request *models.SalesOrderRequest) (*models.Sale
 		Total:       getSalesOrdersResult.Total,
 	}
 
-	return salesOrders, &model.ErrorLog{}
+	return salesOrders, &baseModel.ErrorLog{}
 }
 
-func (u *salesOrderUseCase) GetByID(request *models.SalesOrderRequest, ctx context.Context) ([]*models.SalesOrderOpenSearchResponse, *model.ErrorLog) {
+func (u *salesOrderUseCase) GetByID(request *models.SalesOrderRequest, ctx context.Context) ([]*models.SalesOrderOpenSearchResponse, *baseModel.ErrorLog) {
 
 	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
 	go u.salesOrderOpenSearchRepository.GetByID(request, getSalesOrderResultChan)
@@ -501,11 +501,11 @@ func (u *salesOrderUseCase) GetByID(request *models.SalesOrderRequest, ctx conte
 	var salesOrders []*models.SalesOrderOpenSearchResponse
 	salesOrders = append(salesOrders, &salesOrder)
 
-	return salesOrders, &model.ErrorLog{}
+	return salesOrders, &baseModel.ErrorLog{}
 
 }
 
-func (u *salesOrderUseCase) GetByIDWithDetail(request *models.SalesOrderRequest, ctx context.Context) (*models.SalesOrder, *model.ErrorLog) {
+func (u *salesOrderUseCase) GetByIDWithDetail(request *models.SalesOrderRequest, ctx context.Context) (*models.SalesOrder, *baseModel.ErrorLog) {
 
 	now := time.Now()
 	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
@@ -663,11 +663,11 @@ func (u *salesOrderUseCase) GetByIDWithDetail(request *models.SalesOrderRequest,
 		getSalesOrderResult.SalesOrder.SalesmanEmail = getSalesmanResult.Salesman.Email
 	}
 
-	return getSalesOrderResult.SalesOrder, &model.ErrorLog{}
+	return getSalesOrderResult.SalesOrder, &baseModel.ErrorLog{}
 
 }
 
-func (u *salesOrderUseCase) GetByAgentID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog) {
+func (u *salesOrderUseCase) GetByAgentID(request *models.SalesOrderRequest) (*models.SalesOrders, *baseModel.ErrorLog) {
 	getSalesOrdersResultChan := make(chan *models.SalesOrdersChan)
 	go u.salesOrderOpenSearchRepository.GetByAgentID(request, getSalesOrdersResultChan)
 	getSalesOrdersResult := <-getSalesOrdersResultChan
@@ -681,10 +681,10 @@ func (u *salesOrderUseCase) GetByAgentID(request *models.SalesOrderRequest) (*mo
 		Total:       getSalesOrdersResult.Total,
 	}
 
-	return salesOrders, &model.ErrorLog{}
+	return salesOrders, &baseModel.ErrorLog{}
 }
 
-func (u *salesOrderUseCase) GetByStoreID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog) {
+func (u *salesOrderUseCase) GetByStoreID(request *models.SalesOrderRequest) (*models.SalesOrders, *baseModel.ErrorLog) {
 	getSalesOrdersResultChan := make(chan *models.SalesOrdersChan)
 	go u.salesOrderOpenSearchRepository.GetByStoreID(request, getSalesOrdersResultChan)
 	getSalesOrdersResult := <-getSalesOrdersResultChan
@@ -698,10 +698,10 @@ func (u *salesOrderUseCase) GetByStoreID(request *models.SalesOrderRequest) (*mo
 		Total:       getSalesOrdersResult.Total,
 	}
 
-	return salesOrders, &model.ErrorLog{}
+	return salesOrders, &baseModel.ErrorLog{}
 }
 
-func (u *salesOrderUseCase) GetBySalesmanID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog) {
+func (u *salesOrderUseCase) GetBySalesmanID(request *models.SalesOrderRequest) (*models.SalesOrders, *baseModel.ErrorLog) {
 	getSalesOrdersResultChan := make(chan *models.SalesOrdersChan)
 	go u.salesOrderOpenSearchRepository.GetBySalesmanID(request, getSalesOrdersResultChan)
 	getSalesOrdersResult := <-getSalesOrdersResultChan
@@ -715,10 +715,10 @@ func (u *salesOrderUseCase) GetBySalesmanID(request *models.SalesOrderRequest) (
 		Total:       getSalesOrdersResult.Total,
 	}
 
-	return salesOrders, &model.ErrorLog{}
+	return salesOrders, &baseModel.ErrorLog{}
 }
 
-func (u *salesOrderUseCase) GetByOrderStatusID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog) {
+func (u *salesOrderUseCase) GetByOrderStatusID(request *models.SalesOrderRequest) (*models.SalesOrders, *baseModel.ErrorLog) {
 	getSalesOrdersResultChan := make(chan *models.SalesOrdersChan)
 	go u.salesOrderOpenSearchRepository.GetByOrderStatusID(request, getSalesOrdersResultChan)
 	getSalesOrdersResult := <-getSalesOrdersResultChan
@@ -732,10 +732,10 @@ func (u *salesOrderUseCase) GetByOrderStatusID(request *models.SalesOrderRequest
 		Total:       getSalesOrdersResult.Total,
 	}
 
-	return salesOrders, &model.ErrorLog{}
+	return salesOrders, &baseModel.ErrorLog{}
 }
 
-func (u *salesOrderUseCase) GetByOrderSourceID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog) {
+func (u *salesOrderUseCase) GetByOrderSourceID(request *models.SalesOrderRequest) (*models.SalesOrders, *baseModel.ErrorLog) {
 	getSalesOrdersResultChan := make(chan *models.SalesOrdersChan)
 	go u.salesOrderOpenSearchRepository.GetByOrderSourceID(request, getSalesOrdersResultChan)
 	getSalesOrdersResult := <-getSalesOrdersResultChan
@@ -749,10 +749,10 @@ func (u *salesOrderUseCase) GetByOrderSourceID(request *models.SalesOrderRequest
 		Total:       getSalesOrdersResult.Total,
 	}
 
-	return salesOrders, &model.ErrorLog{}
+	return salesOrders, &baseModel.ErrorLog{}
 }
 
-func (u *salesOrderUseCase) GetSyncToKafkaHistories(request *models.SalesOrderEventLogRequest, ctx context.Context) ([]*models.SalesOrderEventLogResponse, *model.ErrorLog) {
+func (u *salesOrderUseCase) GetSyncToKafkaHistories(request *models.SalesOrderEventLogRequest, ctx context.Context) ([]*models.SalesOrderEventLogResponse, *baseModel.ErrorLog) {
 	getSalesOrderLogResultChan := make(chan *models.GetSalesOrderLogsChan)
 	go u.salesOrderLogRepository.Get(request, false, ctx, getSalesOrderLogResultChan)
 	getSalesOrderLogResult := <-getSalesOrderLogResultChan
@@ -782,7 +782,7 @@ func (u *salesOrderUseCase) GetSyncToKafkaHistories(request *models.SalesOrderEv
 	return salesOrderEventLogs, nil
 }
 
-func (u *salesOrderUseCase) GetSOJourneyBySOId(soId int, ctx context.Context) (*models.SalesOrderJourneyResponses, *model.ErrorLog) {
+func (u *salesOrderUseCase) GetSOJourneyBySOId(soId int, ctx context.Context) (*models.SalesOrderJourneyResponses, *baseModel.ErrorLog) {
 	getSalesOrderJourneyResultChan := make(chan *models.SalesOrdersJourneysChan)
 	go u.salesOrderJourneysRepository.GetBySoId(soId, false, ctx, getSalesOrderJourneyResultChan)
 	getSalesOrderJourneyResult := <-getSalesOrderJourneyResultChan
@@ -795,19 +795,19 @@ func (u *salesOrderUseCase) GetSOJourneyBySOId(soId int, ctx context.Context) (*
 	for _, v := range getSalesOrderJourneyResult.SalesOrderJourneys {
 		orderStatusID := 0
 		switch v.Status {
-		case constants.UPDATE_SO_STATUS_APPV:
+		case constants.SO_STATUS_APPV:
 			orderStatusID = 5
-		case constants.UPDATE_SO_STATUS_REAPPV:
+		case constants.SO_STATUS_REAPPV:
 			orderStatusID = 5
-		case constants.UPDATE_SO_STATUS_RJC:
+		case constants.SO_STATUS_RJC:
 			orderStatusID = 9
-		case constants.UPDATE_SO_STATUS_CNCL:
+		case constants.SO_STATUS_CNCL:
 			orderStatusID = 10
-		case constants.UPDATE_SO_STATUS_ORDPRT:
+		case constants.SO_STATUS_ORDPRT:
 			orderStatusID = 7
-		case constants.UPDATE_SO_STATUS_ORDCLS:
+		case constants.SO_STATUS_ORDCLS:
 			orderStatusID = 8
-		case constants.UPDATE_SO_STATUS_PEND:
+		case constants.SO_STATUS_PEND:
 			orderStatusID = 6
 		default:
 			orderStatusID = 0
@@ -828,7 +828,7 @@ func (u *salesOrderUseCase) GetSOJourneyBySOId(soId int, ctx context.Context) (*
 	return salesOrderJourneysResult, nil
 }
 
-// func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog) {
+// func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *baseModel.ErrorLog) {
 // 	now := time.Now()
 // 	var soCode string
 
@@ -1073,7 +1073,7 @@ func (u *salesOrderUseCase) GetSOJourneyBySOId(soId int, ctx context.Context) (*
 // 	return salesOrdersResponse, nil
 // }
 
-func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog) {
+func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *baseModel.ErrorLog) {
 	now := time.Now()
 	salesOrder := &models.SalesOrder{}
 
@@ -1109,11 +1109,11 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 
 	var status string
 	switch request.Status {
-	case constants.UPDATE_SO_STATUS_APPV:
+	case constants.SO_STATUS_APPV:
 		status = "open"
-	case constants.UPDATE_SO_STATUS_RJC:
+	case constants.SO_STATUS_RJC:
 		status = "rejected"
-	case constants.UPDATE_SO_STATUS_CNCL:
+	case constants.SO_STATUS_CNCL:
 		status = "cancelled"
 	default:
 		status = "undefined"
@@ -1274,7 +1274,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 		}
 
 		detailStatus := request.Status
-		if request.Status == constants.UPDATE_SO_STATUS_APPV {
+		if request.Status == constants.SO_STATUS_APPV {
 			detailStatus = "OPEN"
 		}
 		salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{
@@ -1357,7 +1357,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 	return salesOrdersResponse, nil
 }
 
-// func (u *salesOrderUseCase) UpdateSODetailById(soId, id int, request *models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetail, *model.ErrorLog) {
+// func (u *salesOrderUseCase) UpdateSODetailById(soId, id int, request *models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetail, *baseModel.ErrorLog) {
 // now := time.Now()
 // var soCode string
 
@@ -1445,7 +1445,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 
 // }
 
-func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *models.UpdateSalesOrderDetailByIdRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetailStoreResponse, *model.ErrorLog) {
+func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *models.UpdateSalesOrderDetailByIdRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetailStoreResponse, *baseModel.ErrorLog) {
 	now := time.Now()
 	salesOrder := &models.SalesOrder{}
 
@@ -1745,7 +1745,7 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 	return salesOrderDetail, nil
 }
 
-func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog) {
+func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *baseModel.ErrorLog) {
 	now := time.Now()
 	salesOrder := &models.SalesOrder{}
 
@@ -1781,11 +1781,11 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 
 	var status string
 	switch request.Status {
-	case constants.UPDATE_SO_STATUS_APPV:
+	case constants.SO_STATUS_APPV:
 		status = "open"
-	case constants.UPDATE_SO_STATUS_RJC:
+	case constants.SO_STATUS_RJC:
 		status = "rejected"
-	case constants.UPDATE_SO_STATUS_CNCL:
+	case constants.SO_STATUS_CNCL:
 		status = "cancelled"
 	default:
 		status = "undefined"
@@ -1946,7 +1946,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 		}
 
 		detailStatus := request.Status
-		if request.Status == constants.UPDATE_SO_STATUS_APPV {
+		if request.Status == constants.SO_STATUS_APPV {
 			detailStatus = "OPEN"
 		}
 		salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{
@@ -2061,7 +2061,7 @@ func (u *salesOrderUseCase) updateSOValidation(salesOrderId int, orderStatusName
 	return nil
 }
 
-func (u *salesOrderUseCase) GetDetails(request *models.GetSalesOrderDetailRequest) (*models.SalesOrderDetailsOpenSearchResponse, *model.ErrorLog) {
+func (u *salesOrderUseCase) GetDetails(request *models.GetSalesOrderDetailRequest) (*models.SalesOrderDetailsOpenSearchResponse, *baseModel.ErrorLog) {
 	getSalesOrderDetailsResultChan := make(chan *models.SalesOrderDetailsOpenSearchChan)
 	go u.salesOrderDetailOpenSearchRepository.Get(request, getSalesOrderDetailsResultChan)
 	getSalesOrderDetailsResult := <-getSalesOrderDetailsResultChan
@@ -2085,10 +2085,10 @@ func (u *salesOrderUseCase) GetDetails(request *models.GetSalesOrderDetailReques
 		Total:             getSalesOrderDetailsResult.Total,
 	}
 
-	return salesOrders, &model.ErrorLog{}
+	return salesOrders, &baseModel.ErrorLog{}
 }
 
-func (u *salesOrderUseCase) DeleteById(id int, sqlTransaction *sql.Tx) *model.ErrorLog {
+func (u *salesOrderUseCase) DeleteById(id int, sqlTransaction *sql.Tx) *baseModel.ErrorLog {
 	now := time.Now()
 
 	getSalesOrderByIDResultChan := make(chan *models.SalesOrderChan)
@@ -2244,7 +2244,7 @@ func (u *salesOrderUseCase) GetDetailById(id int) (*models.SalesOrderDetailOpenS
 			result.SalesOrderDetailOpenSearchResponseMap(x)
 		}
 	}
-	return result, &model.ErrorLog{}
+	return result, &baseModel.ErrorLog{}
 
 }
 

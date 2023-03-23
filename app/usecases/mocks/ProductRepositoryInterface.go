@@ -19,6 +19,10 @@ func (_m *ProductRepositoryInterface) GetByID(ID int, countOnly bool, ctx contex
 	_m.Called(ID, countOnly, ctx, result)
 }
 
+func (_m *ProductRepositoryInterface) GetBySKU(SKU string, countOnly bool, ctx context.Context, resultChan chan *models.ProductChan) {
+	_m.Called(SKU, countOnly, ctx, resultChan)
+}
+
 type mockConstructorTestingTNewProductRepositoryInterface interface {
 	mock.TestingT
 	Cleanup(func())

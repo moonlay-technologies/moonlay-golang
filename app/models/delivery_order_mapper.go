@@ -264,6 +264,37 @@ func (deliveryOrder *DeliveryOrder) DeliveryOrderUpdateMap(request *DeliveryOrde
 			}
 		}
 	}
+
+	return
+}
+func (deliveryOrder *DeliveryOrder) DeliveryOrderUploadSOSJMap(request *UploadSOSJField, now time.Time) {
+	deliveryOrder.AgentID = request.IDDistributor
+	deliveryOrder.WarehouseID = request.KodeGudang
+	deliveryOrder.DoDate = request.TglSuratJalan
+	deliveryOrder.DoRefDate = NullString{NullString: sql.NullString{String: request.TglSuratJalan, Valid: true}}
+	deliveryOrder.DriverName = NullString{NullString: sql.NullString{String: request.NamaSupir, Valid: true}}
+	deliveryOrder.PlatNumber = NullString{NullString: sql.NullString{String: request.PlatNo, Valid: true}}
+	deliveryOrder.Note = NullString{NullString: sql.NullString{String: request.Catatan, Valid: true}}
+	deliveryOrder.IsDoneSyncToEs = "0"
+	deliveryOrder.StartDateSyncToEs = &now
+	deliveryOrder.EndDateSyncToEs = &now
+	deliveryOrder.StartCreatedDate = &now
+	deliveryOrder.EndCreatedDate = &now
+	deliveryOrder.CreatedAt = &now
+	deliveryOrder.UpdatedAt = &now
+	deliveryOrder.DeletedAt = nil
+	return
+}
+
+func (deliveryOrderDetail *DeliveryOrderDetail) DeliveryOrderDetailUploadSOSJMap(request *UploadSOSJField, now time.Time) {
+	deliveryOrderDetail.Qty = request.Qty
+	deliveryOrderDetail.Note = NullString{NullString: sql.NullString{String: request.Catatan, Valid: true}}
+	deliveryOrderDetail.IsDoneSyncToEs = "0"
+	deliveryOrderDetail.StartDateSyncToEs = &now
+	deliveryOrderDetail.EndDateSyncToEs = &now
+	deliveryOrderDetail.CreatedAt = &now
+	deliveryOrderDetail.UpdatedAt = &now
+	deliveryOrderDetail.DeletedAt = nil
 	return
 }
 

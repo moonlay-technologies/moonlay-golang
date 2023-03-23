@@ -29,6 +29,7 @@ func (salesOrder *SalesOrder) SalesOrderRequestMap(request *SalesOrderStoreReque
 	salesOrder.StartDateSyncToEs = &now
 	salesOrder.StartCreatedDate = &now
 	salesOrder.CreatedBy = request.UserID
+	salesOrder.LatestUpdatedBy = request.UserID
 	return
 }
 
@@ -327,6 +328,7 @@ func (salesOrder *SalesOrder) AgentChanMap(request *AgentChan) {
 }
 
 func (salesOrder *SalesOrder) StoreChanMap(request *StoreChan) {
+	salesOrder.StoreID = request.Store.ID
 	salesOrder.Store = request.Store
 	salesOrder.StoreName = request.Store.Name
 	salesOrder.StoreCode = request.Store.StoreCode
@@ -502,6 +504,60 @@ func (salesOrder *SalesOrderOpenSearchResponse) SalesOrderOpenSearchResponseMap(
 	return
 }
 
+func (salesOrder *SalesOrder) SalesOrderForDOMap(request *SalesOrder) {
+	salesOrder.ID = request.ID
+	salesOrder.AgentName = request.AgentName
+	salesOrder.AgentEmail = request.AgentEmail
+	salesOrder.AgentName = request.AgentName
+	salesOrder.AgentProvinceName = request.AgentProvinceName
+	salesOrder.AgentCityName = request.AgentCityName
+	salesOrder.AgentDistrictName = request.AgentDistrictName
+	salesOrder.AgentVillageName = request.AgentVillageName
+	salesOrder.AgentAddress = request.AgentAddress
+	salesOrder.AgentPhone = request.AgentPhone
+	salesOrder.AgentMainMobilePhone = request.AgentMainMobilePhone
+
+	salesOrder.StoreName = request.StoreName
+	salesOrder.StoreCode = request.StoreCode
+	salesOrder.StoreEmail = request.StoreEmail
+	salesOrder.StoreName = request.StoreName
+	salesOrder.StoreProvinceName = request.StoreProvinceName
+	salesOrder.StoreCityName = request.StoreCityName
+	salesOrder.StoreDistrictName = request.StoreDistrictName
+	salesOrder.StoreVillageName = request.StoreVillageName
+	salesOrder.StoreAddress = request.StoreAddress
+	salesOrder.StorePhone = request.StorePhone
+	salesOrder.StoreMainMobilePhone = request.StoreMainMobilePhone
+
+	salesOrder.BrandName = request.BrandName
+
+	salesOrder.UserFirstName = request.UserFirstName
+	salesOrder.UserLastName = request.UserLastName
+	salesOrder.UserEmail = request.UserEmail
+
+	salesOrder.OrderSourceName = request.OrderSourceName
+	salesOrder.OrderStatusName = request.OrderStatusName
+
+	salesOrder.SoCode = request.SoCode
+	salesOrder.SoDate = request.SoDate
+	salesOrder.SoRefCode = request.SoRefCode
+	salesOrder.SoRefDate = request.SoRefDate
+	salesOrder.GLat = request.GLat
+	salesOrder.GLong = request.GLong
+	salesOrder.Note = request.Note
+	salesOrder.ReferralCode = request.ReferralCode
+	salesOrder.InternalComment = request.InternalComment
+	salesOrder.TotalAmount = request.TotalAmount
+	salesOrder.TotalTonase = request.TotalTonase
+
+	salesOrder.SalesmanName = request.SalesmanName
+	salesOrder.SalesmanEmail = request.SalesmanEmail
+	salesOrder.CreatedAt = request.CreatedAt
+	salesOrder.UpdatedAt = request.UpdatedAt
+
+	return
+}
+
 func (salesOrderEventLog *SalesOrderEventLogResponse) SalesOrderEventLogResponseMap(request *GetSalesOrderLog) {
 	salesOrderEventLog.ID = request.ID
 	salesOrderEventLog.RequestID = request.RequestID
@@ -549,4 +605,34 @@ func (salesOrderJourney *SalesOrderJourneyResponse) SalesOrderJourneyResponseMap
 	salesOrderJourney.CreatedAt = request.CreatedAt
 	salesOrderJourney.UpdatedAt = request.UpdatedAt
 	return
+}
+
+func (salesOrder *SalesOrder) SalesOrderUploadSOSJMap(request *UploadSOSJField, now time.Time) {
+
+	salesOrder.AgentID = request.IDDistributor
+	salesOrder.BrandID = request.IDMerk
+	salesOrder.SalesmanID = NullInt64{sql.NullInt64{Int64: int64(request.IDSalesman), Valid: true}}
+	salesOrder.SoDate = request.TglSuratJalan
+	salesOrder.SoRefDate = NullString{sql.NullString{String: request.TglSuratJalan, Valid: true}}
+	salesOrder.Note = NullString{sql.NullString{String: request.Catatan, Valid: true}}
+	salesOrder.InternalComment = NullString{sql.NullString{String: request.CatatanInternal, Valid: true}}
+	salesOrder.IsDoneSyncToEs = "0"
+	salesOrder.CreatedAt = &now
+	salesOrder.StartDateSyncToEs = &now
+	salesOrder.StartCreatedDate = &now
+}
+
+func (salesOrder *SalesOrder) SalesOrderUploadSOMap(request *UploadSOField, now time.Time) {
+
+	salesOrder.AgentID = request.IDDistributor
+	salesOrder.BrandID = request.KodeMerk
+	salesOrder.SalesmanID = NullInt64{sql.NullInt64{Int64: int64(request.IDSalesman), Valid: true}}
+	salesOrder.SoDate = request.TanggalOrder
+	salesOrder.SoRefDate = NullString{sql.NullString{String: request.TanggalTokoOrder, Valid: true}}
+	salesOrder.Note = NullString{sql.NullString{String: request.CatatanOrder, Valid: true}}
+	salesOrder.InternalComment = NullString{sql.NullString{String: request.CatatanInternal, Valid: true}}
+	salesOrder.IsDoneSyncToEs = "0"
+	salesOrder.CreatedAt = &now
+	salesOrder.StartDateSyncToEs = &now
+	salesOrder.StartCreatedDate = &now
 }

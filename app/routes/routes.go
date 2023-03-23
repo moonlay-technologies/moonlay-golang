@@ -124,6 +124,20 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 		}
 	}
 
+	uploadController := controllers.InitHTTPUploadController(database, redisdb, mongodbClient, kafkaClient, opensearchClient, ctx)
+	basicAuthRootGroup.Use()
+	{
+		uploadControllerGroup := basicAuthRootGroup.Group("")
+		uploadControllerGroup.Use()
+		{
+			uploadControllerGroup.POST(constants.UPLOAD_SOSJ_PATH, uploadController.UploadSOSJ)
+			uploadControllerGroup.GET(constants.UPLOAD_DO_PATH, uploadController.UploadDO)
+			uploadControllerGroup.POST(constants.UPLOAD_SO_PATH, uploadController.UploadSO)
+			uploadControllerGroup.GET(constants.UPLOAD_SO_PATH+"/retry/:so-upload-history-id", uploadController.RetryUploadSO)
+			uploadControllerGroup.GET(constants.UPLOAD_SOSJ_PATH+"/retry/:sosj-upload-history-id", uploadController.RetryUploadSOSJ)
+		}
+	}
+
 	g.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, baseModel.Response{
 			StatusCode: http.StatusNotFound,

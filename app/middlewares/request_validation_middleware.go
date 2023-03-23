@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/repositories"
+	"strconv"
+
 	"order-service/global/utils/helper"
 	baseModel "order-service/global/utils/model"
 	"strings"
@@ -28,6 +30,9 @@ type RequestValidationMiddlewareInterface interface {
 	StoreIdValidation(ctx *gin.Context, storeId, agentId int, actionName string) error
 	SalesmanIdValidation(ctx *gin.Context, salesmanId, agentId int, actionName string) error
 	BrandIdValidation(ctx *gin.Context, brandId []int, agentId int, actionName string) error
+	UploadMandatoryValidation(request []*models.TemplateRequest) []string
+	UploadIntTypeValidation(request []*models.TemplateRequest) (map[string]int, []string)
+	UploadMustActiveValidation(request []*models.MustActiveRequest) []string
 }
 
 type requestValidationMiddleware struct {
@@ -394,4 +399,59 @@ func (u *requestValidationMiddleware) BrandIdValidation(ctx *gin.Context, brandI
 	}
 
 	return error
+}
+
+func (u *requestValidationMiddleware) UploadMandatoryValidation(request []*models.TemplateRequest) []string {
+	errors := []string{}
+
+	for _, value := range request {
+		if len(value.Value) < 1 {
+			error := fmt.Sprintf("Data %s tidak boleh kosong", value.Field)
+			errors = append(errors, error)
+		}
+	}
+
+	return errors
+}
+
+func (u *requestValidationMiddleware) UploadIntTypeValidation(request []*models.TemplateRequest) (map[string]int, []string) {
+	result := map[string]int{}
+	errors := []string{}
+
+	for _, v := range request {
+		parseInt, error := strconv.Atoi(v.Value)
+
+		if error != nil {
+			error := fmt.Sprintf("Data %s harus bertipe data integer", v.Value)
+			errors = append(errors, error)
+		} else {
+			result[v.Field] = parseInt
+		}
+	}
+
+	return result, errors
+}
+
+func (u *requestValidationMiddleware) UploadMustActiveValidation(request []*models.MustActiveRequest) []string {
+
+	errors := []string{}
+
+	mustActive := make(chan *models.MustActiveRequestChan)
+	go u.requestValidationRepository.MustActiveValidation(request, mustActive)
+	mustActiveResult := <-mustActive
+
+	for k, v := range mustActiveResult.Total {
+		if v < 1 {
+			var error string
+			if request[k].CustomMessage != "" {
+				error = request[k].CustomMessage
+			} else {
+				error = fmt.Sprintf("Kode = %s sudah Tidak Aktif. Silahkan gunakan Kode yang lain.", request[k].Id)
+			}
+
+			errors = append(errors, error)
+		}
+	}
+
+	return errors
 }

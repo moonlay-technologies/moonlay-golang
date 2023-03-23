@@ -22,6 +22,7 @@ type MustActiveRequest struct {
 	Clause             string
 	CustomMessage      string
 	CustomResponseCode int
+	Id                 interface{}
 }
 
 type MustActiveRequestChan struct {
@@ -66,4 +67,9 @@ type RequestIdValidationChan struct {
 	Error    error
 	ErrorLog *model.ErrorLog
 	ID       int64 `json:"id,omitempty" bson:"id,omitempty"`
+}
+
+type TemplateRequest struct {
+	Field string
+	Value string
 }
