@@ -22,14 +22,14 @@ type DeleteDeliveryOrderDetailConsumerHandlerInterface interface {
 
 type DeleteDeliveryOrderDetailConsumerHandler struct {
 	kafkaClient                    kafkadbo.KafkaClientInterface
-	DeliveryOrderOpenSearchUseCase usecases.DeliveryOrderOpenSearchUseCaseInterface
+	DeliveryOrderOpenSearchUseCase usecases.DeliveryOrderConsumerUseCaseInterface
 	ctx                            context.Context
 	args                           []interface{}
 	db                             dbresolver.DB
 	deliveryOrderLogRepository     mongoRepositories.DeliveryOrderLogRepositoryInterface
 }
 
-func InitDeleteDeliveryOrderDetailConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, DeliveryOrderOpenSearchUseCase usecases.DeliveryOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) DeleteDeliveryOrderDetailConsumerHandlerInterface {
+func InitDeleteDeliveryOrderDetailConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, DeliveryOrderOpenSearchUseCase usecases.DeliveryOrderConsumerUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) DeleteDeliveryOrderDetailConsumerHandlerInterface {
 	return &DeleteDeliveryOrderDetailConsumerHandler{
 		kafkaClient:                    kafkaClient,
 		DeliveryOrderOpenSearchUseCase: DeliveryOrderOpenSearchUseCase,

@@ -16,13 +16,13 @@ import (
 	"github.com/bxcodec/dbresolver"
 )
 
-type DeliveryOrderOpenSearchUseCaseInterface interface {
+type DeliveryOrderConsumerUseCaseInterface interface {
 	SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromUpdateEvent(deliveryOrder *models.DeliveryOrder, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, deliveryOrderDetailId []*int, ctx context.Context) *model.ErrorLog
 }
 
-type deliveryOrderOpenSearchUseCase struct {
+type deliveryOrderConsumerUseCase struct {
 	salesOrderRepository                    repositories.SalesOrderRepositoryInterface
 	salesOrderDetailRepository              repositories.SalesOrderDetailRepositoryInterface
 	orderStatusRepository                   repositories.OrderStatusRepositoryInterface
@@ -39,8 +39,8 @@ type deliveryOrderOpenSearchUseCase struct {
 	ctx                                     context.Context
 }
 
-func InitDeliveryOrderOpenSearchUseCaseInterface(salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderOpenSearchUseCaseInterface {
-	return &deliveryOrderOpenSearchUseCase{
+func InitDeliveryOrderConsumerUseCaseInterface(salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderConsumerUseCaseInterface {
+	return &deliveryOrderConsumerUseCase{
 		salesOrderRepository:                    salesOrderRepository,
 		salesOrderDetailRepository:              salesOrderDetailRepository,
 		orderStatusRepository:                   orderStatusRepository,
@@ -58,7 +58,7 @@ func InitDeliveryOrderOpenSearchUseCaseInterface(salesOrderRepository repositori
 	}
 }
 
-func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
+func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
 	now := time.Now()
 
 	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
@@ -182,7 +182,7 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(deliver
 	return &model.ErrorLog{}
 }
 
-func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(request *models.DeliveryOrder, ctx context.Context) *model.ErrorLog {
+func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromUpdateEvent(request *models.DeliveryOrder, ctx context.Context) *model.ErrorLog {
 	now := time.Now()
 
 	getDeliveryOrdersResultChan := make(chan *models.DeliveryOrderChan)
@@ -237,7 +237,7 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(request
 	return &model.ErrorLog{}
 }
 
-func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, deliveryOrderDetailIds []*int, ctx context.Context) *model.ErrorLog {
+func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, deliveryOrderDetailIds []*int, ctx context.Context) *model.ErrorLog {
 	now := time.Now()
 	isDeleteParent := deliveryOrderDetailIds == nil
 	getDeliveryOrdersResultChan := make(chan *models.DeliveryOrderChan)
@@ -358,4 +358,40 @@ func (u *deliveryOrderOpenSearchUseCase) SyncToOpenSearchFromDeleteEvent(deliver
 	// }
 
 	return &model.ErrorLog{}
+}
+
+func (u *deliveryOrderConsumerUseCase) Get(request *models.DeliveryOrderExportRequest) (*models.DeliveryOrdersOpenSearchResponse, *model.ErrorLog) {
+	doRequest := &models.DeliveryOrderRequest{}
+	doRequest.DeliveryOrderExportMap(request)
+	getDeliveryOrdersResultChan := make(chan *models.DeliveryOrdersChan)
+	go u.deliveryOrderOpenSearchRepository.Get(doRequest, false, getDeliveryOrdersResultChan)
+	getDeliveryOrdersResult := <-getDeliveryOrdersResultChan
+
+	if getDeliveryOrdersResult.Error != nil {
+		return &models.DeliveryOrdersOpenSearchResponse{}, getDeliveryOrdersResult.ErrorLog
+	}
+
+	deliveryOrderResults := []*models.DeliveryOrderOpenSearchResponse{}
+	for _, v := range getDeliveryOrdersResult.DeliveryOrders {
+		deliveryOrder := models.DeliveryOrderOpenSearchResponse{}
+		deliveryOrder.DeliveryOrderOpenSearchResponseMap(v)
+
+		deliveryOrderResults = append(deliveryOrderResults, &deliveryOrder)
+
+		deliveryOrderDetails := []*models.DeliveryOrderDetailOpenSearchDetailResponse{}
+		for _, x := range v.DeliveryOrderDetails {
+			deliveryOrderDetail := models.DeliveryOrderDetailOpenSearchDetailResponse{}
+			deliveryOrderDetail.DeliveryOrderDetailOpenSearchResponseMap(x)
+
+			deliveryOrderDetails = append(deliveryOrderDetails, &deliveryOrderDetail)
+		}
+		deliveryOrder.DeliveryOrderDetail = deliveryOrderDetails
+	}
+
+	deliveryOrders := &models.DeliveryOrdersOpenSearchResponse{
+		DeliveryOrders: deliveryOrderResults,
+		Total:          getDeliveryOrdersResult.Total,
+	}
+
+	return deliveryOrders, &model.ErrorLog{}
 }

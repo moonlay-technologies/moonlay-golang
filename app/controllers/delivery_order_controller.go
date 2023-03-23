@@ -4,13 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"order-service/app/middlewares"
 	"order-service/app/models"
+	"order-service/app/models/constants"
 	"order-service/app/usecases"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/model"
 	"strconv"
+	"time"
 
 	"github.com/bxcodec/dbresolver"
 	"github.com/gin-gonic/gin"
@@ -333,7 +336,7 @@ func (c *deliveryOrderController) Get(ctx *gin.Context) {
 }
 
 func (c *deliveryOrderController) Export(ctx *gin.Context) {
-	deliveryOrderRequest, err := c.deliveryOrderValidator.GetDeliveryOrderValidator(ctx)
+	deliveryOrderRequest, err := c.deliveryOrderValidator.ExportDeliveryOrderValidator(ctx)
 	if err != nil {
 		return
 	}
@@ -344,8 +347,9 @@ func (c *deliveryOrderController) Export(ctx *gin.Context) {
 		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 		return
 	}
-
-	ctx.JSON(http.StatusOK, "apis.dbo.dev/noncore-assets/download/excel/delivery_order_27_january_2023.xlsx") // Makesure dor response pattern
+	sTime := time.Now().Format("2_January_2006")
+	fmt.Println(sTime)
+	ctx.JSON(http.StatusOK, fmt.Sprintf("%s_%s.%s", constants.DELIVERY_ORDER_EXPORT_PATH, sTime, deliveryOrderRequest.FileType)) // Makesure dor response pattern
 	return
 }
 

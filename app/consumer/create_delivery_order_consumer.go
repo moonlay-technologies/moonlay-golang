@@ -22,14 +22,14 @@ type CreateDeliveryOrderConsumerHandlerInterface interface {
 
 type createDeliveryOrderConsumerHandler struct {
 	kafkaClient                    kafkadbo.KafkaClientInterface
-	DeliveryOrderOpenSearchUseCase usecases.DeliveryOrderOpenSearchUseCaseInterface
+	DeliveryOrderOpenSearchUseCase usecases.DeliveryOrderConsumerUseCaseInterface
 	ctx                            context.Context
 	args                           []interface{}
 	db                             dbresolver.DB
 	deliveryOrderLogRepository     mongoRepositories.DeliveryOrderLogRepositoryInterface
 }
 
-func InitCreateDeliveryOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, DeliveryOrderOpenSearchUseCase usecases.DeliveryOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) CreateDeliveryOrderConsumerHandlerInterface {
+func InitCreateDeliveryOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, DeliveryOrderOpenSearchUseCase usecases.DeliveryOrderConsumerUseCaseInterface, db dbresolver.DB, ctx context.Context, args []interface{}) CreateDeliveryOrderConsumerHandlerInterface {
 	return &createDeliveryOrderConsumerHandler{
 		kafkaClient:                    kafkaClient,
 		DeliveryOrderOpenSearchUseCase: DeliveryOrderOpenSearchUseCase,
