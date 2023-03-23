@@ -12,4 +12,6 @@ const (
 	UPLOAD_SOSJ_PATH         = "upload-sosj"
 	UPLOAD_DO_PATH           = "upload-deliveryorders"
 	UPLOAD_SO_PATH           = "upload-sales-orders"
+	SOSJ_PATH                = "sosj"
+	UPLOAD_HISTORIES_PATH    = "upload-histories"
 )

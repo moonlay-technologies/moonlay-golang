@@ -171,7 +171,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 				} else {
 					errors := mandatoryError
 
-					c.createSosjUploadErrorLog(i+3, rowData.AgentId, sosjUploadHistoryJourneysResult.UploadHistory.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, *rowData)
+					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, message.AgentName, message.BulkCode, errors, &now, *rowData)
 					continue
 				}
 			}
@@ -216,7 +216,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 				} else {
 					errors := intTypeError
 
-					c.createSosjUploadErrorLog(i+3, rowData.AgentId, sosjUploadHistoryJourneysResult.UploadHistory.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, *rowData)
+					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, message.AgentName, message.BulkCode, errors, &now, *rowData)
 
 					continue
 				}
@@ -230,7 +230,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 				} else {
 					errors = []string{"Quantity harus lebih dari 0"}
 
-					c.createSosjUploadErrorLog(i+3, rowData.AgentId, sosjUploadHistoryJourneysResult.UploadHistory.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, *rowData)
+					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, message.AgentName, message.BulkCode, errors, &now, *rowData)
 					continue
 				}
 			}
@@ -271,7 +271,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 				} else {
 					errors := mustActiveError
 
-					c.createSosjUploadErrorLog(i+3, rowData.AgentId, sosjUploadHistoryJourneysResult.UploadHistory.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, *rowData)
+					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, message.AgentName, message.BulkCode, errors, &now, *rowData)
 
 					continue
 				}
@@ -293,7 +293,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 						errors = append(errors, fmt.Sprintf("ID Salesman = %d Tidak Terdaftar pada Distributor %s. Silahkan gunakan ID Salesman yang lain.", intTypeResult["IDSalesman"], message.AgentName))
 						errors = append(errors, fmt.Sprintf("Salesman di Kode Toko = %s untuk Merek %s Tidak Terdaftar. Silahkan gunakan ID Salesman yang terdaftar.", rowData.StoreCode, rowData.ProductName.String))
 
-						c.createSosjUploadErrorLog(i+3, rowData.AgentId, sosjUploadHistoryJourneysResult.UploadHistory.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, *rowData)
+						c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, message.AgentName, message.BulkCode, errors, &now, *rowData)
 
 						continue
 					}
@@ -311,7 +311,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 				} else {
 					errors := []string{fmt.Sprintf("Alamat Utama pada Kode Toko = %s Tidak Ditemukan. Silahkan gunakan Alamat Toko yang lain.", rowData.StoreCode)}
 
-					c.createSosjUploadErrorLog(i+3, rowData.AgentId, sosjUploadHistoryJourneysResult.UploadHistory.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, *rowData)
+					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, message.AgentName, message.BulkCode, errors, &now, *rowData)
 
 					continue
 				}
@@ -327,7 +327,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 				} else {
 					errors = []string{fmt.Sprintf("Format Tanggal Order = %s Salah, silahkan sesuaikan dengan format DD-MMM-YYYY, contoh 15/12/2021", rowData.SjDate)}
 
-					c.createSosjUploadErrorLog(i+3, rowData.AgentId, sosjUploadHistoryJourneysResult.UploadHistory.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, *rowData)
+					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, message.AgentName, message.BulkCode, errors, &now, *rowData)
 
 					continue
 				}

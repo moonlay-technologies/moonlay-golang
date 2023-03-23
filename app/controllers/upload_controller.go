@@ -19,6 +19,7 @@ type UploadControllerInterface interface {
 	UploadSO(ctx *gin.Context)
 	RetryUploadSO(ctx *gin.Context)
 	RetryUploadSOSJ(ctx *gin.Context)
+	GetSoUploadErrorLogsByReqId(ctx *gin.Context)
 }
 
 type uploadController struct {
@@ -175,6 +176,36 @@ func (c *uploadController) RetryUploadSOSJ(ctx *gin.Context) {
 		"message":                "upload on progress",
 	}
 
+	result.StatusCode = http.StatusOK
+	ctx.JSON(http.StatusOK, result)
+	return
+
+}
+
+func (c *uploadController) GetSoUploadErrorLogsByReqId(ctx *gin.Context) {
+	var result baseModel.Response
+	var resultErrorLog *baseModel.ErrorLog
+
+	ctx.Set("full_path", ctx.FullPath())
+	ctx.Set("method", ctx.Request.Method)
+
+	requestId := ctx.Param("request-id")
+
+	request := &models.GetSosjUploadErrorLogsRequest{
+		RequestID: requestId,
+	}
+
+	sosjUploadErrorLogs, errorLog := c.uploadUseCase.GetSosjUploadErrorLogs(request, ctx)
+
+	if errorLog != nil {
+		resultErrorLog = errorLog
+		result.StatusCode = resultErrorLog.StatusCode
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	result.Data = sosjUploadErrorLogs.SosjUploadErrorLogs
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
 	return
