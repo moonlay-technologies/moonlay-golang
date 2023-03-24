@@ -30,6 +30,7 @@ type SalesOrderControllerInterface interface {
 	GetDetailsBySoId(ctx *gin.Context)
 	GetDetailsById(ctx *gin.Context)
 	GetSyncToKafkaHistories(ctx *gin.Context)
+	GetSOJourneys(ctx *gin.Context)
 	GetSOJourneyBySoId(ctx *gin.Context)
 	DeleteByID(ctx *gin.Context)
 	DeleteDetailByID(ctx *gin.Context)
@@ -1396,6 +1397,23 @@ func (c *salesOrderController) GetSyncToKafkaHistories(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, model.Response{Data: salesOrders, StatusCode: http.StatusOK})
+	return
+}
+
+func (c *salesOrderController) GetSOJourneys(ctx *gin.Context) {
+	salesOrderJourneysRequest, err := c.salesOrderValidator.GetSalesOrderJourneysValidator(ctx)
+	if err != nil {
+		return
+	}
+
+	salesOrderJourneys, errorLog := c.salesOrderUseCase.GetSOJourneys(salesOrderJourneysRequest, ctx)
+
+	if errorLog != nil {
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, model.Response{Data: salesOrderJourneys.SalesOrderJourneys, Total: salesOrderJourneys.Total, StatusCode: http.StatusOK})
 	return
 }
 
