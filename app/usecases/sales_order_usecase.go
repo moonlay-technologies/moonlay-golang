@@ -31,6 +31,7 @@ type SalesOrderUseCaseInterface interface {
 	GetByOrderStatusID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
 	GetByOrderSourceID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
 	GetSyncToKafkaHistories(request *models.SalesOrderEventLogRequest, ctx context.Context) ([]*models.SalesOrderEventLogResponse, *model.ErrorLog)
+	GetSOJourneys(request *models.SalesOrderJourneyRequest, ctx context.Context) (*models.SalesOrderJourneyResponses, *model.ErrorLog)
 	GetSOJourneyBySOId(soId int, ctx context.Context) (*models.SalesOrderJourneyResponses, *model.ErrorLog)
 	UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
 	UpdateSODetailById(soId, soDetailId int, request *models.UpdateSalesOrderDetailByIdRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetailStoreResponse, *model.ErrorLog)
@@ -780,6 +781,31 @@ func (u *salesOrderUseCase) GetSyncToKafkaHistories(request *models.SalesOrderEv
 	}
 
 	return salesOrderEventLogs, nil
+}
+
+func (u *salesOrderUseCase) GetSOJourneys(request *models.SalesOrderJourneyRequest, ctx context.Context) (*models.SalesOrderJourneyResponses, *model.ErrorLog) {
+	getSalesOrderJourneyResultChan := make(chan *models.SalesOrdersJourneysChan)
+	go u.salesOrderJourneysRepository.Get(request, false, ctx, getSalesOrderJourneyResultChan)
+	getSalesOrderJourneyResult := <-getSalesOrderJourneyResultChan
+
+	if getSalesOrderJourneyResult.Error != nil {
+		return &models.SalesOrderJourneyResponses{}, getSalesOrderJourneyResult.ErrorLog
+	}
+
+	salesOrderJourneys := []*models.SalesOrderJourneyResponse{}
+	for _, v := range getSalesOrderJourneyResult.SalesOrderJourneys {
+		salesOrderJourney := models.SalesOrderJourneyResponse{}
+		salesOrderJourney.SalesOrderJourneyResponseMap(v)
+
+		salesOrderJourneys = append(salesOrderJourneys, &salesOrderJourney)
+	}
+
+	salesOrderJourneysResult := models.SalesOrderJourneyResponses{
+		SalesOrderJourneys: salesOrderJourneys,
+		Total:              getSalesOrderJourneyResult.Total,
+	}
+
+	return &salesOrderJourneysResult, nil
 }
 
 func (u *salesOrderUseCase) GetSOJourneyBySOId(soId int, ctx context.Context) (*models.SalesOrderJourneyResponses, *baseModel.ErrorLog) {
