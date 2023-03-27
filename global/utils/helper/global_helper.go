@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -33,6 +34,16 @@ func IsNumber(number string) bool {
 }
 
 func InSliceInt(slice []int, item int) bool {
+	for _, v := range slice {
+		if v == item {
+			return true
+		}
+	}
+
+	return false
+}
+
+func InSliceString(slice []string, item string) bool {
 	for _, v := range slice {
 		if v == item {
 			return true
@@ -105,6 +116,11 @@ func parseLength(s string) (int, error) {
 	} else {
 		return l, nil
 	}
+}
+
+func ParseDDYYMMtoYYYYMMDD(request string) (string, error) {
+	date, err := time.Parse("02/01/2006", request)
+	return date.Format("2006-01-02"), err
 }
 
 // Generate random string

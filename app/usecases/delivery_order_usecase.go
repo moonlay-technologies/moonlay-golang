@@ -38,6 +38,8 @@ type DeliveryOrderUseCaseInterface interface {
 	GetBySalesmansID(request *models.DeliveryOrderRequest) (*models.DeliveryOrdersOpenSearchResponses, *model.ErrorLog)
 	GetByOrderStatusID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
 	GetByOrderSourceID(request *models.DeliveryOrderRequest) (*models.DeliveryOrders, *model.ErrorLog)
+	GetSyncToKafkaHistories(request *models.DeliveryOrderEventLogRequest, ctx context.Context) ([]*models.DeliveryOrderEventLogResponse, *model.ErrorLog)
+	GetDOJourneys(request *models.DeliveryOrderJourneysRequest, ctx context.Context) (*models.DeliveryOrderJourneysResponses, *model.ErrorLog)
 	GetDOJourneysByDoID(doId int, ctx context.Context) (*models.DeliveryOrderJourneysResponses, *model.ErrorLog)
 	DeleteByID(deliveryOrderId int, sqlTransaction *sql.Tx) *model.ErrorLog
 	DeleteDetailByID(deliveryOrderDetailId int, sqlTransaction *sql.Tx) *model.ErrorLog
@@ -1538,6 +1540,63 @@ func (u *deliveryOrderUseCase) GetByOrderSourceID(request *models.DeliveryOrderR
 	}
 
 	return deliveryOrders, &model.ErrorLog{}
+}
+
+func (u *deliveryOrderUseCase) GetSyncToKafkaHistories(request *models.DeliveryOrderEventLogRequest, ctx context.Context) ([]*models.DeliveryOrderEventLogResponse, *model.ErrorLog) {
+	getDeliveryOrderLogResultChan := make(chan *models.GetDeliveryOrderLogsChan)
+	go u.deliveryOrderLogRepository.Get(request, false, ctx, getDeliveryOrderLogResultChan)
+	getDeliveryOrderLogResult := <-getDeliveryOrderLogResultChan
+
+	if getDeliveryOrderLogResult.Error != nil {
+		return []*models.DeliveryOrderEventLogResponse{}, getDeliveryOrderLogResult.ErrorLog
+	}
+
+	deliveryOrderEventLogs := []*models.DeliveryOrderEventLogResponse{}
+	for _, v := range getDeliveryOrderLogResult.DeliveryOrderLog {
+		deliveryOrderEventLog := models.DeliveryOrderEventLogResponse{}
+		deliveryOrderEventLog.DeliveryOrderEventLogResponseMap(v)
+
+		dataDOEventLog := models.DataDOEventLogResponse{}
+		dataDOEventLog.DataDOEventLogResponseMap(v)
+
+		deliveryOrderEventLog.Data = &dataDOEventLog
+
+		for _, x := range v.Data.DeliveryOrderDetails {
+			doDetailEventLog := models.DODetailEventLogResponse{}
+			doDetailEventLog.DoDetailEventLogResponse(x)
+
+			dataDOEventLog.DeliveryOrderDetails = append(dataDOEventLog.DeliveryOrderDetails, &doDetailEventLog)
+		}
+
+		deliveryOrderEventLogs = append(deliveryOrderEventLogs, &deliveryOrderEventLog)
+	}
+
+	return deliveryOrderEventLogs, nil
+}
+
+func (u *deliveryOrderUseCase) GetDOJourneys(request *models.DeliveryOrderJourneysRequest, ctx context.Context) (*models.DeliveryOrderJourneysResponses, *model.ErrorLog) {
+	getJourneysResultChan := make(chan *models.DeliveryOrderJourneysChan)
+	go u.deliveryOrderJourneysRepository.Get(request, false, ctx, getJourneysResultChan)
+	getJourneysResult := <-getJourneysResultChan
+
+	if getJourneysResult.Error != nil {
+		return &models.DeliveryOrderJourneysResponses{}, getJourneysResult.ErrorLog
+	}
+
+	deliveryOrderJourneys := []*models.DeliveryOrderJourneysResponse{}
+	for _, v := range getJourneysResult.DeliveryOrderJourney {
+		deliveryOrderJourney := models.DeliveryOrderJourneysResponse{}
+		deliveryOrderJourney.DeliveryOrderJourneyResponseMap(v)
+
+		deliveryOrderJourneys = append(deliveryOrderJourneys, &deliveryOrderJourney)
+	}
+
+	deliveryOrderJourneyResult := models.DeliveryOrderJourneysResponses{
+		DeliveryOrderJourneys: deliveryOrderJourneys,
+		Total:                 getJourneysResult.Total,
+	}
+
+	return &deliveryOrderJourneyResult, nil
 }
 
 func (u *deliveryOrderUseCase) GetDOJourneysByDoID(doId int, ctx context.Context) (*models.DeliveryOrderJourneysResponses, *model.ErrorLog) {

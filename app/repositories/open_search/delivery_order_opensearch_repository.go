@@ -448,6 +448,16 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 			filters = append(filters, filter)
 		}
 
+		if request.UpdatedAt != "" {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"updated_at": request.UpdatedAt,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
 		if len(request.StartCreatedAt) > 0 && len(request.EndCreatedAt) > 0 {
 			filter := map[string]interface{}{
 				"range": map[string]interface{}{
@@ -476,10 +486,10 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 
 		if request.GlobalSearchValue != "" {
 			match := map[string]interface{}{
-				"query_string": map[string]interface{}{
-					"query":            "*" + request.GlobalSearchValue + "*",
-					"fields":           []string{"do_code", "do_ref_code", "sales_order.so_code", "store.store_code", "store.name"},
-					"default_operator": "AND",
+				"multi_match": map[string]interface{}{
+					"query":  request.GlobalSearchValue,
+					"fields": []string{"do_code", "do_ref_code", "sales_order.so_code", "store.store_code", "store.name"},
+					"type":   "phrase_prefix",
 				},
 			}
 

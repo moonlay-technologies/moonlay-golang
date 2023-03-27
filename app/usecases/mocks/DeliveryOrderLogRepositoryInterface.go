@@ -14,6 +14,11 @@ type DeliveryOrderLogRepositoryInterface struct {
 	mock.Mock
 }
 
+// Get provides a mock function with given fields: request, countOnly, ctx, resultChan
+func (_m *DeliveryOrderLogRepositoryInterface) Get(request *models.DeliveryOrderEventLogRequest, countOnly bool, ctx context.Context, resultChan chan *models.GetDeliveryOrderLogsChan) {
+	_m.Called(request, countOnly, ctx, resultChan)
+}
+
 // GetByID provides a mock function with given fields: ID, countOnly, ctx, resultChan
 func (_m *DeliveryOrderLogRepositoryInterface) GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan) {
 	_m.Called(ID, countOnly, ctx, resultChan)

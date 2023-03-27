@@ -34,6 +34,8 @@ type DeliveryOrderControllerInterface interface {
 	GetDetailsByDoId(ctx *gin.Context)
 	GetDetailById(ctx *gin.Context)
 	GetBySalesmanID(ctx *gin.Context)
+	GetSyncToKafkaHistories(ctx *gin.Context)
+	GetJourneys(ctx *gin.Context)
 	GetDOJourneysByDoID(ctx *gin.Context)
 
 	Export(ctx *gin.Context)
@@ -472,6 +474,41 @@ func (c *deliveryOrderController) GetByID(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, model.Response{Data: deliveryOrder, StatusCode: http.StatusOK})
+	return
+}
+
+func (c *deliveryOrderController) GetSyncToKafkaHistories(ctx *gin.Context) {
+
+	deliveryOrderEventLogRequest, err := c.deliveryOrderValidator.GetDeliveryOrderSyncToKafkaHistoriesValidator(ctx)
+	if err != nil {
+		return
+	}
+
+	deliveryOrderEventLog, errorLog := c.deliveryOrderUseCase.GetSyncToKafkaHistories(deliveryOrderEventLogRequest, ctx)
+
+	if errorLog != nil {
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, model.Response{Data: deliveryOrderEventLog, StatusCode: http.StatusOK})
+	return
+}
+
+func (c *deliveryOrderController) GetJourneys(ctx *gin.Context) {
+	deliveryOrderJourneysRequest, err := c.deliveryOrderValidator.GetDeliveryOrderJourneysValidator(ctx)
+	if err != nil {
+		return
+	}
+
+	deliveryOrderJourneys, errorLog := c.deliveryOrderUseCase.GetDOJourneys(deliveryOrderJourneysRequest, ctx)
+
+	if errorLog != nil {
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, model.Response{Data: deliveryOrderJourneys.DeliveryOrderJourneys, Total: deliveryOrderJourneys.Total, StatusCode: http.StatusOK})
 	return
 }
 

@@ -45,6 +45,7 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 			salesOrderControllerGroup.DELETE(":so-id/details", salesOrderController.DeleteByID)
 			salesOrderControllerGroup.DELETE("details/:so-detail-id", salesOrderController.DeleteDetailByID)
 			salesOrderControllerGroup.GET("event-logs", salesOrderController.GetSyncToKafkaHistories)
+			salesOrderControllerGroup.GET("/journeys", salesOrderController.GetSOJourneys)
 			salesOrderControllerGroup.GET(":so-id/journeys", salesOrderController.GetSOJourneyBySoId)
 			salesOrderControllerGroup.GET("/retry-to-sync-kafka/:log-id", salesOrderController.RetrySyncToKafka)
 		}
@@ -70,6 +71,8 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 			deliveryOrderControllerGroup.GET(":id/details", deliveryOrderController.GetDetailsByDoId)
 			deliveryOrderControllerGroup.GET(":id/details/:do-detail-id", deliveryOrderController.GetDetailById)
 			deliveryOrderControllerGroup.GET("salesmans", deliveryOrderController.GetBySalesmanID)
+			deliveryOrderControllerGroup.GET("/sync-to-kafka-histories", deliveryOrderController.GetSyncToKafkaHistories)
+			deliveryOrderControllerGroup.GET("/journeys", deliveryOrderController.GetJourneys)
 			deliveryOrderControllerGroup.GET(":id/journeys", deliveryOrderController.GetDOJourneysByDoID)
 			deliveryOrderControllerGroup.PUT(":id", deliveryOrderController.UpdateByID)
 			deliveryOrderControllerGroup.PUT(":id/details", deliveryOrderController.UpdateDeliveryOrderDetailByDeliveryOrderID)
@@ -121,6 +124,22 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 		{
 			hostToHostControllerGroup.GET("/"+constants.SALES_ORDERS_PATH, hostToHostController.GetSalesOrders)
 			hostToHostControllerGroup.GET("/"+constants.DELIVERY_ORDERS_PATH, hostToHostController.GetDeliveryOrders)
+		}
+	}
+
+	uploadController := controllers.InitHTTPUploadController(database, redisdb, mongodbClient, kafkaClient, opensearchClient, ctx)
+	basicAuthRootGroup.Use()
+	{
+		uploadControllerGroup := basicAuthRootGroup.Group("")
+		uploadControllerGroup.Use()
+		{
+			uploadControllerGroup.POST(constants.UPLOAD_SOSJ_PATH, uploadController.UploadSOSJ)
+			uploadControllerGroup.GET(constants.UPLOAD_DO_PATH, uploadController.UploadDO)
+			uploadControllerGroup.POST(constants.UPLOAD_SO_PATH, uploadController.UploadSO)
+			uploadControllerGroup.GET(constants.UPLOAD_SO_PATH+"/retry/:so-upload-history-id", uploadController.RetryUploadSO)
+			uploadControllerGroup.GET(constants.UPLOAD_SOSJ_PATH+"/retry/:sosj-upload-history-id", uploadController.RetryUploadSOSJ)
+			uploadControllerGroup.GET(constants.SOSJ_PATH+"/"+constants.UPLOAD_HISTORIES_PATH+"/:id/error-items", uploadController.GetSoUploadErrorLogsByReqId)
+			uploadControllerGroup.GET(constants.SOSJ_PATH+"/"+constants.UPLOAD_HISTORIES_PATH+"/:id", uploadController.GetSosjUploadHistoryById)
 		}
 	}
 

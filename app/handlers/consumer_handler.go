@@ -63,6 +63,25 @@ func MainConsumerHandler(kafkaClient kafkadbo.KafkaClientInterface, mongodbClien
 		salesOrderDetailConsumer := consumer.InitUpdateDeliveryOrderDetailConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
 		go salesOrderDetailConsumer.ProcessMessage()
 		break
+	case constants.UPLOAD_SO_FILE_TOPIC:
+		wg.Add(1)
+		uploadSOFileConsumer := consumer.InitUploadSOFileConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
+		go uploadSOFileConsumer.ProcessMessage()
+		break
+	case constants.UPLOAD_SO_ITEM_TOPIC:
+		wg.Add(1)
+		uploadSOItemConsumer := consumer.InitUploadSOItemConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
+		go uploadSOItemConsumer.ProcessMessage()
+		break
+	case constants.UPLOAD_SOSJ_FILE_TOPIC:
+		wg.Add(1)
+		uploadSOSJFileConsumer := consumer.InitUploadSOSJFileConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
+		go uploadSOSJFileConsumer.ProcessMessage()
+		break
+	case constants.UPLOAD_SOSJ_ITEM_TOPIC:
+		wg.Add(1)
+		uploadSOSJItemConsumer := consumer.InitUploadSOSJItemConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
+		go uploadSOSJItemConsumer.ProcessMessage()
 	case constants.DELETE_DELIVERY_ORDER_DETAIL_TOPIC:
 		wg.Add(1)
 		salesOrderDetailConsumer := consumer.InitDeleteDeliveryOrderDetailConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
