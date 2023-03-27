@@ -19,6 +19,7 @@ import (
 
 type SalesOrderDetailRepositoryInterface interface {
 	GetBySalesOrderID(salesOrderID int, countOnly bool, ctx context.Context, result chan *models.SalesOrderDetailsChan)
+	GetBySOIDSkuAndUomCode(salesOrderID int, sku string, uomCode string, countOnly bool, ctx context.Context, result chan *models.SalesOrderDetailChan)
 	Insert(request *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderDetailChan)
 	GetByID(salesOrderDetailID int, countOnly bool, ctx context.Context, result chan *models.SalesOrderDetailChan)
 	UpdateByID(id int, request *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderDetailChan)
@@ -124,6 +125,91 @@ func (r *salesOrderDetail) GetBySalesOrderID(salesOrderID int, countOnly bool, c
 	} else {
 		_ = json.Unmarshal([]byte(salesOrderDetailsRedis), &salesOrderDetails)
 		response.SalesOrderDetails = salesOrderDetails
+		response.Total = total
+		resultChan <- response
+		return
+	}
+}
+
+func (r *salesOrderDetail) GetBySOIDSkuAndUomCode(salesOrderID int, sku string, uomCode string, countOnly bool, ctx context.Context, resultChan chan *models.SalesOrderDetailChan) {
+	response := &models.SalesOrderDetailChan{}
+	var salesOrderDetail models.SalesOrderDetail
+	var total int64
+
+	salesOrderDetailRedisKey := fmt.Sprintf("%s:%d", constants.SALES_ORDER_DETAIL_BY_SOID_SKU_UOMCODE, salesOrderID)
+	salesOrderDetailOnRedis, err := r.redisdb.Client().Get(ctx, salesOrderDetailRedisKey).Result()
+
+	if err == redis.Nil {
+		err = r.db.QueryRow("SELECT COUNT(*) as total FROM sales_order_details as sod "+
+			"INNER JOIN sales_orders as so on so.id = sod.sales_order_id "+
+			"INNER JOIN products as p on p.id = sod.product_id "+
+			"INNER JOIN uoms as u on u.id = sod.uom_id "+
+			"WHERE sod.deleted_at IS NULL AND p.sku = ? AND u.code = ? AND so.id = ?", sku, uomCode, salesOrderID).Scan(&total)
+
+		if err != nil {
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+
+		if total == 0 {
+			err = helper.NewError("sales_order_detail data not found")
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+
+		if countOnly == false {
+			salesOrderDetail = models.SalesOrderDetail{}
+			err = r.db.QueryRow(""+
+				"SELECT sod.id, sod.sales_order_id, sod.product_id, sod.uom_id, sod.order_status_id, sod.qty, sod.sent_qty, sod.residual_qty, sod.price, sod.note, sod.so_detail_code, sod.created_at, sod.updated_at "+
+				"FROM sales_order_details as sod "+
+				"INNER JOIN sales_orders as so on so.id = sod.sales_order_id "+
+				"INNER JOIN products as p on p.id = sod.product_id "+
+				"INNER JOIN uoms as u on u.id = sod.uom_id "+
+				"WHERE sod.deleted_at IS NULL AND p.sku = ? AND u.code = ? AND so.id = ?", sku, uomCode, salesOrderID).
+				Scan(&salesOrderDetail.ID, &salesOrderDetail.SalesOrderID, &salesOrderDetail.ProductID, &salesOrderDetail.UomID, &salesOrderDetail.OrderStatusID, &salesOrderDetail.Qty, &salesOrderDetail.SentQty, &salesOrderDetail.ResidualQty, &salesOrderDetail.Price, &salesOrderDetail.Note, &salesOrderDetail.SoDetailCode, &salesOrderDetail.CreatedAt, &salesOrderDetail.UpdatedAt)
+
+			if err != nil {
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+				response.Error = err
+				response.ErrorLog = errorLogData
+				resultChan <- response
+				return
+			}
+
+			salesOrderDetailJson, _ := json.Marshal(salesOrderDetail)
+			setSalesOrderDetailOnRedis := r.redisdb.Client().Set(ctx, salesOrderDetailRedisKey, salesOrderDetailJson, 1*time.Hour)
+
+			if setSalesOrderDetailOnRedis.Err() != nil {
+				errorLogData := helper.WriteLog(setSalesOrderDetailOnRedis.Err(), http.StatusInternalServerError, nil)
+				response.Error = setSalesOrderDetailOnRedis.Err()
+				response.ErrorLog = errorLogData
+				resultChan <- response
+				return
+			}
+
+			response.Total = total
+			response.SalesOrderDetail = &salesOrderDetail
+			resultChan <- response
+			return
+		}
+
+	} else if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	} else {
+
+		total = 1
+		_ = json.Unmarshal([]byte(salesOrderDetailOnRedis), &salesOrderDetail)
+		response.SalesOrderDetail = &salesOrderDetail
 		response.Total = total
 		resultChan <- response
 		return
