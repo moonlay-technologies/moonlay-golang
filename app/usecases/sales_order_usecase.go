@@ -124,40 +124,6 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		return []*models.SalesOrderResponse{}, getOrderSourceResult.ErrorLog
 	}
 
-	parseSoDate, _ := time.Parse("2006-01-02", request.SoDate)
-	parseSoRefDate, _ := time.Parse("2006-01-02", request.SoRefDate)
-	duration := time.Hour*time.Duration(now.Hour()) + time.Minute*time.Duration(now.Minute()) + time.Second*time.Duration(now.Second()) + time.Nanosecond*time.Duration(now.Nanosecond())
-
-	soDate := parseSoDate.UTC().Add(duration)
-	soRefDate := parseSoRefDate.UTC().Add(duration)
-	nowUTC := now.UTC()
-	if now.UTC().Hour() <= soRefDate.Hour() {
-		nowUTC = nowUTC.Add(7 * time.Hour)
-	}
-	sourceName := getOrderSourceResult.OrderSource.SourceName
-
-	if sourceName == "manager" && !(soDate.Add(1*time.Minute).After(soRefDate) && soRefDate.Add(-1*time.Minute).Before(nowUTC) && soDate.Add(-1*time.Minute).Before(nowUTC) && soRefDate.Month() == nowUTC.Month() && soRefDate.UTC().Year() == nowUTC.Year()) {
-
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage("create", "so_date dan so_ref_date harus sama dengan kurang dari hari ini dan harus di bulan berjalan")},
-			SystemMessage: []string{"Invalid Process"},
-			StatusCode:    http.StatusUnprocessableEntity,
-		})
-
-		return []*models.SalesOrderResponse{}, errorLog
-
-	} else if (sourceName == "salesman" || sourceName == "store") && !(soDate.Equal(now.Local()) && soRefDate.Equal(now.Local())) {
-
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage("create", "so_date dan so_ref_date harus sama dengan hari ini")},
-			SystemMessage: []string{"Invalid Process"},
-			StatusCode:    http.StatusUnprocessableEntity,
-		})
-
-		return []*models.SalesOrderResponse{}, errorLog
-
-	}
-
 	// Check Agent By Id
 	getAgentResultChan := make(chan *models.AgentChan)
 	go u.agentRepository.GetByID(request.AgentID, false, ctx, getAgentResultChan)
