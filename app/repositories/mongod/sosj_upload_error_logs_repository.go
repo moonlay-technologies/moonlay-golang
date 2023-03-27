@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"net/http"
 	"order-service/app/models"
@@ -99,9 +100,21 @@ func (r *sosjUploadErrorLogsRepository) Get(request *models.GetSosjUploadErrorLo
 		filter["request_id"] = request.RequestID
 	}
 
+	if request.SoSjUploadHistoryID != "" {
+		sosjUploadHistoryID, err := primitive.ObjectIDFromHex(request.SoSjUploadHistoryID)
+		if err != nil {
+			errorLogData := helper.WriteLog(err, http.StatusBadRequest, "Ada kesalahan pada request data, silahkan dicek kembali")
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+		filter["sosj_upload_history_id"] = sosjUploadHistoryID
+	}
+
 	option := options.Find().SetSkip(int64((page - 1) * perPage)).SetLimit(int64(perPage)).SetSort(sort)
 	total, err := collection.CountDocuments(ctx, filter)
-
+	fmt.Println("filter", filter)
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err

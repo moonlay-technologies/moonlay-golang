@@ -140,6 +140,7 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 			uploadControllerGroup.GET(constants.UPLOAD_SOSJ_PATH+"/retry/:sosj-upload-history-id", uploadController.RetryUploadSOSJ)
 			uploadControllerGroup.GET(constants.SOSJ_PATH+"/"+constants.UPLOAD_HISTORIES_PATH+"/:id/error-items", uploadController.GetSoUploadErrorLogsByReqId)
 			uploadControllerGroup.GET(constants.SOSJ_PATH+"/"+constants.UPLOAD_HISTORIES_PATH+"/:id", uploadController.GetSosjUploadHistoryById)
+			uploadControllerGroup.GET(constants.SOSJ_PATH+"/"+constants.UPLOAD_HISTORIES_PATH+"/items/:sosj-upload-history-id", uploadController.GetSosjUploadErrorLogsBySosjUploadHistoryId)
 		}
 	}
 
