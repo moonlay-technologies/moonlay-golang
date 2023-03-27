@@ -52,3 +52,16 @@ type GetSoUploadHistoriesRequest struct {
 	RequestID string `json:"request_id,omitempty" bson:"request_id,omitempty"`
 	Status    string `json:"status,omitempty" bson:"status,omitempty"`
 }
+
+type GetSoUploadHistoryResponse struct {
+	SoUploadHistory
+	SoUploadErrorLogs []*SoUploadErrorLog `json:"so_upload_error_logs,omitempty" bson:"so_upload_error_logs,omitempty"`
+}
+
+type GetSoUploadHistoryResponseChan struct {
+	SoUploadHistories *GetSoUploadHistoryResponse
+	Error             error
+	ErrorLog          *model.ErrorLog
+	Total             int64
+	ID                primitive.ObjectID `json:"_id" bson:"_id"`
+}
