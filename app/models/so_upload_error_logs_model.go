@@ -57,13 +57,14 @@ type SoUploadErrorLogsChan struct {
 }
 
 type GetSoUploadErrorLogsRequest struct {
-	ID        string `json:"_id,omitempty" bson:"_id,omitempty"`
-	Page      int    `json:"page,omitempty" bson:"page,omitempty"`
-	PerPage   int    `json:"per_page,omitempty" bson:"per_page,omitempty"`
-	SortField string `json:"sort_field,omitempty" bson:"sort_field,omitempty"`
-	SortValue string `json:"sort_value,omitempty" bson:"sort_value,omitempty"`
-	RequestID string `json:"request_id,omitempty" bson:"request_id,omitempty"`
-	Status    string `json:"status,omitempty" bson:"status,omitempty"`
+	ID                string `json:"_id,omitempty" bson:"_id,omitempty"`
+	Page              int    `json:"page,omitempty" bson:"page,omitempty"`
+	PerPage           int    `json:"per_page,omitempty" bson:"per_page,omitempty"`
+	SortField         string `json:"sort_field,omitempty" bson:"sort_field,omitempty"`
+	SortValue         string `json:"sort_value,omitempty" bson:"sort_value,omitempty"`
+	RequestID         string `json:"request_id,omitempty" bson:"request_id,omitempty"`
+	SoUploadHistoryID string `json:"so_upload_history_id,omitempty" bson:"so_upload_history_id,omitempty"`
+	Status            string `json:"status,omitempty" bson:"status,omitempty"`
 }
 
 type GetSoUploadErrorLogsResponse struct {
