@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"net/http"
 	"order-service/app/models"
@@ -114,7 +113,7 @@ func (r *sosjUploadErrorLogsRepository) Get(request *models.GetSosjUploadErrorLo
 
 	option := options.Find().SetSkip(int64((page - 1) * perPage)).SetLimit(int64(perPage)).SetSort(sort)
 	total, err := collection.CountDocuments(ctx, filter)
-	fmt.Println("filter", filter)
+
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
