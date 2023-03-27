@@ -20,6 +20,7 @@ type SoUploadHistoriesRepositoryInterface interface {
 	Insert(request *models.SoUploadHistory, ctx context.Context, resultChan chan *models.SoUploadHistoryChan)
 	Get(request *models.GetSoUploadHistoriesRequest, countOnly bool, ctx context.Context, resultChan chan *models.SoUploadHistoriesChan)
 	GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.SoUploadHistoryChan)
+	GetByHistoryID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.GetSoUploadHistoryResponseChan)
 	UpdateByID(ID string, request *models.SoUploadHistory, ctx context.Context, resultChan chan *models.SoUploadHistoryChan)
 }
 
@@ -180,6 +181,92 @@ func (r *soUploadHistoriesRepository) GetByID(ID string, countOnly bool, ctx con
 		return
 	} else {
 		response.SoUploadHistory = nil
+		response.Total = total
+		resultChan <- response
+		return
+	}
+}
+
+func (r *soUploadHistoriesRepository) GetByHistoryID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.GetSoUploadHistoryResponseChan) {
+	response := &models.GetSoUploadHistoryResponseChan{}
+	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
+	objectID, err := primitive.ObjectIDFromHex(ID)
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusBadRequest, "Ada kesalahan pada request data, silahkan dicek kembali")
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	filter := bson.M{"_id": objectID}
+	total, err := collection.CountDocuments(ctx, filter)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	if total == 0 {
+		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
+		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	if !countOnly {
+		cursor, err := collection.Aggregate(ctx, bson.A{
+			bson.D{{"$match", bson.D{{"_id", objectID}}}},
+			bson.D{
+				{"$lookup",
+					bson.D{
+						{"from", "so_upload_error_logs"},
+						{"localField", "_id"},
+						{"foreignField", "so_upload_history_id"},
+						{"as", "so_upload_error_logs"},
+					},
+				},
+			},
+		})
+
+		if err != nil {
+			fmt.Println(err.Error())
+			response.Error = err
+			resultChan <- response
+			return
+		}
+
+		defer cursor.Close(ctx)
+		soUploadHistoryResponse := &models.GetSoUploadHistoryResponse{}
+		soUploadHistory := &models.SoUploadHistory{}
+		for cursor.Next(ctx) {
+			if err := cursor.Decode(&soUploadHistoryResponse); err != nil {
+				response.Error = err
+				resultChan <- response
+				return
+			}
+
+			if err := cursor.Decode(&soUploadHistory); err != nil {
+				response.Error = err
+				resultChan <- response
+				return
+			}
+		}
+
+		soUploadHistoryResponse.GetSoUploadHistoryResponseMap(soUploadHistory)
+
+		response.SoUploadHistories = soUploadHistoryResponse
+		response.Total = total
+		response.Error = nil
+		resultChan <- response
+		return
+	} else {
+		response.SoUploadHistories = nil
 		response.Total = total
 		resultChan <- response
 		return

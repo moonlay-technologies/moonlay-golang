@@ -7,9 +7,9 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func (result *SoUploadErrorLog) SoUploadErrorLogsMap(line int, sosjUploadHistoryId, requestId, bulkCode string, errors []string, now *time.Time) {
+func (result *SoUploadErrorLog) SoUploadErrorLogsMap(line int, soUploadHistoryId, requestId, bulkCode string, errors []string, now *time.Time) {
 	result.RequestId = requestId
-	result.SosjUploadHistoryId, _ = primitive.ObjectIDFromHex(sosjUploadHistoryId)
+	result.SoUploadHistoryId, _ = primitive.ObjectIDFromHex(soUploadHistoryId)
 	result.BulkCode = bulkCode
 	result.ErrorRowLine = int64(line)
 	result.ErrorMessage = strings.Join(errors, ";")
