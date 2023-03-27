@@ -33,6 +33,7 @@ type SalesOrderUseCaseInterface interface {
 	GetSyncToKafkaHistories(request *models.SalesOrderEventLogRequest, ctx context.Context) ([]*models.SalesOrderEventLogResponse, *model.ErrorLog)
 	GetSOJourneys(request *models.SalesOrderJourneyRequest, ctx context.Context) (*models.SalesOrderJourneyResponses, *model.ErrorLog)
 	GetSOJourneyBySOId(soId int, ctx context.Context) (*models.SalesOrderJourneyResponses, *model.ErrorLog)
+	GetSOUploadHistoriesByid(id string, ctx context.Context) (*models.GetSoUploadHistoryResponse, *model.ErrorLog)
 	UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
 	UpdateSODetailById(soId, soDetailId int, request *models.UpdateSalesOrderDetailByIdRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetailStoreResponse, *model.ErrorLog)
 	UpdateSODetailBySOId(soId int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
@@ -58,6 +59,7 @@ type salesOrderUseCase struct {
 	salesOrderLogRepository              mongoRepositories.SalesOrderLogRepositoryInterface
 	salesOrderJourneysRepository         mongoRepositories.SalesOrderJourneysRepositoryInterface
 	salesOrderDetailJourneysRepository   mongoRepositories.SalesOrderDetailJourneysRepositoryInterface
+	soUploadHistoriesRepository          mongoRepositories.SoUploadHistoriesRepositoryInterface
 	userRepository                       repositories.UserRepositoryInterface
 	salesmanRepository                   repositories.SalesmanRepositoryInterface
 	categoryRepository                   repositories.CategoryRepositoryInterface
@@ -68,7 +70,7 @@ type salesOrderUseCase struct {
 	ctx                                  context.Context
 }
 
-func InitSalesOrderUseCaseInterface(salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, uomRepository repositories.UomRepositoryInterface, deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface, salesOrderJourneysRepository mongoRepositories.SalesOrderJourneysRepositoryInterface, salesOrderDetailJourneysRepository mongoRepositories.SalesOrderDetailJourneysRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, categoryRepository repositories.CategoryRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderDetailOpenSearchRepository openSearchRepositories.SalesOrderDetailOpenSearchRepositoryInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context) SalesOrderUseCaseInterface {
+func InitSalesOrderUseCaseInterface(salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, uomRepository repositories.UomRepositoryInterface, deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface, salesOrderJourneysRepository mongoRepositories.SalesOrderJourneysRepositoryInterface, salesOrderDetailJourneysRepository mongoRepositories.SalesOrderDetailJourneysRepositoryInterface, soUploadHistoriesRepository mongoRepositories.SoUploadHistoriesRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, categoryRepository repositories.CategoryRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderDetailOpenSearchRepository openSearchRepositories.SalesOrderDetailOpenSearchRepositoryInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context) SalesOrderUseCaseInterface {
 	return &salesOrderUseCase{
 		salesOrderRepository:                 salesOrderRepository,
 		salesOrderDetailRepository:           salesOrderDetailRepository,
@@ -83,6 +85,7 @@ func InitSalesOrderUseCaseInterface(salesOrderRepository repositories.SalesOrder
 		salesOrderLogRepository:              salesOrderLogRepository,
 		salesOrderJourneysRepository:         salesOrderJourneysRepository,
 		salesOrderDetailJourneysRepository:   salesOrderDetailJourneysRepository,
+		soUploadHistoriesRepository:          soUploadHistoriesRepository,
 		userRepository:                       userRepository,
 		salesmanRepository:                   salesmanRepository,
 		categoryRepository:                   categoryRepository,
@@ -852,6 +855,19 @@ func (u *salesOrderUseCase) GetSOJourneyBySOId(soId int, ctx context.Context) (*
 	}
 
 	return salesOrderJourneysResult, nil
+}
+
+func (u *salesOrderUseCase) GetSOUploadHistoriesByid(id string, ctx context.Context) (*models.GetSoUploadHistoryResponse, *model.ErrorLog) {
+
+	getSoUploadHistoryByIdResultChan := make(chan *models.GetSoUploadHistoryResponseChan)
+	go u.soUploadHistoriesRepository.GetByHistoryID(id, false, ctx, getSoUploadHistoryByIdResultChan)
+	getSoUploadHistoryByIdResult := <-getSoUploadHistoryByIdResultChan
+
+	if getSoUploadHistoryByIdResult.Error != nil {
+		return &models.GetSoUploadHistoryResponse{}, getSoUploadHistoryByIdResult.ErrorLog
+	}
+
+	return getSoUploadHistoryByIdResult.SoUploadHistories, nil
 }
 
 func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *baseModel.ErrorLog) {
