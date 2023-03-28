@@ -181,16 +181,6 @@ func InitUploadSOFileConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodb
 	return handler
 }
 
-func InitUploadDOFileConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodbClient mongodb.MongoDBInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, database dbresolver.DB, redisdb redisdb.RedisInterface, ctx context.Context, args []interface{}) UploadDOFileConsumerHandlerInterface {
-	orderSourceRepository := repositories.InitOrderSourceRepository(database, redisdb)
-	requestValidationRepository := repositories.InitRequestValidationRepository(database)
-	uploadRepository := repositories.InitUploadRepository(requestValidationRepository, database)
-	requestValidationMiddleware := middlewares.InitRequestValidationMiddlewareInterface(requestValidationRepository, orderSourceRepository)
-	uploadSJHistoriesRepository := mongoRepo.InitDoUploadHistoriesRepositoryInterface(mongodbClient)
-	handler := InitUploadDOFileConsumerHandlerInterface(kafkaClient, uploadRepository, requestValidationMiddleware, requestValidationRepository, uploadSJHistoriesRepository, ctx, args, database)
-	return handler
-}
-
 func InitUploadSOItemConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodbClient mongodb.MongoDBInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, database dbresolver.DB, redisdb redisdb.RedisInterface, ctx context.Context, args []interface{}) UploadSOItemConsumerHandlerInterface {
 	salesOrderRepository := repositories.InitSalesOrderRepository(database, redisdb)
 	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(database, redisdb)
@@ -267,5 +257,37 @@ func InitDeleteDeliveryOrderDetailConsumer(kafkaClient kafkadbo.KafkaClientInter
 	salesOrderOpenSearchUseCase := usecases.InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, productRepository, uomRepository, salesOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, deliveryOrderOpenSearchRepository)
 	deliveryOrderOpenSearchUseCase := usecases.InitDeliveryOrderOpenSearchUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, brandRepository, uomRepository, agentRepository, storeRepository, productRepository, deliveryOrderOpenSearchRepository, deliveryOrderDetailOpenSearchRepository, salesOrderOpenSearchRepository, salesOrderOpenSearchUseCase, database, ctx)
 	handler := InitDeleteDeliveryOrderDetailConsumerHandlerInterface(kafkaClient, deliveryOrderLogRepository, deliveryOrderOpenSearchUseCase, database, ctx, args)
+	return handler
+}
+
+func InitUploadDOFileConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodbClient mongodb.MongoDBInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, database dbresolver.DB, redisdb redisdb.RedisInterface, ctx context.Context, args []interface{}) UploadSOSJFileConsumerHandlerInterface {
+	orderSourceRepository := repositories.InitOrderSourceRepository(database, redisdb)
+	requestValidationRepository := repositories.InitRequestValidationRepository(database)
+	uploadRepository := repositories.InitUploadRepository(requestValidationRepository, database)
+	requestValidationMiddleware := middlewares.InitRequestValidationMiddlewareInterface(requestValidationRepository, orderSourceRepository)
+	uploadSJHistoriesRepository := mongoRepo.InitDoUploadHistoriesRepositoryInterface(mongodbClient)
+	uploadSJErrorLogsRepository := mongoRepo.InitDoUploadErrorLogsRepositoryInterface(mongodbClient)
+	warehouseRepository := repositories.InitWarehouseRepository(database, redisdb)
+	handler := InitUploadDOFileConsumerHandlerInterface(kafkaClient, uploadRepository, requestValidationMiddleware, requestValidationRepository, uploadSJHistoriesRepository, uploadSJErrorLogsRepository, warehouseRepository, ctx, args, database)
+	return handler
+}
+
+func InitUploadDOItemConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodbClient mongodb.MongoDBInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, database dbresolver.DB, redisdb redisdb.RedisInterface, ctx context.Context, args []interface{}) UploadSOItemConsumerHandlerInterface {
+	salesOrderRepository := repositories.InitSalesOrderRepository(database, redisdb)
+	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(database, redisdb)
+	deliveryOrderRepository := repositories.InitDeliveryRepository(database, redisdb)
+	deliveryOrderDetailRepository := repositories.InitDeliveryOrderDetailRepository(database, redisdb)
+	orderStatusRepository := repositories.InitOrderStatusRepository(database, redisdb)
+	orderSourceRepository := repositories.InitOrderSourceRepository(database, redisdb)
+	warehouseRepository := repositories.InitWarehouseRepository(database, redisdb)
+	agentRepository := repositories.InitAgentRepository(database, redisdb)
+	brandRepository := repositories.InitBrandRepository(database, redisdb)
+	storeRepository := repositories.InitStoreRepository(database, redisdb)
+	productRepository := repositories.InitProductRepository(database, redisdb)
+	uomRepository := repositories.InitUomRepository(database, redisdb)
+	userRepository := repositories.InitUserRepository(database, redisdb)
+	salesmanRepository := repositories.InitSalesmanRepository(database, redisdb)
+	deliveryOrderLogRepository := mongoRepo.InitDeliveryOrderLogRepository(mongodbClient)
+	handler := InitUploadDOItemConsumerHandlerInterface(deliveryOrderRepository, deliveryOrderDetailRepository, salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, warehouseRepository, brandRepository, uomRepository, agentRepository, storeRepository, productRepository, userRepository, salesmanRepository, deliveryOrderLogRepository, kafkaClient, ctx, args, database)
 	return handler
 }

@@ -93,10 +93,23 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 
 		// Get Order Source for DO
 		getOrderSourceResultChan := make(chan *models.OrderSourceChan)
-		go c.orderSourceRepository.GetBySourceName("manager", false, c.ctx, getOrderSourceResultChan)
+		go c.orderSourceRepository.GetBySourceName("upload_sj", false, c.ctx, getOrderSourceResultChan)
 		getOrderSourceResult := <-getOrderSourceResultChan
 
 		for _, v := range UploadDOFields {
+
+			var errors []string
+
+			if getOrderStatusResult.Error != nil {
+				fmt.Println(getOrderStatusResult.Error.Error())
+				errors = append(errors, getOrderStatusResult.Error.Error())
+			}
+
+			if getOrderSourceResult.Error != nil {
+				fmt.Println(getOrderSourceResult.Error.Error())
+				errors = append(errors, getOrderSourceResult.Error.Error())
+			}
+
 			deliveryOrder := &models.DeliveryOrder{}
 
 			// Get Sales Order By SoCode / NoOrder
@@ -104,20 +117,40 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 			go c.salesOrderRepository.GetByCode(v.NoOrder, false, c.ctx, getSalesOrderResultChan)
 			getSalesOrderResult := <-getSalesOrderResultChan
 
+			if getSalesOrderResult.Error != nil {
+				fmt.Println(getSalesOrderResult.Error.Error())
+				errors = append(errors, getOrderSourceResult.Error.Error())
+			}
+
 			// Get Sales Order Details by SOID, Sku and uomCode (upload data)
 			getSODetailBySoIdSkuAndUomCodeResultChan := make(chan *models.SalesOrderDetailChan)
 			go c.salesOrderDetailRepository.GetBySOIDSkuAndUomCode(getSalesOrderResult.SalesOrder.ID, v.KodeProduk, v.Unit, false, c.ctx, getSODetailBySoIdSkuAndUomCodeResultChan)
 			getSODetailBySoIdSkuAndUomCodeResult := <-getSODetailBySoIdSkuAndUomCodeResultChan
+
+			if getSODetailBySoIdSkuAndUomCodeResult.Error != nil {
+				fmt.Println(getSODetailBySoIdSkuAndUomCodeResult.Error.Error())
+				errors = append(errors, getOrderSourceResult.Error.Error())
+			}
 
 			// Get Brand by ID / KodeMerk
 			getBrandResultChan := make(chan *models.BrandChan)
 			go c.brandRepository.GetByID(v.KodeMerk, false, c.ctx, getBrandResultChan)
 			getBrandResult := <-getBrandResultChan
 
+			if getBrandResult.Error != nil {
+				fmt.Println(getBrandResult.Error.Error())
+				errors = append(errors, getOrderSourceResult.Error.Error())
+			}
+
 			// Get Agent By ID / IDDistributor
 			getAgentResultChan := make(chan *models.AgentChan)
 			go c.agentRepository.GetByID(v.IDDistributor, false, c.ctx, getAgentResultChan)
 			getAgentResult := <-getAgentResultChan
+
+			if getAgentResult.Error != nil {
+				fmt.Println(getAgentResult.Error.Error())
+				errors = append(errors, getOrderSourceResult.Error.Error())
+			}
 
 			// Get Warehouse
 			getWarehouseResultChan := make(chan *models.WarehouseChan)
@@ -128,15 +161,30 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 			}
 			getWarehouseResult := <-getWarehouseResultChan
 
+			if getWarehouseResult.Error != nil {
+				fmt.Println(getWarehouseResult.Error.Error())
+				errors = append(errors, getOrderSourceResult.Error.Error())
+			}
+
 			// Get Store By ID
 			getStoreResultChan := make(chan *models.StoreChan)
 			go c.storeRepository.GetByID(getSalesOrderResult.SalesOrder.StoreID, false, c.ctx, getStoreResultChan)
 			getStoreResult := <-getStoreResultChan
 
+			if getStoreResult.Error != nil {
+				fmt.Println(getStoreResult.Error.Error())
+				errors = append(errors, getOrderSourceResult.Error.Error())
+			}
+
 			// Get User By ID
 			getUserResultChan := make(chan *models.UserChan)
 			go c.userRepository.GetByID(getSalesOrderResult.SalesOrder.UserID, false, c.ctx, getUserResultChan)
 			getUserResult := <-getUserResultChan
+
+			if getUserResult.Error != nil {
+				fmt.Println(getUserResult.Error.Error())
+				errors = append(errors, getOrderSourceResult.Error.Error())
+			}
 
 			// Get Salesman
 			getSalesmanResultChan := make(chan *models.SalesmanChan)
@@ -146,6 +194,11 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 				go c.salesmanRepository.GetByEmail(getUserResult.User.Email, false, c.ctx, getSalesmanResultChan)
 			}
 			getSalesmanResult := <-getSalesmanResultChan
+
+			if getSalesmanResult.Error != nil {
+				fmt.Println(getSalesmanResult.Error.Error())
+				errors = append(errors, getOrderSourceResult.Error.Error())
+			}
 
 			latestUpdatedBy := c.ctx.Value("user").(*models.UserClaims)
 			deliveryOrder.SalesOrderID = getSalesOrderResult.SalesOrder.ID
@@ -328,7 +381,7 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 			createDeliveryOrderLogResult := <-createDeliveryOrderLogResultChan
 
 			if createDeliveryOrderLogResult.Error != nil {
-				// return &models.DeliveryOrderStoreResponse{}, createDeliveryOrderLogResult.ErrorLog
+				fmt.Println(createDeliveryOrderLogResult.Error)
 			}
 
 			deliveryOrderJourney := &models.DeliveryOrderJourney{
@@ -354,8 +407,7 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 			err := c.kafkaClient.WriteToTopic(constants.CREATE_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
 
 			if err != nil {
-				// errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-				// return &models.DeliveryOrderStoreResponse{}, errorLogData
+				fmt.Println(err)
 			}
 		}
 	}
