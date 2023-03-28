@@ -113,7 +113,7 @@ func (os *openSearchClient) GetByID(index string, documentID string) (*model.Ope
 	response, err := req.Do(os.ctx, os.client)
 
 	if err != nil {
-		fmt.Println("Error Insert Index Open Search : ", err.Error())
+		fmt.Println("Error Get Index Open Search : ", err.Error())
 		return &model.OpenSearchGetResponse{}, err
 	}
 
@@ -148,7 +148,7 @@ func (os *openSearchClient) Query(index string, query []byte) (*model.OpenSearch
 	response, err := req.Do(os.ctx, os.client)
 
 	if err != nil {
-		fmt.Println("Error Insert Index Open Search : ", err.Error())
+		fmt.Println("Error Query Index Open Search : ", err.Error())
 		return &model.OpenSearchQueryResponse{}, err
 	}
 
@@ -183,12 +183,12 @@ func (os *openSearchClient) Count(index string, query []byte) (int64, error) {
 	response, err := req.Do(os.ctx, os.client)
 
 	if err != nil {
-		fmt.Println("Error Insert Index Open Search : ", err.Error())
+		fmt.Println("Error Count Index Open Search : ", err.Error())
 		return 0, err
 	}
 
 	if response.IsError() == true {
-		errStr := fmt.Sprintf("Error failed Query Document to open_search")
+		errStr := fmt.Sprintf("Error failed Count Document to open_search")
 		err = helper.NewError(errStr)
 		fmt.Println(errStr)
 		fmt.Println(response.Status())

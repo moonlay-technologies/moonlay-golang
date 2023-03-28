@@ -397,3 +397,41 @@ func (doDetailEventLogResponse *DODetailEventLogResponse) DoDetailEventLogRespon
 	doDetailEventLogResponse.ProductUnit = request.Product.UnitMeasurementSmall
 	return
 }
+
+func (d *DeliveryOrderCsvResponse) DoDetailMap(r *DeliveryOrder) {
+	d.DoStatus = r.OrderStatusID
+	d.DoDate = r.DoDate
+	d.SjNo = r.DoRefCode
+	d.DoNo = r.DoCode
+	d.OrderNo = r.SalesOrder.SoCode
+	d.SoDate = r.SalesOrder.SoDate
+	d.SoNo = r.SalesOrder.SoCode
+	d.SoSource = r.SalesOrder.OrderSourceID
+	d.AgentID = r.AgentID
+	d.AgentName = r.AgentName
+	d.GudangID = r.WarehouseID
+	d.GudangName = r.WarehouseName
+	d.BrandID = r.SalesOrder.BrandID
+	d.BrandName = r.SalesOrder.BrandName
+	d.KodeSalesman = r.SalesOrder.SalesmanID
+	d.Salesman = r.SalesOrder.SalesmanName
+	d.KategoryToko = r.Store.StoreCategory
+	d.KodeTokoDbo = r.SalesOrder.StoreCode
+	d.KodeToko = r.Store.AliasCode
+	d.NamaToko = r.SalesOrder.StoreName
+	d.KodeKecamatan = r.SalesOrder.StoreDistrictID
+	d.Kecamatan = r.SalesOrder.StoreDistrictName
+	d.KodeCity = r.SalesOrder.StoreCityID
+	d.City = r.SalesOrder.StoreCityName
+	d.KodeProvince = r.SalesOrder.StoreProvinceID
+	d.Province = r.SalesOrder.StoreProvinceName
+	d.DoAmount = 0
+	d.NamaSupir = r.DriverName
+	d.PlatNo = r.PlatNumber
+	d.Catatan = r.Note
+	d.CreatedDate = r.CreatedAt
+	d.UpdatedDate = r.UpdatedAt
+	d.UserIDCreated = r.CreatedBy
+	d.UserIDModified = r.LatestUpdatedBy
+	return
+}

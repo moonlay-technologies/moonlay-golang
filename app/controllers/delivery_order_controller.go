@@ -343,15 +343,16 @@ func (c *deliveryOrderController) Export(ctx *gin.Context) {
 		return
 	}
 
+	deliveryOrderRequest.FileDate = time.Now().Format("2_January_2006")
+	fmt.Println(deliveryOrderRequest.FileDate)
+
 	errorLog := c.deliveryOrderUseCase.Export(deliveryOrderRequest)
 
-	if errorLog.Err != nil {
+	if errorLog != nil {
 		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 		return
 	}
-	sTime := time.Now().Format("2_January_2006")
-	fmt.Println(sTime)
-	ctx.JSON(http.StatusOK, fmt.Sprintf("%s_%s.%s", constants.DELIVERY_ORDER_EXPORT_PATH, sTime, deliveryOrderRequest.FileType)) // Makesure dor response pattern
+	ctx.JSON(http.StatusOK, fmt.Sprintf("%s_%s.%s", constants.DELIVERY_ORDER_EXPORT_PATH, deliveryOrderRequest.FileDate, deliveryOrderRequest.FileType)) // Makesure dor response pattern
 	return
 }
 

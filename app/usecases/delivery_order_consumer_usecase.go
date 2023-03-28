@@ -1,8 +1,10 @@
 package usecases
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/csv"
 	"fmt"
 	"net/http"
 	"order-service/app/models"
@@ -10,24 +12,23 @@ import (
 	openSearchRepositories "order-service/app/repositories/open_search"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/model"
+	"strconv"
 	"strings"
 	"time"
-
-	"github.com/bxcodec/dbresolver"
 )
 
 type DeliveryOrderConsumerUseCaseInterface interface {
 	SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromUpdateEvent(deliveryOrder *models.DeliveryOrder, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, deliveryOrderDetailId []*int, ctx context.Context) *model.ErrorLog
+	Get(request *models.DeliveryOrderExportRequest) (*models.DeliveryOrdersOpenSearchResponse, *model.ErrorLog)
 }
 
 type deliveryOrderConsumerUseCase struct {
 	salesOrderRepository                    repositories.SalesOrderRepositoryInterface
-	salesOrderDetailRepository              repositories.SalesOrderDetailRepositoryInterface
+	uploadRepository                        repositories.UploadRepositoryInterface
 	orderStatusRepository                   repositories.OrderStatusRepositoryInterface
 	brandRepository                         repositories.BrandRepositoryInterface
-	uomRepository                           repositories.UomRepositoryInterface
 	agentRepository                         repositories.AgentRepositoryInterface
 	storeRepository                         repositories.StoreRepositoryInterface
 	productRepository                       repositories.ProductRepositoryInterface
@@ -35,17 +36,15 @@ type deliveryOrderConsumerUseCase struct {
 	deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface
 	salesOrderOpenSearchRepository          openSearchRepositories.SalesOrderOpenSearchRepositoryInterface
 	SalesOrderOpenSearchUseCase             SalesOrderOpenSearchUseCaseInterface
-	db                                      dbresolver.DB
 	ctx                                     context.Context
 }
 
-func InitDeliveryOrderConsumerUseCaseInterface(salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderConsumerUseCaseInterface {
+func InitDeliveryOrderConsumerUseCaseInterface(salesOrderRepository repositories.SalesOrderRepositoryInterface, uploadRepository repositories.UploadRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, ctx context.Context) DeliveryOrderConsumerUseCaseInterface {
 	return &deliveryOrderConsumerUseCase{
 		salesOrderRepository:                    salesOrderRepository,
-		salesOrderDetailRepository:              salesOrderDetailRepository,
+		uploadRepository:                        uploadRepository,
 		orderStatusRepository:                   orderStatusRepository,
 		brandRepository:                         brandRepository,
-		uomRepository:                           uomRepository,
 		productRepository:                       productRepository,
 		agentRepository:                         agentRepository,
 		storeRepository:                         storeRepository,
@@ -53,7 +52,6 @@ func InitDeliveryOrderConsumerUseCaseInterface(salesOrderRepository repositories
 		deliveryOrderDetailOpenSearchRepository: deliveryOrderDetailOpenSearchRepository,
 		salesOrderOpenSearchRepository:          salesOrderOpenSearchRepository,
 		SalesOrderOpenSearchUseCase:             salesOrderOpenSearchUseCase,
-		db:                                      db,
 		ctx:                                     ctx,
 	}
 }
@@ -350,19 +348,24 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromDeleteEvent(deliveryO
 		return deleteDeliveryOrderResult.ErrorLog
 	}
 
-	// deleteDeliveryOrderResult.ErrorLog = u.SyncToOpenSearchFromUpdateEvent(deleteDeliveryOrderResult.DeliveryOrder, ctx)
-
-	// if deleteDeliveryOrderResult.ErrorLog != nil {
-	// 	fmt.Println(deleteDeliveryOrderResult.ErrorLog.Err.Error())
-	// 	return deleteDeliveryOrderResult.ErrorLog
-	// }
-
 	return &model.ErrorLog{}
 }
 
 func (u *deliveryOrderConsumerUseCase) Get(request *models.DeliveryOrderExportRequest) (*models.DeliveryOrdersOpenSearchResponse, *model.ErrorLog) {
 	doRequest := &models.DeliveryOrderRequest{}
 	doRequest.DeliveryOrderExportMap(request)
+	// getDeliveryOrdersCountResultChan := make(chan *models.DeliveryOrdersChan)
+	// go u.deliveryOrderOpenSearchRepository.Get(doRequest, true, getDeliveryOrdersCountResultChan)
+	// getDeliveryOrdersCountResult := <-getDeliveryOrdersCountResultChan
+
+	// if getDeliveryOrdersCountResult.Error != nil {
+	// 	fmt.Println("error = ", getDeliveryOrdersCountResult.Error)
+	// 	return &models.DeliveryOrdersOpenSearchResponse{}, getDeliveryOrdersCountResult.ErrorLog
+	// }
+	// fmt.Println("cekk 2")
+	// x := math.Ceil(float64(getDeliveryOrdersCountResult.Total / 50))
+	// fmt.Println(x)
+
 	getDeliveryOrdersResultChan := make(chan *models.DeliveryOrdersChan)
 	go u.deliveryOrderOpenSearchRepository.Get(doRequest, false, getDeliveryOrdersResultChan)
 	getDeliveryOrdersResult := <-getDeliveryOrdersResultChan
@@ -370,22 +373,108 @@ func (u *deliveryOrderConsumerUseCase) Get(request *models.DeliveryOrderExportRe
 	if getDeliveryOrdersResult.Error != nil {
 		return &models.DeliveryOrdersOpenSearchResponse{}, getDeliveryOrdersResult.ErrorLog
 	}
-
 	deliveryOrderResults := []*models.DeliveryOrderOpenSearchResponse{}
+	deliveryOrdersCsv := []*models.DeliveryOrderCsvResponse{}
+
+	b := new(bytes.Buffer)
+	writer := csv.NewWriter(b)
+	defer writer.Flush()
+
+	header := []string{
+		"do_status",
+		"do_date",
+		"sj_no",
+		"do_no",
+		"order_no",
+		"so_date",
+		"so_no",
+		"so_source",
+		"agent_id",
+		"agent_name",
+		"gudang_id",
+		"gudang_name",
+		"brand_id",
+		"brand_name",
+		"kode_salesman",
+		"salesman",
+		"kategory_toko",
+		"kode_toko_dbo",
+		"kode_toko",
+		"nama_toko",
+		"kode_kecamatan",
+		"kecamatan",
+		"kode_city",
+		"city",
+		"kode_province",
+		"province",
+		"do_amount",
+		"nama_supir",
+		"plat_no",
+		"catatan",
+		"created_date",
+		"updated_date",
+		"user_id_created",
+		"user_id_modified"}
+
+	if err := writer.Write(header); err != nil {
+		fmt.Println("error writer", err)
+	}
 	for _, v := range getDeliveryOrdersResult.DeliveryOrders {
 		deliveryOrder := models.DeliveryOrderOpenSearchResponse{}
 		deliveryOrder.DeliveryOrderOpenSearchResponseMap(v)
 
 		deliveryOrderResults = append(deliveryOrderResults, &deliveryOrder)
+		deliveryOrderCsv := &models.DeliveryOrderCsvResponse{}
+		deliveryOrderCsv.DoDetailMap(v)
+		deliveryOrdersCsv = append(deliveryOrdersCsv, deliveryOrderCsv)
 
-		deliveryOrderDetails := []*models.DeliveryOrderDetailOpenSearchDetailResponse{}
-		for _, x := range v.DeliveryOrderDetails {
-			deliveryOrderDetail := models.DeliveryOrderDetailOpenSearchDetailResponse{}
-			deliveryOrderDetail.DeliveryOrderDetailOpenSearchResponseMap(x)
+		var csvRow []string
+		csvRow = append(csvRow,
+			strconv.Itoa(deliveryOrderCsv.DoStatus),
+			deliveryOrderCsv.DoDate,
+			deliveryOrderCsv.SjNo.String,
+			deliveryOrderCsv.DoNo,
+			deliveryOrderCsv.OrderNo,
+			deliveryOrderCsv.SoDate,
+			deliveryOrderCsv.SoNo,
+			strconv.Itoa(deliveryOrderCsv.SoSource),
+			strconv.Itoa(deliveryOrderCsv.AgentID),
+			deliveryOrderCsv.AgentName,
+			strconv.Itoa(deliveryOrderCsv.GudangID),
+			deliveryOrderCsv.GudangName,
+			strconv.Itoa(deliveryOrderCsv.BrandID),
+			deliveryOrderCsv.BrandName,
+			strconv.Itoa(int(deliveryOrderCsv.KodeSalesman.Int64)),
+			deliveryOrderCsv.Salesman.String,
+			deliveryOrderCsv.KategoryToko.String,
+			deliveryOrderCsv.KodeTokoDbo.String,
+			deliveryOrderCsv.KodeToko.String,
+			deliveryOrderCsv.NamaToko.String,
+			strconv.Itoa(deliveryOrderCsv.KodeKecamatan),
+			deliveryOrderCsv.Kecamatan.String,
+			strconv.Itoa(deliveryOrderCsv.KodeCity),
+			deliveryOrderCsv.City.String,
+			strconv.Itoa(deliveryOrderCsv.KodeProvince),
+			deliveryOrderCsv.Province.String,
+			strconv.FormatFloat(deliveryOrderCsv.DoAmount, 'f', 6, 64),
+			deliveryOrderCsv.NamaSupir.String,
+			deliveryOrderCsv.PlatNo.String,
+			deliveryOrderCsv.Catatan.String,
+			deliveryOrderCsv.CreatedDate.String(),
+			deliveryOrderCsv.UpdatedDate.String(),
+			strconv.Itoa(deliveryOrderCsv.UserIDCreated),
+			strconv.Itoa(deliveryOrderCsv.UserIDModified))
 
-			deliveryOrderDetails = append(deliveryOrderDetails, &deliveryOrderDetail)
+		if err := writer.Write(csvRow); err != nil {
+			fmt.Println("error fill", err)
 		}
-		deliveryOrder.DeliveryOrderDetail = deliveryOrderDetails
+
+	}
+
+	// Upload Files
+	err := u.uploadRepository.UploadFile(b, request.FileDate, request.FileType)
+	if err != nil {
+		fmt.Println("error upload", err)
 	}
 
 	deliveryOrders := &models.DeliveryOrdersOpenSearchResponse{

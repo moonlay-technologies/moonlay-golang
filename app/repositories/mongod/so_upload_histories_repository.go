@@ -221,14 +221,14 @@ func (r *soUploadHistoriesRepository) GetByHistoryID(ID string, countOnly bool, 
 
 	if !countOnly {
 		cursor, err := collection.Aggregate(ctx, bson.A{
-			bson.D{{"$match", bson.D{{"_id", objectID}}}},
+			bson.D{{Key: "$match", Value: bson.D{{Key: "_id", Value: objectID}}}},
 			bson.D{
-				{"$lookup",
-					bson.D{
-						{"from", "so_upload_error_logs"},
-						{"localField", "_id"},
-						{"foreignField", "so_upload_history_id"},
-						{"as", "so_upload_error_logs"},
+				{Key: "$lookup",
+					Value: bson.D{
+						{Key: "from", Value: "so_upload_error_logs"},
+						{Key: "localField", Value: "_id"},
+						{Key: "foreignField", Value: "so_upload_history_id"},
+						{Key: "as", Value: "so_upload_error_logs"},
 					},
 				},
 			},

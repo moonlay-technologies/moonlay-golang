@@ -60,8 +60,8 @@ func MainConsumerHandler(kafkaClient kafkadbo.KafkaClientInterface, mongodbClien
 		break
 	case constants.UPDATE_DELIVERY_ORDER_DETAIL_TOPIC:
 		wg.Add(1)
-		salesOrderDetailConsumer := consumer.InitUpdateDeliveryOrderDetailConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
-		go salesOrderDetailConsumer.ProcessMessage()
+		deliveryOrderDetailConsumer := consumer.InitUpdateDeliveryOrderDetailConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
+		go deliveryOrderDetailConsumer.ProcessMessage()
 		break
 	case constants.UPLOAD_SO_FILE_TOPIC:
 		wg.Add(1)
@@ -84,8 +84,13 @@ func MainConsumerHandler(kafkaClient kafkadbo.KafkaClientInterface, mongodbClien
 		go uploadSOSJItemConsumer.ProcessMessage()
 	case constants.DELETE_DELIVERY_ORDER_DETAIL_TOPIC:
 		wg.Add(1)
-		salesOrderDetailConsumer := consumer.InitDeleteDeliveryOrderDetailConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
-		go salesOrderDetailConsumer.ProcessMessage()
+		deliveryOrderDetailConsumer := consumer.InitDeleteDeliveryOrderDetailConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
+		go deliveryOrderDetailConsumer.ProcessMessage()
+		break
+	case constants.EXPORT_DELIVERY_ORDER_TOPIC:
+		wg.Add(1)
+		deliveryOrderConsumer := consumer.InitExportDeliveryOrderConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
+		go deliveryOrderConsumer.ProcessMessage()
 		break
 	default:
 		fmt.Println("Choose Command Type You Want")
