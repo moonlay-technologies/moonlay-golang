@@ -25,15 +25,15 @@ type RowDataDoUploadErrorLog struct {
 	OrderCode     string  `json:"order_code,omitempty" bson:"order_code,omitempty"`
 	DoDate        string  `json:"do_date,omitempty" bson:"do_date,omitempty"`
 	DoNumber      string  `json:"do_number,omitempty" bson:"do_number,omitempty"`
-	Note          *string `json:"note,omitempty" bson:"note,omitempty"`
-	InternalNote  *string `json:"internal_note,omitempty" bson:"internal_note,omitempty"`
-	DriverName    *string `json:"driver_name,omitempty" bson:"driver_name,omitempty"`
-	VehicleNo     *string `json:"vehicle_no,omitempty" bson:"vehicle_no,omitempty"`
+	Note          string  `json:"note,omitempty" bson:"note,omitempty"`
+	InternalNote  string  `json:"internal_note,omitempty" bson:"internal_note,omitempty"`
+	DriverName    string  `json:"driver_name,omitempty" bson:"driver_name,omitempty"`
+	VehicleNo     string  `json:"vehicle_no,omitempty" bson:"vehicle_no,omitempty"`
 	BrandID       string  `json:"brand_id,omitempty" bson:"brand_id,omitempty"`
-	BrandName     *string `json:"brand_name,omitempty" bson:"brand_name,omitempty"`
+	BrandName     string  `json:"brand_name,omitempty" bson:"brand_name,omitempty"`
 	ProductCode   string  `json:"product_code,omitempty" bson:"product_code,omitempty"`
-	ProductName   *string `json:"product_name,omitempty" bson:"product_name,omitempty"`
-	DeliveryQty   *string `json:"delivery_qty,omitempty" bson:"delivery_qty,omitempty"`
+	ProductName   string  `json:"product_name,omitempty" bson:"product_name,omitempty"`
+	DeliveryQty   string  `json:"delivery_qty,omitempty" bson:"delivery_qty,omitempty"`
 	ProductUnit   string  `json:"product_unit,omitempty" bson:"product_unit,omitempty"`
 	WarehouseCode string  `json:"warehouse_code,omitempty" bson:"warehouse_code,omitempty"`
 	WarehouseName *string `json:"warehouse_name,omitempty" bson:"warehouse_name,omitempty"`
