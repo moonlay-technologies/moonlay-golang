@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"context"
-	"math"
+	"log"
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
@@ -15,25 +15,26 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type SosjUploadErrorLogsRepositoryInterface interface {
-	Insert(request *models.SosjUploadErrorLog, ctx context.Context, resultChan chan *models.SosjUploadErrorLogChan)
-	Get(request *models.GetSosjUploadErrorLogsRequest, countOnly bool, ctx context.Context, resultChan chan *models.SosjUploadErrorLogsChan)
+type DoUploadErrorLogsRepositoryInterface interface {
+	Insert(request *models.DoUploadErrorLog, ctx context.Context, resultChan chan *models.DoUploadErrorLogChan)
+	Get(request *models.GetDoUploadErrorLogsRequest, countOnly bool, ctx context.Context, resultChan chan *models.DoUploadErrorLogsChan)
 }
 
-type sosjUploadErrorLogsRepository struct {
+type doUploadErrorLogsRepository struct {
+	logger     log.Logger
 	mongod     mongodb.MongoDBInterface
 	collection string
 }
 
-func InitSOSJUploadErrorLogsRepositoryInterface(mongod mongodb.MongoDBInterface) SosjUploadErrorLogsRepositoryInterface {
-	return &sosjUploadErrorLogsRepository{
+func InitDoUploadErrorLogsRepositoryInterface(mongod mongodb.MongoDBInterface) DoUploadErrorLogsRepositoryInterface {
+	return &doUploadErrorLogsRepository{
 		mongod:     mongod,
-		collection: constants.SOSJ_UPLOAD_ERROR_TABLE_LOGS,
+		collection: constants.SJ_UPLOAD_ERROR_TABLE_LOGS,
 	}
 }
 
-func (r *sosjUploadErrorLogsRepository) Insert(request *models.SosjUploadErrorLog, ctx context.Context, resultChan chan *models.SosjUploadErrorLogChan) {
-	response := &models.SosjUploadErrorLogChan{}
+func (r *doUploadErrorLogsRepository) Insert(request *models.DoUploadErrorLog, ctx context.Context, resultChan chan *models.DoUploadErrorLogChan) {
+	response := &models.DoUploadErrorLogChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
 	result, err := collection.InsertOne(ctx, request)
 
@@ -46,13 +47,14 @@ func (r *sosjUploadErrorLogsRepository) Insert(request *models.SosjUploadErrorLo
 	}
 
 	request.ID, _ = result.InsertedID.(primitive.ObjectID)
-	response.SosjUploadErrorLog = request
+	response.DoUploadErrorLog = request
 	response.Error = nil
 	resultChan <- response
+	return
 }
 
-func (r *sosjUploadErrorLogsRepository) Get(request *models.GetSosjUploadErrorLogsRequest, countOnly bool, ctx context.Context, resultChan chan *models.SosjUploadErrorLogsChan) {
-	response := &models.SosjUploadErrorLogsChan{}
+func (r *doUploadErrorLogsRepository) Get(request *models.GetDoUploadErrorLogsRequest, countOnly bool, ctx context.Context, resultChan chan *models.DoUploadErrorLogsChan) {
+	response := &models.DoUploadErrorLogsChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
 	filter := bson.M{}
 	sort := bson.M{}
@@ -66,7 +68,7 @@ func (r *sosjUploadErrorLogsRepository) Get(request *models.GetSosjUploadErrorLo
 
 	perPage := request.PerPage
 	if perPage == 0 {
-		perPage = math.MaxInt
+		perPage = 10
 	}
 
 	if request.SortField == "updated_at" {
@@ -99,8 +101,8 @@ func (r *sosjUploadErrorLogsRepository) Get(request *models.GetSosjUploadErrorLo
 		filter["request_id"] = request.RequestID
 	}
 
-	if request.SoSjUploadHistoryID != "" {
-		sosjUploadHistoryID, err := primitive.ObjectIDFromHex(request.SoSjUploadHistoryID)
+	if request.DoUploadHistoryID != "" {
+		doUploadHistoryID, err := primitive.ObjectIDFromHex(request.DoUploadHistoryID)
 		if err != nil {
 			errorLogData := helper.WriteLog(err, http.StatusBadRequest, "Ada kesalahan pada request data, silahkan dicek kembali")
 			response.Error = err
@@ -108,7 +110,8 @@ func (r *sosjUploadErrorLogsRepository) Get(request *models.GetSosjUploadErrorLo
 			resultChan <- response
 			return
 		}
-		filter["sosj_upload_history_id"] = sosjUploadHistoryID
+
+		filter["do_upload_history_id"] = doUploadHistoryID
 	}
 
 	option := options.Find().SetSkip(int64((page - 1) * perPage)).SetLimit(int64(perPage)).SetSort(sort)
@@ -132,7 +135,7 @@ func (r *sosjUploadErrorLogsRepository) Get(request *models.GetSosjUploadErrorLo
 	}
 
 	if countOnly == false {
-		sosjUploadErorLogs := []*models.SosjUploadErrorLog{}
+		doUploadErorLogs := []*models.DoUploadErrorLog{}
 		cursor, errs := collection.Find(ctx, filter, option)
 
 		if errs != nil {
@@ -143,23 +146,23 @@ func (r *sosjUploadErrorLogsRepository) Get(request *models.GetSosjUploadErrorLo
 		defer cursor.Close(ctx)
 
 		for cursor.Next(ctx) {
-			var sosjUploadErrorLog *models.SosjUploadErrorLog
-			if err := cursor.Decode(&sosjUploadErrorLog); err != nil {
+			var doUploadErrorLog *models.DoUploadErrorLog
+			if err := cursor.Decode(&doUploadErrorLog); err != nil {
 				response.Error = err
 				resultChan <- response
 				return
 			}
 
-			sosjUploadErorLogs = append(sosjUploadErorLogs, sosjUploadErrorLog)
+			doUploadErorLogs = append(doUploadErorLogs, doUploadErrorLog)
 		}
 
-		response.SosjUploadErrorLogs = sosjUploadErorLogs
+		response.DoUploadErrorLogs = doUploadErorLogs
 		response.Total = total
 		response.Error = nil
 		resultChan <- response
 		return
 	} else {
-		response.SosjUploadErrorLogs = nil
+		response.DoUploadErrorLogs = nil
 		response.Total = total
 		resultChan <- response
 		return

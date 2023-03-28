@@ -90,6 +90,8 @@ func newSalesOrderUseCase(status bool) salesOrderUseCase {
 		salesOrderLogRepository:              mockSalesOrderLogRepository,
 		salesOrderJourneysRepository:         nil,
 		salesOrderDetailJourneysRepository:   nil,
+		soUploadHistoriesRepository:          nil,
+		soUploadErrorLogsRepository:          nil,
 		userRepository:                       mockUserRepository,
 		salesmanRepository:                   mockSalesmanRepository,
 		categoryRepository:                   nil,
@@ -106,7 +108,7 @@ func Test_SalesOrderUseCase_InitSalesOrderUseCaseInterface_ShouldSuccess(t *test
 	salesOrderUseCase := newSalesOrderUseCase(false)
 	// salesOrderUseCaseInterface := InitSalesOrderUseCaseInterface(salesOrderUseCase.deliveryOrderRepository, salesOrderUseCase.deliveryOrderDetailRepository, salesOrderUseCase.salesOrderRepository, salesOrderUseCase.salesOrderDetailRepository, salesOrderUseCase.orderStatusRepository, salesOrderUseCase.orderSourceRepository, salesOrderUseCase.warehouseRepository, salesOrderUseCase.brandRepository, salesOrderUseCase.uomRepository, salesOrderUseCase.agentRepository, salesOrderUseCase.storeRepository, salesOrderUseCase.productRepository, salesOrderUseCase.userRepository, salesOrderUseCase.salesmanRepository, salesOrderUseCase.deliveryOrderLogRepository, salesOrderUseCase.deliveryOrderOpenSearchRepository, salesOrderUseCase.salesOrderOpenSearchRepository, salesOrderUseCase.salesOrderUseCase, salesOrderUseCase.kafkaClient, salesOrderUseCase.db, salesOrderUseCase.ctx)
 	// Act
-	dataSalesOrderUseCaseInit := InitSalesOrderUseCaseInterface(salesOrderUseCase.salesOrderRepository, salesOrderUseCase.salesOrderDetailRepository, salesOrderUseCase.orderStatusRepository, salesOrderUseCase.orderSourceRepository, salesOrderUseCase.agentRepository, salesOrderUseCase.brandRepository, salesOrderUseCase.storeRepository, salesOrderUseCase.productRepository, salesOrderUseCase.uomRepository, salesOrderUseCase.deliveryOrderRepository, salesOrderUseCase.salesOrderLogRepository, salesOrderUseCase.salesOrderJourneysRepository, salesOrderUseCase.salesOrderDetailJourneysRepository, salesOrderUseCase.userRepository, salesOrderUseCase.salesmanRepository, salesOrderUseCase.categoryRepository, salesOrderUseCase.salesOrderOpenSearchRepository, salesOrderUseCase.salesOrderDetailOpenSearchRepository, salesOrderUseCase.kafkaClient, salesOrderUseCase.db, salesOrderUseCase.ctx)
+	dataSalesOrderUseCaseInit := InitSalesOrderUseCaseInterface(salesOrderUseCase.salesOrderRepository, salesOrderUseCase.salesOrderDetailRepository, salesOrderUseCase.orderStatusRepository, salesOrderUseCase.orderSourceRepository, salesOrderUseCase.agentRepository, salesOrderUseCase.brandRepository, salesOrderUseCase.storeRepository, salesOrderUseCase.productRepository, salesOrderUseCase.uomRepository, salesOrderUseCase.deliveryOrderRepository, salesOrderUseCase.salesOrderLogRepository, salesOrderUseCase.salesOrderJourneysRepository, salesOrderUseCase.salesOrderDetailJourneysRepository, salesOrderUseCase.soUploadHistoriesRepository, salesOrderUseCase.soUploadErrorLogsRepository, salesOrderUseCase.userRepository, salesOrderUseCase.salesmanRepository, salesOrderUseCase.categoryRepository, salesOrderUseCase.salesOrderOpenSearchRepository, salesOrderUseCase.salesOrderDetailOpenSearchRepository, salesOrderUseCase.kafkaClient, salesOrderUseCase.db, salesOrderUseCase.ctx)
 
 	// Assert
 	assert.NotNil(t, dataSalesOrderUseCaseInit)

@@ -101,6 +101,19 @@ func (r *soUploadErrorLogsRepository) Get(request *models.GetSoUploadErrorLogsRe
 		filter["request_id"] = request.RequestID
 	}
 
+	if request.SoUploadHistoryID != "" {
+		soUploadHistoryID, err := primitive.ObjectIDFromHex(request.SoUploadHistoryID)
+		if err != nil {
+			errorLogData := helper.WriteLog(err, http.StatusBadRequest, "Ada kesalahan pada request data, silahkan dicek kembali")
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+
+		filter["so_upload_history_id"] = soUploadHistoryID
+	}
+
 	option := options.Find().SetSkip(int64((page - 1) * perPage)).SetLimit(int64(perPage)).SetSort(sort)
 	total, err := collection.CountDocuments(ctx, filter)
 

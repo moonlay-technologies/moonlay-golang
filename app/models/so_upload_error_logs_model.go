@@ -8,15 +8,15 @@ import (
 )
 
 type SoUploadErrorLog struct {
-	ID                  primitive.ObjectID      `json:"_id,omitempty" bson:"_id,omitempty"`
-	RequestId           string                  `json:"request_id,omitempty" bson:"request_id,omitempty"`
-	SosjUploadHistoryId primitive.ObjectID      `json:"sosj_upload_history_id,omitempty" bson:"sosj_upload_history_id,omitempty"`
-	BulkCode            string                  `json:"bulk_code,omitempty" bson:"bulk_code,omitempty"`
-	RowData             RowDataSoUploadErrorLog `json:"row_data,omitempty" bson:"row_data,omitempty"`
-	ErrorRowLine        int64                   `json:"error_row_line,omitempty" bson:"error_row_line,omitempty"`
-	ErrorMessage        string                  `json:"error_message,omitempty" bson:"error_message,omitempty"`
-	CreatedAt           *time.Time              `json:"created_at,omitempty" bson:"created_at,omitempty"`
-	UpdatedAt           *time.Time              `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
+	ID                primitive.ObjectID      `json:"_id,omitempty" bson:"_id,omitempty"`
+	RequestId         string                  `json:"request_id,omitempty" bson:"request_id,omitempty"`
+	SoUploadHistoryId primitive.ObjectID      `json:"so_upload_history_id,omitempty" bson:"so_upload_history_id,omitempty"`
+	BulkCode          string                  `json:"bulk_code,omitempty" bson:"bulk_code,omitempty"`
+	RowData           RowDataSoUploadErrorLog `json:"row_data,omitempty" bson:"row_data,omitempty"`
+	ErrorRowLine      int64                   `json:"error_row_line,omitempty" bson:"error_row_line,omitempty"`
+	ErrorMessage      string                  `json:"error_message,omitempty" bson:"error_message,omitempty"`
+	CreatedAt         *time.Time              `json:"created_at,omitempty" bson:"created_at,omitempty"`
+	UpdatedAt         *time.Time              `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
 }
 
 type RowDataSoUploadErrorLog struct {
@@ -57,13 +57,14 @@ type SoUploadErrorLogsChan struct {
 }
 
 type GetSoUploadErrorLogsRequest struct {
-	ID        string `json:"_id,omitempty" bson:"_id,omitempty"`
-	Page      int    `json:"page,omitempty" bson:"page,omitempty"`
-	PerPage   int    `json:"per_page,omitempty" bson:"per_page,omitempty"`
-	SortField string `json:"sort_field,omitempty" bson:"sort_field,omitempty"`
-	SortValue string `json:"sort_value,omitempty" bson:"sort_value,omitempty"`
-	RequestID string `json:"request_id,omitempty" bson:"request_id,omitempty"`
-	Status    string `json:"status,omitempty" bson:"status,omitempty"`
+	ID                string `json:"_id,omitempty" bson:"_id,omitempty"`
+	Page              int    `json:"page,omitempty" bson:"page,omitempty"`
+	PerPage           int    `json:"per_page,omitempty" bson:"per_page,omitempty"`
+	SortField         string `json:"sort_field,omitempty" bson:"sort_field,omitempty"`
+	SortValue         string `json:"sort_value,omitempty" bson:"sort_value,omitempty"`
+	RequestID         string `json:"request_id,omitempty" bson:"request_id,omitempty"`
+	SoUploadHistoryID string `json:"so_upload_history_id,omitempty" bson:"so_upload_history_id,omitempty"`
+	Status            string `json:"status,omitempty" bson:"status,omitempty"`
 }
 
 type GetSoUploadErrorLogsResponse struct {

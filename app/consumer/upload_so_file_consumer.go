@@ -406,9 +406,9 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 	}
 }
 
-func (c *uploadSOFileConsumerHandler) createSoUploadErrorLog(errorLine int, agentId, sosjUploadHistoryId, requestId, agentName, bulkCode string, errors []string, now *time.Time, item map[string]string) {
+func (c *uploadSOFileConsumerHandler) createSoUploadErrorLog(errorLine int, agentId, soUploadHistoryId, requestId, agentName, bulkCode string, errors []string, now *time.Time, item map[string]string) {
 	soUploadErrorLog := &models.SoUploadErrorLog{}
-	soUploadErrorLog.SoUploadErrorLogsMap(errorLine, sosjUploadHistoryId, requestId, bulkCode, errors, now)
+	soUploadErrorLog.SoUploadErrorLogsMap(errorLine, soUploadHistoryId, requestId, bulkCode, errors, now)
 	rowData := &models.RowDataSoUploadErrorLog{}
 	rowData.RowDataSoUploadErrorLogMap(item)
 	soUploadErrorLog.RowData = *rowData
