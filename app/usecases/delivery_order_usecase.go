@@ -376,7 +376,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	deliveryOrderJourney := &models.DeliveryOrderJourney{
 		DoId:      deliveryOrder.ID,
 		DoCode:    deliveryOrder.DoCode,
-		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		Status:    constants.DO_STATUS_OPEN,
 		Remark:    "",
 		Reason:    "",
 		CreatedAt: &now,
