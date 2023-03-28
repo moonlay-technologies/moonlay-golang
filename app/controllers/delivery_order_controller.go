@@ -10,6 +10,7 @@ import (
 	"order-service/app/usecases"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/model"
+	baseModel "order-service/global/utils/model"
 	"strconv"
 
 	"github.com/bxcodec/dbresolver"
@@ -24,7 +25,6 @@ type DeliveryOrderControllerInterface interface {
 	DeleteByID(ctx *gin.Context)
 	DeleteDetailByID(ctx *gin.Context)
 	DeleteDetailByDoID(ctx *gin.Context)
-
 	Get(ctx *gin.Context)
 	GetByID(ctx *gin.Context)
 	GetDetails(ctx *gin.Context)
@@ -35,6 +35,9 @@ type DeliveryOrderControllerInterface interface {
 	GetJourneys(ctx *gin.Context)
 	GetDOJourneysByDoID(ctx *gin.Context)
 	GetDoUploadHistoriesById(ctx *gin.Context)
+	RetrySyncToKafka(ctx *gin.Context)
+	GetDoUploadErrorLogByReqId(ctx *gin.Context)
+	GetDoUploadErrorLogByDoUploadHistoryId(ctx *gin.Context)
 }
 
 type deliveryOrderController struct {
@@ -520,6 +523,42 @@ func (c *deliveryOrderController) GetDoUploadHistoriesById(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, model.Response{Data: doUploadHistories, StatusCode: http.StatusOK})
 }
 
+func (c *deliveryOrderController) GetDoUploadErrorLogByReqId(ctx *gin.Context) {
+	doUploadRequestId := ctx.Param("sj-id")
+
+	request := &models.GetDoUploadErrorLogsRequest{
+		RequestID: doUploadRequestId,
+	}
+
+	doUploadErrorLogs, errorLog := c.deliveryOrderUseCase.GetDOUploadErrorLogsByReqId(request, ctx)
+
+	if errorLog != nil {
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, model.Response{Data: doUploadErrorLogs.DoUploadErrorLogs, Total: doUploadErrorLogs.Total, StatusCode: http.StatusOK})
+	return
+}
+
+func (c *deliveryOrderController) GetDoUploadErrorLogByDoUploadHistoryId(ctx *gin.Context) {
+	doUploadHistoryId := ctx.Param("sj-id")
+
+	request := &models.GetDoUploadErrorLogsRequest{
+		DoUploadHistoryID: doUploadHistoryId,
+	}
+
+	doUploadErrorLogs, errorLog := c.deliveryOrderUseCase.GetDOUploadErrorLogsByDoUploadHistoryId(request, ctx)
+
+	if errorLog != nil {
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, model.Response{Data: doUploadErrorLogs.DoUploadErrorLogs, Total: doUploadErrorLogs.Total, StatusCode: http.StatusOK})
+	return
+}
+
 func (c *deliveryOrderController) DeleteByID(ctx *gin.Context) {
 	var id int
 
@@ -643,4 +682,28 @@ func (c *deliveryOrderController) DeleteDetailByDoID(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, model.Response{StatusCode: http.StatusOK})
+}
+
+func (c *deliveryOrderController) RetrySyncToKafka(ctx *gin.Context) {
+	var result baseModel.Response
+	var resultErrorLog *baseModel.ErrorLog
+
+	ctx.Set("full_path", ctx.FullPath())
+	ctx.Set("method", ctx.Request.Method)
+
+	logId := ctx.Param("log-id")
+
+	retryToKafka, errorLog := c.deliveryOrderUseCase.RetrySyncToKafka(logId)
+
+	if errorLog != nil {
+		resultErrorLog = errorLog
+		result.StatusCode = resultErrorLog.StatusCode
+		result.Error = resultErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return
+	}
+
+	result.Data = retryToKafka
+	result.StatusCode = http.StatusOK
+	ctx.JSON(http.StatusOK, result)
 }

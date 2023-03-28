@@ -77,12 +77,15 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 			deliveryOrderControllerGroup.GET("/journeys", deliveryOrderController.GetJourneys)
 			deliveryOrderControllerGroup.GET(":id/journeys", deliveryOrderController.GetDOJourneysByDoID)
 			deliveryOrderControllerGroup.GET("/upload-histories/:sj-id", deliveryOrderController.GetDoUploadHistoriesById)
+			deliveryOrderControllerGroup.GET("/upload-histories/items/:sj-id", deliveryOrderController.GetDoUploadErrorLogByReqId)
+			deliveryOrderControllerGroup.GET("/upload-histories/:sj-id/error-items", deliveryOrderController.GetDoUploadErrorLogByDoUploadHistoryId)
 			deliveryOrderControllerGroup.PUT(":id", deliveryOrderController.UpdateByID)
 			deliveryOrderControllerGroup.PUT(":id/details", deliveryOrderController.UpdateDeliveryOrderDetailByDeliveryOrderID)
 			deliveryOrderControllerGroup.PUT("details/:id", deliveryOrderController.UpdateDeliveryOrderDetailByID)
 			deliveryOrderControllerGroup.DELETE(":id", deliveryOrderController.DeleteByID)
 			deliveryOrderControllerGroup.DELETE(":id/details", deliveryOrderController.DeleteByID)
 			deliveryOrderControllerGroup.DELETE("details/:id", deliveryOrderController.DeleteByID)
+			deliveryOrderControllerGroup.GET("/retry-to-sync-kafka/:log-id", deliveryOrderController.RetrySyncToKafka)
 		}
 	}
 
@@ -137,9 +140,10 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 		uploadControllerGroup.Use()
 		{
 			uploadControllerGroup.POST(constants.UPLOAD_SOSJ_PATH, uploadController.UploadSOSJ)
-			uploadControllerGroup.GET(constants.UPLOAD_DO_PATH, uploadController.UploadDO)
+			uploadControllerGroup.POST(constants.UPLOAD_DO_PATH, uploadController.UploadDO)
 			uploadControllerGroup.POST(constants.UPLOAD_SO_PATH, uploadController.UploadSO)
 			uploadControllerGroup.GET(constants.UPLOAD_SO_PATH+"/retry/:so-upload-history-id", uploadController.RetryUploadSO)
+			uploadControllerGroup.GET(constants.UPLOAD_DO_PATH+"/retry/:sj-upload-history-id", uploadController.RetryUploadDO)
 			uploadControllerGroup.GET(constants.UPLOAD_SOSJ_PATH+"/retry/:sosj-upload-history-id", uploadController.RetryUploadSOSJ)
 			uploadControllerGroup.GET(constants.SOSJ_PATH+"/"+constants.UPLOAD_HISTORIES_PATH+"/:id/error-items", uploadController.GetSoUploadErrorLogsByReqId)
 			uploadControllerGroup.GET(constants.SOSJ_PATH+"/"+constants.UPLOAD_HISTORIES_PATH+"/:id", uploadController.GetSosjUploadHistoryById)
