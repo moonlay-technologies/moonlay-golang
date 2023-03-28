@@ -12,6 +12,8 @@ const (
 	SOSJ_UPLOAD_ERROR_TABLE_LOGS         = "sosj_upload_error_logs"
 	SO_UPLOAD_TABLE_HISTORIES            = "so_upload_histories"
 	SO_UPLOAD_ERROR_TABLE_LOGS           = "so_upload_error_logs"
+	SJ_UPLOAD_TABLE_HISTORIES            = "sj_upload_histories"
+	SJ_UPLOAD_ERROR_TABLE_LOGS           = "sj_upload_error_logs"
 
 	COLUMN_SALES_ORDER_CODE    = "so_code"
 	COLUMN_DELIVERY_ORDER_CODE = "do_code"

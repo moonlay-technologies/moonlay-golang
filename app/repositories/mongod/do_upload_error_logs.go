@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
@@ -9,32 +10,31 @@ import (
 	"order-service/global/utils/mongodb"
 	"os"
 
-	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type SoUploadErrorLogsRepositoryInterface interface {
-	Insert(request *models.SoUploadErrorLog, ctx context.Context, resultChan chan *models.SoUploadErrorLogChan)
-	Get(request *models.GetSoUploadErrorLogsRequest, countOnly bool, ctx context.Context, resultChan chan *models.SoUploadErrorLogsChan)
+type DoUploadErrorLogsRepositoryInterface interface {
+	Insert(request *models.DoUploadErrorLog, ctx context.Context, resultChan chan *models.DoUploadErrorLogChan)
+	Get(request *models.GetDoUploadErrorLogsRequest, countOnly bool, ctx context.Context, resultChan chan *models.DoUploadErrorLogsChan)
 }
 
-type soUploadErrorLogsRepository struct {
+type doUploadErrorLogsRepository struct {
 	logger     log.Logger
 	mongod     mongodb.MongoDBInterface
 	collection string
 }
 
-func InitSoUploadErrorLogsRepositoryInterface(mongod mongodb.MongoDBInterface) SoUploadErrorLogsRepositoryInterface {
-	return &soUploadErrorLogsRepository{
+func InitDoUploadErrorLogsRepositoryInterface(mongod mongodb.MongoDBInterface) DoUploadErrorLogsRepositoryInterface {
+	return &doUploadErrorLogsRepository{
 		mongod:     mongod,
-		collection: constants.SO_UPLOAD_ERROR_TABLE_LOGS,
+		collection: constants.SJ_UPLOAD_ERROR_TABLE_LOGS,
 	}
 }
 
-func (r *soUploadErrorLogsRepository) Insert(request *models.SoUploadErrorLog, ctx context.Context, resultChan chan *models.SoUploadErrorLogChan) {
-	response := &models.SoUploadErrorLogChan{}
+func (r *doUploadErrorLogsRepository) Insert(request *models.DoUploadErrorLog, ctx context.Context, resultChan chan *models.DoUploadErrorLogChan) {
+	response := &models.DoUploadErrorLogChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
 	result, err := collection.InsertOne(ctx, request)
 
@@ -47,14 +47,14 @@ func (r *soUploadErrorLogsRepository) Insert(request *models.SoUploadErrorLog, c
 	}
 
 	request.ID, _ = result.InsertedID.(primitive.ObjectID)
-	response.SoUploadErrorLog = request
+	response.DoUploadErrorLog = request
 	response.Error = nil
 	resultChan <- response
 	return
 }
 
-func (r *soUploadErrorLogsRepository) Get(request *models.GetSoUploadErrorLogsRequest, countOnly bool, ctx context.Context, resultChan chan *models.SoUploadErrorLogsChan) {
-	response := &models.SoUploadErrorLogsChan{}
+func (r *doUploadErrorLogsRepository) Get(request *models.GetDoUploadErrorLogsRequest, countOnly bool, ctx context.Context, resultChan chan *models.DoUploadErrorLogsChan) {
+	response := &models.DoUploadErrorLogsChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
 	filter := bson.M{}
 	sort := bson.M{}
@@ -101,8 +101,8 @@ func (r *soUploadErrorLogsRepository) Get(request *models.GetSoUploadErrorLogsRe
 		filter["request_id"] = request.RequestID
 	}
 
-	if request.SoUploadHistoryID != "" {
-		soUploadHistoryID, err := primitive.ObjectIDFromHex(request.SoUploadHistoryID)
+	if request.DoUploadHistoryID != "" {
+		doUploadHistoryID, err := primitive.ObjectIDFromHex(request.DoUploadHistoryID)
 		if err != nil {
 			errorLogData := helper.WriteLog(err, http.StatusBadRequest, "Ada kesalahan pada request data, silahkan dicek kembali")
 			response.Error = err
@@ -111,7 +111,7 @@ func (r *soUploadErrorLogsRepository) Get(request *models.GetSoUploadErrorLogsRe
 			return
 		}
 
-		filter["so_upload_history_id"] = soUploadHistoryID
+		filter["do_upload_history_id"] = doUploadHistoryID
 	}
 
 	option := options.Find().SetSkip(int64((page - 1) * perPage)).SetLimit(int64(perPage)).SetSort(sort)
@@ -135,7 +135,7 @@ func (r *soUploadErrorLogsRepository) Get(request *models.GetSoUploadErrorLogsRe
 	}
 
 	if countOnly == false {
-		soUploadErorLogs := []*models.SoUploadErrorLog{}
+		doUploadErorLogs := []*models.DoUploadErrorLog{}
 		cursor, errs := collection.Find(ctx, filter, option)
 
 		if errs != nil {
@@ -146,23 +146,23 @@ func (r *soUploadErrorLogsRepository) Get(request *models.GetSoUploadErrorLogsRe
 		defer cursor.Close(ctx)
 
 		for cursor.Next(ctx) {
-			var salesOrderLog *models.SoUploadErrorLog
-			if err := cursor.Decode(&salesOrderLog); err != nil {
+			var doUploadErrorLog *models.DoUploadErrorLog
+			if err := cursor.Decode(&doUploadErrorLog); err != nil {
 				response.Error = err
 				resultChan <- response
 				return
 			}
 
-			soUploadErorLogs = append(soUploadErorLogs, salesOrderLog)
+			doUploadErorLogs = append(doUploadErorLogs, doUploadErrorLog)
 		}
 
-		response.SoUploadErrorLogs = soUploadErorLogs
+		response.DoUploadErrorLogs = doUploadErorLogs
 		response.Total = total
 		response.Error = nil
 		resultChan <- response
 		return
 	} else {
-		response.SoUploadErrorLogs = nil
+		response.DoUploadErrorLogs = nil
 		response.Total = total
 		resultChan <- response
 		return
