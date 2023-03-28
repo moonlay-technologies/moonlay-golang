@@ -35,6 +35,7 @@ type DeliveryOrderControllerInterface interface {
 	GetJourneys(ctx *gin.Context)
 	GetDOJourneysByDoID(ctx *gin.Context)
 	GetDoUploadHistoriesById(ctx *gin.Context)
+	GetDoUploadErrorLogByReqId(ctx *gin.Context)
 	GetDoUploadErrorLogByDoUploadHistoryId(ctx *gin.Context)
 }
 
@@ -519,6 +520,24 @@ func (c *deliveryOrderController) GetDoUploadHistoriesById(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, model.Response{Data: doUploadHistories, StatusCode: http.StatusOK})
+}
+
+func (c *deliveryOrderController) GetDoUploadErrorLogByReqId(ctx *gin.Context) {
+	doUploadRequestId := ctx.Param("sj-id")
+
+	request := &models.GetDoUploadErrorLogsRequest{
+		RequestID: doUploadRequestId,
+	}
+
+	doUploadErrorLogs, errorLog := c.deliveryOrderUseCase.GetDOUploadErrorLogsByReqId(request, ctx)
+
+	if errorLog != nil {
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, model.Response{Data: doUploadErrorLogs.DoUploadErrorLogs, Total: doUploadErrorLogs.Total, StatusCode: http.StatusOK})
+	return
 }
 
 func (c *deliveryOrderController) GetDoUploadErrorLogByDoUploadHistoryId(ctx *gin.Context) {
