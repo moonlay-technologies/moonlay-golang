@@ -35,6 +35,7 @@ type SalesOrderUseCaseInterface interface {
 	GetSOJourneyBySOId(soId int, ctx context.Context) (*models.SalesOrderJourneyResponses, *model.ErrorLog)
 	GetSOUploadHistoriesByid(id string, ctx context.Context) (*models.GetSoUploadHistoryResponse, *model.ErrorLog)
 	GetSOUploadErrorLogsByReqId(request *models.GetSoUploadErrorLogsRequest, ctx context.Context) (*models.GetSoUploadErrorLogsResponse, *model.ErrorLog)
+	GetSOUploadErrorLogsBySoUploadHistoryId(request *models.GetSoUploadErrorLogsRequest, ctx context.Context) (*models.GetSoUploadErrorLogsResponse, *model.ErrorLog)
 	UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
 	UpdateSODetailById(soId, soDetailId int, request *models.UpdateSalesOrderDetailByIdRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetailStoreResponse, *model.ErrorLog)
 	UpdateSODetailBySOId(soId int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
@@ -874,6 +875,25 @@ func (u *salesOrderUseCase) GetSOUploadHistoriesByid(id string, ctx context.Cont
 }
 
 func (u *salesOrderUseCase) GetSOUploadErrorLogsByReqId(request *models.GetSoUploadErrorLogsRequest, ctx context.Context) (*models.GetSoUploadErrorLogsResponse, *model.ErrorLog) {
+
+	getSoUploadErrorLogsResultChan := make(chan *models.SoUploadErrorLogsChan)
+	go u.soUploadErrorLogsRepository.Get(request, false, ctx, getSoUploadErrorLogsResultChan)
+	getSoUploadErrorLogsResult := <-getSoUploadErrorLogsResultChan
+
+	if getSoUploadErrorLogsResult.Error != nil {
+		return &models.GetSoUploadErrorLogsResponse{}, getSoUploadErrorLogsResult.ErrorLog
+	}
+
+	result := models.GetSoUploadErrorLogsResponse{
+		SoUploadErrosLogs: getSoUploadErrorLogsResult.SoUploadErrorLogs,
+		Total:             getSoUploadErrorLogsResult.Total,
+	}
+
+	return &result, nil
+
+}
+
+func (u *salesOrderUseCase) GetSOUploadErrorLogsBySoUploadHistoryId(request *models.GetSoUploadErrorLogsRequest, ctx context.Context) (*models.GetSoUploadErrorLogsResponse, *model.ErrorLog) {
 
 	getSoUploadErrorLogsResultChan := make(chan *models.SoUploadErrorLogsChan)
 	go u.soUploadErrorLogsRepository.Get(request, false, ctx, getSoUploadErrorLogsResultChan)
