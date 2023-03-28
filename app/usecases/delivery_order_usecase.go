@@ -1693,8 +1693,11 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 		return getSalesOrderByIDResult.ErrorLog
 	}
 	totalSentQty := 0
+	isOpen := false
 	for _, v := range getDeliveryOrderDetailsByIDResult.DeliveryOrderDetails {
-
+		if v.Qty > 0 {
+			isOpen = true
+		}
 		getSalesOrderDetailByIDResultChan := make(chan *models.SalesOrderDetailChan)
 		go u.salesOrderDetailRepository.GetByID(v.SoDetailID, false, u.ctx, getSalesOrderDetailByIDResultChan)
 		getSalesOrderDetailsByIDResult := <-getSalesOrderDetailByIDResultChan
@@ -1758,10 +1761,30 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 		return createDeliveryOrderLogResult.ErrorLog
 	}
 
+	if isOpen {
+		deliveryOrderJourney := &models.DeliveryOrderJourney{
+			DoId:      getDeliveryOrderByIDResult.DeliveryOrder.ID,
+			DoCode:    getDeliveryOrderByIDResult.DeliveryOrder.DoCode,
+			Status:    constants.DO_STATUS_OPEN,
+			Remark:    "",
+			Reason:    "",
+			CreatedAt: &now,
+			UpdatedAt: &now,
+		}
+
+		createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
+		go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, u.ctx, createDeliveryOrderJourneyChan)
+		createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
+
+		if createDeliveryOrderJourneysResult.Error != nil {
+			return createDeliveryOrderJourneysResult.ErrorLog
+		}
+	}
+
 	deliveryOrderJourney := &models.DeliveryOrderJourney{
 		DoId:      getDeliveryOrderByIDResult.DeliveryOrder.ID,
 		DoCode:    getDeliveryOrderByIDResult.DeliveryOrder.DoCode,
-		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		Status:    constants.DO_STATUS_CNCL,
 		Remark:    "",
 		Reason:    "",
 		CreatedAt: &now,
