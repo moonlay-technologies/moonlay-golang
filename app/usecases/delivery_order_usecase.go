@@ -41,6 +41,7 @@ type DeliveryOrderUseCaseInterface interface {
 	GetDOJourneys(request *models.DeliveryOrderJourneysRequest, ctx context.Context) (*models.DeliveryOrderJourneysResponses, *model.ErrorLog)
 	GetDOJourneysByDoID(doId int, ctx context.Context) (*models.DeliveryOrderJourneysResponses, *model.ErrorLog)
 	GetDOUploadHistoriesById(id string, ctx context.Context) (*models.GetDoUploadHistoryResponse, *model.ErrorLog)
+	GetDOUploadErrorLogsByDoUploadHistoryId(request *models.GetDoUploadErrorLogsRequest, ctx context.Context) (*models.GetDoUploadErrorLogsResponse, *model.ErrorLog)
 	DeleteByID(deliveryOrderId int, sqlTransaction *sql.Tx) *model.ErrorLog
 	DeleteDetailByID(deliveryOrderDetailId int, sqlTransaction *sql.Tx) *model.ErrorLog
 	DeleteDetailByDoID(deliveryOrderId int, sqlTransaction *sql.Tx) *model.ErrorLog
@@ -1623,6 +1624,25 @@ func (u *deliveryOrderUseCase) GetDOUploadHistoriesById(id string, ctx context.C
 	}
 
 	return getDoUploadHistoryByIdResult.DoUploadHistories, nil
+}
+
+func (u *deliveryOrderUseCase) GetDOUploadErrorLogsByDoUploadHistoryId(request *models.GetDoUploadErrorLogsRequest, ctx context.Context) (*models.GetDoUploadErrorLogsResponse, *model.ErrorLog) {
+
+	getDoUploadErrorLogsResultChan := make(chan *models.DoUploadErrorLogsChan)
+	go u.doUploadErrorLogsRepository.Get(request, false, ctx, getDoUploadErrorLogsResultChan)
+	getDoUploadErrorLogsResult := <-getDoUploadErrorLogsResultChan
+
+	if getDoUploadErrorLogsResult.Error != nil {
+		return &models.GetDoUploadErrorLogsResponse{}, getDoUploadErrorLogsResult.ErrorLog
+	}
+
+	result := models.GetDoUploadErrorLogsResponse{
+		DoUploadErrorLogs: getDoUploadErrorLogsResult.DoUploadErrorLogs,
+		Total:             getDoUploadErrorLogsResult.Total,
+	}
+
+	return &result, nil
+
 }
 
 func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.ErrorLog {
