@@ -83,6 +83,7 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 			deliveryOrderControllerGroup.DELETE(":id", deliveryOrderController.DeleteByID)
 			deliveryOrderControllerGroup.DELETE(":id/details", deliveryOrderController.DeleteByID)
 			deliveryOrderControllerGroup.DELETE("details/:id", deliveryOrderController.DeleteByID)
+			deliveryOrderControllerGroup.GET("/retry-to-sync-kafka/:log-id", deliveryOrderController.RetrySyncToKafka)
 		}
 	}
 

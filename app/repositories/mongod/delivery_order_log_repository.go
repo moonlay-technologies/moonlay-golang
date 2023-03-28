@@ -19,7 +19,7 @@ import (
 type DeliveryOrderLogRepositoryInterface interface {
 	Insert(request *models.DeliveryOrderLog, ctx context.Context, result chan *models.DeliveryOrderLogChan)
 	Get(request *models.DeliveryOrderEventLogRequest, countOnly bool, ctx context.Context, resultChan chan *models.GetDeliveryOrderLogsChan)
-	GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan)
+	GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.GetDeliveryOrderLogChan)
 	GetByCode(doCode string, status string, action string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan)
 	UpdateByID(ID string, request *models.DeliveryOrderLog, ctx context.Context, result chan *models.DeliveryOrderLogChan)
 	InsertJourney(request *models.DeliveryOrderJourney, ctx context.Context, result chan *models.DeliveryOrderJourneyChan)
@@ -185,8 +185,8 @@ func (r *deliveryOrderLogRepository) Get(request *models.DeliveryOrderEventLogRe
 	}
 }
 
-func (r *deliveryOrderLogRepository) GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan) {
-	response := &models.DeliveryOrderLogChan{}
+func (r *deliveryOrderLogRepository) GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.GetDeliveryOrderLogChan) {
+	response := &models.GetDeliveryOrderLogChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collectionLog)
 	objectID, _ := primitive.ObjectIDFromHex(ID)
 	filter := bson.M{"_id": objectID}
@@ -202,7 +202,7 @@ func (r *deliveryOrderLogRepository) GetByID(ID string, countOnly bool, ctx cont
 
 	if total == 0 {
 		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -210,7 +210,7 @@ func (r *deliveryOrderLogRepository) GetByID(ID string, countOnly bool, ctx cont
 	}
 
 	if countOnly == false {
-		deliveryOrderLog := &models.DeliveryOrderLog{}
+		deliveryOrderLog := &models.GetDeliveryOrderLog{}
 		err = collection.FindOne(ctx, filter).Decode(deliveryOrderLog)
 
 		if err != nil {
