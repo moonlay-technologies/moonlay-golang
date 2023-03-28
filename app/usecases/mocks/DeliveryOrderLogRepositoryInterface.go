@@ -20,7 +20,7 @@ func (_m *DeliveryOrderLogRepositoryInterface) Get(request *models.DeliveryOrder
 }
 
 // GetByID provides a mock function with given fields: ID, countOnly, ctx, resultChan
-func (_m *DeliveryOrderLogRepositoryInterface) GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan) {
+func (_m *DeliveryOrderLogRepositoryInterface) GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.GetDeliveryOrderLogChan) {
 	_m.Called(ID, countOnly, ctx, resultChan)
 }
 

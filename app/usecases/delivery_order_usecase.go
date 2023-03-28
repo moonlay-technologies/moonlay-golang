@@ -44,6 +44,7 @@ type DeliveryOrderUseCaseInterface interface {
 	DeleteByID(deliveryOrderId int, sqlTransaction *sql.Tx) *model.ErrorLog
 	DeleteDetailByID(deliveryOrderDetailId int, sqlTransaction *sql.Tx) *model.ErrorLog
 	DeleteDetailByDoID(deliveryOrderId int, sqlTransaction *sql.Tx) *model.ErrorLog
+	RetrySyncToKafka(logId string) (*models.DORetryProcessSyncToKafkaResponse, *model.ErrorLog)
 }
 
 type deliveryOrderUseCase struct {
@@ -1987,4 +1988,68 @@ func (u deliveryOrderUseCase) DeleteDetailByDoID(id int, sqlTransaction *sql.Tx)
 	}
 
 	return nil
+}
+
+func (u *deliveryOrderUseCase) RetrySyncToKafka(logId string) (*models.DORetryProcessSyncToKafkaResponse, *model.ErrorLog) {
+
+	now := time.Now()
+
+	getDeliveryOrderLogByIdResultChan := make(chan *models.GetDeliveryOrderLogChan)
+	go u.deliveryOrderLogRepository.GetByID(logId, false, u.ctx, getDeliveryOrderLogByIdResultChan)
+	getDeliveryOrderLogByIdResult := <-getDeliveryOrderLogByIdResultChan
+
+	if getDeliveryOrderLogByIdResult.Error != nil {
+		return &models.DORetryProcessSyncToKafkaResponse{}, getDeliveryOrderLogByIdResult.ErrorLog
+	}
+
+	if getDeliveryOrderLogByIdResult.DeliveryOrderLog.Status != "2" {
+		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       []string{helper.GenerateUnprocessableErrorMessage("retry", fmt.Sprintf("status log dengan id %s bukan gagal", logId))},
+			SystemMessage: []string{"Invalid Process"},
+			StatusCode:    http.StatusUnprocessableEntity,
+		})
+
+		return &models.DORetryProcessSyncToKafkaResponse{}, errorLog
+	}
+
+	keyKafka := []byte(getDeliveryOrderLogByIdResult.DeliveryOrderLog.DoCode)
+	messageKafka, _ := json.Marshal(getDeliveryOrderLogByIdResult.DeliveryOrderLog.Data)
+
+	var topic string
+	switch getDeliveryOrderLogByIdResult.DeliveryOrderLog.Action {
+	case constants.LOG_ACTION_MONGO_INSERT:
+		topic = constants.CREATE_DELIVERY_ORDER_TOPIC
+	case constants.LOG_ACTION_MONGO_UPDATE:
+		topic = constants.UPDATE_DELIVERY_ORDER_TOPIC
+	case constants.LOG_ACTION_MONGO_DELETE:
+		topic = constants.DELETE_DELIVERY_ORDER_TOPIC
+	}
+
+	err := u.kafkaClient.WriteToTopic(topic, keyKafka, messageKafka)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		return &models.DORetryProcessSyncToKafkaResponse{}, errorLogData
+	}
+
+	salesOrderLog := &models.DeliveryOrderLog{
+		RequestID: getDeliveryOrderLogByIdResult.DeliveryOrderLog.RequestID,
+		DoCode:    getDeliveryOrderLogByIdResult.DeliveryOrderLog.DoCode,
+		Data:      getDeliveryOrderLogByIdResult.DeliveryOrderLog.Data,
+		Action:    getDeliveryOrderLogByIdResult.DeliveryOrderLog.Action,
+		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		CreatedAt: getDeliveryOrderLogByIdResult.DeliveryOrderLog.CreatedAt,
+		UpdatedAt: &now,
+	}
+
+	salesOrderLogResultChan := make(chan *models.DeliveryOrderLogChan)
+	go u.deliveryOrderLogRepository.UpdateByID(logId, salesOrderLog, u.ctx, salesOrderLogResultChan)
+
+	result := models.DORetryProcessSyncToKafkaResponse{
+		DeliveryOrderLogEventId: logId,
+		Status:                  constants.LOG_STATUS_MONGO_DEFAULT,
+		Message:                 "on progres",
+	}
+	return &result, nil
+
 }
