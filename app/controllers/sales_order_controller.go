@@ -33,6 +33,7 @@ type SalesOrderControllerInterface interface {
 	GetSOJourneys(ctx *gin.Context)
 	GetSOJourneyBySoId(ctx *gin.Context)
 	GetSoUploadHistoriesById(ctx *gin.Context)
+	GetSoUploadErrorLogByReqId(ctx *gin.Context)
 	DeleteByID(ctx *gin.Context)
 	DeleteDetailByID(ctx *gin.Context)
 	DeleteDetailBySOID(ctx *gin.Context)
@@ -1440,7 +1441,7 @@ func (c *salesOrderController) GetSOJourneyBySoId(ctx *gin.Context) {
 }
 
 func (c *salesOrderController) GetSoUploadHistoriesById(ctx *gin.Context) {
-	soUploadHistoriesId := ctx.Param("so-upload-histories-id")
+	soUploadHistoriesId := ctx.Param("id")
 
 	soUploadHistories, errorLog := c.salesOrderUseCase.GetSOUploadHistoriesByid(soUploadHistoriesId, ctx)
 
@@ -1450,6 +1451,24 @@ func (c *salesOrderController) GetSoUploadHistoriesById(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, model.Response{Data: soUploadHistories, StatusCode: http.StatusOK})
+	return
+}
+
+func (c *salesOrderController) GetSoUploadErrorLogByReqId(ctx *gin.Context) {
+	soUploadRequestId := ctx.Param("id")
+
+	request := &models.GetSoUploadErrorLogsRequest{
+		RequestID: soUploadRequestId,
+	}
+
+	soUploadErrorLogs, errorLog := c.salesOrderUseCase.GetSOUploadErrorLogsByReqId(request, ctx)
+
+	if errorLog != nil {
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, model.Response{Data: soUploadErrorLogs.SoUploadErrosLogs, Total: soUploadErrorLogs.Total, StatusCode: http.StatusOK})
 	return
 }
 
