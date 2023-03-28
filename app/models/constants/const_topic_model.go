@@ -21,4 +21,6 @@ const (
 	UPLOAD_SO_ITEM_TOPIC   = "upload-so-item"
 	UPLOAD_SOSJ_FILE_TOPIC = "upload-sosj-file"
 	UPLOAD_SOSJ_ITEM_TOPIC = "upload-sosj-item"
+	UPLOAD_DO_FILE_TOPIC   = "upload-do-file"
+	UPLOAD_DO_ITEM_TOPIC   = "upload-do-item"
 )
