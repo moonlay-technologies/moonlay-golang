@@ -29,14 +29,16 @@ type SalesOrderValidatorInterface interface {
 type SalesOrderValidator struct {
 	requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface
 	orderSourceRepository       repositories.OrderSourceRepositoryInterface
+	salesmanRepository          repositories.SalesmanRepositoryInterface
 	db                          dbresolver.DB
 	ctx                         context.Context
 }
 
-func InitSalesOrderValidator(requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, db dbresolver.DB, ctx context.Context) SalesOrderValidatorInterface {
+func InitSalesOrderValidator(requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, db dbresolver.DB, ctx context.Context) SalesOrderValidatorInterface {
 	return &SalesOrderValidator{
 		requestValidationMiddleware: requestValidationMiddleware,
 		orderSourceRepository:       orderSourceRepository,
+		salesmanRepository:          salesmanRepository,
 		db:                          db,
 		ctx:                         ctx,
 	}
@@ -134,6 +136,42 @@ func (c *SalesOrderValidator) CreateSalesOrderValidator(insertRequest *models.Sa
 
 		err = helper.NewError("device_id tidak boleh kosong")
 		return err
+	}
+
+	if sourceName == "store" && len(insertRequest.ReferralCode) > 0 {
+		// Get Salesmans By Agent Id
+		getSalesmanResultChan := make(chan *models.SalesmansChan)
+		go c.salesmanRepository.GetByAgentId(insertRequest.AgentID, false, ctx, getSalesmanResultChan)
+		getSalesmanResult := <-getSalesmanResultChan
+
+		if getSalesmanResult.Error != nil {
+			result.StatusCode = getSalesmanResult.ErrorLog.StatusCode
+			result.Error = getSalesmanResult.ErrorLog
+			ctx.JSON(result.StatusCode, result)
+			return getSalesmanResult.Error
+		}
+
+		isExist := false
+		for _, v := range getSalesmanResult.Salesmans {
+			if v.ReferralCode == insertRequest.ReferralCode {
+				isExist = true
+				break
+			}
+		}
+
+		if !isExist {
+			errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+				Message:       []string{helper.GenerateUnprocessableErrorMessage("create", "referral code tidak terdaftar")},
+				SystemMessage: []string{"Invalid Process"},
+				StatusCode:    http.StatusUnprocessableEntity,
+			})
+			result.StatusCode = errorLog.StatusCode
+			result.Error = errorLog
+			ctx.JSON(result.StatusCode, result)
+
+			err = helper.NewError("referral code tidak terdaftar")
+			return err
+		}
 	}
 
 	now := time.Now().UTC().Add(7 * time.Hour)

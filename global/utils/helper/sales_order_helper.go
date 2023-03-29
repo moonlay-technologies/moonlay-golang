@@ -5,15 +5,16 @@ import (
 	"math/rand"
 	"order-service/app/models"
 	"strconv"
+	"strings"
 	"time"
 )
 
-func GenerateSORefCode(agentID int) string {
+func GenerateSORefCode(agentID int, soDate string) string {
 	var code string
 	rand.Seed(time.Now().UnixNano())
 	randcode, _ := Generate(`[a-zA-Z0-9]{13}`)
-	now := time.Now().In(GetTimeLocationWIB())
-	code = fmt.Sprintf("DBO-SOREF-AUTOGEN-%05d-%s-%s", agentID, now.Format("20060102T150304"), randcode)
+	soDate = strings.ReplaceAll(soDate, "-", "")
+	code = fmt.Sprintf("DBO-SOREF-AUTOGEN-%05d-%s-%s", agentID, soDate, randcode)
 	return code
 }
 

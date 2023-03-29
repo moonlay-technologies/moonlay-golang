@@ -104,24 +104,7 @@ func InitSalesOrderUseCaseInterface(salesOrderRepository repositories.SalesOrder
 func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTransaction *sql.Tx, ctx context.Context) ([]*models.SalesOrderResponse, *baseModel.ErrorLog) {
 	now := time.Now()
 	var soCode string
-
-	// Get Order Status By Name
-	getOrderStatusResultChan := make(chan *models.OrderStatusChan)
-	go u.orderStatusRepository.GetByNameAndType("open", "sales_order", false, ctx, getOrderStatusResultChan)
-	getOrderStatusResult := <-getOrderStatusResultChan
-
-	if getOrderStatusResult.Error != nil {
-		return []*models.SalesOrderResponse{}, getOrderStatusResult.ErrorLog
-	}
-
-	// Get Order Detail Status By Name
-	getOrderDetailStatusResultChan := make(chan *models.OrderStatusChan)
-	go u.orderStatusRepository.GetByNameAndType("open", "sales_order_detail", false, ctx, getOrderDetailStatusResultChan)
-	getOrderDetailStatusResult := <-getOrderDetailStatusResultChan
-
-	if getOrderDetailStatusResult.Error != nil {
-		return []*models.SalesOrderResponse{}, getOrderDetailStatusResult.ErrorLog
-	}
+	var journeyStatus string
 
 	// Get Order Source Status By Id
 	getOrderSourceResultChan := make(chan *models.OrderSourceChan)
@@ -130,6 +113,33 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 
 	if getOrderSourceResult.Error != nil {
 		return []*models.SalesOrderResponse{}, getOrderSourceResult.ErrorLog
+	}
+
+	var status string
+	if getOrderSourceResult.OrderSource.SourceName == "manager" {
+		status = "open"
+		journeyStatus = constants.SO_STATUS_APPV
+	} else {
+		status = "pending"
+		journeyStatus = constants.SO_STATUS_PEND
+	}
+
+	// Get Order Status By Name
+	getOrderStatusResultChan := make(chan *models.OrderStatusChan)
+	go u.orderStatusRepository.GetByNameAndType(status, "sales_order", false, ctx, getOrderStatusResultChan)
+	getOrderStatusResult := <-getOrderStatusResultChan
+
+	if getOrderStatusResult.Error != nil {
+		return []*models.SalesOrderResponse{}, getOrderStatusResult.ErrorLog
+	}
+
+	// Get Order Detail Status By Name
+	getOrderDetailStatusResultChan := make(chan *models.OrderStatusChan)
+	go u.orderStatusRepository.GetByNameAndType(status, "sales_order_detail", false, ctx, getOrderDetailStatusResultChan)
+	getOrderDetailStatusResult := <-getOrderDetailStatusResultChan
+
+	if getOrderDetailStatusResult.Error != nil {
+		return []*models.SalesOrderResponse{}, getOrderDetailStatusResult.ErrorLog
 	}
 
 	// Check Agent By Id
@@ -175,6 +185,17 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		}
 	}
 
+	if len(request.SoRefCode) < 1 {
+		// x := 5 - len(strconv.Itoa(request.AgentID))
+		// var str strings.Builder
+		// for i := 0; i < x; i++ {
+		// 	str.WriteString("0")
+		// }
+		// agentId := str.String() + strconv.Itoa(request.AgentID)
+
+		request.SoRefCode = helper.GenerateSORefCode(request.AgentID, request.SoDate)
+	}
+
 	brandIds := []int{}
 	var salesOrderBrands map[int]*models.SalesOrder
 	salesOrderBrands = map[int]*models.SalesOrder{}
@@ -196,6 +217,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 
 			salesOrderDetail := &models.SalesOrderDetail{}
 			salesOrderDetail.SalesOrderDetailStoreRequestMap(v, now)
+			salesOrderDetail.SalesOrderDetailStatusChanMap(getOrderDetailStatusResult)
 			salesOrderDetail.Note = models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}}
 			salesOrderDetail.OrderStatusID = getOrderDetailStatusResult.OrderStatus.ID
 
@@ -238,6 +260,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 			salesOrderDetail := &models.SalesOrderDetail{}
 			salesOrderDetail.SalesOrderDetailStoreRequestMap(v, now)
 			salesOrderDetail.SalesOrderDetailStatusChanMap(getOrderDetailStatusResult)
+			salesOrderDetail.Note = models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}}
 			salesOrderDetail.OrderStatusID = getOrderDetailStatusResult.OrderStatus.ID
 
 			salesOrderDetails := []*models.SalesOrderDetail{}
@@ -382,7 +405,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 			SoCode:    salesOrderResponse.SoCode,
 			SoId:      createSalesOrderResult.SalesOrder.ID,
 			SoDate:    createSalesOrderResult.SalesOrder.SoDate,
-			Status:    constants.SO_STATUS_APPV,
+			Status:    journeyStatus,
 			Remark:    "",
 			Reason:    "",
 			CreatedAt: &now,
