@@ -941,7 +941,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 	if errorValidation != nil {
 		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, errorValidation.Error())},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 		return &models.SalesOrderResponse{}, errorLogData
@@ -962,7 +962,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 	if status == "undefined" {
 		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, "status tidak terdaftar")},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 		return &models.SalesOrderResponse{}, errorLogData
@@ -1213,7 +1213,7 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 	if soId != getSalesOrderDetailByIDResult.SalesOrderDetail.SalesOrderID {
 		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, fmt.Sprintf("SO Detail Id %d tidak terdaftar di SO Id %d", soDetailId, soId))},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 		return &models.SalesOrderDetailStoreResponse{}, errorLogData
@@ -1271,7 +1271,7 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 	if len(soStatus) < 1 || len(soDetailStatus) < 1 {
 		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, fmt.Sprintf("tidak memenuhi syarat"))},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 		return &models.SalesOrderDetailStoreResponse{}, errorLogData
@@ -1525,7 +1525,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 	if errorValidation != nil {
 		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, errorValidation.Error())},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 		return &models.SalesOrderResponse{}, errorLogData
@@ -1546,7 +1546,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 	if status == "undefined" {
 		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, "status tidak terdaftar")},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 		return &models.SalesOrderResponse{}, errorLogData
@@ -2015,7 +2015,7 @@ func (u *salesOrderUseCase) RetrySyncToKafka(logId string) (*models.SORetryProce
 	if getSalesOrderLogByIdResult.SalesOrderLog.Status != "2" {
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage("retry", fmt.Sprintf("status log dengan id %s bukan gagal", logId))},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 

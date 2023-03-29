@@ -2101,7 +2101,7 @@ func (u *deliveryOrderUseCase) RetrySyncToKafka(logId string) (*models.DORetryPr
 	if getDeliveryOrderLogByIdResult.DeliveryOrderLog.Status != "2" {
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage("retry", fmt.Sprintf("status log dengan id %s bukan gagal", logId))},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 

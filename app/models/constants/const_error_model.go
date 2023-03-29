@@ -6,4 +6,6 @@ const (
 	ERROR_ACTION_NAME_UPDATE = "update"
 	ERROR_ACTION_NAME_DELETE = "delete"
 	ERROR_ACTION_NAME_UPLOAD = "upload"
+
+	ERROR_INVALID_PROCESS = "Invalid Process"
 )
