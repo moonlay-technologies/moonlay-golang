@@ -14,6 +14,14 @@ const (
 
 	DELETE_DELIVERY_ORDER_DETAIL_CONSUMER = "delete-delivery-order-detail-consumer"
 
+	EVENT_LOG_STATUS_NUMBER_0 = "0"
+	EVENT_LOG_STATUS_NUMBER_1 = "1"
+	EVENT_LOG_STATUS_NUMBER_2 = "2"
+
+	EVENT_LOG_STATUS_0 = "in progress"
+	EVENT_LOG_STATUS_1 = "success"
+	EVENT_LOG_STATUS_2 = "failed"
+
 	SO_STATUS_APPV   = "APPV"
 	SO_STATUS_REAPPV = "REAPPV"
 	SO_STATUS_RJC    = "RJC"

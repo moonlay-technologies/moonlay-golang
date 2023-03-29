@@ -760,8 +760,20 @@ func (u *salesOrderUseCase) GetSyncToKafkaHistories(request *models.SalesOrderEv
 
 	salesOrderEventLogs := []*models.SalesOrderEventLogResponse{}
 	for _, v := range getSalesOrderLogResult.SalesOrderLogs {
+		var status string
+		switch v.Status {
+		case constants.EVENT_LOG_STATUS_NUMBER_0:
+			status = "In Progress"
+		case constants.EVENT_LOG_STATUS_NUMBER_1:
+			status = "Success"
+		case constants.EVENT_LOG_STATUS_NUMBER_2:
+			status = "Failed"
+		default:
+			status = ""
+		}
+
 		salesOrderEventLog := models.SalesOrderEventLogResponse{}
-		salesOrderEventLog.SalesOrderEventLogResponseMap(v)
+		salesOrderEventLog.SalesOrderEventLogResponseMap(v, status)
 		dataSOEventLog := models.DataSOEventLogResponse{}
 		dataSOEventLog.DataSOEventLogResponseMap(v)
 		salesOrderEventLog.Data = &dataSOEventLog
