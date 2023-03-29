@@ -110,7 +110,7 @@ func (r *deliveryOrderJourneysRepository) Get(request *models.DeliveryOrderJourn
 
 	if total == 0 {
 		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
