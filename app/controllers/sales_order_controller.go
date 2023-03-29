@@ -771,7 +771,7 @@ func (c *salesOrderController) DeleteDetailByID(ctx *gin.Context) {
 		{
 			Table:           "sales_order_details s JOIN order_statuses o ON s.order_status_id = o.id",
 			SelectedCollumn: "o.name",
-			Clause:          fmt.Sprintf("o.id = %d AND s.order_status_id NOT IN (16)", id),
+			Clause:          fmt.Sprintf("s.id = %d AND s.order_status_id NOT IN (16)", id),
 			MessageFormat:   "Hanya status cancelled pada Sales Order Detail yang dapat di delete",
 		},
 		// {
@@ -861,6 +861,12 @@ func (c *salesOrderController) DeleteDetailBySOID(ctx *gin.Context) {
 			SelectedCollumn: "o.name",
 			Clause:          fmt.Sprintf("o.id = %d AND s.order_status_id NOT IN (5,6,9,10)", id),
 			MessageFormat:   "Status Sales Order <result>",
+		},
+		{
+			Table:           "sales_orders s JOIN sales_order_details sd ON s.id = sd.sales_order_id JOIN order_statuses o ON sd.order_status_id = o.id",
+			SelectedCollumn: "o.name",
+			Clause:          fmt.Sprintf("s.id = %d AND sd.order_status_id NOT IN (16)", id),
+			MessageFormat:   "Hanya status cancelled pada Sales Order Detail yang dapat di delete",
 		},
 		{
 			Table:           "delivery_orders d JOIN sales_orders s ON d.sales_order_id = s.id",
