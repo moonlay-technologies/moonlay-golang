@@ -11,6 +11,7 @@ import (
 	mongoRepositories "order-service/app/repositories/mongod"
 	"order-service/global/utils/helper"
 	kafkadbo "order-service/global/utils/kafka"
+	"strconv"
 	"strings"
 	"time"
 
@@ -89,6 +90,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 		message.TotalRows = &totalRows
 		c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_SUCCESS)
 
+		agentIds := map[int]int{}
 		results := []map[string]string{}
 		for i, v := range data {
 			if i == len(data)-1 {
@@ -98,13 +100,32 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				continue
 			}
 
+			row := strings.Split(v, "\"")
+			for j := 1; j < len(row); j = j + 2 {
+				cell := strings.Split(row[j], ",")
+				row[j] = strings.Join(cell, "")
+			}
+			v = strings.Join(row, "")
+
 			headers := strings.Split(data[0], ",")
 			line := strings.Split(v, ",")
 			uploadSOField := map[string]string{}
 			for j, y := range line {
+				if j == 0 {
+					agentId, err := strconv.Atoi(y)
+					if err == nil {
+						agentIds[agentId] = agentIds[agentId] + 1
+					}
+				}
 				uploadSOField[strings.ReplaceAll(headers[j], "\r", "")] = strings.ReplaceAll(y, "\r", "")
 			}
 			results = append(results, uploadSOField)
+		}
+
+		if len(agentIds) > 1 {
+			fmt.Println("Error multiple agentId")
+			c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+			continue
 		}
 
 		brandIds := map[string][]map[string]string{}
@@ -349,8 +370,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				}
 			}
 
-			var uploadSOField models.UploadSOField
-			uploadSOField.TanggalOrder, err = helper.ParseDDYYMMtoYYYYMMDD(v["TanggalOrder"])
+			tanggalOrder, err := helper.ParseDDYYMMtoYYYYMMDD(v["TanggalOrder"])
 			if err != nil {
 				if key == "retry" {
 					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
@@ -365,7 +385,25 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				}
 			}
 
-			uploadSOField.TanggalTokoOrder, err = helper.ParseDDYYMMtoYYYYMMDD(v["TanggalTokoOrder"])
+			nowWIB := time.Now().UTC().Add(7 * time.Hour)
+			duration := time.Hour*time.Duration(nowWIB.Hour()) + time.Minute*time.Duration(nowWIB.Minute()) + time.Second*time.Duration(nowWIB.Second()) + time.Nanosecond*time.Duration(nowWIB.Nanosecond())
+
+			parseTangalOrder, _ := time.Parse("2006-01-02", tanggalOrder)
+			if parseTangalOrder.Add(duration - 1*time.Minute).After(nowWIB) {
+				if key == "retry" {
+					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+
+					break
+				} else {
+					errors := []string{fmt.Sprintf("Tanggal Order = %s tidak boleh melebihi tanggal upload", v["TanggalOrder"])}
+
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
+
+					continue
+				}
+			}
+
+			tanggalTokoOrder, err := helper.ParseDDYYMMtoYYYYMMDD(v["TanggalTokoOrder"])
 			if err != nil {
 				if key == "retry" {
 					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
@@ -379,6 +417,25 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 					continue
 				}
 			}
+
+			parseTanggalTokoOrder, _ := time.Parse("2006-01-02", tanggalOrder)
+			if parseTanggalTokoOrder.Add(duration - 1*time.Minute).After(parseTangalOrder) {
+				if key == "retry" {
+					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+
+					break
+				} else {
+					errors := []string{fmt.Sprintf("Tanggal Toko Order = %s tidak boleh melebihi Tanggal Order", v["TanggalOrder"])}
+
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
+
+					continue
+				}
+			}
+
+			var uploadSOField models.UploadSOField
+			uploadSOField.TanggalOrder = tanggalOrder
+			uploadSOField.TanggalTokoOrder = tanggalTokoOrder
 
 			uploadSOField.UploadSOFieldMap(v, int(*message.UploadedBy), message.ID.Hex())
 			uploadSOField.BulkCode = message.BulkCode
