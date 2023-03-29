@@ -3,8 +3,6 @@ package usecases
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/repositories"
@@ -97,8 +95,6 @@ func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(salesOrder
 			errorLogData := helper.WriteLog(getFirstCategoryResult.Error, http.StatusInternalServerError, nil)
 			return errorLogData
 		}
-		a, _ := json.Marshal(getFirstCategoryResult.Category)
-		fmt.Println("ini ya", string(a))
 
 		salesOrder.SalesOrderDetails[k].FirstCategoryId = getProductResult.Product.CategoryID
 		if getFirstCategoryResult.Category != nil {
