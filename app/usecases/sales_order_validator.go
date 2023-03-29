@@ -7,16 +7,19 @@ import (
 	"order-service/app/middlewares"
 	"order-service/app/models"
 	"order-service/app/models/constants"
+	"order-service/app/repositories"
 	"order-service/global/utils/helper"
 	baseModel "order-service/global/utils/model"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/bxcodec/dbresolver"
 	"github.com/gin-gonic/gin"
 )
 
 type SalesOrderValidatorInterface interface {
+	CreateSalesOrderValidator(insertRequest *models.SalesOrderStoreRequest, ctx *gin.Context) error
 	GetSalesOrderValidator(*gin.Context) (*models.SalesOrderRequest, error)
 	GetSalesOrderDetailValidator(*gin.Context) (*models.GetSalesOrderDetailRequest, error)
 	GetSalesOrderSyncToKafkaHistoriesValidator(*gin.Context) (*models.SalesOrderEventLogRequest, error)
@@ -25,16 +28,220 @@ type SalesOrderValidatorInterface interface {
 
 type SalesOrderValidator struct {
 	requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface
+	orderSourceRepository       repositories.OrderSourceRepositoryInterface
+	salesmanRepository          repositories.SalesmanRepositoryInterface
 	db                          dbresolver.DB
 	ctx                         context.Context
 }
 
-func InitSalesOrderValidator(requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, db dbresolver.DB, ctx context.Context) SalesOrderValidatorInterface {
+func InitSalesOrderValidator(requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, db dbresolver.DB, ctx context.Context) SalesOrderValidatorInterface {
 	return &SalesOrderValidator{
 		requestValidationMiddleware: requestValidationMiddleware,
+		orderSourceRepository:       orderSourceRepository,
+		salesmanRepository:          salesmanRepository,
 		db:                          db,
 		ctx:                         ctx,
 	}
+}
+
+func (c *SalesOrderValidator) CreateSalesOrderValidator(insertRequest *models.SalesOrderStoreRequest, ctx *gin.Context) error {
+	var result baseModel.Response
+	dateField := []*models.DateInputRequest{
+		{
+			Field: "so_date",
+			Value: insertRequest.SoDate,
+		},
+		{
+			Field: "so_ref_date",
+			Value: insertRequest.SoRefDate,
+		},
+	}
+	err := c.requestValidationMiddleware.DateInputValidation(ctx, dateField, constants.ERROR_ACTION_NAME_CREATE)
+	if err != nil {
+		return err
+	}
+
+	uniqueField := []*models.UniqueRequest{}
+	if len(insertRequest.SoRefCode) > 0 {
+		err = c.requestValidationMiddleware.OrderSourceValidation(ctx, insertRequest.OrderSourceID, insertRequest.SoRefCode, constants.ERROR_ACTION_NAME_CREATE)
+		if err != nil {
+			return err
+		}
+
+		uniqueField = append(uniqueField, &models.UniqueRequest{
+			Table: constants.SALES_ORDERS_TABLE,
+			Field: "so_ref_code",
+			Value: insertRequest.SoRefCode,
+		})
+	}
+
+	if len(uniqueField) > 0 {
+		err = c.requestValidationMiddleware.UniqueValidation(ctx, uniqueField)
+		if err != nil {
+			return err
+		}
+	}
+
+	brandIds := []int{}
+	mustActiveField := []*models.MustActiveRequest{
+		helper.GenerateMustActive("agents", "agent_id", insertRequest.AgentID, "active"),
+		helper.GenerateMustActive("stores", "store_id", insertRequest.StoreID, "active"),
+		helper.GenerateMustActive("users", "user_id", insertRequest.UserID, "ACTIVE"),
+	}
+	for i, v := range insertRequest.SalesOrderDetails {
+		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+			Table:    "products",
+			ReqField: fmt.Sprintf("sales_order_details[%d].product_id", i),
+			Clause:   fmt.Sprintf("id = %d AND isActive = %d", v.ProductID, 1),
+		})
+		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+			Table:    "uoms",
+			ReqField: fmt.Sprintf("sales_order_details[%d].uom_id", i),
+			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", v.UomID),
+		})
+		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
+			Table:    "brands",
+			ReqField: fmt.Sprintf("sales_order_details[%d].brand_id", i),
+			Clause:   fmt.Sprintf("id = %d AND status_active = %d", v.BrandID, 1),
+		})
+
+		brandIds = append(brandIds, v.BrandID)
+	}
+	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
+	if err != nil {
+		return err
+	}
+
+	// Get Order Source Status By Id
+	getOrderSourceResultChan := make(chan *models.OrderSourceChan)
+	go c.orderSourceRepository.GetByID(insertRequest.OrderSourceID, false, ctx, getOrderSourceResultChan)
+	getOrderSourceResult := <-getOrderSourceResultChan
+
+	if getOrderSourceResult.Error != nil {
+		result.StatusCode = getOrderSourceResult.ErrorLog.StatusCode
+		result.Error = getOrderSourceResult.ErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return getOrderSourceResult.Error
+	}
+	sourceName := getOrderSourceResult.OrderSource.SourceName
+	if sourceName != "manager" && len(insertRequest.DeviceId) < 1 {
+		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       []string{helper.GenerateUnprocessableErrorMessage("create", "device_id tidak boleh kosong")},
+			SystemMessage: []string{"Invalid Process"},
+			StatusCode:    http.StatusUnprocessableEntity,
+		})
+		result.StatusCode = errorLog.StatusCode
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+
+		err = helper.NewError("device_id tidak boleh kosong")
+		return err
+	}
+
+	if sourceName == "store" && len(insertRequest.ReferralCode) > 0 {
+		// Get Salesmans By Agent Id
+		getSalesmanResultChan := make(chan *models.SalesmansChan)
+		go c.salesmanRepository.GetByAgentId(insertRequest.AgentID, false, ctx, getSalesmanResultChan)
+		getSalesmanResult := <-getSalesmanResultChan
+
+		if getSalesmanResult.Error != nil {
+			result.StatusCode = getSalesmanResult.ErrorLog.StatusCode
+			result.Error = getSalesmanResult.ErrorLog
+			ctx.JSON(result.StatusCode, result)
+			return getSalesmanResult.Error
+		}
+
+		isExist := false
+		for _, v := range getSalesmanResult.Salesmans {
+			if v.ReferralCode == insertRequest.ReferralCode {
+				isExist = true
+				break
+			}
+		}
+
+		if !isExist {
+			errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+				Message:       []string{helper.GenerateUnprocessableErrorMessage("create", "referral code tidak terdaftar")},
+				SystemMessage: []string{"Invalid Process"},
+				StatusCode:    http.StatusUnprocessableEntity,
+			})
+			result.StatusCode = errorLog.StatusCode
+			result.Error = errorLog
+			ctx.JSON(result.StatusCode, result)
+
+			err = helper.NewError("referral code tidak terdaftar")
+			return err
+		}
+	}
+
+	now := time.Now().UTC().Add(7 * time.Hour)
+	parseSoDate, _ := time.Parse("2006-01-02", insertRequest.SoDate)
+	parseSoRefDate, _ := time.Parse("2006-01-02", insertRequest.SoRefDate)
+	duration := time.Hour*time.Duration(now.Hour()) + time.Minute*time.Duration(now.Minute()) + time.Second*time.Duration(now.Second()) + time.Nanosecond*time.Duration(now.Nanosecond())
+
+	soDate := parseSoDate.UTC().Add(duration)
+	soRefDate := parseSoRefDate.UTC().Add(duration)
+	nowUTC := now.UTC()
+	if now.UTC().Hour() < soRefDate.Hour() {
+		nowUTC = nowUTC.Add(7 * time.Hour)
+	}
+	fmt.Println("1", soDate)
+	fmt.Println("2", soRefDate)
+	fmt.Println("3", nowUTC)
+
+	if sourceName == "manager" && !(soDate.Add(1*time.Minute).After(soRefDate) && soRefDate.Add(-1*time.Minute).Before(nowUTC) && soDate.Add(-1*time.Minute).Before(nowUTC) && soRefDate.Month() == nowUTC.Month() && soRefDate.UTC().Year() == nowUTC.Year()) {
+
+		err = helper.NewError("so_date dan so_ref_date harus sama dengan kurang dari hari ini dan harus di bulan berjalan")
+		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       []string{helper.GenerateUnprocessableErrorMessage("create", "so_date dan so_ref_date harus sama dengan kurang dari hari ini dan harus di bulan berjalan")},
+			SystemMessage: []string{"Invalid Process"},
+			StatusCode:    http.StatusUnprocessableEntity,
+		})
+		result.StatusCode = errorLog.StatusCode
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+
+		return err
+
+	} else if (sourceName == "salesman" || sourceName == "store") && !(soDate.Equal(now.Local()) && soRefDate.Equal(now.Local())) {
+
+		err = helper.NewError("so_date dan so_ref_date harus sama dengan hari ini")
+		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       []string{helper.GenerateUnprocessableErrorMessage("create", "so_date dan so_ref_date harus sama dengan hari ini")},
+			SystemMessage: []string{"Invalid Process"},
+			StatusCode:    http.StatusUnprocessableEntity,
+		})
+		result.StatusCode = errorLog.StatusCode
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+
+		return err
+
+	}
+
+	err = c.requestValidationMiddleware.AgentIdValidation(ctx, insertRequest.AgentID, insertRequest.UserID, constants.ERROR_ACTION_NAME_CREATE)
+	if err != nil {
+		return err
+	}
+
+	err = c.requestValidationMiddleware.StoreIdValidation(ctx, insertRequest.StoreID, insertRequest.AgentID, constants.ERROR_ACTION_NAME_CREATE)
+	if err != nil {
+		return err
+	}
+
+	if insertRequest.SalesmanID > 0 {
+		err = c.requestValidationMiddleware.SalesmanIdValidation(ctx, insertRequest.SalesmanID, insertRequest.AgentID, constants.ERROR_ACTION_NAME_CREATE)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = c.requestValidationMiddleware.BrandIdValidation(ctx, brandIds, insertRequest.AgentID, constants.ERROR_ACTION_NAME_CREATE)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *SalesOrderValidator) GetSalesOrderValidator(ctx *gin.Context) (*models.SalesOrderRequest, error) {

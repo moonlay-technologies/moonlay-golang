@@ -360,6 +360,7 @@ func (salesOrder *SalesOrder) SalesmanChanMap(request *SalesmanChan) {
 }
 
 func (result *SalesOrderResponse) CreateSoResponseMap(request *SalesOrder) {
+	result.ID = request.ID
 	result.CartID = request.CartID
 	result.AgentID = request.AgentID
 	result.StoreID = request.StoreID

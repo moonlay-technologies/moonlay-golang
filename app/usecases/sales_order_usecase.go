@@ -104,24 +104,7 @@ func InitSalesOrderUseCaseInterface(salesOrderRepository repositories.SalesOrder
 func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTransaction *sql.Tx, ctx context.Context) ([]*models.SalesOrderResponse, *baseModel.ErrorLog) {
 	now := time.Now()
 	var soCode string
-
-	// Get Order Status By Name
-	getOrderStatusResultChan := make(chan *models.OrderStatusChan)
-	go u.orderStatusRepository.GetByNameAndType("open", "sales_order", false, ctx, getOrderStatusResultChan)
-	getOrderStatusResult := <-getOrderStatusResultChan
-
-	if getOrderStatusResult.Error != nil {
-		return []*models.SalesOrderResponse{}, getOrderStatusResult.ErrorLog
-	}
-
-	// Get Order Detail Status By Name
-	getOrderDetailStatusResultChan := make(chan *models.OrderStatusChan)
-	go u.orderStatusRepository.GetByNameAndType("open", "sales_order_detail", false, ctx, getOrderDetailStatusResultChan)
-	getOrderDetailStatusResult := <-getOrderDetailStatusResultChan
-
-	if getOrderDetailStatusResult.Error != nil {
-		return []*models.SalesOrderResponse{}, getOrderDetailStatusResult.ErrorLog
-	}
+	var journeyStatus string
 
 	// Get Order Source Status By Id
 	getOrderSourceResultChan := make(chan *models.OrderSourceChan)
@@ -132,38 +115,31 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		return []*models.SalesOrderResponse{}, getOrderSourceResult.ErrorLog
 	}
 
-	parseSoDate, _ := time.Parse("2006-01-02", request.SoDate)
-	parseSoRefDate, _ := time.Parse("2006-01-02", request.SoRefDate)
-	duration := time.Hour*time.Duration(now.Hour()) + time.Minute*time.Duration(now.Minute()) + time.Second*time.Duration(now.Second()) + time.Nanosecond*time.Duration(now.Nanosecond())
-
-	soDate := parseSoDate.UTC().Add(duration)
-	soRefDate := parseSoRefDate.UTC().Add(duration)
-	nowUTC := now.UTC()
-	if now.UTC().Hour() <= soRefDate.Hour() {
-		nowUTC = nowUTC.Add(7 * time.Hour)
+	var status string
+	if getOrderSourceResult.OrderSource.SourceName == "manager" {
+		status = "open"
+		journeyStatus = constants.SO_STATUS_APPV
+	} else {
+		status = "pending"
+		journeyStatus = constants.SO_STATUS_PEND
 	}
-	sourceName := getOrderSourceResult.OrderSource.SourceName
 
-	if sourceName == "manager" && !(soDate.Add(1*time.Minute).After(soRefDate) && soRefDate.Add(-1*time.Minute).Before(nowUTC) && soDate.Add(-1*time.Minute).Before(nowUTC) && soRefDate.Month() == nowUTC.Month() && soRefDate.UTC().Year() == nowUTC.Year()) {
+	// Get Order Status By Name
+	getOrderStatusResultChan := make(chan *models.OrderStatusChan)
+	go u.orderStatusRepository.GetByNameAndType(status, "sales_order", false, ctx, getOrderStatusResultChan)
+	getOrderStatusResult := <-getOrderStatusResultChan
 
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage("create", "so_date dan so_ref_date harus sama dengan kurang dari hari ini dan harus di bulan berjalan")},
-			SystemMessage: []string{"Invalid Process"},
-			StatusCode:    http.StatusUnprocessableEntity,
-		})
+	if getOrderStatusResult.Error != nil {
+		return []*models.SalesOrderResponse{}, getOrderStatusResult.ErrorLog
+	}
 
-		return []*models.SalesOrderResponse{}, errorLog
+	// Get Order Detail Status By Name
+	getOrderDetailStatusResultChan := make(chan *models.OrderStatusChan)
+	go u.orderStatusRepository.GetByNameAndType(status, "sales_order_detail", false, ctx, getOrderDetailStatusResultChan)
+	getOrderDetailStatusResult := <-getOrderDetailStatusResultChan
 
-	} else if (sourceName == "salesman" || sourceName == "store") && !(soDate.Equal(now.Local()) && soRefDate.Equal(now.Local())) {
-
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage("create", "so_date dan so_ref_date harus sama dengan hari ini")},
-			SystemMessage: []string{"Invalid Process"},
-			StatusCode:    http.StatusUnprocessableEntity,
-		})
-
-		return []*models.SalesOrderResponse{}, errorLog
-
+	if getOrderDetailStatusResult.Error != nil {
+		return []*models.SalesOrderResponse{}, getOrderDetailStatusResult.ErrorLog
 	}
 
 	// Check Agent By Id
@@ -209,6 +185,17 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		}
 	}
 
+	if len(request.SoRefCode) < 1 {
+		// x := 5 - len(strconv.Itoa(request.AgentID))
+		// var str strings.Builder
+		// for i := 0; i < x; i++ {
+		// 	str.WriteString("0")
+		// }
+		// agentId := str.String() + strconv.Itoa(request.AgentID)
+
+		request.SoRefCode = helper.GenerateSORefCode(request.AgentID, request.SoDate)
+	}
+
 	brandIds := []int{}
 	var salesOrderBrands map[int]*models.SalesOrder
 	salesOrderBrands = map[int]*models.SalesOrder{}
@@ -230,6 +217,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 
 			salesOrderDetail := &models.SalesOrderDetail{}
 			salesOrderDetail.SalesOrderDetailStoreRequestMap(v, now)
+			salesOrderDetail.SalesOrderDetailStatusChanMap(getOrderDetailStatusResult)
 			salesOrderDetail.Note = models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}}
 			salesOrderDetail.OrderStatusID = getOrderDetailStatusResult.OrderStatus.ID
 
@@ -272,6 +260,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 			salesOrderDetail := &models.SalesOrderDetail{}
 			salesOrderDetail.SalesOrderDetailStoreRequestMap(v, now)
 			salesOrderDetail.SalesOrderDetailStatusChanMap(getOrderDetailStatusResult)
+			salesOrderDetail.Note = models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}}
 			salesOrderDetail.OrderStatusID = getOrderDetailStatusResult.OrderStatus.ID
 
 			salesOrderDetails := []*models.SalesOrderDetail{}
@@ -416,7 +405,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 			SoCode:    salesOrderResponse.SoCode,
 			SoId:      createSalesOrderResult.SalesOrder.ID,
 			SoDate:    createSalesOrderResult.SalesOrder.SoDate,
-			Status:    constants.SO_STATUS_APPV,
+			Status:    journeyStatus,
 			Remark:    "",
 			Reason:    "",
 			CreatedAt: &now,

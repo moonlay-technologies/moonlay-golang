@@ -98,7 +98,7 @@ type SalesOrderTemplate struct {
 	InternalComment string  `json:"internal_comment,omitempty" bson:"internal_comment,omitempty"`
 	TotalAmount     float64 `json:"total_amount,omitempty" bson:"total_amount,omitempty" binding:"required"`
 	TotalTonase     float64 `json:"total_tonase,omitempty" bson:"total_tonase,omitempty" binding:"required"`
-	DeviceId        string  `json:"device_id,omitempty" bson:"device_id,omitempty" binding:"required"`
+	DeviceId        string  `json:"device_id,omitempty" bson:"device_id,omitempty"`
 	ReferralCode    string  `json:"referral_code,omitempty" bson:"referral_code,omitempty"`
 }
 

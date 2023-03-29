@@ -22,6 +22,7 @@ func (v *SalesOrderDetail) SalesOrderDetailStoreRequestMap(soDetail *SalesOrderD
 }
 
 func (v *SalesOrderDetailStoreResponse) SalesOrderDetailStoreResponseMap(soDetail *SalesOrderDetail) {
+	v.ID = soDetail.ID
 	v.SalesOrderId = soDetail.SalesOrderID
 	v.ProductID = soDetail.ProductID
 	v.UomID = soDetail.UomID
@@ -223,6 +224,15 @@ func (salesOrderDetail *SalesOrderDetailOpenSearch) SalesOrderDetailOpenSearchMa
 	salesOrderDetail.ResidualQty = requestSalesOrderDetail.ResidualQty
 	salesOrderDetail.Price = requestSalesOrderDetail.Price
 	salesOrderDetail.Note = requestSalesOrderDetail.Note
+
+	salesOrderDetail.FirstCategoryId = requestSalesOrderDetail.FirstCategoryId
+	salesOrderDetail.FirstCategoryName = requestSalesOrderDetail.FirstCategoryName
+	salesOrderDetail.LastCategoryId = requestSalesOrderDetail.LastCategoryId
+	salesOrderDetail.LastCategoryName = requestSalesOrderDetail.LastCategoryName
+
+	salesOrderDetail.CreatedBy = requestSalesOrderDetail.CreatedBy
+	salesOrderDetail.UpdatedBy = requestSalesOrderDetail.UpdatedBy
+	salesOrderDetail.DeletedBy = requestSalesOrderDetail.DeletedBy
 
 	salesOrderDetail.CreatedAt = requestSalesOrderDetail.CreatedAt
 	salesOrderDetail.UpdatedAt = requestSalesOrderDetail.UpdatedAt
