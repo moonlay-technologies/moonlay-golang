@@ -76,7 +76,6 @@ func (c *uploadController) UploadSOSJ(ctx *gin.Context) {
 
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
-	return
 
 }
 
@@ -116,7 +115,6 @@ func (c *uploadController) UploadDO(ctx *gin.Context) {
 
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
-	return
 
 }
 
@@ -157,7 +155,6 @@ func (c *uploadController) UploadSO(ctx *gin.Context) {
 
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
-	return
 
 }
 
@@ -186,7 +183,6 @@ func (c *uploadController) RetryUploadSO(ctx *gin.Context) {
 
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
-	return
 
 }
 
@@ -215,7 +211,6 @@ func (c *uploadController) RetryUploadDO(ctx *gin.Context) {
 
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
-	return
 
 }
 
@@ -244,7 +239,6 @@ func (c *uploadController) RetryUploadSOSJ(ctx *gin.Context) {
 
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
-	return
 
 }
 
@@ -274,7 +268,6 @@ func (c *uploadController) GetSoUploadErrorLogsByReqId(ctx *gin.Context) {
 	result.Data = sosjUploadErrorLogs.SosjUploadErrorLogs
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
-	return
 
 }
 
@@ -300,7 +293,6 @@ func (c *uploadController) GetSosjUploadHistoryById(ctx *gin.Context) {
 	result.Data = sosjUploadHistory
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
-	return
 
 }
 
@@ -331,6 +323,5 @@ func (c *uploadController) GetSosjUploadErrorLogsBySosjUploadHistoryId(ctx *gin.
 	result.Total = sosjUploadErrorLogs.Total
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
-	return
 
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"order-service/app/models"
+	"order-service/app/models/constants"
 	"order-service/app/repositories"
 	"strconv"
 
@@ -98,13 +99,13 @@ func (u *requestValidationMiddleware) OrderSourceValidation(ctx *gin.Context, or
 
 		message := helper.GenerateUnprocessableErrorMessage(actionName, "order_source_id tidak terdaftar!")
 		messages = append(messages, message)
-		systemMessages = []string{"Invalid Process"}
+		systemMessages = []string{constants.ERROR_INVALID_PROCESS}
 
 	} else if len(soRefCode) > 0 && getOrderSourceResult.OrderSource.SourceName != "manager" {
 
 		message := helper.GenerateUnprocessableErrorMessage(actionName, fmt.Sprintf("order_source_id %d tidak dapat memasukkan so_ref_code", orderSourceId))
 		messages = append(messages, message)
-		systemMessages = []string{"Invalid Process"}
+		systemMessages = []string{constants.ERROR_INVALID_PROCESS}
 
 	}
 
@@ -117,7 +118,7 @@ func (u *requestValidationMiddleware) OrderSourceValidation(ctx *gin.Context, or
 		result.StatusCode = http.StatusUnprocessableEntity
 		result.Error = errorLog
 		ctx.JSON(result.StatusCode, result)
-		error = fmt.Errorf("Invalid Process")
+		error = fmt.Errorf(constants.ERROR_INVALID_PROCESS)
 	}
 
 	return error
@@ -213,7 +214,7 @@ func (u *requestValidationMiddleware) DateInputValidation(ctx *gin.Context, valu
 		if err != nil {
 			message := helper.GenerateUnprocessableErrorMessage(actionName, fmt.Sprintf("field %s harus memiliki format yyyy-mm-dd", v.Field))
 			messages = append(messages, message)
-			systemMessage := "Invalid Process"
+			systemMessage := constants.ERROR_INVALID_PROCESS
 			systemMessages = append(systemMessages, systemMessage)
 		}
 	}
@@ -227,7 +228,7 @@ func (u *requestValidationMiddleware) DateInputValidation(ctx *gin.Context, valu
 		result.StatusCode = http.StatusUnprocessableEntity
 		result.Error = errorLog
 		ctx.JSON(result.StatusCode, result)
-		error = fmt.Errorf("Invalid Process")
+		error = fmt.Errorf(constants.ERROR_INVALID_PROCESS)
 	}
 
 	return error
@@ -260,7 +261,7 @@ func (u *requestValidationMiddleware) MustEmptyValidation(ctx *gin.Context, valu
 		result.StatusCode = http.StatusUnprocessableEntity
 		result.Error = errorLog
 		ctx.JSON(result.StatusCode, result)
-		error = fmt.Errorf("Invalid Process")
+		error = fmt.Errorf(constants.ERROR_INVALID_PROCESS)
 	}
 
 	return error
@@ -280,7 +281,7 @@ func (u *requestValidationMiddleware) AgentIdValidation(ctx *gin.Context, agentI
 
 		message := helper.GenerateUnprocessableErrorMessage(actionName, fmt.Sprintf("agent_id %d tidak terdaftar untuk user_id %d", agentId, userId))
 		messages = append(messages, message)
-		systemMessages = []string{"Invalid Process"}
+		systemMessages = []string{constants.ERROR_INVALID_PROCESS}
 
 	}
 
@@ -293,7 +294,7 @@ func (u *requestValidationMiddleware) AgentIdValidation(ctx *gin.Context, agentI
 		result.StatusCode = http.StatusUnprocessableEntity
 		result.Error = errorLog
 		ctx.JSON(result.StatusCode, result)
-		error = fmt.Errorf("Invalid Process")
+		error = fmt.Errorf(constants.ERROR_INVALID_PROCESS)
 	}
 
 	return error
@@ -313,7 +314,7 @@ func (u *requestValidationMiddleware) StoreIdValidation(ctx *gin.Context, storeI
 
 		message := helper.GenerateUnprocessableErrorMessage(actionName, fmt.Sprintf("store_id %d tidak terdaftar untuk agent_id %d", storeId, agentId))
 		messages = append(messages, message)
-		systemMessages = []string{"Invalid Process"}
+		systemMessages = []string{constants.ERROR_INVALID_PROCESS}
 
 	}
 
@@ -326,7 +327,7 @@ func (u *requestValidationMiddleware) StoreIdValidation(ctx *gin.Context, storeI
 		result.StatusCode = http.StatusUnprocessableEntity
 		result.Error = errorLog
 		ctx.JSON(result.StatusCode, result)
-		error = fmt.Errorf("Invalid Process")
+		error = fmt.Errorf(constants.ERROR_INVALID_PROCESS)
 	}
 
 	return error
@@ -346,7 +347,7 @@ func (u *requestValidationMiddleware) SalesmanIdValidation(ctx *gin.Context, sal
 
 		message := helper.GenerateUnprocessableErrorMessage(actionName, fmt.Sprintf("salesman_id %d tidak terdaftar untuk agent_id %d", salesmanId, agentId))
 		messages = append(messages, message)
-		systemMessages = []string{"Invalid Process"}
+		systemMessages = []string{constants.ERROR_INVALID_PROCESS}
 
 	}
 
@@ -359,7 +360,7 @@ func (u *requestValidationMiddleware) SalesmanIdValidation(ctx *gin.Context, sal
 		result.StatusCode = http.StatusUnprocessableEntity
 		result.Error = errorLog
 		ctx.JSON(result.StatusCode, result)
-		error = fmt.Errorf("Invalid Process")
+		error = fmt.Errorf(constants.ERROR_INVALID_PROCESS)
 	}
 
 	return error
@@ -381,7 +382,7 @@ func (u *requestValidationMiddleware) BrandIdValidation(ctx *gin.Context, brandI
 
 			message := helper.GenerateUnprocessableErrorMessage(actionName, fmt.Sprintf("brand_id %d tidak terdaftar untuk agent_id %d", v, agentId))
 			messages = append(messages, message)
-			systemMessages = []string{"Invalid Process"}
+			systemMessages = []string{constants.ERROR_INVALID_PROCESS}
 
 		}
 	}
@@ -395,7 +396,7 @@ func (u *requestValidationMiddleware) BrandIdValidation(ctx *gin.Context, brandI
 		result.StatusCode = http.StatusUnprocessableEntity
 		result.Error = errorLog
 		ctx.JSON(result.StatusCode, result)
-		error = fmt.Errorf("Invalid Process")
+		error = fmt.Errorf(constants.ERROR_INVALID_PROCESS)
 	}
 
 	return error

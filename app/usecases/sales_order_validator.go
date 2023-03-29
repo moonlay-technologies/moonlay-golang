@@ -127,7 +127,7 @@ func (c *SalesOrderValidator) CreateSalesOrderValidator(insertRequest *models.Sa
 	if sourceName != "manager" && len(insertRequest.DeviceId) < 1 {
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage("create", "device_id tidak boleh kosong")},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 		result.StatusCode = errorLog.StatusCode
@@ -162,7 +162,7 @@ func (c *SalesOrderValidator) CreateSalesOrderValidator(insertRequest *models.Sa
 		if !isExist {
 			errorLog := helper.NewWriteLog(baseModel.ErrorLog{
 				Message:       []string{helper.GenerateUnprocessableErrorMessage("create", "referral code tidak terdaftar")},
-				SystemMessage: []string{"Invalid Process"},
+				SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 				StatusCode:    http.StatusUnprocessableEntity,
 			})
 			result.StatusCode = errorLog.StatusCode
@@ -194,7 +194,7 @@ func (c *SalesOrderValidator) CreateSalesOrderValidator(insertRequest *models.Sa
 		err = helper.NewError("so_date dan so_ref_date harus sama dengan kurang dari hari ini dan harus di bulan berjalan")
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage("create", "so_date dan so_ref_date harus sama dengan kurang dari hari ini dan harus di bulan berjalan")},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 		result.StatusCode = errorLog.StatusCode
@@ -208,7 +208,7 @@ func (c *SalesOrderValidator) CreateSalesOrderValidator(insertRequest *models.Sa
 		err = helper.NewError("so_date dan so_ref_date harus sama dengan hari ini")
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage("create", "so_date dan so_ref_date harus sama dengan hari ini")},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 		result.StatusCode = errorLog.StatusCode
