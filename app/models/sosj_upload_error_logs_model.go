@@ -31,7 +31,7 @@ type RowDataSosjUploadErrorLog struct {
 	BrandName    NullString `json:"brand_name,omitempty" bson:"brand_name,omitempty"`
 	ProductCode  string     `json:"product_code,omitempty" bson:"product_code,omitempty"`
 	ProductName  NullString `json:"product_name,omitempty" bson:"product_name,omitempty"`
-	DeliveryQty  string     `json:"deivery_qty,omitempty" bson:"deivery_qty,omitempty"`
+	DeliveryQty  string     `json:"delivery_qty,omitempty" bson:"deivery_qty,omitempty"`
 	ProductUnit  string     `json:"product_unit,omitempty" bson:"product_unit,omitempty"`
 	DriverName   string     `json:"driver_name,omitempty" bson:"driver_name,omitempty"`
 	VehicleNo    string     `json:"vehicle_no,omitempty" bson:"vehicle_no,omitempty"`
@@ -70,13 +70,14 @@ type RowDataSosjUploadErrorLogChan struct {
 }
 
 type GetSosjUploadErrorLogsRequest struct {
-	ID        string `json:"_id,omitempty" bson:"_id,omitempty"`
-	Page      int    `json:"page,omitempty" bson:"page,omitempty"`
-	PerPage   int    `json:"per_page,omitempty" bson:"per_page,omitempty"`
-	SortField string `json:"sort_field,omitempty" bson:"sort_field,omitempty"`
-	SortValue string `json:"sort_value,omitempty" bson:"sort_value,omitempty"`
-	RequestID string `json:"request_id,omitempty" bson:"request_id,omitempty"`
-	Status    string `json:"status,omitempty" bson:"status,omitempty"`
+	ID                  string `json:"_id,omitempty" bson:"_id,omitempty"`
+	Page                int    `json:"page,omitempty" bson:"page,omitempty"`
+	PerPage             int    `json:"per_page,omitempty" bson:"per_page,omitempty"`
+	SortField           string `json:"sort_field,omitempty" bson:"sort_field,omitempty"`
+	SortValue           string `json:"sort_value,omitempty" bson:"sort_value,omitempty"`
+	RequestID           string `json:"request_id,omitempty" bson:"request_id,omitempty"`
+	SoSjUploadHistoryID string `json:"sosj_upload_history_id,omitempty" bson:"sosj_upload_history_id,omitempty"`
+	Status              string `json:"status,omitempty" bson:"status,omitempty"`
 }
 
 type GetSosjUploadErrorLogsResponse struct {

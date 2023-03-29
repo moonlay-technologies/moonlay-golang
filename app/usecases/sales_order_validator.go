@@ -23,6 +23,7 @@ type SalesOrderValidatorInterface interface {
 	GetSalesOrderValidator(*gin.Context) (*models.SalesOrderRequest, error)
 	GetSalesOrderDetailValidator(*gin.Context) (*models.GetSalesOrderDetailRequest, error)
 	GetSalesOrderSyncToKafkaHistoriesValidator(*gin.Context) (*models.SalesOrderEventLogRequest, error)
+	GetSalesOrderJourneysValidator(*gin.Context) (*models.SalesOrderJourneyRequest, error)
 }
 
 type SalesOrderValidator struct {
@@ -497,6 +498,49 @@ func (c *SalesOrderValidator) GetSalesOrderSyncToKafkaHistoriesValidator(ctx *gi
 		AgentID:           intAgentID,
 	}
 	return salesOrderRequest, nil
+}
+
+func (c *SalesOrderValidator) GetSalesOrderJourneysValidator(ctx *gin.Context) (*models.SalesOrderJourneyRequest, error) {
+	var result baseModel.Response
+	pageInt, err := c.getIntQueryWithDefault("page", "1", true, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	perPageInt, err := c.getIntQueryWithDefault("per_page", "10", true, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	intSoID, err := c.getIntQueryWithDefault("so_id", "0", false, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	sortField := c.getQueryWithDefault("sort_field", "created_at", ctx)
+
+	if sortField != "so_code" && sortField != "status" && sortField != "created_at" {
+		err = helper.NewError("Parameter 'sort_field' harus bernilai 'so_code' or 'status' or 'created_at' ")
+		result.StatusCode = http.StatusBadRequest
+		result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		ctx.JSON(result.StatusCode, result)
+		return nil, err
+	}
+
+	salesOrderJourneysRequest := models.SalesOrderJourneyRequest{
+		Page:              pageInt,
+		PerPage:           perPageInt,
+		SortField:         sortField,
+		SortValue:         strings.ToLower(c.getQueryWithDefault("sort_value", "desc", ctx)),
+		GlobalSearchValue: c.getQueryWithDefault("global_search_value", "", ctx),
+		SoId:              intSoID,
+		SoCode:            c.getQueryWithDefault("so_code", "", ctx),
+		Status:            c.getQueryWithDefault("status", "", ctx),
+		StartDate:         c.getQueryWithDefault("start_date", "", ctx),
+		EndDate:           c.getQueryWithDefault("end_date", "", ctx),
+	}
+
+	return &salesOrderJourneysRequest, nil
 }
 
 func (d *SalesOrderValidator) getQueryWithDefault(param string, empty string, ctx *gin.Context) string {

@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
@@ -10,35 +11,34 @@ import (
 	"order-service/global/utils/mongodb"
 	"os"
 
-	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type SoUploadHistoriesRepositoryInterface interface {
-	Insert(request *models.SoUploadHistory, ctx context.Context, resultChan chan *models.SoUploadHistoryChan)
-	Get(request *models.GetSoUploadHistoriesRequest, countOnly bool, ctx context.Context, resultChan chan *models.SoUploadHistoriesChan)
-	GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.SoUploadHistoryChan)
-	GetByHistoryID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.GetSoUploadHistoryResponseChan)
-	UpdateByID(ID string, request *models.SoUploadHistory, ctx context.Context, resultChan chan *models.SoUploadHistoryChan)
+type DoUploadHistoriesRepositoryInterface interface {
+	Insert(request *models.DoUploadHistory, ctx context.Context, resultChan chan *models.DoUploadHistoryChan)
+	Get(request *models.GetDoUploadHistoriesRequest, countOnly bool, ctx context.Context, resultChan chan *models.DoUploadHistoriesChan)
+	GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.DoUploadHistoryChan)
+	GetByHistoryID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.GetDoUploadHistoryResponseChan)
+	UpdateByID(ID string, request *models.DoUploadHistory, ctx context.Context, resultChan chan *models.DoUploadHistoryChan)
 }
 
-type soUploadHistoriesRepository struct {
+type doUploadHistoriesRepository struct {
 	logger     log.Logger
 	mongod     mongodb.MongoDBInterface
 	collection string
 }
 
-func InitSoUploadHistoriesRepositoryInterface(mongod mongodb.MongoDBInterface) SoUploadHistoriesRepositoryInterface {
-	return &soUploadHistoriesRepository{
+func InitDoUploadHistoriesRepositoryInterface(mongod mongodb.MongoDBInterface) DoUploadHistoriesRepositoryInterface {
+	return &doUploadHistoriesRepository{
 		mongod:     mongod,
-		collection: constants.SO_UPLOAD_TABLE_HISTORIES,
+		collection: constants.SJ_UPLOAD_TABLE_HISTORIES,
 	}
 }
 
-func (r *soUploadHistoriesRepository) Insert(request *models.SoUploadHistory, ctx context.Context, resultChan chan *models.SoUploadHistoryChan) {
-	response := &models.SoUploadHistoryChan{}
+func (r *doUploadHistoriesRepository) Insert(request *models.DoUploadHistory, ctx context.Context, resultChan chan *models.DoUploadHistoryChan) {
+	response := &models.DoUploadHistoryChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
 	result, err := collection.InsertOne(ctx, request)
 
@@ -49,15 +49,16 @@ func (r *soUploadHistoriesRepository) Insert(request *models.SoUploadHistory, ct
 		resultChan <- response
 		return
 	}
+
 	request.ID, _ = result.InsertedID.(primitive.ObjectID)
-	response.SoUploadHistory = request
+	response.DoUploadHistory = request
 	response.Error = nil
 	resultChan <- response
 	return
 }
 
-func (r *soUploadHistoriesRepository) Get(request *models.GetSoUploadHistoriesRequest, countOnly bool, ctx context.Context, resultChan chan *models.SoUploadHistoriesChan) {
-	response := &models.SoUploadHistoriesChan{}
+func (r *doUploadHistoriesRepository) Get(request *models.GetDoUploadHistoriesRequest, countOnly bool, ctx context.Context, resultChan chan *models.DoUploadHistoriesChan) {
+	response := &models.DoUploadHistoriesChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
 	filter := bson.M{}
 	sort := bson.M{}
@@ -115,7 +116,7 @@ func (r *soUploadHistoriesRepository) Get(request *models.GetSoUploadHistoriesRe
 	}
 
 	if !countOnly {
-		SoUploadHistories := []*models.SoUploadHistory{}
+		doUploadHistories := []*models.DoUploadHistory{}
 		cursor, err := collection.Find(ctx, filter, option)
 
 		if err != nil {
@@ -126,21 +127,21 @@ func (r *soUploadHistoriesRepository) Get(request *models.GetSoUploadHistoriesRe
 		}
 		defer cursor.Close(ctx)
 
-		response.SoUploadHistories = SoUploadHistories
+		response.DoUploadHistories = doUploadHistories
 		response.Total = total
 		response.Error = nil
 		resultChan <- response
 		return
 	} else {
-		response.SoUploadHistories = nil
+		response.DoUploadHistories = nil
 		response.Total = total
 		resultChan <- response
 		return
 	}
 }
 
-func (r *soUploadHistoriesRepository) GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.SoUploadHistoryChan) {
-	response := &models.SoUploadHistoryChan{}
+func (r *doUploadHistoriesRepository) GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.DoUploadHistoryChan) {
+	response := &models.DoUploadHistoryChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
 	objectID, _ := primitive.ObjectIDFromHex(ID)
 	filter := bson.M{"_id": objectID}
@@ -164,8 +165,8 @@ func (r *soUploadHistoriesRepository) GetByID(ID string, countOnly bool, ctx con
 	}
 
 	if !countOnly {
-		soUploadHistory := &models.SoUploadHistory{}
-		err = collection.FindOne(ctx, filter).Decode(soUploadHistory)
+		doUploadHistory := &models.DoUploadHistory{}
+		err = collection.FindOne(ctx, filter).Decode(doUploadHistory)
 
 		if err != nil {
 			fmt.Println(err.Error())
@@ -174,21 +175,21 @@ func (r *soUploadHistoriesRepository) GetByID(ID string, countOnly bool, ctx con
 			return
 		}
 
-		response.SoUploadHistory = soUploadHistory
+		response.DoUploadHistory = doUploadHistory
 		response.Total = total
 		response.Error = nil
 		resultChan <- response
 		return
 	} else {
-		response.SoUploadHistory = nil
+		response.DoUploadHistory = nil
 		response.Total = total
 		resultChan <- response
 		return
 	}
 }
 
-func (r *soUploadHistoriesRepository) GetByHistoryID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.GetSoUploadHistoryResponseChan) {
-	response := &models.GetSoUploadHistoryResponseChan{}
+func (r *doUploadHistoriesRepository) GetByHistoryID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.GetDoUploadHistoryResponseChan) {
+	response := &models.GetDoUploadHistoryResponseChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
 	objectID, err := primitive.ObjectIDFromHex(ID)
 	if err != nil {
@@ -225,10 +226,10 @@ func (r *soUploadHistoriesRepository) GetByHistoryID(ID string, countOnly bool, 
 			bson.D{
 				{"$lookup",
 					bson.D{
-						{"from", "so_upload_error_logs"},
+						{"from", "do_upload_error_logs"},
 						{"localField", "_id"},
-						{"foreignField", "so_upload_history_id"},
-						{"as", "so_upload_error_logs"},
+						{"foreignField", "do_upload_history_id"},
+						{"as", "do_upload_error_logs"},
 					},
 				},
 			},
@@ -242,39 +243,39 @@ func (r *soUploadHistoriesRepository) GetByHistoryID(ID string, countOnly bool, 
 		}
 
 		defer cursor.Close(ctx)
-		soUploadHistoryResponse := &models.GetSoUploadHistoryResponse{}
-		soUploadHistory := &models.SoUploadHistory{}
+		doUploadHistoryResponse := &models.GetDoUploadHistoryResponse{}
+		doUploadHistory := &models.DoUploadHistory{}
 		for cursor.Next(ctx) {
-			if err := cursor.Decode(&soUploadHistoryResponse); err != nil {
+			if err := cursor.Decode(&doUploadHistoryResponse); err != nil {
 				response.Error = err
 				resultChan <- response
 				return
 			}
 
-			if err := cursor.Decode(&soUploadHistory); err != nil {
+			if err := cursor.Decode(&doUploadHistory); err != nil {
 				response.Error = err
 				resultChan <- response
 				return
 			}
 		}
 
-		soUploadHistoryResponse.GetSoUploadHistoryResponseMap(soUploadHistory)
+		doUploadHistoryResponse.GetDoUploadHistoryResponseMap(doUploadHistory)
 
-		response.SoUploadHistories = soUploadHistoryResponse
+		response.DoUploadHistories = doUploadHistoryResponse
 		response.Total = total
 		response.Error = nil
 		resultChan <- response
 		return
 	} else {
-		response.SoUploadHistories = nil
+		response.DoUploadHistories = nil
 		response.Total = total
 		resultChan <- response
 		return
 	}
 }
 
-func (r *soUploadHistoriesRepository) UpdateByID(ID string, request *models.SoUploadHistory, ctx context.Context, resultChan chan *models.SoUploadHistoryChan) {
-	response := &models.SoUploadHistoryChan{}
+func (r *doUploadHistoriesRepository) UpdateByID(ID string, request *models.DoUploadHistory, ctx context.Context, resultChan chan *models.DoUploadHistoryChan) {
+	response := &models.DoUploadHistoryChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collection)
 	objectID, _ := primitive.ObjectIDFromHex(ID)
 	filter := bson.M{"_id": objectID}
@@ -309,6 +310,6 @@ func (r *soUploadHistoriesRepository) UpdateByID(ID string, request *models.SoUp
 	}
 
 	response.Error = nil
-	response.SoUploadHistory = request
+	response.DoUploadHistory = request
 	resultChan <- response
 }

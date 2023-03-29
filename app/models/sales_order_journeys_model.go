@@ -36,7 +36,16 @@ type SalesOrdersJourneysChan struct {
 }
 
 type SalesOrderJourneyRequest struct {
-	SoId int `json:"so_id,omitempty" bson:"so_id,omitempty"`
+	Page              int    `json:"page,omitempty" bson:"page,omitempty"`
+	PerPage           int    `json:"per_page,omitempty" bson:"per_page,omitempty"`
+	SortField         string `json:"sort_field,omitempty" bson:"sort_field,omitempty"`
+	SortValue         string `json:"sort_value,omitempty" bson:"sort_value,omitempty"`
+	GlobalSearchValue string `json:"global_search_value,omitempty" bson:"global_search_value,omitempty"`
+	SoId              int    `json:"so_id,omitempty" bson:"so_id,omitempty"`
+	SoCode            string `json:"so_code,omitempty" bson:"so_code,omitempty"`
+	Status            string `json:"status,omitempty" bson:"status,omitempty"`
+	StartDate         string `json:"start_date,omitempty" bson:"start_date,omitempty"`
+	EndDate           string `json:"end_date,omitempty" bson:"end_date,omitempty"`
 }
 
 type SalesOrderJourneyResponse struct {

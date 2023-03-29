@@ -45,8 +45,12 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 			salesOrderControllerGroup.DELETE(":so-id/details", salesOrderController.DeleteByID)
 			salesOrderControllerGroup.DELETE("details/:so-detail-id", salesOrderController.DeleteDetailByID)
 			salesOrderControllerGroup.GET("event-logs", salesOrderController.GetSyncToKafkaHistories)
+			salesOrderControllerGroup.GET("/journeys", salesOrderController.GetSOJourneys)
 			salesOrderControllerGroup.GET(":so-id/journeys", salesOrderController.GetSOJourneyBySoId)
 			salesOrderControllerGroup.GET("/retry-to-sync-kafka/:log-id", salesOrderController.RetrySyncToKafka)
+			salesOrderControllerGroup.GET("/upload-histories/:id", salesOrderController.GetSoUploadHistoriesById)
+			salesOrderControllerGroup.GET("/upload-histories/:id/error-items", salesOrderController.GetSoUploadErrorLogByReqId)
+			salesOrderControllerGroup.GET("/upload-histories/items/:id", salesOrderController.GetSoUploadErrorLogBySoUploadHistoryId)
 		}
 
 		salesOrderDetailControllerGroup := basicAuthRootGroup.Group(constants.SALES_ORDER_DETAIL)
@@ -72,12 +76,16 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 			deliveryOrderControllerGroup.GET("/sync-to-kafka-histories", deliveryOrderController.GetSyncToKafkaHistories)
 			deliveryOrderControllerGroup.GET("/journeys", deliveryOrderController.GetJourneys)
 			deliveryOrderControllerGroup.GET(":id/journeys", deliveryOrderController.GetDOJourneysByDoID)
+			deliveryOrderControllerGroup.GET("/upload-histories/:sj-id", deliveryOrderController.GetDoUploadHistoriesById)
+			deliveryOrderControllerGroup.GET("/upload-histories/items/:sj-id", deliveryOrderController.GetDoUploadErrorLogByReqId)
+			deliveryOrderControllerGroup.GET("/upload-histories/:sj-id/error-items", deliveryOrderController.GetDoUploadErrorLogByDoUploadHistoryId)
 			deliveryOrderControllerGroup.PUT(":id", deliveryOrderController.UpdateByID)
 			deliveryOrderControllerGroup.PUT(":id/details", deliveryOrderController.UpdateDeliveryOrderDetailByDeliveryOrderID)
 			deliveryOrderControllerGroup.PUT("details/:id", deliveryOrderController.UpdateDeliveryOrderDetailByID)
 			deliveryOrderControllerGroup.DELETE(":id", deliveryOrderController.DeleteByID)
 			deliveryOrderControllerGroup.DELETE(":id/details", deliveryOrderController.DeleteByID)
 			deliveryOrderControllerGroup.DELETE("details/:id", deliveryOrderController.DeleteByID)
+			deliveryOrderControllerGroup.GET("/retry-to-sync-kafka/:log-id", deliveryOrderController.RetrySyncToKafka)
 		}
 	}
 
@@ -132,12 +140,14 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 		uploadControllerGroup.Use()
 		{
 			uploadControllerGroup.POST(constants.UPLOAD_SOSJ_PATH, uploadController.UploadSOSJ)
-			uploadControllerGroup.GET(constants.UPLOAD_DO_PATH, uploadController.UploadDO)
+			uploadControllerGroup.POST(constants.UPLOAD_DO_PATH, uploadController.UploadDO)
 			uploadControllerGroup.POST(constants.UPLOAD_SO_PATH, uploadController.UploadSO)
 			uploadControllerGroup.GET(constants.UPLOAD_SO_PATH+"/retry/:so-upload-history-id", uploadController.RetryUploadSO)
+			uploadControllerGroup.GET(constants.UPLOAD_DO_PATH+"/retry/:sj-upload-history-id", uploadController.RetryUploadDO)
 			uploadControllerGroup.GET(constants.UPLOAD_SOSJ_PATH+"/retry/:sosj-upload-history-id", uploadController.RetryUploadSOSJ)
 			uploadControllerGroup.GET(constants.SOSJ_PATH+"/"+constants.UPLOAD_HISTORIES_PATH+"/:id/error-items", uploadController.GetSoUploadErrorLogsByReqId)
 			uploadControllerGroup.GET(constants.SOSJ_PATH+"/"+constants.UPLOAD_HISTORIES_PATH+"/:id", uploadController.GetSosjUploadHistoryById)
+			uploadControllerGroup.GET(constants.SOSJ_PATH+"/"+constants.UPLOAD_HISTORIES_PATH+"/items/:sosj-upload-history-id", uploadController.GetSosjUploadErrorLogsBySosjUploadHistoryId)
 		}
 	}
 

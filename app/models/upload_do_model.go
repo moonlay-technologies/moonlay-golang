@@ -2,8 +2,12 @@ package models
 
 import "order-service/global/utils/model"
 
+type UploadDORequest struct {
+	File string `json:"file,omitempty" binding:"required"`
+}
+
 type UploadDOField struct {
-	IDDistributor   string
+	IDDistributor   int
 	NoOrder         string
 	TanggalSJ       string
 	NoSJ            string
@@ -11,13 +15,14 @@ type UploadDOField struct {
 	CatatanInternal string
 	NamaSupir       string
 	PlatNo          string
-	KodeMerk        string
+	KodeMerk        int
 	NamaMerk        string
 	KodeProduk      string
 	NamaProduk      string
-	QTYShip         string
+	QTYShip         int
 	Unit            string
 	KodeGudang      string
+	IDUser          int
 }
 
 type UploadDOFieldsChan struct {

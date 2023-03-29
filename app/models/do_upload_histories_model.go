@@ -7,7 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type SoUploadHistory struct {
+type DoUploadHistory struct {
 	ID              primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	RequestId       string             `json:"request_id,omitempty" bson:"request_id,omitempty"`
 	BulkCode        string             `json:"bulk_code,omitempty" bson:"bulk_code,omitempty"`
@@ -27,23 +27,23 @@ type SoUploadHistory struct {
 	UpdatedAt       time.Time          `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
 }
 
-type SoUploadHistoryChan struct {
-	SoUploadHistory *SoUploadHistory
+type DoUploadHistoryChan struct {
+	DoUploadHistory *DoUploadHistory
 	Error           error
 	ErrorLog        *model.ErrorLog
 	Total           int64
 	ID              primitive.ObjectID `json:"_id" bson:"_id"`
 }
 
-type SoUploadHistoriesChan struct {
-	SoUploadHistories []*SoUploadHistory
+type DoUploadHistoriesChan struct {
+	DoUploadHistories []*DoUploadHistory
 	Error             error
 	ErrorLog          *model.ErrorLog
 	Total             int64
 	ID                primitive.ObjectID `json:"_id" bson:"_id"`
 }
 
-type GetSoUploadHistoriesRequest struct {
+type GetDoUploadHistoriesRequest struct {
 	ID        string `json:"_id,omitempty" bson:"_id,omitempty"`
 	Page      int    `json:"page,omitempty" bson:"page,omitempty"`
 	PerPage   int    `json:"per_page,omitempty" bson:"per_page,omitempty"`
@@ -53,13 +53,13 @@ type GetSoUploadHistoriesRequest struct {
 	Status    string `json:"status,omitempty" bson:"status,omitempty"`
 }
 
-type GetSoUploadHistoryResponse struct {
-	SoUploadHistory
-	SoUploadErrorLogs []*SoUploadErrorLog `json:"so_upload_error_logs,omitempty" bson:"so_upload_error_logs,omitempty"`
+type GetDoUploadHistoryResponse struct {
+	DoUploadHistory
+	DoUploadErrorLogs []*DoUploadErrorLog `json:"do_upload_error_logs,omitempty" bson:"do_upload_error_logs,omitempty"`
 }
 
-type GetSoUploadHistoryResponseChan struct {
-	SoUploadHistories *GetSoUploadHistoryResponse
+type GetDoUploadHistoryResponseChan struct {
+	DoUploadHistories *GetDoUploadHistoryResponse
 	Error             error
 	ErrorLog          *model.ErrorLog
 	Total             int64
