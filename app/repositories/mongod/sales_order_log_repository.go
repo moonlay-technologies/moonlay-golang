@@ -106,33 +106,6 @@ func (r *salesOrderLogRepository) Get(request *models.SalesOrderEventLogRequest,
 			}
 		}
 	}
-	// } else {
-	// 	sort = bson.M{
-	// 		"created_at": desc,
-	// 	}
-	// }
-
-	// if request.SortField == "created_at" && request.SortValue == "asc" {
-	// 	sort = bson.M{
-	// 		"created_at": asc,
-	// 	}
-	// } else if request.SortField == "updated_at" && request.SortValue == "asc" {
-	// 	sort = bson.M{
-	// 		"updated_at": asc,
-	// 	}
-	// } else if request.SortField == "created_at" && request.SortValue == "desc" {
-	// 	sort = bson.M{
-	// 		"created_at": desc,
-	// 	}
-	// } else if request.SortField == "updated_at" && request.SortValue == "desc" {
-	// 	sort = bson.M{
-	// 		"updated_at": desc,
-	// 	}
-	// } else {
-	// 	sort = bson.M{
-	// 		"created_at": desc,
-	// 	}
-	// }
 
 	if request.GlobalSearchValue != "" {
 		var status string
@@ -173,14 +146,6 @@ func (r *salesOrderLogRepository) Get(request *models.SalesOrderEventLogRequest,
 				},
 			}
 		}
-		// fmt.Println("globalSearch =", request.GlobalSearchValue)
-		// filter = bson.M{
-		// 	"$or": []bson.M{
-		// 		{"so_code": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
-		// 		{"status": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
-		// 		{"data.agent_name.nullstring.string": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
-		// 	},
-		// }
 	}
 
 	if request.RequestID != "" {
@@ -216,9 +181,7 @@ func (r *salesOrderLogRepository) Get(request *models.SalesOrderEventLogRequest,
 
 	option := options.Find().SetSkip(int64((request.Page - 1) * request.PerPage)).SetLimit(int64(request.PerPage)).SetSort(sort)
 	total, err := collection.CountDocuments(ctx, filter)
-	fmt.Println("filter =", filter)
-	fmt.Println("sort =", sort)
-	fmt.Println("total =", total)
+
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
