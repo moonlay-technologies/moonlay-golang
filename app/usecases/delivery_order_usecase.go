@@ -1568,8 +1568,19 @@ func (u *deliveryOrderUseCase) GetSyncToKafkaHistories(request *models.DeliveryO
 
 	deliveryOrderEventLogs := []*models.DeliveryOrderEventLogResponse{}
 	for _, v := range getDeliveryOrderLogResult.DeliveryOrderLog {
+		var status string
+		switch v.Status {
+		case constants.EVENT_LOG_STATUS_NUMBER_0:
+			status = "In Progress"
+		case constants.EVENT_LOG_STATUS_NUMBER_1:
+			status = "Success"
+		case constants.EVENT_LOG_STATUS_NUMBER_2:
+			status = "Failed"
+		default:
+			status = ""
+		}
 		deliveryOrderEventLog := models.DeliveryOrderEventLogResponse{}
-		deliveryOrderEventLog.DeliveryOrderEventLogResponseMap(v)
+		deliveryOrderEventLog.DeliveryOrderEventLogResponseMap(v, status)
 
 		dataDOEventLog := models.DataDOEventLogResponse{}
 		dataDOEventLog.DataDOEventLogResponseMap(v)

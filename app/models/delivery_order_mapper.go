@@ -311,12 +311,12 @@ func (deliveryOrderJourney *DeliveryOrderJourneysResponse) DeliveryOrderJourneyR
 	return
 }
 
-func (deliveryOrderEventLog *DeliveryOrderEventLogResponse) DeliveryOrderEventLogResponseMap(request *GetDeliveryOrderLog) {
+func (deliveryOrderEventLog *DeliveryOrderEventLogResponse) DeliveryOrderEventLogResponseMap(request *GetDeliveryOrderLog, status string) {
 	deliveryOrderEventLog.ID = request.ID
 	deliveryOrderEventLog.RequestID = request.RequestID
 	deliveryOrderEventLog.DoID = request.Data.ID
 	deliveryOrderEventLog.DoCode = request.DoCode
-	deliveryOrderEventLog.Status = request.Status
+	deliveryOrderEventLog.Status = status
 	deliveryOrderEventLog.Action = request.Action
 	deliveryOrderEventLog.CreatedAt = request.CreatedAt
 	deliveryOrderEventLog.UpdatedAt = request.UpdatedAt
