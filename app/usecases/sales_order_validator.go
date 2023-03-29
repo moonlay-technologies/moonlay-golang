@@ -505,6 +505,7 @@ func (c *SalesOrderValidator) GetSalesOrderDetailValidator(ctx *gin.Context) (*m
 }
 
 func (c *SalesOrderValidator) GetSalesOrderSyncToKafkaHistoriesValidator(ctx *gin.Context) (*models.SalesOrderEventLogRequest, error) {
+	var result baseModel.Response
 
 	pageInt, err := c.getIntQueryWithDefault("page", "1", true, ctx)
 	if err != nil {
@@ -518,6 +519,14 @@ func (c *SalesOrderValidator) GetSalesOrderSyncToKafkaHistoriesValidator(ctx *gi
 
 	sortField := c.getQueryWithDefault("sort_field", "created_at", ctx)
 
+	if sortField != "so_code" && sortField != "status" && sortField != "agent_name" && sortField != "created_at" {
+		err = helper.NewError("Parameter 'sort_field' harus bernilai 'so_code' or 'status' or 'agent_name' or 'created_at' ")
+		result.StatusCode = http.StatusBadRequest
+		result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		ctx.JSON(result.StatusCode, result)
+		return nil, err
+	}
+
 	intAgentID, err := c.getIntQueryWithDefault("agent_id", "0", false, ctx)
 	if err != nil {
 		return nil, err
@@ -528,10 +537,10 @@ func (c *SalesOrderValidator) GetSalesOrderSyncToKafkaHistoriesValidator(ctx *gi
 		PerPage:           perPageInt,
 		SortField:         sortField,
 		SortValue:         strings.ToLower(c.getQueryWithDefault("sort_value", "desc", ctx)),
-		GlobalSearchValue: c.getQueryWithDefault("global_search_value", "", ctx),
+		GlobalSearchValue: strings.ToLower(c.getQueryWithDefault("global_search_value", "", ctx)),
 		RequestID:         c.getQueryWithDefault("request_id", "", ctx),
 		SoCode:            c.getQueryWithDefault("so_code", "", ctx),
-		Status:            c.getQueryWithDefault("status", "", ctx),
+		Status:            strings.ToLower(c.getQueryWithDefault("status", "", ctx)),
 		Action:            c.getQueryWithDefault("action", "", ctx),
 		AgentID:           intAgentID,
 	}
