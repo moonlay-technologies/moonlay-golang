@@ -24,6 +24,10 @@ const (
 	LOG_STATUS_MONGO_SUCCESS = "1"
 	LOG_STATUS_MONGO_ERROR   = "2"
 
+	EVENT_LOG_STATUS_0 = "in progress"
+	EVENT_LOG_STATUS_1 = "success"
+	EVENT_LOG_STATUS_2 = "failed"
+
 	LOG_ACTION_MONGO_INSERT = "insert"
 	LOG_ACTION_MONGO_UPDATE = "update"
 	LOG_ACTION_MONGO_DELETE = "delete"

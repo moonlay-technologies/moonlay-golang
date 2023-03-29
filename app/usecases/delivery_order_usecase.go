@@ -1570,11 +1570,11 @@ func (u *deliveryOrderUseCase) GetSyncToKafkaHistories(request *models.DeliveryO
 	for _, v := range getDeliveryOrderLogResult.DeliveryOrderLog {
 		var status string
 		switch v.Status {
-		case constants.EVENT_LOG_STATUS_NUMBER_0:
+		case constants.LOG_STATUS_MONGO_DEFAULT:
 			status = "In Progress"
-		case constants.EVENT_LOG_STATUS_NUMBER_1:
+		case constants.LOG_STATUS_MONGO_SUCCESS:
 			status = "Success"
-		case constants.EVENT_LOG_STATUS_NUMBER_2:
+		case constants.LOG_STATUS_MONGO_ERROR:
 			status = "Failed"
 		default:
 			status = ""
