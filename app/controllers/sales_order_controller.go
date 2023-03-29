@@ -774,12 +774,12 @@ func (c *salesOrderController) DeleteDetailByID(ctx *gin.Context) {
 			Clause:          fmt.Sprintf("s.id = %d AND s.order_status_id NOT IN (16)", id),
 			MessageFormat:   "Hanya status cancelled pada Sales Order Detail yang dapat di delete",
 		},
-		// {
-		// 	Table:           "delivery_orders d JOIN sales_orders s ON d.sales_order_id = s.id",
-		// 	SelectedCollumn: "d.id",
-		// 	Clause:          fmt.Sprintf("s.id = %d AND d.deleted_at IS NULL", id),
-		// 	MessageFormat:   "Sales Order Has Delivery Order <result>, Please Delete it First",
-		// },
+		{
+			Table:           "sales_orders s JOIN sales_order_details sd ON s.id = sd.sales_order_id JOIN delivery_orders d ON d.sales_order_id = s.id",
+			SelectedCollumn: "d.id",
+			Clause:          fmt.Sprintf("sd.id = %d AND d.deleted_at IS NULL", id),
+			MessageFormat:   "Sales Order Has Delivery Order <result>, Please Delete it First",
+		},
 	}
 	err = c.requestValidationMiddleware.MustEmptyValidation(ctx, mustEmpties)
 	if err != nil {
