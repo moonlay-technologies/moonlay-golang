@@ -65,6 +65,7 @@ type deliveryOrderUseCase struct {
 	userRepository                          repositories.UserRepositoryInterface
 	salesmanRepository                      repositories.SalesmanRepositoryInterface
 	deliveryOrderLogRepository              mongoRepositories.DeliveryOrderLogRepositoryInterface
+	salesOrderJourneyRepository             mongoRepositories.SalesOrderJourneysRepositoryInterface
 	deliveryOrderJourneysRepository         mongoRepositories.DeliveryOrderJourneysRepositoryInterface
 	doUploadHistoriesRepository             mongoRepositories.DoUploadHistoriesRepositoryInterface
 	doUploadErrorLogsRepository             mongoRepositories.DoUploadErrorLogsRepositoryInterface
@@ -76,7 +77,7 @@ type deliveryOrderUseCase struct {
 	ctx                                     context.Context
 }
 
-func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, deliveryOrderDetailRepository repositories.DeliveryOrderDetailRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, deliveryOrderJourneysRepository mongoRepositories.DeliveryOrderJourneysRepositoryInterface, doUploadHistoriesRepository mongoRepositories.DoUploadHistoriesRepositoryInterface, doUploadErrorLogsRepository mongoRepositories.DoUploadErrorLogsRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderUseCaseInterface {
+func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, deliveryOrderDetailRepository repositories.DeliveryOrderDetailRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, salesOrderJourneysRepository mongoRepositories.SalesOrderJourneysRepositoryInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, deliveryOrderJourneysRepository mongoRepositories.DeliveryOrderJourneysRepositoryInterface, doUploadHistoriesRepository mongoRepositories.DoUploadHistoriesRepositoryInterface, doUploadErrorLogsRepository mongoRepositories.DoUploadErrorLogsRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderUseCaseInterface {
 	return &deliveryOrderUseCase{
 		deliveryOrderRepository:                 deliveryOrderRepository,
 		deliveryOrderDetailRepository:           deliveryOrderDetailRepository,
@@ -93,6 +94,7 @@ func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.Deli
 		agentRepository:                         agentRepository,
 		storeRepository:                         storeRepository,
 		deliveryOrderLogRepository:              deliveryOrderLogRepository,
+		salesOrderJourneyRepository:             salesOrderJourneysRepository,
 		deliveryOrderJourneysRepository:         deliveryOrderJourneysRepository,
 		doUploadHistoriesRepository:             doUploadHistoriesRepository,
 		doUploadErrorLogsRepository:             doUploadErrorLogsRepository,
@@ -323,9 +325,12 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	}
 
 	deliveryOrder.DeliveryOrderDetails = deliveryOrderDetails
+	var statusSoJourney string
 	if totalResidualQty == 0 {
+		statusSoJourney = constants.SO_STATUS_ORDCLS
 		getSalesOrderResult.SalesOrder.OrderStatusID = 8
 	} else {
+		statusSoJourney = constants.SO_STATUS_ORDPRT
 		getSalesOrderResult.SalesOrder.OrderStatusID = 7
 	}
 
@@ -389,6 +394,24 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 
 	if createDeliveryOrderJourneysResult.Error != nil {
 		return &models.DeliveryOrderStoreResponse{}, createDeliveryOrderJourneysResult.ErrorLog
+	}
+
+	salesOrderJourney := &models.SalesOrderJourneys{
+		SoId:      getSalesOrderResult.SalesOrder.ID,
+		SoCode:    getSalesOrderResult.SalesOrder.SoCode,
+		Status:    statusSoJourney,
+		Remark:    "",
+		Reason:    "",
+		CreatedAt: &now,
+		UpdatedAt: &now,
+	}
+
+	createSalesOrderJourneyChan := make(chan *models.SalesOrderJourneysChan)
+	go u.salesOrderJourneyRepository.Insert(salesOrderJourney, ctx, createSalesOrderJourneyChan)
+	createSalesOrderJourneysResult := <-createSalesOrderJourneyChan
+
+	if createSalesOrderJourneysResult.Error != nil {
+		return &models.DeliveryOrderStoreResponse{}, createSalesOrderJourneysResult.ErrorLog
 	}
 
 	keyKafka := []byte(deliveryOrder.DoCode)
