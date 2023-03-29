@@ -45,7 +45,7 @@ func (c *hostToHostController) GetSalesOrders(ctx *gin.Context) {
 	var pageInt, perPageInt, agentIdInt, storeIdInt, brandIdInt, orderSourceIdInt, orderStatusIdInt, productIdInt, categoryIdInt, salesmanIdInt, provinceIdInt, cityIdInt, districtIdInt, villageIdInt, idInt int
 
 	page, isPageExist := ctx.GetQuery("page")
-	if isPageExist == false {
+	if !isPageExist {
 		page = "1"
 	}
 
@@ -70,7 +70,7 @@ func (c *hostToHostController) GetSalesOrders(ctx *gin.Context) {
 	}
 
 	perPage, isPerPageExist := ctx.GetQuery("per_page")
-	if isPerPageExist == false {
+	if !isPerPageExist {
 		perPage = "10"
 	}
 
@@ -94,7 +94,7 @@ func (c *hostToHostController) GetSalesOrders(ctx *gin.Context) {
 	}
 
 	sortField, isSortFieldExist := ctx.GetQuery("sort_field")
-	if isSortFieldExist == false {
+	if !isSortFieldExist {
 		sortField = "created_at"
 	}
 
@@ -380,7 +380,7 @@ func (c *hostToHostController) GetDeliveryOrders(ctx *gin.Context) {
 	var pageInt, perPageInt, intID, intSalesOrderID, intAgentID, intStoreID, intBrandID, intOrderStatusID, intProductID, intCategoryID, intSalesmanID, intProvinceID, intCityID, intDistrictID, intVillageID int
 
 	page, isPageExist := ctx.GetQuery("page")
-	if isPageExist == false {
+	if !isPageExist {
 		page = "1"
 	}
 

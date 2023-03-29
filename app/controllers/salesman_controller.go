@@ -65,7 +65,6 @@ func (c *salesmanController) GetSalesOrders(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, model.Response{Data: salesOrders.SalesOrders, Total: salesOrders.Total, StatusCode: http.StatusOK})
-	return
 }
 
 func (c *salesmanController) GetDeliveryOrders(ctx *gin.Context) {
@@ -93,5 +92,4 @@ func (c *salesmanController) GetDeliveryOrders(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, model.Response{Data: deliveryOrders.DeliveryOrders, Total: deliveryOrders.Total, StatusCode: http.StatusOK})
-	return
 }
