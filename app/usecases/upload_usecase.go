@@ -104,7 +104,7 @@ func (u *uploadUseCase) UploadSOSJ(request *models.UploadSOSJRequest, ctx contex
 
 	// Check Agent By Id
 	getAgentResultChan := make(chan *models.AgentChan)
-	go u.agentRepository.GetByID(4, false, ctx, getAgentResultChan)
+	go u.agentRepository.GetByID(user.AgentID, false, ctx, getAgentResultChan)
 	getAgentResult := <-getAgentResultChan
 
 	if getAgentResult.Error != nil {
@@ -162,7 +162,7 @@ func (u *uploadUseCase) UploadDO(request *models.UploadDORequest, ctx context.Co
 
 	// Check Agent By Id
 	getAgentResultChan := make(chan *models.AgentChan)
-	go u.agentRepository.GetByID(4, false, ctx, getAgentResultChan)
+	go u.agentRepository.GetByID(user.AgentID, false, ctx, getAgentResultChan)
 	getAgentResult := <-getAgentResultChan
 
 	if getAgentResult.Error != nil {
@@ -220,7 +220,7 @@ func (u *uploadUseCase) UploadSO(request *models.UploadSORequest, ctx context.Co
 
 	// Check Agent By Id
 	getAgentResultChan := make(chan *models.AgentChan)
-	go u.agentRepository.GetByID(4, false, ctx, getAgentResultChan)
+	go u.agentRepository.GetByID(user.AgentID, false, ctx, getAgentResultChan)
 	getAgentResult := <-getAgentResultChan
 
 	if getAgentResult.Error != nil {
