@@ -419,7 +419,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 			}
 
 			parseTanggalTokoOrder, _ := time.Parse("2006-01-02", tanggalOrder)
-			if parseTanggalTokoOrder.Add(duration - 1*time.Minute).After(parseTangalOrder) {
+			if parseTanggalTokoOrder.Add(duration - 1*time.Minute).After(parseTangalOrder.Add(duration)) {
 				if key == "retry" {
 					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 
