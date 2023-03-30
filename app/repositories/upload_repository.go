@@ -25,14 +25,12 @@ type UploadRepositoryInterface interface {
 }
 
 type uploadRepository struct {
-	requestValidationRepository RequestValidationRepositoryInterface
-	db                          dbresolver.DB
+	db dbresolver.DB
 }
 
-func InitUploadRepository(requestValidationRepository RequestValidationRepositoryInterface, db dbresolver.DB) UploadRepositoryInterface {
+func InitUploadRepository(db dbresolver.DB) UploadRepositoryInterface {
 	return &uploadRepository{
-		requestValidationRepository: requestValidationRepository,
-		db:                          db,
+		db: db,
 	}
 }
 
@@ -82,9 +80,13 @@ func (r *uploadRepository) GetSosjRowData(agentId, storeCode, brandId, productSk
 
 func (r *uploadRepository) UploadFile(data *bytes.Buffer, date string, fileType string) error {
 
-	session, err := session.NewSession(&aws.Config{Region: aws.String("ap-southeast-1"), Credentials: credentials.NewStaticCredentials(
-		"ASIAUHX63DBTOXGQIU4F", "ADYRZWgcYMl3j9U7rmX/Sres0UOC+z+R7WJEUGtX", "IQoJb3JpZ2luX2VjEGIaDmFwLXNvdXRoZWFzdC0xIkYwRAIgbb9Cu0hH/ZFIiApK7GKvR4Qsz4+dgKXWSfH34A58kZ0CIB8zYxOQ2gtlEn7A+SoV7UT4lwsjpwR/C/Y1mVKpwinXKvcCCDsQABoMMjkxNTE4NDg2NjMwIgw3hSmJLllh3sToJOgq1AJf3aus62JEYsyutdpVTt5sbx871q2E+ahnx6apIB7mwlEAeJ6pJXXtT3Ud3OF3XVVf9jg7xPMAmJ+s7ZskNAtzAyk8vTr5oT5b8lwi4Hpw4P/Xuy574E0lOHrsY6dbOgBHJmPSDHwLwjmMgdSu3xpn0SjkxzCrMvfYSWZ137nENcu/u2WWxYjlaoSpvAxu2y14cNYDSqT68CjfIehSrjdGm7QT2HOWxUy1uihRZQAqsignj17xw3OY3hRfLP3gSlRhSmCJKXL9unQScpLzd+kusmivLRfMcmS7PwRskuSkZVYxKyTB6GTuNHbvj/BeBzVnDOwK4JX71DGQkd+aNBIUjiAIdM7aEGW01Ydw0ajNYS9JuNmZ/S2wkk36HMXmSlgnGm1M04oueiAcTjhN918gnHXUC9tX2CluGwK9Y4DGJAQLh1QVj6VUsR2+NrkdtpEb76m7MPeOiaEGOqgB2EZc9o/uCCOO5e1HYIzquqabkduUKZBpiPxD5e3bCKzR39qLSMHSel7ftinCRUq8sPKsLriEFIulfXs9o+ukYcTeMDMdKCnFY5Sz159XHf0LLPhCehy+RaTYmqEVqkYF3d5xYcKrRzpBzra+zO0Q1MWm6+/KZ3ufhBRIxODpzx9JJF7JBizp7PKJh/Q1uGNVjvHMotd441Mr7rP5a9Y2XwCfgyYLiQvV",
-	)})
+	session, err := session.NewSession(&aws.Config{
+		Region: aws.String("ap-southeast-1"),
+		Credentials: credentials.NewStaticCredentials(
+			"ASIAUHX63DBTOXGQIU4F",
+			"ADYRZWgcYMl3j9U7rmX/Sres0UOC+z+R7WJEUGtX",
+			"IQoJb3JpZ2luX2VjEGIaDmFwLXNvdXRoZWFzdC0xIkYwRAIgbb9Cu0hH/ZFIiApK7GKvR4Qsz4+dgKXWSfH34A58kZ0CIB8zYxOQ2gtlEn7A+SoV7UT4lwsjpwR/C/Y1mVKpwinXKvcCCDsQABoMMjkxNTE4NDg2NjMwIgw3hSmJLllh3sToJOgq1AJf3aus62JEYsyutdpVTt5sbx871q2E+ahnx6apIB7mwlEAeJ6pJXXtT3Ud3OF3XVVf9jg7xPMAmJ+s7ZskNAtzAyk8vTr5oT5b8lwi4Hpw4P/Xuy574E0lOHrsY6dbOgBHJmPSDHwLwjmMgdSu3xpn0SjkxzCrMvfYSWZ137nENcu/u2WWxYjlaoSpvAxu2y14cNYDSqT68CjfIehSrjdGm7QT2HOWxUy1uihRZQAqsignj17xw3OY3hRfLP3gSlRhSmCJKXL9unQScpLzd+kusmivLRfMcmS7PwRskuSkZVYxKyTB6GTuNHbvj/BeBzVnDOwK4JX71DGQkd+aNBIUjiAIdM7aEGW01Ydw0ajNYS9JuNmZ/S2wkk36HMXmSlgnGm1M04oueiAcTjhN918gnHXUC9tX2CluGwK9Y4DGJAQLh1QVj6VUsR2+NrkdtpEb76m7MPeOiaEGOqgB2EZc9o/uCCOO5e1HYIzquqabkduUKZBpiPxD5e3bCKzR39qLSMHSel7ftinCRUq8sPKsLriEFIulfXs9o+ukYcTeMDMdKCnFY5Sz159XHf0LLPhCehy+RaTYmqEVqkYF3d5xYcKrRzpBzra+zO0Q1MWm6+/KZ3ufhBRIxODpzx9JJF7JBizp7PKJh/Q1uGNVjvHMotd441Mr7rP5a9Y2XwCfgyYLiQvV",
+		)})
 	if err != nil {
 		log.Fatal(err)
 	}

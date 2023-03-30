@@ -248,7 +248,7 @@ func InitHTTPUploadController(database dbresolver.DB, redisdb redisdb.RedisInter
 	orderStatusRepository := repositories.InitOrderStatusRepository(database, redisdb)
 	orderSourceRepository := repositories.InitOrderSourceRepository(database, redisdb)
 	requestValidationRepository := repositories.InitRequestValidationRepository(database)
-	uploadRepositories := repositories.InitUploadRepository(requestValidationRepository, database)
+	uploadRepositories := repositories.InitUploadRepository(database)
 	agentRepository := repositories.InitAgentRepository(database, redisdb)
 	brandRepository := repositories.InitBrandRepository(database, redisdb)
 	storeRepository := repositories.InitStoreRepository(database, redisdb)
