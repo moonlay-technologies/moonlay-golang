@@ -521,7 +521,7 @@ func (r *deliveryOrder) DeleteByID(request *models.DeliveryOrder, ctx context.Co
 	query = fmt.Sprintf("%s='%v'", "updated_at", request.UpdatedAt.Format("2006-01-02 15:04:05"))
 	rawSqlQueries = append(rawSqlQueries, query)
 
-	query = fmt.Sprintf("%s=%v", "order_status_id", "17")
+	query = fmt.Sprintf("%s=%v", "order_status_id", "19")
 	rawSqlQueries = append(rawSqlQueries, query)
 
 	query = fmt.Sprintf("%s='%v'", "is_done_sync_to_es", 0)

@@ -27,13 +27,14 @@ type SalesOrderOpenSearchUseCase struct {
 	orderStatusRepository                repositories.OrderStatusRepositoryInterface
 	productRepository                    repositories.ProductRepositoryInterface
 	uomRepository                        repositories.UomRepositoryInterface
+	categoryRepository                   repositories.CategoryRepositoryInterface
 	salesOrderOpenSearchRepository       openSearchRepositories.SalesOrderOpenSearchRepositoryInterface
 	salesOrderDetailOpenSearchRepository openSearchRepositories.SalesOrderDetailOpenSearchRepositoryInterface
 	deliveryOrderOpenSearchRepository    openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface
 	ctx                                  context.Context
 }
 
-func InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, productRepository repositories.ProductRepositoryInterface, uomRepository repositories.UomRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderDetailOpenSearchRepository openSearchRepositories.SalesOrderDetailOpenSearchRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface) SalesOrderOpenSearchUseCaseInterface {
+func InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, productRepository repositories.ProductRepositoryInterface, uomRepository repositories.UomRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderDetailOpenSearchRepository openSearchRepositories.SalesOrderDetailOpenSearchRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, categoryRepository repositories.CategoryRepositoryInterface) SalesOrderOpenSearchUseCaseInterface {
 	return &SalesOrderOpenSearchUseCase{
 		salesOrderRepository:                 salesOrderRepository,
 		salesOrderDetailRepository:           salesOrderDetailRepository,
@@ -43,6 +44,7 @@ func InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository repositories.
 		salesOrderOpenSearchRepository:       salesOrderOpenSearchRepository,
 		salesOrderDetailOpenSearchRepository: salesOrderDetailOpenSearchRepository,
 		deliveryOrderOpenSearchRepository:    deliveryOrderOpenSearchRepository,
+		categoryRepository:                   categoryRepository,
 	}
 }
 
@@ -84,6 +86,36 @@ func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(salesOrder
 		salesOrder.SalesOrderDetails[k].EndDateSyncToEs = &now
 		salesOrder.SalesOrderDetails[k].IsDoneSyncToEs = "1"
 		salesOrder.SalesOrderDetails[k].OrderStatus = getOrderStatusDetailResult.OrderStatus
+
+		getFirstCategoryResultChan := make(chan *models.CategoryChan)
+		go u.categoryRepository.GetByParentID(getProductResult.Product.CategoryID, false, ctx, getFirstCategoryResultChan)
+		getFirstCategoryResult := <-getFirstCategoryResultChan
+
+		if getFirstCategoryResult.Error != nil && getFirstCategoryResult.ErrorLog.StatusCode != http.StatusNotFound {
+			errorLogData := helper.WriteLog(getFirstCategoryResult.Error, http.StatusInternalServerError, nil)
+			return errorLogData
+		}
+
+		salesOrder.SalesOrderDetails[k].FirstCategoryId = getProductResult.Product.CategoryID
+		if getFirstCategoryResult.Category != nil {
+			salesOrder.SalesOrderDetails[k].FirstCategoryName = &getFirstCategoryResult.Category.Name
+		}
+
+		getLastCategoryResultChan := make(chan *models.CategoryChan)
+		go u.categoryRepository.GetByID(getProductResult.Product.CategoryID, false, ctx, getLastCategoryResultChan)
+		getLastCategoryResult := <-getLastCategoryResultChan
+
+		if getLastCategoryResult.Error != nil && getLastCategoryResult.ErrorLog.StatusCode != http.StatusNotFound {
+			errorLogData := helper.WriteLog(getLastCategoryResult.Error, http.StatusInternalServerError, nil)
+			return errorLogData
+		}
+
+		salesOrder.SalesOrderDetails[k].LastCategoryId = getProductResult.Product.CategoryID
+		if getLastCategoryResult.Category != nil {
+			salesOrder.SalesOrderDetails[k].LastCategoryName = &getLastCategoryResult.Category.Name
+		}
+		salesOrder.SalesOrderDetails[k].CreatedBy = salesOrder.CreatedBy
+		salesOrder.SalesOrderDetails[k].UpdatedBy = salesOrder.CreatedBy
 
 		salesOrderDetailUpdateData := &models.SalesOrderDetail{
 			UpdatedAt:       &now,
@@ -190,9 +222,40 @@ func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(salesOrder
 			return errorLogData
 		}
 
-		salesOrder.SalesOrderDetails[k].OrderStatus = getOrderStatusDetailResult.OrderStatus
 		v.IsDoneSyncToEs = "1"
 		v.EndDateSyncToEs = &now
+		salesOrder.SalesOrderDetails[k].OrderStatus = getOrderStatusDetailResult.OrderStatus
+
+		getFirstCategoryResultChan := make(chan *models.CategoryChan)
+		go u.categoryRepository.GetByParentID(getProductResult.Product.CategoryID, false, ctx, getFirstCategoryResultChan)
+		getFirstCategoryResult := <-getFirstCategoryResultChan
+
+		if getFirstCategoryResult.Error != nil && getFirstCategoryResult.ErrorLog.StatusCode != http.StatusNotFound {
+			errorLogData := helper.WriteLog(getFirstCategoryResult.Error, http.StatusInternalServerError, nil)
+			return errorLogData
+		}
+
+		salesOrder.SalesOrderDetails[k].FirstCategoryId = getProductResult.Product.CategoryID
+		if getFirstCategoryResult.Category != nil {
+			salesOrder.SalesOrderDetails[k].FirstCategoryName = &getFirstCategoryResult.Category.Name
+		}
+
+		getLastCategoryResultChan := make(chan *models.CategoryChan)
+		go u.categoryRepository.GetByID(getProductResult.Product.CategoryID, false, ctx, getLastCategoryResultChan)
+		getLastCategoryResult := <-getLastCategoryResultChan
+
+		if getLastCategoryResult.Error != nil && getLastCategoryResult.ErrorLog.StatusCode != http.StatusNotFound {
+			errorLogData := helper.WriteLog(getLastCategoryResult.Error, http.StatusInternalServerError, nil)
+			return errorLogData
+		}
+
+		salesOrder.SalesOrderDetails[k].LastCategoryId = getProductResult.Product.CategoryID
+		if getFirstCategoryResult.Category != nil {
+			salesOrder.SalesOrderDetails[k].LastCategoryName = &getLastCategoryResult.Category.Name
+		}
+
+		salesOrder.SalesOrderDetails[k].CreatedBy = salesOrder.CreatedBy
+		salesOrder.SalesOrderDetails[k].UpdatedBy = salesOrder.LatestUpdatedBy
 
 		salesOrderDetail := &models.SalesOrderDetailOpenSearch{}
 		salesOrderDetail.SalesOrderDetailOpenSearchMap(salesOrder, v)

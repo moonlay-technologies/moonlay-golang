@@ -42,9 +42,12 @@ type DeliveryOrderUseCaseInterface interface {
 	GetDOJourneys(request *models.DeliveryOrderJourneysRequest, ctx context.Context) (*models.DeliveryOrderJourneysResponses, *model.ErrorLog)
 	GetDOJourneysByDoID(doId int, ctx context.Context) (*models.DeliveryOrderJourneysResponses, *model.ErrorLog)
 	GetDOUploadHistoriesById(id string, ctx context.Context) (*models.GetDoUploadHistoryResponse, *model.ErrorLog)
+	GetDOUploadErrorLogsByReqId(request *models.GetDoUploadErrorLogsRequest, ctx context.Context) (*models.GetDoUploadErrorLogsResponse, *model.ErrorLog)
+	GetDOUploadErrorLogsByDoUploadHistoryId(request *models.GetDoUploadErrorLogsRequest, ctx context.Context) (*models.GetDoUploadErrorLogsResponse, *model.ErrorLog)
 	DeleteByID(deliveryOrderId int, sqlTransaction *sql.Tx) *model.ErrorLog
 	DeleteDetailByID(deliveryOrderDetailId int, sqlTransaction *sql.Tx) *model.ErrorLog
 	DeleteDetailByDoID(deliveryOrderId int, sqlTransaction *sql.Tx) *model.ErrorLog
+	RetrySyncToKafka(logId string) (*models.DORetryProcessSyncToKafkaResponse, *model.ErrorLog)
 	Export(request *models.DeliveryOrderExportRequest) *model.ErrorLog
 }
 
@@ -64,6 +67,7 @@ type deliveryOrderUseCase struct {
 	userRepository                          repositories.UserRepositoryInterface
 	salesmanRepository                      repositories.SalesmanRepositoryInterface
 	deliveryOrderLogRepository              mongoRepositories.DeliveryOrderLogRepositoryInterface
+	salesOrderJourneyRepository             mongoRepositories.SalesOrderJourneysRepositoryInterface
 	deliveryOrderJourneysRepository         mongoRepositories.DeliveryOrderJourneysRepositoryInterface
 	doUploadHistoriesRepository             mongoRepositories.DoUploadHistoriesRepositoryInterface
 	doUploadErrorLogsRepository             mongoRepositories.DoUploadErrorLogsRepositoryInterface
@@ -75,7 +79,7 @@ type deliveryOrderUseCase struct {
 	ctx                                     context.Context
 }
 
-func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, deliveryOrderDetailRepository repositories.DeliveryOrderDetailRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, deliveryOrderJourneysRepository mongoRepositories.DeliveryOrderJourneysRepositoryInterface, doUploadHistoriesRepository mongoRepositories.DoUploadHistoriesRepositoryInterface, doUploadErrorLogsRepository mongoRepositories.DoUploadErrorLogsRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderUseCaseInterface {
+func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, deliveryOrderDetailRepository repositories.DeliveryOrderDetailRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, salesOrderJourneysRepository mongoRepositories.SalesOrderJourneysRepositoryInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, deliveryOrderJourneysRepository mongoRepositories.DeliveryOrderJourneysRepositoryInterface, doUploadHistoriesRepository mongoRepositories.DoUploadHistoriesRepositoryInterface, doUploadErrorLogsRepository mongoRepositories.DoUploadErrorLogsRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderUseCaseInterface {
 	return &deliveryOrderUseCase{
 		deliveryOrderRepository:                 deliveryOrderRepository,
 		deliveryOrderDetailRepository:           deliveryOrderDetailRepository,
@@ -92,6 +96,7 @@ func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.Deli
 		agentRepository:                         agentRepository,
 		storeRepository:                         storeRepository,
 		deliveryOrderLogRepository:              deliveryOrderLogRepository,
+		salesOrderJourneyRepository:             salesOrderJourneysRepository,
 		deliveryOrderJourneysRepository:         deliveryOrderJourneysRepository,
 		doUploadHistoriesRepository:             doUploadHistoriesRepository,
 		doUploadErrorLogsRepository:             doUploadErrorLogsRepository,
@@ -322,9 +327,12 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	}
 
 	deliveryOrder.DeliveryOrderDetails = deliveryOrderDetails
+	var statusSoJourney string
 	if totalResidualQty == 0 {
+		statusSoJourney = constants.SO_STATUS_ORDCLS
 		getSalesOrderResult.SalesOrder.OrderStatusID = 8
 	} else {
+		statusSoJourney = constants.SO_STATUS_ORDPRT
 		getSalesOrderResult.SalesOrder.OrderStatusID = 7
 	}
 
@@ -375,7 +383,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	deliveryOrderJourney := &models.DeliveryOrderJourney{
 		DoId:      deliveryOrder.ID,
 		DoCode:    deliveryOrder.DoCode,
-		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		Status:    constants.DO_STATUS_OPEN,
 		Remark:    "",
 		Reason:    "",
 		CreatedAt: &now,
@@ -388,6 +396,24 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 
 	if createDeliveryOrderJourneysResult.Error != nil {
 		return &models.DeliveryOrderStoreResponse{}, createDeliveryOrderJourneysResult.ErrorLog
+	}
+
+	salesOrderJourney := &models.SalesOrderJourneys{
+		SoId:      getSalesOrderResult.SalesOrder.ID,
+		SoCode:    getSalesOrderResult.SalesOrder.SoCode,
+		Status:    statusSoJourney,
+		Remark:    "",
+		Reason:    "",
+		CreatedAt: &now,
+		UpdatedAt: &now,
+	}
+
+	createSalesOrderJourneyChan := make(chan *models.SalesOrderJourneysChan)
+	go u.salesOrderJourneyRepository.Insert(salesOrderJourney, ctx, createSalesOrderJourneyChan)
+	createSalesOrderJourneysResult := <-createSalesOrderJourneyChan
+
+	if createSalesOrderJourneysResult.Error != nil {
+		return &models.DeliveryOrderStoreResponse{}, createSalesOrderJourneysResult.ErrorLog
 	}
 
 	keyKafka := []byte(deliveryOrder.DoCode)
@@ -1558,8 +1584,19 @@ func (u *deliveryOrderUseCase) GetSyncToKafkaHistories(request *models.DeliveryO
 
 	deliveryOrderEventLogs := []*models.DeliveryOrderEventLogResponse{}
 	for _, v := range getDeliveryOrderLogResult.DeliveryOrderLog {
+		var status string
+		switch v.Status {
+		case constants.LOG_STATUS_MONGO_DEFAULT:
+			status = "In Progress"
+		case constants.LOG_STATUS_MONGO_SUCCESS:
+			status = "Success"
+		case constants.LOG_STATUS_MONGO_ERROR:
+			status = "Failed"
+		default:
+			status = ""
+		}
 		deliveryOrderEventLog := models.DeliveryOrderEventLogResponse{}
-		deliveryOrderEventLog.DeliveryOrderEventLogResponseMap(v)
+		deliveryOrderEventLog.DeliveryOrderEventLogResponseMap(v, status)
 
 		dataDOEventLog := models.DataDOEventLogResponse{}
 		dataDOEventLog.DataDOEventLogResponseMap(v)
@@ -1641,6 +1678,43 @@ func (u *deliveryOrderUseCase) GetDOUploadHistoriesById(id string, ctx context.C
 	return getDoUploadHistoryByIdResult.DoUploadHistories, nil
 }
 
+func (u *deliveryOrderUseCase) GetDOUploadErrorLogsByReqId(request *models.GetDoUploadErrorLogsRequest, ctx context.Context) (*models.GetDoUploadErrorLogsResponse, *model.ErrorLog) {
+
+	getDoUploadErrorLogsResultChan := make(chan *models.DoUploadErrorLogsChan)
+	go u.doUploadErrorLogsRepository.Get(request, false, ctx, getDoUploadErrorLogsResultChan)
+	getDoUploadErrorLogsResult := <-getDoUploadErrorLogsResultChan
+
+	if getDoUploadErrorLogsResult.Error != nil {
+		return &models.GetDoUploadErrorLogsResponse{}, getDoUploadErrorLogsResult.ErrorLog
+	}
+
+	result := models.GetDoUploadErrorLogsResponse{
+		DoUploadErrorLogs: getDoUploadErrorLogsResult.DoUploadErrorLogs,
+		Total:             getDoUploadErrorLogsResult.Total,
+	}
+
+	return &result, nil
+}
+
+func (u *deliveryOrderUseCase) GetDOUploadErrorLogsByDoUploadHistoryId(request *models.GetDoUploadErrorLogsRequest, ctx context.Context) (*models.GetDoUploadErrorLogsResponse, *model.ErrorLog) {
+
+	getDoUploadErrorLogsResultChan := make(chan *models.DoUploadErrorLogsChan)
+	go u.doUploadErrorLogsRepository.Get(request, false, ctx, getDoUploadErrorLogsResultChan)
+	getDoUploadErrorLogsResult := <-getDoUploadErrorLogsResultChan
+
+	if getDoUploadErrorLogsResult.Error != nil {
+		return &models.GetDoUploadErrorLogsResponse{}, getDoUploadErrorLogsResult.ErrorLog
+	}
+
+	result := models.GetDoUploadErrorLogsResponse{
+		DoUploadErrorLogs: getDoUploadErrorLogsResult.DoUploadErrorLogs,
+		Total:             getDoUploadErrorLogsResult.Total,
+	}
+
+	return &result, nil
+
+}
+
 func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.ErrorLog {
 	now := time.Now()
 	getDeliveryOrderByIDResultChan := make(chan *models.DeliveryOrderChan)
@@ -1669,8 +1743,11 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 		return getSalesOrderByIDResult.ErrorLog
 	}
 	totalSentQty := 0
+	isOpen := false
 	for _, v := range getDeliveryOrderDetailsByIDResult.DeliveryOrderDetails {
-
+		if v.Qty > 0 {
+			isOpen = true
+		}
 		getSalesOrderDetailByIDResultChan := make(chan *models.SalesOrderDetailChan)
 		go u.salesOrderDetailRepository.GetByID(v.SoDetailID, false, u.ctx, getSalesOrderDetailByIDResultChan)
 		getSalesOrderDetailsByIDResult := <-getSalesOrderDetailByIDResultChan
@@ -1734,10 +1811,30 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 		return createDeliveryOrderLogResult.ErrorLog
 	}
 
+	if isOpen {
+		deliveryOrderJourney := &models.DeliveryOrderJourney{
+			DoId:      getDeliveryOrderByIDResult.DeliveryOrder.ID,
+			DoCode:    getDeliveryOrderByIDResult.DeliveryOrder.DoCode,
+			Status:    constants.DO_STATUS_OPEN,
+			Remark:    "",
+			Reason:    "",
+			CreatedAt: &now,
+			UpdatedAt: &now,
+		}
+
+		createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
+		go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, u.ctx, createDeliveryOrderJourneyChan)
+		createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
+
+		if createDeliveryOrderJourneysResult.Error != nil {
+			return createDeliveryOrderJourneysResult.ErrorLog
+		}
+	}
+
 	deliveryOrderJourney := &models.DeliveryOrderJourney{
 		DoId:      getDeliveryOrderByIDResult.DeliveryOrder.ID,
 		DoCode:    getDeliveryOrderByIDResult.DeliveryOrder.DoCode,
-		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		Status:    constants.DO_STATUS_CNCL,
 		Remark:    "",
 		Reason:    "",
 		CreatedAt: &now,
@@ -2003,4 +2100,68 @@ func (u deliveryOrderUseCase) DeleteDetailByDoID(id int, sqlTransaction *sql.Tx)
 	}
 
 	return nil
+}
+
+func (u *deliveryOrderUseCase) RetrySyncToKafka(logId string) (*models.DORetryProcessSyncToKafkaResponse, *model.ErrorLog) {
+
+	now := time.Now()
+
+	getDeliveryOrderLogByIdResultChan := make(chan *models.GetDeliveryOrderLogChan)
+	go u.deliveryOrderLogRepository.GetByID(logId, false, u.ctx, getDeliveryOrderLogByIdResultChan)
+	getDeliveryOrderLogByIdResult := <-getDeliveryOrderLogByIdResultChan
+
+	if getDeliveryOrderLogByIdResult.Error != nil {
+		return &models.DORetryProcessSyncToKafkaResponse{}, getDeliveryOrderLogByIdResult.ErrorLog
+	}
+
+	if getDeliveryOrderLogByIdResult.DeliveryOrderLog.Status != "2" {
+		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       []string{helper.GenerateUnprocessableErrorMessage("retry", fmt.Sprintf("status log dengan id %s bukan gagal", logId))},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
+			StatusCode:    http.StatusUnprocessableEntity,
+		})
+
+		return &models.DORetryProcessSyncToKafkaResponse{}, errorLog
+	}
+
+	keyKafka := []byte(getDeliveryOrderLogByIdResult.DeliveryOrderLog.DoCode)
+	messageKafka, _ := json.Marshal(getDeliveryOrderLogByIdResult.DeliveryOrderLog.Data)
+
+	var topic string
+	switch getDeliveryOrderLogByIdResult.DeliveryOrderLog.Action {
+	case constants.LOG_ACTION_MONGO_INSERT:
+		topic = constants.CREATE_DELIVERY_ORDER_TOPIC
+	case constants.LOG_ACTION_MONGO_UPDATE:
+		topic = constants.UPDATE_DELIVERY_ORDER_TOPIC
+	case constants.LOG_ACTION_MONGO_DELETE:
+		topic = constants.DELETE_DELIVERY_ORDER_TOPIC
+	}
+
+	err := u.kafkaClient.WriteToTopic(topic, keyKafka, messageKafka)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		return &models.DORetryProcessSyncToKafkaResponse{}, errorLogData
+	}
+
+	salesOrderLog := &models.DeliveryOrderLog{
+		RequestID: getDeliveryOrderLogByIdResult.DeliveryOrderLog.RequestID,
+		DoCode:    getDeliveryOrderLogByIdResult.DeliveryOrderLog.DoCode,
+		Data:      getDeliveryOrderLogByIdResult.DeliveryOrderLog.Data,
+		Action:    getDeliveryOrderLogByIdResult.DeliveryOrderLog.Action,
+		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		CreatedAt: getDeliveryOrderLogByIdResult.DeliveryOrderLog.CreatedAt,
+		UpdatedAt: &now,
+	}
+
+	salesOrderLogResultChan := make(chan *models.DeliveryOrderLogChan)
+	go u.deliveryOrderLogRepository.UpdateByID(logId, salesOrderLog, u.ctx, salesOrderLogResultChan)
+
+	result := models.DORetryProcessSyncToKafkaResponse{
+		DeliveryOrderLogEventId: logId,
+		Status:                  constants.LOG_STATUS_MONGO_DEFAULT,
+		Message:                 "on progres",
+	}
+	return &result, nil
+
 }

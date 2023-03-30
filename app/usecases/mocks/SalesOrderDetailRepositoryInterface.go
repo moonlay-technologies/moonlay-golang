@@ -26,6 +26,11 @@ func (_m *SalesOrderDetailRepositoryInterface) GetBySalesOrderID(salesOrderID in
 	_m.Called(salesOrderID, countOnly, ctx, result)
 }
 
+// GetBySOIDSkuAndUomCode provides a mock function with given fields: salesOrderID, sku, uomCode, countOnly, ctx, result
+func (_m *SalesOrderDetailRepositoryInterface) GetBySOIDSkuAndUomCode(salesOrderID int, sku string, uomCode string, countOnly bool, ctx context.Context, result chan *models.SalesOrderDetailChan) {
+	_m.Called(salesOrderID, sku, uomCode, countOnly, ctx, result)
+}
+
 // Insert provides a mock function with given fields: request, sqlTransaction, ctx, result
 func (_m *SalesOrderDetailRepositoryInterface) Insert(request *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderDetailChan) {
 	_m.Called(request, sqlTransaction, ctx, result)

@@ -19,7 +19,7 @@ import (
 type DeliveryOrderLogRepositoryInterface interface {
 	Insert(request *models.DeliveryOrderLog, ctx context.Context, result chan *models.DeliveryOrderLogChan)
 	Get(request *models.DeliveryOrderEventLogRequest, countOnly bool, ctx context.Context, resultChan chan *models.GetDeliveryOrderLogsChan)
-	GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan)
+	GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.GetDeliveryOrderLogChan)
 	GetByCode(doCode string, status string, action string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan)
 	UpdateByID(ID string, request *models.DeliveryOrderLog, ctx context.Context, result chan *models.DeliveryOrderLogChan)
 	InsertJourney(request *models.DeliveryOrderJourney, ctx context.Context, result chan *models.DeliveryOrderJourneyChan)
@@ -68,36 +68,86 @@ func (r *deliveryOrderLogRepository) Get(request *models.DeliveryOrderEventLogRe
 	asc := 1
 	desc := -1
 
-	if request.SortField == "created_at" && request.SortValue == "asc" {
-		sort = bson.M{
-			"created_at": asc,
+	if request.SortField == "do_code" {
+		if request.SortValue == "asc" {
+			sort = bson.M{
+				"do_code": asc,
+			}
+		} else if request.SortValue == "desc" {
+			sort = bson.M{
+				"do_code": desc,
+			}
 		}
-	} else if request.SortField == "updated_at" && request.SortValue == "asc" {
-		sort = bson.M{
-			"updated_at": asc,
+	} else if request.SortField == "status" {
+		if request.SortValue == "asc" {
+			sort = bson.M{
+				"status": asc,
+			}
+		} else if request.SortValue == "desc" {
+			sort = bson.M{
+				"status": desc,
+			}
 		}
-	} else if request.SortField == "created_at" && request.SortValue == "desc" {
-		sort = bson.M{
-			"created_at": desc,
+	} else if request.SortField == "agent_name" {
+		if request.SortValue == "asc" {
+			sort = bson.M{
+				"data.agent_name": asc,
+			}
+		} else if request.SortValue == "desc" {
+			sort = bson.M{
+				"data.agent_name": desc,
+			}
 		}
-	} else if request.SortField == "updated_at" && request.SortValue == "desc" {
-		sort = bson.M{
-			"updated_at": desc,
-		}
-	} else {
-		sort = bson.M{
-			"created_at": desc,
+	} else if request.SortField == "created_at" {
+		if request.SortValue == "asc" {
+			sort = bson.M{
+				"created_at": asc,
+			}
+		} else if request.SortValue == "desc" {
+			sort = bson.M{
+				"created_at": desc,
+			}
 		}
 	}
 
 	if request.GlobalSearchValue != "" {
-		filter = bson.M{
-			"$or": []bson.M{
-				{"request_id": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
-				{"status": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
-				{"do_code": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
-				{"data.agent_id": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
-			},
+		var status string
+		switch request.GlobalSearchValue {
+		case constants.EVENT_LOG_STATUS_0:
+			status = "0"
+			filter = bson.M{
+				"$or": []bson.M{
+					{"do_code": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
+					{"status": bson.M{"$regex": status, "$options": "i"}},
+					{"data.agent_name": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
+				},
+			}
+		case constants.EVENT_LOG_STATUS_1:
+			status = "1"
+			filter = bson.M{
+				"$or": []bson.M{
+					{"do_code": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
+					{"status": bson.M{"$regex": status, "$options": "i"}},
+					{"data.agent_name": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
+				},
+			}
+		case constants.EVENT_LOG_STATUS_2:
+			status = "2"
+			filter = bson.M{
+				"$or": []bson.M{
+					{"do_code": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
+					{"status": bson.M{"$regex": status, "$options": "i"}},
+					{"data.agent_name": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
+				},
+			}
+		default:
+			filter = bson.M{
+				"$or": []bson.M{
+					{"do_code": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
+					{"status": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
+					{"data.agent_name": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
+				},
+			}
 		}
 	}
 
@@ -122,7 +172,18 @@ func (r *deliveryOrderLogRepository) Get(request *models.DeliveryOrderEventLogRe
 	}
 
 	if request.Status != "" {
-		filter["status"] = request.Status
+		var status string
+		switch request.Status {
+		case constants.EVENT_LOG_STATUS_0:
+			status = "0"
+		case constants.EVENT_LOG_STATUS_1:
+			status = "1"
+		case constants.EVENT_LOG_STATUS_2:
+			status = "2"
+		default:
+			status = ""
+		}
+		filter["status"] = status
 	}
 
 	option := options.Find().SetSkip(int64((request.Page - 1) * request.PerPage)).SetLimit(int64(request.PerPage)).SetSort(sort)
@@ -137,7 +198,7 @@ func (r *deliveryOrderLogRepository) Get(request *models.DeliveryOrderEventLogRe
 	}
 
 	if total == 0 {
-		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
+		err = helper.NewError("data not found")
 		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
@@ -185,8 +246,8 @@ func (r *deliveryOrderLogRepository) Get(request *models.DeliveryOrderEventLogRe
 	}
 }
 
-func (r *deliveryOrderLogRepository) GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderLogChan) {
-	response := &models.DeliveryOrderLogChan{}
+func (r *deliveryOrderLogRepository) GetByID(ID string, countOnly bool, ctx context.Context, resultChan chan *models.GetDeliveryOrderLogChan) {
+	response := &models.GetDeliveryOrderLogChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collectionLog)
 	objectID, _ := primitive.ObjectIDFromHex(ID)
 	filter := bson.M{"_id": objectID}
@@ -202,7 +263,7 @@ func (r *deliveryOrderLogRepository) GetByID(ID string, countOnly bool, ctx cont
 
 	if total == 0 {
 		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -210,7 +271,7 @@ func (r *deliveryOrderLogRepository) GetByID(ID string, countOnly bool, ctx cont
 	}
 
 	if countOnly == false {
-		deliveryOrderLog := &models.DeliveryOrderLog{}
+		deliveryOrderLog := &models.GetDeliveryOrderLog{}
 		err = collection.FindOne(ctx, filter).Decode(deliveryOrderLog)
 
 		if err != nil {

@@ -104,24 +104,7 @@ func InitSalesOrderUseCaseInterface(salesOrderRepository repositories.SalesOrder
 func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTransaction *sql.Tx, ctx context.Context) ([]*models.SalesOrderResponse, *baseModel.ErrorLog) {
 	now := time.Now()
 	var soCode string
-
-	// Get Order Status By Name
-	getOrderStatusResultChan := make(chan *models.OrderStatusChan)
-	go u.orderStatusRepository.GetByNameAndType("open", "sales_order", false, ctx, getOrderStatusResultChan)
-	getOrderStatusResult := <-getOrderStatusResultChan
-
-	if getOrderStatusResult.Error != nil {
-		return []*models.SalesOrderResponse{}, getOrderStatusResult.ErrorLog
-	}
-
-	// Get Order Detail Status By Name
-	getOrderDetailStatusResultChan := make(chan *models.OrderStatusChan)
-	go u.orderStatusRepository.GetByNameAndType("open", "sales_order_detail", false, ctx, getOrderDetailStatusResultChan)
-	getOrderDetailStatusResult := <-getOrderDetailStatusResultChan
-
-	if getOrderDetailStatusResult.Error != nil {
-		return []*models.SalesOrderResponse{}, getOrderDetailStatusResult.ErrorLog
-	}
+	var journeyStatus string
 
 	// Get Order Source Status By Id
 	getOrderSourceResultChan := make(chan *models.OrderSourceChan)
@@ -132,38 +115,31 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		return []*models.SalesOrderResponse{}, getOrderSourceResult.ErrorLog
 	}
 
-	parseSoDate, _ := time.Parse("2006-01-02", request.SoDate)
-	parseSoRefDate, _ := time.Parse("2006-01-02", request.SoRefDate)
-	duration := time.Hour*time.Duration(now.Hour()) + time.Minute*time.Duration(now.Minute()) + time.Second*time.Duration(now.Second()) + time.Nanosecond*time.Duration(now.Nanosecond())
-
-	soDate := parseSoDate.UTC().Add(duration)
-	soRefDate := parseSoRefDate.UTC().Add(duration)
-	nowUTC := now.UTC()
-	if now.UTC().Hour() <= soRefDate.Hour() {
-		nowUTC = nowUTC.Add(7 * time.Hour)
+	var status string
+	if getOrderSourceResult.OrderSource.SourceName == "manager" {
+		status = "open"
+		journeyStatus = constants.SO_STATUS_APPV
+	} else {
+		status = "pending"
+		journeyStatus = constants.SO_STATUS_PEND
 	}
-	sourceName := getOrderSourceResult.OrderSource.SourceName
 
-	if sourceName == "manager" && !(soDate.Add(1*time.Minute).After(soRefDate) && soRefDate.Add(-1*time.Minute).Before(nowUTC) && soDate.Add(-1*time.Minute).Before(nowUTC) && soRefDate.Month() == nowUTC.Month() && soRefDate.UTC().Year() == nowUTC.Year()) {
+	// Get Order Status By Name
+	getOrderStatusResultChan := make(chan *models.OrderStatusChan)
+	go u.orderStatusRepository.GetByNameAndType(status, "sales_order", false, ctx, getOrderStatusResultChan)
+	getOrderStatusResult := <-getOrderStatusResultChan
 
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage("create", "so_date dan so_ref_date harus sama dengan kurang dari hari ini dan harus di bulan berjalan")},
-			SystemMessage: []string{"Invalid Process"},
-			StatusCode:    http.StatusUnprocessableEntity,
-		})
+	if getOrderStatusResult.Error != nil {
+		return []*models.SalesOrderResponse{}, getOrderStatusResult.ErrorLog
+	}
 
-		return []*models.SalesOrderResponse{}, errorLog
+	// Get Order Detail Status By Name
+	getOrderDetailStatusResultChan := make(chan *models.OrderStatusChan)
+	go u.orderStatusRepository.GetByNameAndType(status, "sales_order_detail", false, ctx, getOrderDetailStatusResultChan)
+	getOrderDetailStatusResult := <-getOrderDetailStatusResultChan
 
-	} else if (sourceName == "salesman" || sourceName == "store") && !(soDate.Equal(now.Local()) && soRefDate.Equal(now.Local())) {
-
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage("create", "so_date dan so_ref_date harus sama dengan hari ini")},
-			SystemMessage: []string{"Invalid Process"},
-			StatusCode:    http.StatusUnprocessableEntity,
-		})
-
-		return []*models.SalesOrderResponse{}, errorLog
-
+	if getOrderDetailStatusResult.Error != nil {
+		return []*models.SalesOrderResponse{}, getOrderDetailStatusResult.ErrorLog
 	}
 
 	// Check Agent By Id
@@ -209,6 +185,17 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 		}
 	}
 
+	if len(request.SoRefCode) < 1 {
+		// x := 5 - len(strconv.Itoa(request.AgentID))
+		// var str strings.Builder
+		// for i := 0; i < x; i++ {
+		// 	str.WriteString("0")
+		// }
+		// agentId := str.String() + strconv.Itoa(request.AgentID)
+
+		request.SoRefCode = helper.GenerateSORefCode(request.AgentID, request.SoDate)
+	}
+
 	brandIds := []int{}
 	var salesOrderBrands map[int]*models.SalesOrder
 	salesOrderBrands = map[int]*models.SalesOrder{}
@@ -230,6 +217,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 
 			salesOrderDetail := &models.SalesOrderDetail{}
 			salesOrderDetail.SalesOrderDetailStoreRequestMap(v, now)
+			salesOrderDetail.SalesOrderDetailStatusChanMap(getOrderDetailStatusResult)
 			salesOrderDetail.Note = models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}}
 			salesOrderDetail.OrderStatusID = getOrderDetailStatusResult.OrderStatus.ID
 
@@ -272,6 +260,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 			salesOrderDetail := &models.SalesOrderDetail{}
 			salesOrderDetail.SalesOrderDetailStoreRequestMap(v, now)
 			salesOrderDetail.SalesOrderDetailStatusChanMap(getOrderDetailStatusResult)
+			salesOrderDetail.Note = models.NullString{NullString: sql.NullString{String: request.Note, Valid: true}}
 			salesOrderDetail.OrderStatusID = getOrderDetailStatusResult.OrderStatus.ID
 
 			salesOrderDetails := []*models.SalesOrderDetail{}
@@ -416,7 +405,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 			SoCode:    salesOrderResponse.SoCode,
 			SoId:      createSalesOrderResult.SalesOrder.ID,
 			SoDate:    createSalesOrderResult.SalesOrder.SoDate,
-			Status:    constants.SO_STATUS_APPV,
+			Status:    journeyStatus,
 			Remark:    "",
 			Reason:    "",
 			CreatedAt: &now,
@@ -771,8 +760,20 @@ func (u *salesOrderUseCase) GetSyncToKafkaHistories(request *models.SalesOrderEv
 
 	salesOrderEventLogs := []*models.SalesOrderEventLogResponse{}
 	for _, v := range getSalesOrderLogResult.SalesOrderLogs {
+		var status string
+		switch v.Status {
+		case constants.LOG_STATUS_MONGO_DEFAULT:
+			status = "In Progress"
+		case constants.LOG_STATUS_MONGO_SUCCESS:
+			status = "Success"
+		case constants.LOG_STATUS_MONGO_ERROR:
+			status = "Failed"
+		default:
+			status = ""
+		}
+
 		salesOrderEventLog := models.SalesOrderEventLogResponse{}
-		salesOrderEventLog.SalesOrderEventLogResponseMap(v)
+		salesOrderEventLog.SalesOrderEventLogResponseMap(v, status)
 		dataSOEventLog := models.DataSOEventLogResponse{}
 		dataSOEventLog.DataSOEventLogResponseMap(v)
 		salesOrderEventLog.Data = &dataSOEventLog
@@ -940,7 +941,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 	if errorValidation != nil {
 		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, errorValidation.Error())},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 		return &models.SalesOrderResponse{}, errorLogData
@@ -961,7 +962,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 	if status == "undefined" {
 		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, "status tidak terdaftar")},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 		return &models.SalesOrderResponse{}, errorLogData
@@ -1196,94 +1197,6 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 	return salesOrdersResponse, nil
 }
 
-// func (u *salesOrderUseCase) UpdateSODetailById(soId, id int, request *models.SalesOrderDetailUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetail, *baseModel.ErrorLog) {
-// now := time.Now()
-// var soCode string
-
-// getSalesOrderByIDResultChan := make(chan *models.SalesOrderChan)
-// go u.salesOrderRepository.GetByID(soId, false, ctx, getSalesOrderByIDResultChan)
-// getSalesOrderByIDResult := <-getSalesOrderByIDResultChan
-
-// if getSalesOrderByIDResult.Error != nil {
-// 	return &models.SalesOrderDetail{}, getSalesOrderByIDResult.ErrorLog
-// }
-
-// // Check Order Status
-// getOrderStatusResultChan := make(chan *models.OrderStatusChan)
-// go u.orderStatusRepository.GetByID(getSalesOrderByIDResult.SalesOrder.OrderStatusID, false, ctx, getOrderStatusResultChan)
-// getOrderStatusResult := <-getOrderStatusResultChan
-
-// if getOrderStatusResult.Error != nil {
-// 	return &models.SalesOrderDetail{}, getOrderStatusResult.ErrorLog
-// }
-
-// errorValidation := u.updateSOValidation(getSalesOrderByIDResult.SalesOrder.ID, getOrderStatusResult.OrderStatus.Name, ctx)
-
-// if errorValidation != nil {
-// 	errorLogData := helper.WriteLog(errorValidation, http.StatusBadRequest, "Ada kesalahan, silahkan coba lagi nanti")
-// 	return &models.SalesOrderDetail{}, errorLogData
-// }
-
-// // Check Order Detail Status
-// getOrderDetailStatusResultChan := make(chan *models.OrderStatusChan)
-// go u.orderStatusRepository.GetByNameAndType("open", "sales_order_detail", false, ctx, getOrderDetailStatusResultChan)
-// getOrderDetailStatusResult := <-getOrderDetailStatusResultChan
-
-// if getOrderDetailStatusResult.Error != nil {
-// 	return &models.SalesOrderDetail{}, getOrderDetailStatusResult.ErrorLog
-// }
-
-// // Check Brand
-// getBrandResultChan := make(chan *models.BrandChan)
-// go u.brandRepository.GetByID(request.BrandID, false, ctx, getBrandResultChan)
-// getBrandResult := <-getBrandResultChan
-
-// if getBrandResult.Error != nil {
-// 	return &models.SalesOrderDetail{}, getBrandResult.ErrorLog
-// }
-
-// salesOrderDetail := &models.SalesOrderDetail{}
-// salesOrderDetail.SalesOrderDetailUpdateRequestMap(request, now)
-
-// updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
-// go u.salesOrderDetailRepository.UpdateByID(request.ID, salesOrderDetail, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
-// updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
-
-// if updateSalesOrderDetailResult.Error != nil {
-// 	return &models.SalesOrderDetail{}, updateSalesOrderDetailResult.ErrorLog
-// }
-
-// salesOrderDetail.BrandID = request.BrandID
-
-// salesOrderLog := &models.SalesOrderLog{
-// 	RequestID: "",
-// 	SoCode:    soCode,
-// 	Data:      salesOrderDetail,
-// 	Status:    "0",
-// 	CreatedAt: &now,
-// }
-
-// createSalesOrderLogResultChan := make(chan *models.SalesOrderLogChan)
-// go u.salesOrderLogRepository.Insert(salesOrderLog, ctx, createSalesOrderLogResultChan)
-// createSalesOrderLogResult := <-createSalesOrderLogResultChan
-
-// if createSalesOrderLogResult.Error != nil {
-// 	return &models.SalesOrderDetail{}, createSalesOrderLogResult.ErrorLog
-// }
-
-// keyKafka := []byte(soCode)
-// messageKafka, _ := json.Marshal(salesOrderDetail)
-// err := u.kafkaClient.WriteToTopic(constants.UPDATE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
-
-// if err != nil {
-// 	errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-// 	return &models.SalesOrderDetail{}, errorLogData
-// }
-
-// 	return salesOrderDetail, nil
-
-// }
-
 func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *models.UpdateSalesOrderDetailByIdRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetailStoreResponse, *baseModel.ErrorLog) {
 	now := time.Now()
 	salesOrder := &models.SalesOrder{}
@@ -1300,7 +1213,7 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 	if soId != getSalesOrderDetailByIDResult.SalesOrderDetail.SalesOrderID {
 		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, fmt.Sprintf("SO Detail Id %d tidak terdaftar di SO Id %d", soDetailId, soId))},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 		return &models.SalesOrderDetailStoreResponse{}, errorLogData
@@ -1358,7 +1271,7 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 	if len(soStatus) < 1 || len(soDetailStatus) < 1 {
 		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, fmt.Sprintf("tidak memenuhi syarat"))},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 		return &models.SalesOrderDetailStoreResponse{}, errorLogData
@@ -1612,7 +1525,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 	if errorValidation != nil {
 		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, errorValidation.Error())},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 		return &models.SalesOrderResponse{}, errorLogData
@@ -1633,7 +1546,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 	if status == "undefined" {
 		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, "status tidak terdaftar")},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 		return &models.SalesOrderResponse{}, errorLogData
@@ -2102,7 +2015,7 @@ func (u *salesOrderUseCase) RetrySyncToKafka(logId string) (*models.SORetryProce
 	if getSalesOrderLogByIdResult.SalesOrderLog.Status != "2" {
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage("retry", fmt.Sprintf("status log dengan id %s bukan gagal", logId))},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 

@@ -360,6 +360,7 @@ func (salesOrder *SalesOrder) SalesmanChanMap(request *SalesmanChan) {
 }
 
 func (result *SalesOrderResponse) CreateSoResponseMap(request *SalesOrder) {
+	result.ID = request.ID
 	result.CartID = request.CartID
 	result.AgentID = request.AgentID
 	result.StoreID = request.StoreID
@@ -558,11 +559,11 @@ func (salesOrder *SalesOrder) SalesOrderForDOMap(request *SalesOrder) {
 	return
 }
 
-func (salesOrderEventLog *SalesOrderEventLogResponse) SalesOrderEventLogResponseMap(request *GetSalesOrderLog) {
+func (salesOrderEventLog *SalesOrderEventLogResponse) SalesOrderEventLogResponseMap(request *GetSalesOrderLog, status string) {
 	salesOrderEventLog.ID = request.ID
 	salesOrderEventLog.RequestID = request.RequestID
 	salesOrderEventLog.SoCode = request.SoCode
-	salesOrderEventLog.Status = request.Status
+	salesOrderEventLog.Status = status
 	salesOrderEventLog.Action = request.Action
 	salesOrderEventLog.CreatedAt = request.CreatedAt
 	salesOrderEventLog.UpdatedAt = request.UpdatedAt

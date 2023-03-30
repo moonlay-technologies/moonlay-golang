@@ -11,7 +11,6 @@ import (
 	"order-service/app/models/constants"
 	"order-service/app/usecases"
 	"order-service/global/utils/helper"
-	"order-service/global/utils/model"
 	baseModel "order-service/global/utils/model"
 	"strconv"
 
@@ -74,8 +73,7 @@ func (c *salesOrderController) Get(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, model.Response{Data: salesOrders.SalesOrders, Total: salesOrders.Total, StatusCode: http.StatusOK})
-	return
+	ctx.JSON(http.StatusOK, baseModel.Response{Data: salesOrders.SalesOrders, Total: salesOrders.Total, StatusCode: http.StatusOK})
 }
 
 func (c *salesOrderController) GetByID(ctx *gin.Context) {
@@ -92,7 +90,7 @@ func (c *salesOrderController) GetByID(ctx *gin.Context) {
 	if err != nil {
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_GET, "sales order id harus bernilai integer")},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 		result.StatusCode = http.StatusUnprocessableEntity
@@ -118,7 +116,6 @@ func (c *salesOrderController) GetByID(ctx *gin.Context) {
 	result.Data = salesOrder
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
-	return
 }
 
 func (c *salesOrderController) Create(ctx *gin.Context) {
@@ -143,90 +140,7 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 		}
 	}
 
-	dateField := []*models.DateInputRequest{
-		{
-			Field: "so_date",
-			Value: insertRequest.SoDate,
-		},
-		{
-			Field: "so_ref_date",
-			Value: insertRequest.SoRefDate,
-		},
-	}
-	err = c.requestValidationMiddleware.DateInputValidation(ctx, dateField, constants.ERROR_ACTION_NAME_CREATE)
-	if err != nil {
-		return
-	}
-
-	brandIds := []int{}
-	mustActiveField := []*models.MustActiveRequest{
-		helper.GenerateMustActive("agents", "agent_id", insertRequest.AgentID, "active"),
-		helper.GenerateMustActive("stores", "store_id", insertRequest.StoreID, "active"),
-		helper.GenerateMustActive("users", "user_id", insertRequest.UserID, "ACTIVE"),
-	}
-	for i, v := range insertRequest.SalesOrderDetails {
-		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
-			Table:    "products",
-			ReqField: fmt.Sprintf("sales_order_details[%d].product_id", i),
-			Clause:   fmt.Sprintf("id = %d AND isActive = %d", v.ProductID, 1),
-		})
-		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
-			Table:    "uoms",
-			ReqField: fmt.Sprintf("sales_order_details[%d].uom_id", i),
-			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", v.UomID),
-		})
-		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
-			Table:    "brands",
-			ReqField: fmt.Sprintf("sales_order_details[%d].brand_id", i),
-			Clause:   fmt.Sprintf("id = %d AND status_active = %d", v.BrandID, 1),
-		})
-
-		brandIds = append(brandIds, v.BrandID)
-	}
-	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
-	if err != nil {
-		return
-	}
-
-	uniqueField := []*models.UniqueRequest{}
-	if len(insertRequest.SoRefCode) > 0 {
-		err = c.requestValidationMiddleware.OrderSourceValidation(ctx, insertRequest.OrderSourceID, insertRequest.SoRefCode, constants.ERROR_ACTION_NAME_CREATE)
-		if err != nil {
-			return
-		}
-
-		uniqueField = append(uniqueField, &models.UniqueRequest{
-			Table: constants.SALES_ORDERS_TABLE,
-			Field: "so_ref_code",
-			Value: insertRequest.SoRefCode,
-		})
-	}
-
-	if len(uniqueField) > 0 {
-		err = c.requestValidationMiddleware.UniqueValidation(ctx, uniqueField)
-		if err != nil {
-			return
-		}
-	}
-
-	err = c.requestValidationMiddleware.AgentIdValidation(ctx, insertRequest.AgentID, insertRequest.UserID, constants.ERROR_ACTION_NAME_CREATE)
-	if err != nil {
-		return
-	}
-
-	err = c.requestValidationMiddleware.StoreIdValidation(ctx, insertRequest.StoreID, insertRequest.AgentID, constants.ERROR_ACTION_NAME_CREATE)
-	if err != nil {
-		return
-	}
-
-	if insertRequest.SalesmanID > 0 {
-		err = c.requestValidationMiddleware.SalesmanIdValidation(ctx, insertRequest.SalesmanID, insertRequest.AgentID, constants.ERROR_ACTION_NAME_CREATE)
-		if err != nil {
-			return
-		}
-	}
-
-	err = c.requestValidationMiddleware.BrandIdValidation(ctx, brandIds, insertRequest.AgentID, constants.ERROR_ACTION_NAME_CREATE)
+	err = c.salesOrderValidator.CreateSalesOrderValidator(insertRequest, ctx)
 	if err != nil {
 		return
 	}
@@ -276,7 +190,7 @@ func (c *salesOrderController) Create(ctx *gin.Context) {
 	result.Data = salesOrders
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
-	return
+
 }
 
 func (c *salesOrderController) UpdateByID(ctx *gin.Context) {
@@ -294,7 +208,7 @@ func (c *salesOrderController) UpdateByID(ctx *gin.Context) {
 	if err != nil {
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, "sales order id harus bernilai integer")},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 		result.StatusCode = http.StatusUnprocessableEntity
@@ -362,7 +276,7 @@ func (c *salesOrderController) UpdateByID(ctx *gin.Context) {
 	result.Data = salesOrder
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
-	return
+
 }
 
 func (c *salesOrderController) UpdateSODetailByID(ctx *gin.Context) {
@@ -379,7 +293,7 @@ func (c *salesOrderController) UpdateSODetailByID(ctx *gin.Context) {
 	if err != nil {
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, "sales order id harus bernilai integer")},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 		result.StatusCode = http.StatusUnprocessableEntity
@@ -394,7 +308,7 @@ func (c *salesOrderController) UpdateSODetailByID(ctx *gin.Context) {
 	if err != nil {
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, "sales order detail id harus bernilai integer")},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 		result.StatusCode = http.StatusUnprocessableEntity
@@ -462,7 +376,7 @@ func (c *salesOrderController) UpdateSODetailByID(ctx *gin.Context) {
 	result.Data = salesOrderDetail
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
-	return
+
 }
 
 func (c *salesOrderController) UpdateSODetailBySOID(ctx *gin.Context) {
@@ -480,7 +394,7 @@ func (c *salesOrderController) UpdateSODetailBySOID(ctx *gin.Context) {
 	if err != nil {
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, "sales order id harus bernilai integer")},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 		result.StatusCode = http.StatusUnprocessableEntity
@@ -548,343 +462,8 @@ func (c *salesOrderController) UpdateSODetailBySOID(ctx *gin.Context) {
 	result.Data = salesOrderDetail
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
-	return
+
 }
-
-// func (c *salesOrderController) GetDetails(ctx *gin.Context) {
-// 	var result baseModel.Response
-// 	var resultErrorLog *baseModel.ErrorLog
-// 	var pageInt, perPageInt, agentIdInt, storeIdInt, brandIdInt, orderSourceIdInt, orderStatusIdInt, productIdInt, categoryIdInt, salesmanIdInt, provinceIdInt, cityIdInt, districtIdInt, villageIdInt, idInt int
-
-// 	page, isPageExist := ctx.GetQuery("page")
-// 	if isPageExist == false {
-// 		page = "1"
-// 	}
-
-// 	pageInt, err := strconv.Atoi(page)
-
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'page' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	if pageInt == 0 {
-// 		err = helper.NewError("Parameter 'page' harus bernilai integer > 0")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	perPage, isPerPageExist := ctx.GetQuery("per_page")
-// 	if isPerPageExist == false {
-// 		perPage = "10"
-// 	}
-
-// 	perPageInt, err = strconv.Atoi(perPage)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'per_page' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	if perPageInt == 0 {
-// 		err = helper.NewError("Parameter 'per_page' harus bernilai integer > 0")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	sortField, isSortFieldExist := ctx.GetQuery("sort_field")
-// 	if isSortFieldExist == false {
-// 		sortField = "created_at"
-// 	}
-
-// 	if sortField != "order_status_id" && sortField != "so_date" && sortField != "so_ref_code" && sortField != "so_code" && sortField != "store_code" && sortField != "store_name" && sortField != "created_at" && sortField != "updated_at" {
-// 		err = helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'so_date' or 'so_ref_code' or 'so_code' or 'store_code' or 'store_name' or 'created_at' or 'updated_at' ")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	sortValue, isSortValueExist := ctx.GetQuery("sort_value")
-// 	if isSortValueExist == false {
-// 		sortValue = "desc"
-// 	}
-
-// 	globalSearchValue, isGlobalSearchValueExist := ctx.GetQuery("global_search_value")
-// 	if isGlobalSearchValueExist == false {
-// 		globalSearchValue = ""
-// 	}
-
-// 	agentId, isAgentIdExist := ctx.GetQuery("agent_id")
-// 	if isAgentIdExist == false {
-// 		agentId = "0"
-// 	}
-
-// 	agentIdInt, err = strconv.Atoi(agentId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'agent_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	storeId, isStoreIdExist := ctx.GetQuery("store_id")
-// 	if isStoreIdExist == false {
-// 		storeId = "0"
-// 	}
-
-// 	storeIdInt, err = strconv.Atoi(storeId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'store_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	brandId, isBrandIdExist := ctx.GetQuery("brand_id")
-// 	if isBrandIdExist == false {
-// 		brandId = "0"
-// 	}
-
-// 	brandIdInt, err = strconv.Atoi(brandId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'brand_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	orderSourceId, isOrderSourceIdExist := ctx.GetQuery("order_source_id")
-// 	if isOrderSourceIdExist == false {
-// 		orderSourceId = "0"
-// 	}
-
-// 	orderSourceIdInt, err = strconv.Atoi(orderSourceId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'order_source_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	orderStatusId, isOrderStatusIdExist := ctx.GetQuery("order_status_id")
-// 	if isOrderStatusIdExist == false {
-// 		orderStatusId = "0"
-// 	}
-
-// 	orderStatusIdInt, err = strconv.Atoi(orderStatusId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'order_status_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	startSoDate, isStartSoDate := ctx.GetQuery("start_so_date")
-// 	if isStartSoDate == false {
-// 		startSoDate = ""
-// 	}
-
-// 	endSoDate, isEndSoDate := ctx.GetQuery("end_so_date")
-// 	if isEndSoDate == false {
-// 		endSoDate = ""
-// 	}
-
-// 	id, isIdExist := ctx.GetQuery("id")
-// 	if isIdExist == false {
-// 		id = "0"
-// 	}
-
-// 	idInt, err = strconv.Atoi(id)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	productId, isProductIdExist := ctx.GetQuery("product_id")
-// 	if isProductIdExist == false {
-// 		productId = "0"
-// 	}
-
-// 	productIdInt, err = strconv.Atoi(productId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'product_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	categoryId, isCategoryIdExist := ctx.GetQuery("category_id")
-// 	if isCategoryIdExist == false {
-// 		categoryId = "0"
-// 	}
-
-// 	categoryIdInt, err = strconv.Atoi(categoryId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'category_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	salesmanId, isSalesmanIdExist := ctx.GetQuery("salesman_id")
-// 	if isSalesmanIdExist == false {
-// 		salesmanId = "0"
-// 	}
-
-// 	salesmanIdInt, err = strconv.Atoi(salesmanId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'salesman_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	provinceId, isProvinceIdExist := ctx.GetQuery("province_id")
-// 	if isProvinceIdExist == false {
-// 		provinceId = "0"
-// 	}
-
-// 	provinceIdInt, err = strconv.Atoi(provinceId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'province_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	cityId, isCityIdExist := ctx.GetQuery("city_id")
-// 	if isCityIdExist == false {
-// 		cityId = "0"
-// 	}
-
-// 	cityIdInt, err = strconv.Atoi(cityId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'city_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	districtId, isDistrictIdExist := ctx.GetQuery("district_id")
-// 	if isDistrictIdExist == false {
-// 		districtId = "0"
-// 	}
-
-// 	districtIdInt, err = strconv.Atoi(districtId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'district_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	villageId, isVillageIdExist := ctx.GetQuery("village_id")
-// 	if isVillageIdExist == false {
-// 		villageId = "0"
-// 	}
-
-// 	villageIdInt, err = strconv.Atoi(villageId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'village_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	startCreatedAt, isStartCreatedAt := ctx.GetQuery("start_created_at")
-// 	if isStartCreatedAt == false {
-// 		startCreatedAt = ""
-// 	}
-
-// 	endCreatedAt, isEndCreatedAt := ctx.GetQuery("end_created_at")
-// 	if isEndCreatedAt == false {
-// 		endCreatedAt = ""
-// 	}
-
-// 	salesOrderRequest := &models.GetSalesOrderDetailRequest{
-// 		Page:              pageInt,
-// 		PerPage:           perPageInt,
-// 		SortField:         sortField,
-// 		SortValue:         sortValue,
-// 		GlobalSearchValue: globalSearchValue,
-// 		AgentID:           agentIdInt,
-// 		StoreID:           storeIdInt,
-// 		BrandID:           brandIdInt,
-// 		OrderSourceID:     orderSourceIdInt,
-// 		OrderStatusID:     orderStatusIdInt,
-// 		StartSoDate:       startSoDate,
-// 		EndSoDate:         endSoDate,
-// 		ID:                idInt,
-// 		ProductID:         productIdInt,
-// 		CategoryID:        categoryIdInt,
-// 		SalesmanID:        salesmanIdInt,
-// 		ProvinceID:        provinceIdInt,
-// 		CityID:            cityIdInt,
-// 		DistrictID:        districtIdInt,
-// 		VillageID:         villageIdInt,
-// 		StartCreatedAt:    startCreatedAt,
-// 		EndCreatedAt:      endCreatedAt,
-// 	}
-
-// 	salesOrders, errorLog := c.salesOrderUseCase.GetDetails(salesOrderRequest)
-
-// 	if errorLog.Err != nil {
-// 		resultErrorLog = errorLog
-// 		result.StatusCode = resultErrorLog.StatusCode
-// 		result.Error = resultErrorLog
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	result.Data = salesOrders.SalesOrderDetails
-// 	result.Total = salesOrders.Total
-// 	result.StatusCode = http.StatusOK
-// 	ctx.JSON(http.StatusOK, result)
-// 	return
-// }
 
 func (c *salesOrderController) GetDetails(ctx *gin.Context) {
 	salesOrderDetailRequest, err := c.salesOrderValidator.GetSalesOrderDetailValidator(ctx)
@@ -899,8 +478,8 @@ func (c *salesOrderController) GetDetails(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, model.Response{Data: salesOrders.SalesOrderDetails, Total: salesOrders.Total, StatusCode: http.StatusOK})
-	return
+	ctx.JSON(http.StatusOK, baseModel.Response{Data: salesOrders.SalesOrderDetails, Total: salesOrders.Total, StatusCode: http.StatusOK})
+
 }
 
 func (c *salesOrderController) DeleteByID(ctx *gin.Context) {
@@ -988,340 +567,8 @@ func (c *salesOrderController) DeleteByID(ctx *gin.Context) {
 
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
-	return
+
 }
-
-// func (c *salesOrderController) GetDetailsBySoId(ctx *gin.Context) {
-// 	var result baseModel.Response
-// 	var resultErrorLog *baseModel.ErrorLog
-// 	var pageInt, perPageInt, agentIdInt, storeIdInt, brandIdInt, orderSourceIdInt, orderStatusIdInt, productIdInt, categoryIdInt, salesmanIdInt, provinceIdInt, cityIdInt, districtIdInt, villageIdInt int
-
-// 	soIds := ctx.Param("so-id")
-// 	soId, err := strconv.Atoi(soIds)
-
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'so-id' harus bernilai integer")
-// 		resultErrorLog.Message = err.Error()
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = resultErrorLog
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	page, isPageExist := ctx.GetQuery("page")
-// 	if isPageExist == false {
-// 		page = "1"
-// 	}
-
-// 	pageInt, err = strconv.Atoi(page)
-
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'page' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	if pageInt == 0 {
-// 		err = helper.NewError("Parameter 'page' harus bernilai integer > 0")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	perPage, isPerPageExist := ctx.GetQuery("per_page")
-// 	if isPerPageExist == false {
-// 		perPage = "10"
-// 	}
-
-// 	perPageInt, err = strconv.Atoi(perPage)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'per_page' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	if perPageInt == 0 {
-// 		err = helper.NewError("Parameter 'per_page' harus bernilai integer > 0")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	sortField, isSortFieldExist := ctx.GetQuery("sort_field")
-// 	if isSortFieldExist == false {
-// 		sortField = "created_at"
-// 	}
-
-// 	if sortField != "order_status_id" && sortField != "so_date" && sortField != "so_ref_code" && sortField != "so_code" && sortField != "store_code" && sortField != "store_name" && sortField != "created_at" && sortField != "updated_at" {
-// 		err = helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'so_date' or 'so_ref_code' or 'so_code' or 'store_code' or 'store_name' or 'created_at' or 'updated_at' ")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	sortValue, isSortValueExist := ctx.GetQuery("sort_value")
-// 	if isSortValueExist == false {
-// 		sortValue = "desc"
-// 	}
-
-// 	globalSearchValue, isGlobalSearchValueExist := ctx.GetQuery("global_search_value")
-// 	if isGlobalSearchValueExist == false {
-// 		globalSearchValue = ""
-// 	}
-
-// 	agentId, isAgentIdExist := ctx.GetQuery("agent_id")
-// 	if isAgentIdExist == false {
-// 		agentId = "0"
-// 	}
-
-// 	agentIdInt, err = strconv.Atoi(agentId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'agent_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	storeId, isStoreIdExist := ctx.GetQuery("store_id")
-// 	if isStoreIdExist == false {
-// 		storeId = "0"
-// 	}
-
-// 	storeIdInt, err = strconv.Atoi(storeId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'store_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	brandId, isBrandIdExist := ctx.GetQuery("brand_id")
-// 	if isBrandIdExist == false {
-// 		brandId = "0"
-// 	}
-
-// 	brandIdInt, err = strconv.Atoi(brandId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'brand_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	orderSourceId, isOrderSourceIdExist := ctx.GetQuery("order_source_id")
-// 	if isOrderSourceIdExist == false {
-// 		orderSourceId = "0"
-// 	}
-
-// 	orderSourceIdInt, err = strconv.Atoi(orderSourceId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'order_source_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	orderStatusId, isOrderStatusIdExist := ctx.GetQuery("order_status_id")
-// 	if isOrderStatusIdExist == false {
-// 		orderStatusId = "0"
-// 	}
-
-// 	orderStatusIdInt, err = strconv.Atoi(orderStatusId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'order_status_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	startSoDate, isStartSoDate := ctx.GetQuery("start_so_date")
-// 	if isStartSoDate == false {
-// 		startSoDate = ""
-// 	}
-
-// 	endSoDate, isEndSoDate := ctx.GetQuery("end_so_date")
-// 	if isEndSoDate == false {
-// 		endSoDate = ""
-// 	}
-
-// 	productId, isProductIdExist := ctx.GetQuery("product_id")
-// 	if isProductIdExist == false {
-// 		productId = "0"
-// 	}
-
-// 	productIdInt, err = strconv.Atoi(productId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'product_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	categoryId, isCategoryIdExist := ctx.GetQuery("category_id")
-// 	if isCategoryIdExist == false {
-// 		categoryId = "0"
-// 	}
-
-// 	categoryIdInt, err = strconv.Atoi(categoryId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'category_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	salesmanId, isSalesmanIdExist := ctx.GetQuery("salesman_id")
-// 	if isSalesmanIdExist == false {
-// 		salesmanId = "0"
-// 	}
-
-// 	salesmanIdInt, err = strconv.Atoi(salesmanId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'salesman_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	provinceId, isProvinceIdExist := ctx.GetQuery("province_id")
-// 	if isProvinceIdExist == false {
-// 		provinceId = "0"
-// 	}
-
-// 	provinceIdInt, err = strconv.Atoi(provinceId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'province_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	cityId, isCityIdExist := ctx.GetQuery("city_id")
-// 	if isCityIdExist == false {
-// 		cityId = "0"
-// 	}
-
-// 	cityIdInt, err = strconv.Atoi(cityId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'city_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	districtId, isDistrictIdExist := ctx.GetQuery("district_id")
-// 	if isDistrictIdExist == false {
-// 		districtId = "0"
-// 	}
-
-// 	districtIdInt, err = strconv.Atoi(districtId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'district_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	villageId, isVillageIdExist := ctx.GetQuery("village_id")
-// 	if isVillageIdExist == false {
-// 		villageId = "0"
-// 	}
-
-// 	villageIdInt, err = strconv.Atoi(villageId)
-// 	if err != nil {
-// 		err = helper.NewError("Parameter 'village_id' harus bernilai integer")
-// 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
-// 		result.StatusCode = http.StatusBadRequest
-// 		result.Error = errorLogData
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	startCreatedAt, isStartCreatedAt := ctx.GetQuery("start_created_at")
-// 	if isStartCreatedAt == false {
-// 		startCreatedAt = ""
-// 	}
-
-// 	endCreatedAt, isEndCreatedAt := ctx.GetQuery("end_created_at")
-// 	if isEndCreatedAt == false {
-// 		endCreatedAt = ""
-// 	}
-
-// 	salesOrderRequest := &models.GetSalesOrderDetailRequest{
-// 		Page:              pageInt,
-// 		PerPage:           perPageInt,
-// 		SortField:         sortField,
-// 		SortValue:         sortValue,
-// 		GlobalSearchValue: globalSearchValue,
-// 		AgentID:           agentIdInt,
-// 		StoreID:           storeIdInt,
-// 		BrandID:           brandIdInt,
-// 		OrderSourceID:     orderSourceIdInt,
-// 		OrderStatusID:     orderStatusIdInt,
-// 		StartSoDate:       startSoDate,
-// 		EndSoDate:         endSoDate,
-// 		SoID:              soId,
-// 		ProductID:         productIdInt,
-// 		CategoryID:        categoryIdInt,
-// 		SalesmanID:        salesmanIdInt,
-// 		ProvinceID:        provinceIdInt,
-// 		CityID:            cityIdInt,
-// 		DistrictID:        districtIdInt,
-// 		VillageID:         villageIdInt,
-// 		StartCreatedAt:    startCreatedAt,
-// 		EndCreatedAt:      endCreatedAt,
-// 	}
-
-// 	salesOrders, errorLog := c.salesOrderUseCase.GetDetails(salesOrderRequest)
-
-// 	if errorLog.Err != nil {
-// 		resultErrorLog = errorLog
-// 		result.StatusCode = resultErrorLog.StatusCode
-// 		result.Error = resultErrorLog
-// 		ctx.JSON(result.StatusCode, result)
-// 		return
-// 	}
-
-// 	result.Data = salesOrders.SalesOrderDetails
-// 	result.Total = salesOrders.Total
-// 	result.StatusCode = http.StatusOK
-// 	ctx.JSON(http.StatusOK, result)
-// 	return
-// }
 
 func (c *salesOrderController) GetDetailsBySoId(ctx *gin.Context) {
 	soIds := ctx.Param("so-id")
@@ -1347,8 +594,8 @@ func (c *salesOrderController) GetDetailsBySoId(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, model.Response{Data: salesOrders.SalesOrderDetails, Total: salesOrders.Total, StatusCode: http.StatusOK})
-	return
+	ctx.JSON(http.StatusOK, baseModel.Response{Data: salesOrders.SalesOrderDetails, Total: salesOrders.Total, StatusCode: http.StatusOK})
+
 }
 
 func (c *salesOrderController) GetDetailsById(ctx *gin.Context) {
@@ -1361,7 +608,7 @@ func (c *salesOrderController) GetDetailsById(ctx *gin.Context) {
 	if err != nil {
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, "sales order detail id harus bernilai integer")},
-			SystemMessage: []string{"Invalid Process"},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 		result.StatusCode = http.StatusUnprocessableEntity
@@ -1382,7 +629,7 @@ func (c *salesOrderController) GetDetailsById(ctx *gin.Context) {
 	result.Data = data
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
-	return
+
 }
 
 func (c *salesOrderController) GetSyncToKafkaHistories(ctx *gin.Context) {
@@ -1399,8 +646,8 @@ func (c *salesOrderController) GetSyncToKafkaHistories(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, model.Response{Data: salesOrders, StatusCode: http.StatusOK})
-	return
+	ctx.JSON(http.StatusOK, baseModel.Response{Data: salesOrders, StatusCode: http.StatusOK})
+
 }
 
 func (c *salesOrderController) GetSOJourneys(ctx *gin.Context) {
@@ -1416,8 +663,8 @@ func (c *salesOrderController) GetSOJourneys(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, model.Response{Data: salesOrderJourneys.SalesOrderJourneys, Total: salesOrderJourneys.Total, StatusCode: http.StatusOK})
-	return
+	ctx.JSON(http.StatusOK, baseModel.Response{Data: salesOrderJourneys.SalesOrderJourneys, Total: salesOrderJourneys.Total, StatusCode: http.StatusOK})
+
 }
 
 func (c *salesOrderController) GetSOJourneyBySoId(ctx *gin.Context) {
@@ -1437,8 +684,8 @@ func (c *salesOrderController) GetSOJourneyBySoId(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, model.Response{Data: salesOrderJourney.SalesOrderJourneys, Total: salesOrderJourney.Total, StatusCode: http.StatusOK})
-	return
+	ctx.JSON(http.StatusOK, baseModel.Response{Data: salesOrderJourney.SalesOrderJourneys, Total: salesOrderJourney.Total, StatusCode: http.StatusOK})
+
 }
 
 func (c *salesOrderController) GetSoUploadHistoriesById(ctx *gin.Context) {
@@ -1451,8 +698,8 @@ func (c *salesOrderController) GetSoUploadHistoriesById(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, model.Response{Data: soUploadHistories, StatusCode: http.StatusOK})
-	return
+	ctx.JSON(http.StatusOK, baseModel.Response{Data: soUploadHistories, StatusCode: http.StatusOK})
+
 }
 
 func (c *salesOrderController) GetSoUploadErrorLogByReqId(ctx *gin.Context) {
@@ -1469,8 +716,8 @@ func (c *salesOrderController) GetSoUploadErrorLogByReqId(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, model.Response{Data: soUploadErrorLogs.SoUploadErrosLogs, Total: soUploadErrorLogs.Total, StatusCode: http.StatusOK})
-	return
+	ctx.JSON(http.StatusOK, baseModel.Response{Data: soUploadErrorLogs.SoUploadErrosLogs, Total: soUploadErrorLogs.Total, StatusCode: http.StatusOK})
+
 }
 
 func (c *salesOrderController) GetSoUploadErrorLogBySoUploadHistoryId(ctx *gin.Context) {
@@ -1487,8 +734,8 @@ func (c *salesOrderController) GetSoUploadErrorLogBySoUploadHistoryId(ctx *gin.C
 		return
 	}
 
-	ctx.JSON(http.StatusOK, model.Response{Data: soUploadErrorLogs.SoUploadErrosLogs, Total: soUploadErrorLogs.Total, StatusCode: http.StatusOK})
-	return
+	ctx.JSON(http.StatusOK, baseModel.Response{Data: soUploadErrorLogs.SoUploadErrosLogs, Total: soUploadErrorLogs.Total, StatusCode: http.StatusOK})
+
 }
 
 func (c *salesOrderController) DeleteDetailByID(ctx *gin.Context) {
@@ -1524,15 +771,15 @@ func (c *salesOrderController) DeleteDetailByID(ctx *gin.Context) {
 		{
 			Table:           "sales_order_details s JOIN order_statuses o ON s.order_status_id = o.id",
 			SelectedCollumn: "o.name",
-			Clause:          fmt.Sprintf("o.id = %d AND s.order_status_id NOT IN (16)", id),
+			Clause:          fmt.Sprintf("s.id = %d AND s.order_status_id NOT IN (16)", id),
 			MessageFormat:   "Hanya status cancelled pada Sales Order Detail yang dapat di delete",
 		},
-		// {
-		// 	Table:           "delivery_orders d JOIN sales_orders s ON d.sales_order_id = s.id",
-		// 	SelectedCollumn: "d.id",
-		// 	Clause:          fmt.Sprintf("s.id = %d AND d.deleted_at IS NULL", id),
-		// 	MessageFormat:   "Sales Order Has Delivery Order <result>, Please Delete it First",
-		// },
+		{
+			Table:           "sales_orders s JOIN sales_order_details sd ON s.id = sd.sales_order_id JOIN delivery_orders d ON d.sales_order_id = s.id",
+			SelectedCollumn: "d.id",
+			Clause:          fmt.Sprintf("sd.id = %d AND d.deleted_at IS NULL", id),
+			MessageFormat:   "Sales Order Has Delivery Order <result>, Please Delete it First",
+		},
 	}
 	err = c.requestValidationMiddleware.MustEmptyValidation(ctx, mustEmpties)
 	if err != nil {
@@ -1576,7 +823,7 @@ func (c *salesOrderController) DeleteDetailByID(ctx *gin.Context) {
 
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
-	return
+
 }
 
 func (c *salesOrderController) DeleteDetailBySOID(ctx *gin.Context) {
@@ -1614,6 +861,12 @@ func (c *salesOrderController) DeleteDetailBySOID(ctx *gin.Context) {
 			SelectedCollumn: "o.name",
 			Clause:          fmt.Sprintf("o.id = %d AND s.order_status_id NOT IN (5,6,9,10)", id),
 			MessageFormat:   "Status Sales Order <result>",
+		},
+		{
+			Table:           "sales_orders s JOIN sales_order_details sd ON s.id = sd.sales_order_id JOIN order_statuses o ON sd.order_status_id = o.id",
+			SelectedCollumn: "o.name",
+			Clause:          fmt.Sprintf("s.id = %d AND sd.order_status_id NOT IN (16)", id),
+			MessageFormat:   "Hanya status cancelled pada Sales Order Detail yang dapat di delete",
 		},
 		{
 			Table:           "delivery_orders d JOIN sales_orders s ON d.sales_order_id = s.id",
@@ -1664,7 +917,7 @@ func (c *salesOrderController) DeleteDetailBySOID(ctx *gin.Context) {
 
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
-	return
+
 }
 
 func (c *salesOrderController) RetrySyncToKafka(ctx *gin.Context) {

@@ -31,6 +31,13 @@ type SalesOrderDetail struct {
 	EndDateSyncToEs   *time.Time   `json:"end_date_sync_to_es,omitempty" bson:"end_date_sync_to_es,omitempty"`
 	UomType           string       `json:"uom_type,omitempty" bson:"uom_type,omitempty"`
 	Subtotal          float64      `json:"subtotal,omitempty" bson:"subtotal,omitempty"`
+	FirstCategoryId   int          `json:"first_category_id,omitempty" bson:"first_category_id,omitempty"`
+	FirstCategoryName *string      `json:"first_category_name,omitempty" bson:"first_category_name,omitempty"`
+	LastCategoryId    int          `json:"last_category_id,omitempty" bson:"last_category_id,omitempty"`
+	LastCategoryName  *string      `json:"last_category_name,omitempty" bson:"last_category_name,omitempty"`
+	CreatedBy         int          `json:"created_by,omitempty" bson:"created_by,omitempty"`
+	UpdatedBy         int          `json:"updated_by,omitempty" bson:"updated_by,omitempty"`
+	DeletedBy         int          `json:"deleted_by,omitempty" bson:"deleted_by,omitempty"`
 	CreatedAt         *time.Time   `json:"created_at,omitempty" bson:"created_at,omitempty"`
 	UpdatedAt         *time.Time   `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
 	DeletedAt         *time.Time   `json:"deleted_at,omitempty" bson:"deleted_at,omitempty"`
@@ -200,6 +207,13 @@ type SalesOrderDetailOpenSearch struct {
 	IsDoneSyncToEs       string       `json:"is_done_sync_to_es,omitempty" bson:"is_done_sync_to_es,omitempty"`
 	StartDateSyncToEs    *time.Time   `json:"start_date_sync_to_es,omitempty" bson:"start_date_sync_to_es,omitempty"`
 	EndDateSyncToEs      *time.Time   `json:"end_date_sync_to_es,omitempty" bson:"end_date_sync_to_es,omitempty"`
+	FirstCategoryId      int          `json:"first_category_id,omitempty" bson:"first_category_id,omitempty"`
+	FirstCategoryName    *string      `json:"first_category_name,omitempty" bson:"first_category_name,omitempty"`
+	LastCategoryId       int          `json:"last_category_id,omitempty" bson:"last_category_id,omitempty"`
+	LastCategoryName     *string      `json:"last_category_name,omitempty" bson:"last_category_name,omitempty"`
+	CreatedBy            int          `json:"created_by,omitempty" bson:"created_by,omitempty"`
+	UpdatedBy            int          `json:"updated_by,omitempty" bson:"updated_by,omitempty"`
+	DeletedBy            int          `json:"deleted_by,omitempty" bson:"deleted_by,omitempty"`
 	CreatedAt            *time.Time   `json:"created_at,omitempty" bson:"created_at,omitempty"`
 	UpdatedAt            *time.Time   `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
 	DeletedAt            *time.Time   `json:"deleted_at,omitempty" bson:"deleted_at,omitempty"`

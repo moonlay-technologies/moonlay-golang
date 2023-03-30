@@ -27,7 +27,7 @@ func BasicAuthMiddleware() gin.HandlerFunc {
 			respondWithError(http.StatusUnauthorized, c)
 			return
 		}
-		c.Request.Header.Set("token", "eyJ1c2VyX2lkIjo1NzgzLCJhZ2VudF9pZCI6MCwidXNlcl9lbWFpbCI6ImNtc19wcmluc2lwYWxAZ21haWwuY29tIiwidXNlcl9yb2xlX3NsdWciOiJkYm8tYWRtaW5pc3RyYXRvciIsInVzZXJfcm9sZV9jYXRlZ29yeSI6ImFkbWluIiwiZmlyc3RfbmFtZSI6IkNNUyBQcmluc2lwYWwiLCJsYXN0X25hbWUiOiIifQ==")
+		c.Request.Header.Set("token", "eyJ1c2VyX2lkIjo1NzgzLCJhZ2VudF9pZCI6NCwidXNlcl9lbWFpbCI6ImNtc19wcmluc2lwYWxAZ21haWwuY29tIiwidXNlcl9yb2xlX3NsdWciOiJkYm8tYWRtaW5pc3RyYXRvciIsInVzZXJfcm9sZV9jYXRlZ29yeSI6ImFkbWluIiwiZmlyc3RfbmFtZSI6IkNNUyBQcmluc2lwYWwiLCJsYXN0X25hbWUiOiIiLCJhbGciOiJIUzI1NiJ9==")
 		pair := strings.SplitN(string(payload), ":", 2)
 
 		if len(pair) != 2 || !authenticateUser(c.Request.Header.Get("token"), c) {

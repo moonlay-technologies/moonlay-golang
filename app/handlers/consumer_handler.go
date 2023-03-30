@@ -91,6 +91,17 @@ func MainConsumerHandler(kafkaClient kafkadbo.KafkaClientInterface, mongodbClien
 		wg.Add(1)
 		deliveryOrderConsumer := consumer.InitExportDeliveryOrderConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
 		go deliveryOrderConsumer.ProcessMessage()
+		salesOrderDetailConsumer := consumer.InitDeleteDeliveryOrderDetailConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
+		go salesOrderDetailConsumer.ProcessMessage()
+	case constants.UPLOAD_DO_FILE_TOPIC:
+		wg.Add(1)
+		uploadDOFileConsumer := consumer.InitUploadDOFileConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
+		go uploadDOFileConsumer.ProcessMessage()
+		break
+	case constants.UPLOAD_DO_ITEM_TOPIC:
+		wg.Add(1)
+		uploadDOItemConsumer := consumer.InitUploadDOItemConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
+		go uploadDOItemConsumer.ProcessMessage()
 		break
 	default:
 		fmt.Println("Choose Command Type You Want")

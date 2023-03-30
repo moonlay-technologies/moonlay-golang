@@ -24,6 +24,11 @@ func (_m *SalesmanRepositoryInterface) GetByID(ID int, countOnly bool, ctx conte
 	_m.Called(ID, countOnly, ctx, result)
 }
 
+// GetByAgentId provides a mock function with given fields: ID, countOnly, ctx, result
+func (_m *SalesmanRepositoryInterface) 	GetByAgentId(agentId int, countOnly bool, ctx context.Context, result chan *models.SalesmansChan) {
+	_m.Called(agentId, countOnly, ctx, result)
+}
+
 type mockConstructorTestingTNewSalesmanRepositoryInterface interface {
 	mock.TestingT
 	Cleanup(func())
