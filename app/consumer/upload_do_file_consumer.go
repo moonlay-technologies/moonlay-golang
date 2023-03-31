@@ -115,7 +115,7 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 			}
 			results = append(results, uploadSjField)
 		}
-		fmt.Println(results)
+
 		var uploadDOFields []*models.UploadDOField
 		for i, v := range results {
 			warehouseName := ""
@@ -253,14 +253,13 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 			uploadDOField.BulkCode = message.BulkCode
 			uploadDOField.ErrorLine = i + 2
 			uploadDOField.UploadType = key
-			a, _ := json.Marshal(uploadDOField)
-			fmt.Println("2", string(a))
+
 			uploadDOFields = append(uploadDOFields, &uploadDOField)
 		}
 
 		keyKafka := []byte(message.RequestId)
 		messageKafka, _ := json.Marshal(uploadDOFields)
-		fmt.Println("ini ya", string(messageKafka))
+
 		err = c.kafkaClient.WriteToTopic(constants.UPLOAD_DO_ITEM_TOPIC, keyKafka, messageKafka)
 
 		if err != nil {
