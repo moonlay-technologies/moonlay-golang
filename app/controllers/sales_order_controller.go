@@ -31,6 +31,7 @@ type SalesOrderControllerInterface interface {
 	GetSyncToKafkaHistories(ctx *gin.Context)
 	GetSOJourneys(ctx *gin.Context)
 	GetSOJourneyBySoId(ctx *gin.Context)
+	GetSOUploadHistories(ctx *gin.Context)
 	GetSoUploadHistoriesById(ctx *gin.Context)
 	GetSoUploadErrorLogByReqId(ctx *gin.Context)
 	GetSoUploadErrorLogBySoUploadHistoryId(ctx *gin.Context)
@@ -686,6 +687,22 @@ func (c *salesOrderController) GetSOJourneyBySoId(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, baseModel.Response{Data: salesOrderJourney.SalesOrderJourneys, Total: salesOrderJourney.Total, StatusCode: http.StatusOK})
 
+}
+
+func (c *salesOrderController) GetSOUploadHistories(ctx *gin.Context) {
+	soUploadHistoriesRequest, err := c.salesOrderValidator.GetSOUploadHistoriesValidator(ctx)
+	if err != nil {
+		return
+	}
+
+	soUploadHistories, errorLog := c.salesOrderUseCase.GetSOUploadHistories(soUploadHistoriesRequest, ctx)
+
+	if errorLog != nil {
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, baseModel.Response{Data: soUploadHistories.SoUploadHistories, Total: soUploadHistories.Total, StatusCode: http.StatusOK})
 }
 
 func (c *salesOrderController) GetSoUploadHistoriesById(ctx *gin.Context) {

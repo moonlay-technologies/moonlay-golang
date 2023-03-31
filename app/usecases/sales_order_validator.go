@@ -24,6 +24,7 @@ type SalesOrderValidatorInterface interface {
 	GetSalesOrderDetailValidator(*gin.Context) (*models.GetSalesOrderDetailRequest, error)
 	GetSalesOrderSyncToKafkaHistoriesValidator(*gin.Context) (*models.SalesOrderEventLogRequest, error)
 	GetSalesOrderJourneysValidator(*gin.Context) (*models.SalesOrderJourneyRequest, error)
+	GetSOUploadHistoriesValidator(*gin.Context) (*models.GetSoUploadHistoriesRequest, error)
 }
 
 type SalesOrderValidator struct {
@@ -588,6 +589,75 @@ func (c *SalesOrderValidator) GetSalesOrderJourneysValidator(ctx *gin.Context) (
 	}
 
 	return &salesOrderJourneysRequest, nil
+}
+
+func (c *SalesOrderValidator) GetSOUploadHistoriesValidator(ctx *gin.Context) (*models.GetSoUploadHistoriesRequest, error) {
+	var result baseModel.Response
+
+	pageInt, err := c.getIntQueryWithDefault("page", "1", true, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	perPageInt, err := c.getIntQueryWithDefault("per_page", "10", true, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	sortField := c.getQueryWithDefault("sort_field", "created_at", ctx)
+
+	if sortField != "agent_name" && sortField != "file_name" && sortField != "status" && sortField != "created_at" {
+		err = helper.NewError("Parameter 'sort_field' harus bernilai 'agent_name' or 'file_name' or 'status' or 'created_at' ")
+		result.StatusCode = http.StatusBadRequest
+		result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		ctx.JSON(result.StatusCode, result)
+		return nil, err
+	}
+
+	intAgentID, err := c.getIntQueryWithDefault("agent_id", "0", false, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	intUploadedBy, err := c.getIntQueryWithDefault("uploaded_by", "0", false, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	dateFields := []*models.DateInputRequest{}
+
+	startUploadAt, dateFields := c.getQueryWithDateValidation("start_upload_at", "", dateFields, ctx)
+
+	endUploadAt, dateFields := c.getQueryWithDateValidation("end_upload_at", "", dateFields, ctx)
+
+	finishProcessDateStart, dateFields := c.getQueryWithDateValidation("finish_process_date_start", "", dateFields, ctx)
+
+	finishProcessDateEnd, dateFields := c.getQueryWithDateValidation("finish_process_date_end", "", dateFields, ctx)
+
+	err = c.requestValidationMiddleware.DateInputValidation(ctx, dateFields, constants.ERROR_ACTION_NAME_GET)
+	if err != nil {
+		return nil, err
+	}
+
+	salesOrderRequest := &models.GetSoUploadHistoriesRequest{
+		ID:                     c.getQueryWithDefault("id", "", ctx),
+		Page:                   pageInt,
+		PerPage:                perPageInt,
+		SortField:              sortField,
+		SortValue:              strings.ToLower(c.getQueryWithDefault("sort_value", "desc", ctx)),
+		GlobalSearchValue:      strings.ToLower(c.getQueryWithDefault("global_search_value", "", ctx)),
+		RequestID:              c.getQueryWithDefault("request_id", "", ctx),
+		FileName:               c.getQueryWithDefault("file_name", "", ctx),
+		BulkCode:               c.getQueryWithDefault("bulk_code", "", ctx),
+		AgentID:                intAgentID,
+		Status:                 strings.ToLower(c.getQueryWithDefault("status", "", ctx)),
+		UploadedBy:             intUploadedBy,
+		StartUploadAt:          startUploadAt,
+		EndUploadAt:            endUploadAt,
+		FinishProcessDateStart: finishProcessDateStart,
+		FinishProcessDateEnd:   finishProcessDateEnd,
+	}
+	return salesOrderRequest, nil
 }
 
 func (d *SalesOrderValidator) getQueryWithDefault(param string, empty string, ctx *gin.Context) string {

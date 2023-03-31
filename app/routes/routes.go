@@ -48,6 +48,7 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 			salesOrderControllerGroup.GET("/journeys", salesOrderController.GetSOJourneys)
 			salesOrderControllerGroup.GET(":so-id/journeys", salesOrderController.GetSOJourneyBySoId)
 			salesOrderControllerGroup.GET("/retry-to-sync-kafka/:log-id", salesOrderController.RetrySyncToKafka)
+			salesOrderControllerGroup.GET("/upload-histories", salesOrderController.GetSOUploadHistories)
 			salesOrderControllerGroup.GET("/upload-histories/:id", salesOrderController.GetSoUploadHistoriesById)
 			salesOrderControllerGroup.GET("/upload-histories/:id/error-items", salesOrderController.GetSoUploadErrorLogByReqId)
 			salesOrderControllerGroup.GET("/upload-histories/items/:id", salesOrderController.GetSoUploadErrorLogBySoUploadHistoryId)

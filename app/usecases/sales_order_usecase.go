@@ -33,6 +33,7 @@ type SalesOrderUseCaseInterface interface {
 	GetSyncToKafkaHistories(request *models.SalesOrderEventLogRequest, ctx context.Context) ([]*models.SalesOrderEventLogResponse, *model.ErrorLog)
 	GetSOJourneys(request *models.SalesOrderJourneyRequest, ctx context.Context) (*models.SalesOrderJourneyResponses, *model.ErrorLog)
 	GetSOJourneyBySOId(soId int, ctx context.Context) (*models.SalesOrderJourneyResponses, *model.ErrorLog)
+	GetSOUploadHistories(request *models.GetSoUploadHistoriesRequest, ctx context.Context) (*models.GetSoUploadHistoryResponses, *model.ErrorLog)
 	GetSOUploadHistoriesByid(id string, ctx context.Context) (*models.GetSoUploadHistoryResponse, *model.ErrorLog)
 	GetSOUploadErrorLogsByReqId(request *models.GetSoUploadErrorLogsRequest, ctx context.Context) (*models.GetSoUploadErrorLogsResponse, *model.ErrorLog)
 	GetSOUploadErrorLogsBySoUploadHistoryId(request *models.GetSoUploadErrorLogsRequest, ctx context.Context) (*models.GetSoUploadErrorLogsResponse, *model.ErrorLog)
@@ -860,6 +861,24 @@ func (u *salesOrderUseCase) GetSOJourneyBySOId(soId int, ctx context.Context) (*
 	}
 
 	return salesOrderJourneysResult, nil
+}
+
+func (u *salesOrderUseCase) GetSOUploadHistories(request *models.GetSoUploadHistoriesRequest, ctx context.Context) (*models.GetSoUploadHistoryResponses, *model.ErrorLog) {
+
+	getSoUploadHistoriesResultChan := make(chan *models.SoUploadHistoriesChan)
+	go u.soUploadHistoriesRepository.Get(request, false, ctx, getSoUploadHistoriesResultChan)
+	getSoUploadHistoriesResult := <-getSoUploadHistoriesResultChan
+
+	if getSoUploadHistoriesResult.Error != nil {
+		return &models.GetSoUploadHistoryResponses{}, getSoUploadHistoriesResult.ErrorLog
+	}
+
+	result := models.GetSoUploadHistoryResponses{
+		SoUploadHistories: getSoUploadHistoriesResult.SoUploadHistories,
+		Total:             getSoUploadHistoriesResult.Total,
+	}
+
+	return &result, nil
 }
 
 func (u *salesOrderUseCase) GetSOUploadHistoriesByid(id string, ctx context.Context) (*models.GetSoUploadHistoryResponse, *model.ErrorLog) {
