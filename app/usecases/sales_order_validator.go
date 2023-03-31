@@ -187,9 +187,6 @@ func (c *SalesOrderValidator) CreateSalesOrderValidator(insertRequest *models.Sa
 	if now.UTC().Hour() < soRefDate.Hour() {
 		nowUTC = nowUTC.Add(7 * time.Hour)
 	}
-	fmt.Println("1", soDate)
-	fmt.Println("2", soRefDate)
-	fmt.Println("3", nowUTC)
 
 	if sourceName == "manager" && !(soDate.Add(1*time.Minute).After(soRefDate) && soRefDate.Add(-1*time.Minute).Before(nowUTC) && soDate.Add(-1*time.Minute).Before(nowUTC) && soRefDate.Month() == nowUTC.Month() && soRefDate.UTC().Year() == nowUTC.Year()) {
 

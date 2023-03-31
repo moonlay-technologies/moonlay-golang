@@ -333,7 +333,7 @@ func (c *uploadSOItemConsumerHandler) ProcessMessage() {
 
 		for _, v := range salesOrderSoRefCodes {
 
-			sqlTransaction, _ := c.db.BeginTx(c.ctx, nil)
+			sqlTransaction, err := c.db.BeginTx(c.ctx, nil)
 
 			if err != nil {
 				fmt.Println(err.Error())
@@ -428,7 +428,7 @@ func (c *uploadSOItemConsumerHandler) ProcessMessage() {
 			keyKafka := []byte(v.SoCode)
 			messageKafka, _ := json.Marshal(v)
 
-			err := c.kafkaClient.WriteToTopic(constants.CREATE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
+			err = c.kafkaClient.WriteToTopic(constants.CREATE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
 
 			if err != nil {
 				fmt.Println(err.Error())
