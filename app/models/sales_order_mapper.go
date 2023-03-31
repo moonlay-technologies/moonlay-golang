@@ -269,10 +269,10 @@ func (salesOrder *SalesOrder) SalesOrderOpenSearchChanMap(request *SalesOrderCha
 	if salesOrder.DeletedAt == defaultSo.DeletedAt {
 		salesOrder.DeletedAt = request.SalesOrder.DeletedAt
 	}
-	for _, v := range request.SalesOrder.SalesOrderDetails {
+	for k, v := range request.SalesOrder.SalesOrderDetails {
 		for _, y := range salesOrder.SalesOrderDetails {
 			if y.ID == v.ID {
-				v = y
+				request.SalesOrder.SalesOrderDetails[k] = y
 			}
 		}
 	}
