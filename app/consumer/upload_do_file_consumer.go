@@ -67,7 +67,7 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 		sjUploadHistoryId := m.Value
 		var key = string(m.Key[:])
 
-		var errors []string
+		// var errors []string
 
 		sjUploadHistoryJourneysResultChan := make(chan *models.DoUploadHistoryChan)
 		go c.sjUploadHistoriesRepository.GetByID(string(sjUploadHistoryId), false, c.ctx, sjUploadHistoryJourneysResultChan)
@@ -100,6 +100,13 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 				continue
 			}
 
+			row := strings.Split(v, "\"")
+			for j := 1; j < len(row); j = j + 2 {
+				cell := strings.Split(row[j], ",")
+				row[j] = strings.Join(cell, "")
+			}
+			v = strings.Join(row, "")
+
 			headers := strings.Split(data[0], ",")
 			line := strings.Split(v, ",")
 			uploadSjField := map[string]string{}
@@ -108,7 +115,7 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 			}
 			results = append(results, uploadSjField)
 		}
-
+		fmt.Println(results)
 		var uploadDOFields []*models.UploadDOField
 		for i, v := range results {
 			warehouseName := ""
@@ -116,6 +123,16 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 				getWarehouseResultChan := make(chan *models.WarehouseChan)
 				go c.warehouseRepository.GetByCode(v["KodeGudang"], false, c.ctx, getWarehouseResultChan)
 				getWarehouseResult := <-getWarehouseResultChan
+				if getWarehouseResult.Error != nil {
+					if key == "retry" {
+						c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+						break
+					} else {
+						errors := []string{getWarehouseResult.Error.Error()}
+						c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
+						continue
+					}
+				}
 				warehouseName = getWarehouseResult.Warehouse.Name
 			}
 			mandatoryError := c.requestValidationMiddleware.UploadMandatoryValidation([]*models.TemplateRequest{
@@ -217,20 +234,33 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 				}
 			}
 
-			var uploadDOField models.UploadDOField
-			uploadDOField.TanggalSJ, err = helper.ParseDDYYMMtoYYYYMMDD(v["TanggalSJ"])
+			tanggalSJ, err := helper.ParseDDYYMMtoYYYYMMDD(v["TanggalSJ"])
 			if err != nil {
-				errors = append(errors, fmt.Sprintf("Format Tanggal Order = %s Salah, silahkan sesuaikan dengan format DD-MMM-YYYY, contoh 15/12/2021", v["TanggalSJ"]))
-				continue
-			}
-			uploadDOField.UploadDOFieldMap(v, int(*message.UploadedBy))
+				if key == "retry" {
+					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{fmt.Sprintf("Format Tanggal Order = %s Salah, silahkan sesuaikan dengan format DD-MMM-YYYY, contoh 15/12/2021", v["TanggalSJ"])}
 
+					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
+					continue
+				}
+			}
+
+			var uploadDOField models.UploadDOField
+			uploadDOField.TanggalSJ = tanggalSJ
+			uploadDOField.UploadDOFieldMap(v, int(*message.UploadedBy), message.ID.Hex())
+			uploadDOField.BulkCode = message.BulkCode
+			uploadDOField.ErrorLine = i + 2
+			uploadDOField.UploadType = key
+			a, _ := json.Marshal(uploadDOField)
+			fmt.Println("2", string(a))
 			uploadDOFields = append(uploadDOFields, &uploadDOField)
 		}
 
 		keyKafka := []byte(message.RequestId)
 		messageKafka, _ := json.Marshal(uploadDOFields)
-
+		fmt.Println("ini ya", string(messageKafka))
 		err = c.kafkaClient.WriteToTopic(constants.UPLOAD_DO_ITEM_TOPIC, keyKafka, messageKafka)
 
 		if err != nil {

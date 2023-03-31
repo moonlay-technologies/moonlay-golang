@@ -298,6 +298,8 @@ func InitUploadDOItemConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodb
 	userRepository := repositories.InitUserRepository(database, redisdb)
 	salesmanRepository := repositories.InitSalesmanRepository(database, redisdb)
 	deliveryOrderLogRepository := mongoRepo.InitDeliveryOrderLogRepository(mongodbClient)
-	handler := InitUploadDOItemConsumerHandlerInterface(deliveryOrderRepository, deliveryOrderDetailRepository, salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, warehouseRepository, brandRepository, uomRepository, agentRepository, storeRepository, productRepository, userRepository, salesmanRepository, deliveryOrderLogRepository, kafkaClient, ctx, args, database)
+	salesOrderLogRepository := mongoRepo.InitSalesOrderLogRepository(mongodbClient)
+	salesOrderJourneysRepository := mongoRepo.InitSalesOrderJourneysRepository(mongodbClient)
+	handler := InitUploadDOItemConsumerHandlerInterface(deliveryOrderRepository, deliveryOrderDetailRepository, salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, warehouseRepository, brandRepository, uomRepository, agentRepository, storeRepository, productRepository, userRepository, salesmanRepository, deliveryOrderLogRepository, salesOrderLogRepository, salesOrderJourneysRepository, kafkaClient, ctx, args, database)
 	return handler
 }
