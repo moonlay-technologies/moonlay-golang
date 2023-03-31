@@ -8,6 +8,7 @@ import (
 	"order-service/app/middlewares"
 	"order-service/app/models"
 	"order-service/app/usecases"
+	"order-service/global/utils/helper"
 	baseModel "order-service/global/utils/model"
 
 	"github.com/gin-gonic/gin"
@@ -20,6 +21,7 @@ type UploadControllerInterface interface {
 	RetryUploadSO(ctx *gin.Context)
 	RetryUploadDO(ctx *gin.Context)
 	RetryUploadSOSJ(ctx *gin.Context)
+	GetSosjUploadHistories(ctx *gin.Context)
 	GetSoUploadErrorLogsByReqId(ctx *gin.Context)
 	GetSosjUploadHistoryById(ctx *gin.Context)
 	GetSosjUploadErrorLogsBySosjUploadHistoryId(ctx *gin.Context)
@@ -27,13 +29,15 @@ type UploadControllerInterface interface {
 
 type uploadController struct {
 	uploadUseCase               usecases.UploadUseCaseInterface
+	salesOrderValidator         usecases.SalesOrderValidatorInterface
 	requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface
 	ctx                         context.Context
 }
 
-func InitUploadController(uploadUseCase usecases.UploadUseCaseInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, ctx context.Context) UploadControllerInterface {
+func InitUploadController(uploadUseCase usecases.UploadUseCaseInterface, salesOrderValidator usecases.SalesOrderValidatorInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, ctx context.Context) UploadControllerInterface {
 	return &uploadController{
 		uploadUseCase:               uploadUseCase,
+		salesOrderValidator:         salesOrderValidator,
 		requestValidationMiddleware: requestValidationMiddleware,
 		ctx:                         ctx,
 	}
@@ -240,6 +244,22 @@ func (c *uploadController) RetryUploadSOSJ(ctx *gin.Context) {
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
 
+}
+
+func (c *uploadController) GetSosjUploadHistories(ctx *gin.Context) {
+	sosjUploadHistoriesRequest, err := c.salesOrderValidator.GetSosjUploadHistoriesValidator(ctx)
+	if err != nil {
+		return
+	}
+
+	sosjUploadHistories, errorLog := c.uploadUseCase.GetSosjUploadHistories(sosjUploadHistoriesRequest, ctx)
+
+	if errorLog != nil {
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, baseModel.Response{Data: sosjUploadHistories.SosjUploadHistories, Total: sosjUploadHistories.Total, StatusCode: http.StatusOK})
 }
 
 func (c *uploadController) GetSoUploadErrorLogsByReqId(ctx *gin.Context) {

@@ -26,6 +26,7 @@ type UploadUseCaseInterface interface {
 	RetryUploadSO(soUploadHistoryId string, ctx context.Context) *model.ErrorLog
 	RetryUploadDO(sjUploadHistoryId string, ctx context.Context) *model.ErrorLog
 	RetryUploadSOSJ(sosjUploadHistoryId string, ctx context.Context) *model.ErrorLog
+	GetSosjUploadHistories(request *models.GetSosjUploadHistoriesRequest, ctx context.Context) (*models.GetSosjUploadHistoryResponses, *model.ErrorLog)
 	GetSosjUploadErrorLogs(request *models.GetSosjUploadErrorLogsRequest, ctx context.Context) (*models.GetSosjUploadErrorLogsResponse, *model.ErrorLog)
 	GetSosjUploadHistoryById(id string, ctx context.Context) (*models.GetSosjUploadHistoryResponse, *model.ErrorLog)
 	GetSosjUploadErrorLogBySosjUploadHistoryId(request *models.GetSosjUploadErrorLogsRequest, ctx context.Context) (*models.GetSosjUploadErrorLogsResponse, *model.ErrorLog)
@@ -392,6 +393,24 @@ func (u *uploadUseCase) RetryUploadSOSJ(sosjUploadHistoryId string, ctx context.
 	}
 
 	return nil
+}
+
+func (u *uploadUseCase) GetSosjUploadHistories(request *models.GetSosjUploadHistoriesRequest, ctx context.Context) (*models.GetSosjUploadHistoryResponses, *model.ErrorLog) {
+
+	getSosjUploadHistoriesResultChan := make(chan *models.UploadHistoriesChan)
+	go u.sosjUploadHistoriesRepository.Get(request, false, ctx, getSosjUploadHistoriesResultChan)
+	getSosjUploadHistoriesResult := <-getSosjUploadHistoriesResultChan
+
+	if getSosjUploadHistoriesResult.Error != nil {
+		return &models.GetSosjUploadHistoryResponses{}, getSosjUploadHistoriesResult.ErrorLog
+	}
+
+	result := models.GetSosjUploadHistoryResponses{
+		SosjUploadHistories: getSosjUploadHistoriesResult.UploadHistories,
+		Total:               getSosjUploadHistoriesResult.Total,
+	}
+
+	return &result, nil
 }
 
 func (u *uploadUseCase) GetSosjUploadErrorLogs(request *models.GetSosjUploadErrorLogsRequest, ctx context.Context) (*models.GetSosjUploadErrorLogsResponse, *model.ErrorLog) {
