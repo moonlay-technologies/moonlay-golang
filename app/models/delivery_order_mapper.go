@@ -26,6 +26,27 @@ func (deliveryOrder *DeliveryOrder) DeliveryOrderStoreRequestMap(request *Delive
 	return
 }
 
+func (deliveryOrder *DeliveryOrder) DeliveryOrderUploadMap(request *UploadDOField, soId, warehouseId int, now time.Time) {
+	deliveryOrder.SalesOrderID = soId
+	deliveryOrder.WarehouseID = warehouseId
+	deliveryOrder.DoRefCode = NullString{NullString: sql.NullString{String: request.NoSJ, Valid: true}}
+	deliveryOrder.DoRefDate = NullString{NullString: sql.NullString{String: request.TanggalSJ, Valid: true}}
+	deliveryOrder.DriverName = NullString{NullString: sql.NullString{String: request.NamaSupir, Valid: true}}
+	deliveryOrder.PlatNumber = NullString{NullString: sql.NullString{String: request.PlatNo, Valid: true}}
+	deliveryOrder.Note = NullString{NullString: sql.NullString{String: request.Catatan, Valid: true}}
+	deliveryOrder.CreatedBy = request.IDUser
+	deliveryOrder.LatestUpdatedBy = request.IDUser
+	deliveryOrder.IsDoneSyncToEs = "0"
+	deliveryOrder.StartDateSyncToEs = &now
+	deliveryOrder.EndDateSyncToEs = &now
+	deliveryOrder.StartCreatedDate = &now
+	deliveryOrder.EndCreatedDate = &now
+	deliveryOrder.CreatedAt = &now
+	deliveryOrder.UpdatedAt = &now
+	deliveryOrder.DeletedAt = nil
+	return
+}
+
 func (deliveryOrder *DeliveryOrder) DeliveryOrderUpdateByIDRequestMap(request *DeliveryOrderUpdateByIDRequest, now time.Time, user *UserClaims) {
 	if request.WarehouseID > 0 {
 		deliveryOrder.WarehouseID = request.WarehouseID
@@ -70,6 +91,18 @@ func (deliveryOrder *DeliveryOrder) WarehouseChanMap(request *WarehouseChan) {
 func (deliveryOrderDetail *DeliveryOrderDetail) DeliveryOrderDetailStoreRequestMap(request *DeliveryOrderDetailStoreRequest, now time.Time) {
 	deliveryOrderDetail.SoDetailID = request.SoDetailID
 	deliveryOrderDetail.Qty = request.Qty
+	deliveryOrderDetail.IsDoneSyncToEs = "0"
+	deliveryOrderDetail.StartDateSyncToEs = &now
+	deliveryOrderDetail.EndDateSyncToEs = &now
+	deliveryOrderDetail.CreatedAt = &now
+	deliveryOrderDetail.UpdatedAt = &now
+	deliveryOrderDetail.DeletedAt = nil
+	return
+}
+
+func (deliveryOrderDetail *DeliveryOrderDetail) DeliveryOrderDetailUploadMap(soDetailId, qty int, now time.Time) {
+	deliveryOrderDetail.SoDetailID = soDetailId
+	deliveryOrderDetail.Qty = qty
 	deliveryOrderDetail.IsDoneSyncToEs = "0"
 	deliveryOrderDetail.StartDateSyncToEs = &now
 	deliveryOrderDetail.EndDateSyncToEs = &now

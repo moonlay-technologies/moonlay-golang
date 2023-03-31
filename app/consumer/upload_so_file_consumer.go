@@ -66,7 +66,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 		soUploadHistoryId := m.Value
 		var key = string(m.Key[:])
 
-		var errors []string
+		// var errors []string
 
 		soUploadHistoryJourneysResultChan := make(chan *models.SoUploadHistoryChan)
 		go c.soUploadHistoriesRepository.GetByID(string(soUploadHistoryId), false, c.ctx, soUploadHistoryJourneysResultChan)
@@ -194,6 +194,9 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 					if key == "retry" {
 						c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 					} else {
+						var errors []string
+						errors = append(errors, fmt.Sprintf("No Order %s memiliki lebih dari 1 Kode Merk", v["NoOrder"]))
+
 						c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
 					}
 					isBreak = true
@@ -418,7 +421,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				}
 			}
 
-			parseTanggalTokoOrder, _ := time.Parse("2006-01-02", tanggalOrder)
+			parseTanggalTokoOrder, _ := time.Parse("2006-01-02", tanggalTokoOrder)
 			if parseTanggalTokoOrder.Add(duration - 1*time.Minute).After(parseTangalOrder.Add(duration)) {
 				if key == "retry" {
 					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
@@ -439,8 +442,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 
 			uploadSOField.UploadSOFieldMap(v, int(*message.UploadedBy), message.ID.Hex())
 			uploadSOField.BulkCode = message.BulkCode
-			uploadSOField.SoUploadHistoryId = message.ID.Hex()
-			uploadSOField.ErrorLine = i + 3
+			uploadSOField.ErrorLine = i + 2
 			uploadSOField.UploadType = key
 			uploadSOFields = append(uploadSOFields, &uploadSOField)
 		}

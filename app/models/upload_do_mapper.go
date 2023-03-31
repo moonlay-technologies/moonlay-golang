@@ -2,10 +2,9 @@ package models
 
 import "strconv"
 
-func (result *UploadDOField) UploadDOFieldMap(request map[string]string, userId int) {
+func (result *UploadDOField) UploadDOFieldMap(request map[string]string, userId int, sjUploadHistoryId string) {
 	result.IDDistributor, _ = strconv.Atoi(request["IDDistributor"])
 	result.NoOrder = request["NoOrder"]
-	result.TanggalSJ = request["TanggalSJ"]
 	result.NoSJ = request["NoSJ"]
 	result.Catatan = request["Catatan"]
 	result.CatatanInternal = request["CatatanInternal"]
@@ -19,5 +18,6 @@ func (result *UploadDOField) UploadDOFieldMap(request map[string]string, userId 
 	result.Unit = request["Unit"]
 	result.KodeGudang = request["KodeGudang"]
 	result.IDUser = userId
+	result.SjUploadHistoryId = sjUploadHistoryId
 	return
 }
