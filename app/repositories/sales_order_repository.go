@@ -664,7 +664,7 @@ func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, sqlTransacti
 		return
 	}
 
-	salesOrderRedisKey := fmt.Sprintf("%s", constants.SALES_ORDER+"*")
+	salesOrderRedisKey := fmt.Sprintf("%s*", constants.SALES_ORDER)
 	_, err = r.redisdb.Client().Del(ctx, salesOrderRedisKey).Result()
 
 	response.ID = salesOrderID
