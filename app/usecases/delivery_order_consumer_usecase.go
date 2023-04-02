@@ -399,7 +399,7 @@ func (u *deliveryOrderConsumerUseCase) Get(request *models.DeliveryOrderExportRe
 		}
 	}
 	// Upload Files
-	err := u.uploadRepository.UploadFile(b, request.FileName, request.FileType)
+	err := u.uploadRepository.UploadFile(b, constants.S3_EXPORT_DO_PATH, request.FileName, request.FileType)
 	if err != nil {
 		fmt.Println("error upload", err)
 		return helper.WriteLog(err, http.StatusInternalServerError, nil)

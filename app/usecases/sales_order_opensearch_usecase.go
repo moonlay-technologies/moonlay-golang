@@ -1,10 +1,15 @@
 package usecases
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/csv"
+	"fmt"
+	"math"
 	"net/http"
 	"order-service/app/models"
+	"order-service/app/models/constants"
 	"order-service/app/repositories"
 	openSearchRepositories "order-service/app/repositories/open_search"
 	"order-service/global/utils/helper"
@@ -19,6 +24,7 @@ type SalesOrderOpenSearchUseCaseInterface interface {
 	SyncDetailToOpenSearchFromCreateEvent(salesOrderDetail *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	SyncDetailToOpenSearchFromUpdateEvent(salesOrder *models.SalesOrder, salesOrderDetail *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	SyncDetailToOpenSearchFromDeleteEvent(salesOrderDetail *models.SalesOrderDetail, ctx context.Context) *model.ErrorLog
+	Get(request *models.SalesOrderExportRequest) *model.ErrorLog
 }
 
 type SalesOrderOpenSearchUseCase struct {
@@ -30,11 +36,11 @@ type SalesOrderOpenSearchUseCase struct {
 	categoryRepository                   repositories.CategoryRepositoryInterface
 	salesOrderOpenSearchRepository       openSearchRepositories.SalesOrderOpenSearchRepositoryInterface
 	salesOrderDetailOpenSearchRepository openSearchRepositories.SalesOrderDetailOpenSearchRepositoryInterface
-	deliveryOrderOpenSearchRepository    openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface
-	ctx                                  context.Context
+	uploadRepository                     repositories.UploadRepositoryInterface
+	pusherRepository                     repositories.PusherRepositoryInterface
 }
 
-func InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, productRepository repositories.ProductRepositoryInterface, uomRepository repositories.UomRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderDetailOpenSearchRepository openSearchRepositories.SalesOrderDetailOpenSearchRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, categoryRepository repositories.CategoryRepositoryInterface) SalesOrderOpenSearchUseCaseInterface {
+func InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, productRepository repositories.ProductRepositoryInterface, uomRepository repositories.UomRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderDetailOpenSearchRepository openSearchRepositories.SalesOrderDetailOpenSearchRepositoryInterface, categoryRepository repositories.CategoryRepositoryInterface, uploadRepository repositories.UploadRepositoryInterface) SalesOrderOpenSearchUseCaseInterface {
 	return &SalesOrderOpenSearchUseCase{
 		salesOrderRepository:                 salesOrderRepository,
 		salesOrderDetailRepository:           salesOrderDetailRepository,
@@ -43,8 +49,9 @@ func InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository repositories.
 		uomRepository:                        uomRepository,
 		salesOrderOpenSearchRepository:       salesOrderOpenSearchRepository,
 		salesOrderDetailOpenSearchRepository: salesOrderDetailOpenSearchRepository,
-		deliveryOrderOpenSearchRepository:    deliveryOrderOpenSearchRepository,
 		categoryRepository:                   categoryRepository,
+		uploadRepository:                     uploadRepository,
+		pusherRepository:                     repositories.InitPusherRepository(),
 	}
 }
 
@@ -412,6 +419,68 @@ func (u *SalesOrderOpenSearchUseCase) SyncDetailToOpenSearchFromDeleteEvent(sale
 
 	if updateSalesOrderResult.Error != nil {
 		return updateSalesOrderResult.ErrorLog
+	}
+
+	return &model.ErrorLog{}
+}
+
+func (u *SalesOrderOpenSearchUseCase) Get(request *models.SalesOrderExportRequest) *model.ErrorLog {
+	soRequest := &models.SalesOrderRequest{}
+	soRequest.SalesOrderExportMap(request)
+	getSalesOrdersCountResultChan := make(chan *models.SalesOrdersChan)
+	go u.salesOrderOpenSearchRepository.Get(soRequest, true, getSalesOrdersCountResultChan)
+	getSalesOrdersCountResult := <-getSalesOrdersCountResultChan
+
+	if getSalesOrdersCountResult.Error != nil {
+		fmt.Println("error = ", getSalesOrdersCountResult.Error)
+		return getSalesOrdersCountResult.ErrorLog
+	}
+
+	soRequest.PerPage = 50
+	instalmentData := math.Ceil(float64(getSalesOrdersCountResult.Total) / float64(soRequest.PerPage))
+	b := new(bytes.Buffer)
+	writer := csv.NewWriter(b)
+	defer writer.Flush()
+
+	if err := writer.Write(constants.SALES_ORDER_EXPORT_HEADER()); err != nil {
+		fmt.Println("error writer", err)
+		return helper.WriteLog(err, http.StatusInternalServerError, nil)
+	}
+
+	for i := 0; i < int(instalmentData); i++ {
+		soRequest.Page = i + 1
+		getSalesOrdersResultChan := make(chan *models.SalesOrdersChan)
+		go u.salesOrderOpenSearchRepository.Get(soRequest, false, getSalesOrdersResultChan)
+		getSalesOrdersResult := <-getSalesOrdersResultChan
+
+		if getSalesOrdersResult.Error != nil {
+			return getSalesOrdersResult.ErrorLog
+		}
+		for _, v := range getSalesOrdersResult.SalesOrders {
+			if err := writer.Write(v.MapToCsvRow()); err != nil {
+				fmt.Println("error fill", err)
+				return helper.WriteLog(err, http.StatusInternalServerError, nil)
+			}
+
+		}
+		progres := math.Round(float64(i*soRequest.PerPage)/float64(getSalesOrdersCountResult.Total)) * 100
+		err := u.pusherRepository.Pubish(map[string]string{"message": fmt.Sprintf("%f", progres) + "%"})
+		if err != nil {
+			fmt.Println("pusher error = ", err.Error())
+			return helper.WriteLog(err, http.StatusInternalServerError, nil)
+		}
+	}
+	// Upload Files
+	err := u.uploadRepository.UploadFile(b, constants.S3_EXPORT_SO_PATH, request.FileName, request.FileType)
+	if err != nil {
+		fmt.Println("error upload", err)
+		return helper.WriteLog(err, http.StatusInternalServerError, nil)
+	}
+
+	err = u.pusherRepository.Pubish(map[string]string{"message": "100%"})
+	if err != nil {
+		fmt.Println("pusher error = ", err.Error())
+		return helper.WriteLog(err, http.StatusInternalServerError, nil)
 	}
 
 	return &model.ErrorLog{}

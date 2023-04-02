@@ -35,6 +35,7 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 		{
 			salesOrderControllerGroup.POST("", salesOrderController.Create)
 			salesOrderControllerGroup.GET("", salesOrderController.Get)
+			salesOrderControllerGroup.GET("export", salesOrderController.Export)
 			salesOrderControllerGroup.GET(":so-id", salesOrderController.GetByID)
 			salesOrderControllerGroup.GET("details/:so-detail-id", salesOrderController.GetDetailsById)
 			salesOrderControllerGroup.GET(":so-id/details", salesOrderController.GetDetailsBySoId)

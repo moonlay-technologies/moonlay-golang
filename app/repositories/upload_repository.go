@@ -23,7 +23,7 @@ import (
 type UploadRepositoryInterface interface {
 	ReadFile(url string) ([]byte, error)
 	GetSosjRowData(agentId, storeCode, brandId, productSku, warehouseId, salesmanId, addressId string, resultChan chan *models.RowDataSosjUploadErrorLogChan)
-	UploadFile(data *bytes.Buffer, fileName string, fileType string) error
+	UploadFile(data *bytes.Buffer, filePath string, fileName string, fileType string) error
 }
 
 type uploadRepository struct {
@@ -80,7 +80,7 @@ func (r *uploadRepository) GetSosjRowData(agentId, storeCode, brandId, productSk
 	}
 }
 
-func (r *uploadRepository) UploadFile(data *bytes.Buffer, fileName string, fileType string) error {
+func (r *uploadRepository) UploadFile(data *bytes.Buffer, filePath string, fileName string, fileType string) error {
 
 	AccessKeyID := os.Getenv("S3_ACCESS_KEY_ID")
 	SecretAccessKey := os.Getenv("S3_SECRET_ACCESS_KEY")
@@ -97,7 +97,7 @@ func (r *uploadRepository) UploadFile(data *bytes.Buffer, fileName string, fileT
 
 	_, err = s3.New(session).PutObject(&s3.PutObjectInput{
 		Bucket:             aws.String(constants.S3_EXPORT_BUCKET),
-		Key:                aws.String(fmt.Sprintf("%s/%s.%s", constants.S3_EXPORT_DO_PATH, fileName, fileType)),
+		Key:                aws.String(fmt.Sprintf("%s/%s.%s", filePath, fileName, fileType)),
 		ACL:                aws.String(constants.S3_EXPORT_ACL),
 		Body:               bytes.NewReader(data.Bytes()),
 		ContentLength:      aws.Int64(int64(len(data.Bytes()))),

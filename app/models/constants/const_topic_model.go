@@ -4,6 +4,7 @@ const (
 	CREATE_SALES_ORDER_TOPIC = "create-sales-order"
 	UPDATE_SALES_ORDER_TOPIC = "update-sales-order"
 	DELETE_SALES_ORDER_TOPIC = "delete-sales-order"
+	EXPORT_SALES_ORDER_TOPIC = "export-sales-order"
 
 	CREATE_SALES_ORDER_DETAIL_TOPIC = "create-sales-order-detail"
 	UPDATE_SALES_ORDER_DETAIL_TOPIC = "update-sales-order-detail"
