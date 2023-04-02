@@ -40,6 +40,7 @@ type DeliveryOrderUseCaseInterface interface {
 	GetSyncToKafkaHistories(request *models.DeliveryOrderEventLogRequest, ctx context.Context) ([]*models.DeliveryOrderEventLogResponse, *model.ErrorLog)
 	GetDOJourneys(request *models.DeliveryOrderJourneysRequest, ctx context.Context) (*models.DeliveryOrderJourneysResponses, *model.ErrorLog)
 	GetDOJourneysByDoID(doId int, ctx context.Context) (*models.DeliveryOrderJourneysResponses, *model.ErrorLog)
+	GetDOUploadHistories(request *models.GetDoUploadHistoriesRequest, ctx context.Context) (*models.GetDoUploadHistoryResponses, *model.ErrorLog)
 	GetDOUploadHistoriesById(id string, ctx context.Context) (*models.GetDoUploadHistoryResponse, *model.ErrorLog)
 	GetDOUploadErrorLogsByReqId(request *models.GetDoUploadErrorLogsRequest, ctx context.Context) (*models.GetDoUploadErrorLogsResponse, *model.ErrorLog)
 	GetDOUploadErrorLogsByDoUploadHistoryId(request *models.GetDoUploadErrorLogsRequest, ctx context.Context) (*models.GetDoUploadErrorLogsResponse, *model.ErrorLog)
@@ -1644,6 +1645,24 @@ func (u *deliveryOrderUseCase) GetDOJourneysByDoID(doId int, ctx context.Context
 	}
 
 	return deliveryOrderJourneysResult, nil
+}
+
+func (u *deliveryOrderUseCase) GetDOUploadHistories(request *models.GetDoUploadHistoriesRequest, ctx context.Context) (*models.GetDoUploadHistoryResponses, *model.ErrorLog) {
+
+	getDoUploadHistoriesResultChan := make(chan *models.DoUploadHistoriesChan)
+	go u.doUploadHistoriesRepository.Get(request, false, ctx, getDoUploadHistoriesResultChan)
+	getDoUploadHistoriesResult := <-getDoUploadHistoriesResultChan
+
+	if getDoUploadHistoriesResult.Error != nil {
+		return &models.GetDoUploadHistoryResponses{}, getDoUploadHistoriesResult.ErrorLog
+	}
+
+	result := models.GetDoUploadHistoryResponses{
+		DoUploadHistories: getDoUploadHistoriesResult.DoUploadHistories,
+		Total:             getDoUploadHistoriesResult.Total,
+	}
+
+	return &result, nil
 }
 
 func (u *deliveryOrderUseCase) GetDOUploadHistoriesById(id string, ctx context.Context) (*models.GetDoUploadHistoryResponse, *model.ErrorLog) {
