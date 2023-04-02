@@ -96,7 +96,7 @@ func (c *uploadSOItemConsumerHandler) ProcessMessage() {
 		go c.orderSourceRepository.GetBySourceName("upload_so", false, c.ctx, getOrderSourceResultChan)
 		getOrderSourceResult := <-getOrderSourceResultChan
 
-		for i, v := range uploadSOFields {
+		for _, v := range uploadSOFields {
 
 			var errors []string
 
@@ -315,7 +315,7 @@ func (c *uploadSOItemConsumerHandler) ProcessMessage() {
 						rowData.RowDataSoUploadErrorLogMap(myMap)
 
 						soUploadErrorLog := &models.SoUploadErrorLog{}
-						soUploadErrorLog.SoUploadErrorLogsMap(i+2, message.ID.Hex(), message.RequestId, message.BulkCode, errors, &now)
+						soUploadErrorLog.SoUploadErrorLogsMap(v.ErrorLine, message.ID.Hex(), message.RequestId, message.BulkCode, errors, &now)
 						soUploadErrorLog.RowData = *rowData
 
 						soUploadErrorLogssResultChan := make(chan *models.SoUploadErrorLogChan)
