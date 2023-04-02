@@ -566,8 +566,8 @@ func (c *SalesOrderValidator) GetSalesOrderJourneysValidator(ctx *gin.Context) (
 
 	sortField := c.getQueryWithDefault("sort_field", "created_at", ctx)
 
-	if sortField != "so_code" && sortField != "status" && sortField != "created_at" {
-		err = helper.NewError("Parameter 'sort_field' harus bernilai 'so_code' or 'status' or 'created_at' ")
+	if sortField != "so_code" && sortField != "status" && sortField != "created_at" && sortField != "action" {
+		err = helper.NewError("Parameter 'sort_field' harus bernilai 'so_code' or 'status' or 'created_at' or 'action' ")
 		result.StatusCode = http.StatusBadRequest
 		result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
 		ctx.JSON(result.StatusCode, result)
@@ -583,6 +583,7 @@ func (c *SalesOrderValidator) GetSalesOrderJourneysValidator(ctx *gin.Context) (
 		SoId:              intSoID,
 		SoCode:            c.getQueryWithDefault("so_code", "", ctx),
 		Status:            c.getQueryWithDefault("status", "", ctx),
+		Action:            c.getQueryWithDefault("action", "", ctx),
 		StartDate:         c.getQueryWithDefault("start_date", "", ctx),
 		EndDate:           c.getQueryWithDefault("end_date", "", ctx),
 	}
@@ -638,7 +639,7 @@ func (c *SalesOrderValidator) GetSOUploadHistoriesValidator(ctx *gin.Context) (*
 		return nil, err
 	}
 
-	salesOrderRequest := &models.GetSoUploadHistoriesRequest{
+	getSoUploadHistoriesRequest := &models.GetSoUploadHistoriesRequest{
 		ID:                     c.getQueryWithDefault("id", "", ctx),
 		Page:                   pageInt,
 		PerPage:                perPageInt,
@@ -656,7 +657,7 @@ func (c *SalesOrderValidator) GetSOUploadHistoriesValidator(ctx *gin.Context) (*
 		FinishProcessDateStart: finishProcessDateStart,
 		FinishProcessDateEnd:   finishProcessDateEnd,
 	}
-	return salesOrderRequest, nil
+	return getSoUploadHistoriesRequest, nil
 }
 
 func (c *SalesOrderValidator) GetSosjUploadHistoriesValidator(ctx *gin.Context) (*models.GetSosjUploadHistoriesRequest, error) {
@@ -709,7 +710,7 @@ func (c *SalesOrderValidator) GetSosjUploadHistoriesValidator(ctx *gin.Context) 
 		return nil, err
 	}
 
-	salesOrderRequest := &models.GetSosjUploadHistoriesRequest{
+	getSosjUploadHistoriesRequest := &models.GetSosjUploadHistoriesRequest{
 		ID:                     c.getQueryWithDefault("id", "", ctx),
 		Page:                   pageInt,
 		PerPage:                perPageInt,
@@ -730,7 +731,7 @@ func (c *SalesOrderValidator) GetSosjUploadHistoriesValidator(ctx *gin.Context) 
 		FinishProcessDateStart: finishProcessDateStart,
 		FinishProcessDateEnd:   finishProcessDateEnd,
 	}
-	return salesOrderRequest, nil
+	return getSosjUploadHistoriesRequest, nil
 }
 
 func (d *SalesOrderValidator) getQueryWithDefault(param string, empty string, ctx *gin.Context) string {

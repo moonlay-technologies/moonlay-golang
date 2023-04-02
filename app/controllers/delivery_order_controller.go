@@ -40,8 +40,9 @@ type DeliveryOrderControllerInterface interface {
 
 	Export(ctx *gin.Context)
 	ExportDetail(ctx *gin.Context)
-	GetDoUploadHistoriesById(ctx *gin.Context)
 	RetrySyncToKafka(ctx *gin.Context)
+	GetDoUploadHistories(ctx *gin.Context)
+	GetDoUploadHistoriesById(ctx *gin.Context)
 	GetDoUploadErrorLogByReqId(ctx *gin.Context)
 	GetDoUploadErrorLogByDoUploadHistoryId(ctx *gin.Context)
 }
@@ -554,6 +555,22 @@ func (c *deliveryOrderController) GetDOJourneysByDoID(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, model.Response{Data: deliveryOrderJourneys.DeliveryOrderJourneys, Total: deliveryOrderJourneys.Total, StatusCode: http.StatusOK})
 	return
+}
+
+func (c *deliveryOrderController) GetDoUploadHistories(ctx *gin.Context) {
+	doUploadHistoriesRequest, err := c.deliveryOrderValidator.GetDOUploadHistoriesValidator(ctx)
+	if err != nil {
+		return
+	}
+
+	doUploadHistories, errorLog := c.deliveryOrderUseCase.GetDOUploadHistories(doUploadHistoriesRequest, ctx)
+
+	if errorLog != nil {
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, model.Response{Data: doUploadHistories.DoUploadHistories, Total: doUploadHistories.Total, StatusCode: http.StatusOK})
 }
 
 func (c *deliveryOrderController) GetDoUploadHistoriesById(ctx *gin.Context) {

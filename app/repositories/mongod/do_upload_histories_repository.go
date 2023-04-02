@@ -8,8 +8,11 @@ import (
 	"order-service/app/models"
 	"order-service/app/models/constants"
 	"order-service/global/utils/helper"
+	"order-service/global/utils/model"
 	"order-service/global/utils/mongodb"
 	"os"
+	"strconv"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -65,34 +68,231 @@ func (r *doUploadHistoriesRepository) Get(request *models.GetDoUploadHistoriesRe
 	asc := 1
 	desc := -1
 
-	if request.SortField == "updated_at" {
+	if request.SortField == "agent_name" {
 		if request.SortValue == "asc" {
 			sort = bson.M{
-				"updated_at": asc,
+				"agent_name": asc,
 			}
-		} else {
+		} else if request.SortValue == "desc" {
 			sort = bson.M{
-				"updated_at": desc,
+				"agent_name": desc,
 			}
 		}
-	} else {
+	} else if request.SortField == "file_name" {
+		if request.SortValue == "asc" {
+			sort = bson.M{
+				"file_name": asc,
+			}
+		} else if request.SortValue == "desc" {
+			sort = bson.M{
+				"file_name": desc,
+			}
+		}
+	} else if request.SortField == "status" {
+		if request.SortValue == "asc" {
+			sort = bson.M{
+				"status": asc,
+			}
+		} else if request.SortValue == "desc" {
+			sort = bson.M{
+				"status": desc,
+			}
+		}
+	} else if request.SortField == "created_at" {
 		if request.SortValue == "asc" {
 			sort = bson.M{
 				"created_at": asc,
 			}
-		} else {
+		} else if request.SortValue == "desc" {
 			sort = bson.M{
 				"created_at": desc,
 			}
 		}
 	}
 
-	if request.Status != "" {
-		filter["status"] = request.Status
+	if request.GlobalSearchValue != "" {
+		uploadedBy, _ := strconv.ParseInt(request.GlobalSearchValue, 10, 64)
+		createdAt, _ := time.Parse("2006-01-02", request.GlobalSearchValue)
+
+		filter = bson.M{
+			"$or": []bson.M{
+				{"bulk_code": bson.M{"$regex": ".*" + request.GlobalSearchValue + ".*", "$options": "i"}},
+				{"agent_name": bson.M{"$regex": ".*" + request.GlobalSearchValue + ".*", "$options": "i"}},
+				{"file_name": bson.M{"$regex": ".*" + request.GlobalSearchValue + ".*", "$options": "i"}},
+				{"status": bson.M{"$regex": ".*" + request.GlobalSearchValue + ".*", "$options": "i"}},
+				{"uploaded_by": uploadedBy},
+				{"created_at": bson.M{"$gte": createdAt, "$lte": createdAt.AddDate(0, 0, 1)}},
+			},
+		}
+	}
+
+	if request.ID != "" {
+		id, err := primitive.ObjectIDFromHex(request.ID)
+		if err != nil {
+			errorLogData := helper.WriteLog(err, http.StatusBadRequest, "Ada kesalahan pada request data, silahkan dicek kembali")
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+
+		filter["_id"] = id
 	}
 
 	if request.RequestID != "" {
 		filter["request_id"] = request.RequestID
+	}
+
+	if request.FileName != "" {
+		filter["file_name"] = request.FileName
+	}
+
+	if request.BulkCode != "" {
+		filter["bulk_code"] = request.BulkCode
+	}
+
+	if request.AgentID > 0 {
+		filter["agent_id"] = request.AgentID
+	}
+
+	if request.Status != "" {
+		filter["status"] = request.Status
+	}
+
+	if request.UploadedBy > 0 {
+		filter["uploaded_by"] = request.UploadedBy
+	}
+
+	if request.StartUploadAt != "" && request.EndUploadAt == "" {
+		startUploadAt, err := time.Parse("2006-01-02", request.StartUploadAt)
+		if err != nil {
+			errorLogData := helper.NewWriteLog(model.ErrorLog{
+				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
+				SystemMessage: helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_GET, fmt.Sprintf("field %s harus memiliki format yyyy-mm-dd", "start_upload_at")),
+				StatusCode:    http.StatusBadRequest,
+				Err:           fmt.Errorf("invalid Process"),
+			})
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+		filter["created_at"] = bson.M{"$gte": startUploadAt, "$lte": startUploadAt.AddDate(0, 0, 1)}
+	}
+
+	if request.EndUploadAt != "" && request.StartUploadAt == "" {
+		endUploadAt, err := time.Parse("2006-01-02", request.EndUploadAt)
+		if err != nil {
+			errorLogData := helper.NewWriteLog(model.ErrorLog{
+				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
+				SystemMessage: helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_GET, fmt.Sprintf("field %s harus memiliki format yyyy-mm-dd", "end_upload_at")),
+				StatusCode:    http.StatusBadRequest,
+				Err:           fmt.Errorf("invalid Process"),
+			})
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+		filter["created_at"] = bson.M{"$gte": endUploadAt, "$lte": endUploadAt.AddDate(0, 0, 1)}
+	}
+
+	if request.FinishProcessDateStart != "" && request.FinishProcessDateEnd == "" {
+		finishProcessDateStart, err := time.Parse("2006-01-02", request.FinishProcessDateStart)
+		if err != nil {
+			errorLogData := helper.NewWriteLog(model.ErrorLog{
+				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
+				SystemMessage: helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_GET, fmt.Sprintf("field %s harus memiliki format yyyy-mm-dd", "finish_process_date_start")),
+				StatusCode:    http.StatusBadRequest,
+				Err:           fmt.Errorf("invalid Process"),
+			})
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+		filter["updated_at"] = bson.M{"$gte": finishProcessDateStart, "$lte": finishProcessDateStart.AddDate(0, 0, 1)}
+	}
+
+	if request.FinishProcessDateEnd != "" && request.FinishProcessDateStart == "" {
+		finishProcessDateEnd, err := time.Parse("2006-01-02", request.FinishProcessDateEnd)
+		if err != nil {
+			errorLogData := helper.NewWriteLog(model.ErrorLog{
+				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
+				SystemMessage: helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_GET, fmt.Sprintf("field %s harus memiliki format yyyy-mm-dd", "finish_process_date_end")),
+				StatusCode:    http.StatusBadRequest,
+				Err:           fmt.Errorf("invalid Process"),
+			})
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+		filter["updated_at"] = bson.M{"$gte": finishProcessDateEnd, "$lte": finishProcessDateEnd.AddDate(0, 0, 1)}
+	}
+
+	if request.StartUploadAt != "" && request.EndUploadAt != "" {
+		startUploadAt, err := time.Parse("2006-01-02", request.StartUploadAt)
+		if err != nil {
+			errorLogData := helper.NewWriteLog(model.ErrorLog{
+				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
+				SystemMessage: helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_GET, fmt.Sprintf("field %s harus memiliki format yyyy-mm-dd", "start_upload_at")),
+				StatusCode:    http.StatusBadRequest,
+				Err:           fmt.Errorf("invalid Process"),
+			})
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+
+		endUploadAt, err := time.Parse("2006-01-02", request.EndUploadAt)
+		if err != nil {
+			errorLogData := helper.NewWriteLog(model.ErrorLog{
+				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
+				SystemMessage: helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_GET, fmt.Sprintf("field %s harus memiliki format yyyy-mm-dd", "end_upload_at")),
+				StatusCode:    http.StatusBadRequest,
+				Err:           fmt.Errorf("invalid Process"),
+			})
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+
+		filter["created_at"] = bson.M{"$gte": startUploadAt, "$lte": endUploadAt.AddDate(0, 0, 1)}
+	}
+
+	if request.FinishProcessDateStart != "" && request.FinishProcessDateEnd != "" {
+		finishProcessDateStart, err := time.Parse("2006-01-02", request.FinishProcessDateStart)
+		if err != nil {
+			errorLogData := helper.NewWriteLog(model.ErrorLog{
+				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
+				SystemMessage: helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_GET, fmt.Sprintf("field %s harus memiliki format yyyy-mm-dd", "finish_process_date_start")),
+				StatusCode:    http.StatusBadRequest,
+				Err:           fmt.Errorf("invalid Process"),
+			})
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+
+		finishProcessDateEnd, err := time.Parse("2006-01-02", request.FinishProcessDateEnd)
+		if err != nil {
+			errorLogData := helper.NewWriteLog(model.ErrorLog{
+				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
+				SystemMessage: helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_GET, fmt.Sprintf("field %s harus memiliki format yyyy-mm-dd", "finish_process_date_end")),
+				StatusCode:    http.StatusBadRequest,
+				Err:           fmt.Errorf("invalid Process"),
+			})
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+
+		filter["updated_at"] = bson.M{"$gte": finishProcessDateStart, "$lte": finishProcessDateEnd.AddDate(0, 0, 1)}
 	}
 
 	option := options.Find().SetSkip(int64((request.Page - 1) * request.PerPage)).SetLimit(int64(request.PerPage)).SetSort(sort)
@@ -107,8 +307,8 @@ func (r *doUploadHistoriesRepository) Get(request *models.GetDoUploadHistoriesRe
 	}
 
 	if total == 0 {
-		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		err = helper.NewError("data not found")
+		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -126,6 +326,17 @@ func (r *doUploadHistoriesRepository) Get(request *models.GetDoUploadHistoriesRe
 			return
 		}
 		defer cursor.Close(ctx)
+
+		for cursor.Next(ctx) {
+			var doUploadhistory *models.DoUploadHistory
+			if err := cursor.Decode(&doUploadhistory); err != nil {
+				response.Error = err
+				resultChan <- response
+				return
+			}
+
+			doUploadHistories = append(doUploadHistories, doUploadhistory)
+		}
 
 		response.DoUploadHistories = doUploadHistories
 		response.Total = total
