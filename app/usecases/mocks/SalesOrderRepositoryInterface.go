@@ -26,6 +26,11 @@ func (_m *SalesOrderRepositoryInterface) GetByCode(soCode string, countOnly bool
 	_m.Called(soCode, countOnly, ctx, result)
 }
 
+// GetBySoRefCode provides a mock function with given fields: soCode, countOnly, ctx, result
+func (_m *SalesOrderRepositoryInterface) GetBySoRefCode(soRefCode string, countOnly bool, ctx context.Context, result chan *models.SalesOrderChan) {
+	_m.Called(soRefCode, countOnly, ctx, result)
+}
+
 // GetByID provides a mock function with given fields: id, countOnly, ctx, result
 func (_m *SalesOrderRepositoryInterface) GetByID(id int, countOnly bool, ctx context.Context, result chan *models.SalesOrderChan) {
 	_m.Called(id, countOnly, ctx, result)

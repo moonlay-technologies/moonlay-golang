@@ -11,6 +11,7 @@ import (
 	mongoRepositories "order-service/app/repositories/mongod"
 	"order-service/global/utils/helper"
 	kafkadbo "order-service/global/utils/kafka"
+	"strconv"
 	"time"
 
 	"github.com/bxcodec/dbresolver"
@@ -114,7 +115,7 @@ func (c *uploadSOItemConsumerHandler) ProcessMessage() {
 
 			if getSalesOrderStatusResult.Error != nil {
 				fmt.Println(getSalesOrderStatusResult.Error.Error())
-				errors = append(errors, getOrderSourceResult.Error.Error())
+				errors = append(errors, getSalesOrderStatusResult.Error.Error())
 			}
 
 			// Get SO Detail Status By Name
@@ -124,7 +125,7 @@ func (c *uploadSOItemConsumerHandler) ProcessMessage() {
 
 			if getSalesOrderDetailStatusResult.Error != nil {
 				fmt.Println(getSalesOrderDetailStatusResult.Error.Error())
-				errors = append(errors, getOrderSourceResult.Error.Error())
+				errors = append(errors, getSalesOrderDetailStatusResult.Error.Error())
 			}
 
 			// Check Product By Id
@@ -144,7 +145,7 @@ func (c *uploadSOItemConsumerHandler) ProcessMessage() {
 
 			if getUomResult.Error != nil {
 				fmt.Println(getUomResult.Error.Error())
-				errors = append(errors, getOrderSourceResult.Error.Error())
+				errors = append(errors, getUomResult.Error.Error())
 			}
 
 			var price float64
@@ -165,24 +166,48 @@ func (c *uploadSOItemConsumerHandler) ProcessMessage() {
 
 				salesOrder := salesOrderSoRefCodes[v.NoOrder]
 
-				salesOrder.TotalAmount = salesOrder.TotalAmount + (price * float64(v.QTYOrder))
-				salesOrder.TotalTonase = salesOrder.TotalTonase + (float64(v.QTYOrder) * getProductResult.Product.NettWeight)
+				if len(errors) < 1 {
 
-				// ### Sales Order Detail ###
-				salesOrderDetail := &models.SalesOrderDetail{}
-				salesOrderDetail.SalesOrderDetailUploadSOMap(v, now)
-				salesOrderDetail.SalesOrderDetailStatusChanMap(getSalesOrderDetailStatusResult)
-				salesOrderDetail.OrderStatusID = getSalesOrderDetailStatusResult.OrderStatus.ID
-				salesOrderDetail.Price = price
-				salesOrderDetail.ProductID = getProductResult.Product.ID
-				salesOrderDetail.Product = getProductResult.Product
-				salesOrderDetail.UomID = getUomResult.Uom.ID
-				salesOrderDetail.Uom = getUomResult.Uom
+					salesOrder.TotalAmount = salesOrder.TotalAmount + (price * float64(v.QTYOrder))
+					salesOrder.TotalTonase = salesOrder.TotalTonase + (float64(v.QTYOrder) * getProductResult.Product.NettWeight)
 
-				salesOrder.SalesOrderDetails = append(salesOrder.SalesOrderDetails, salesOrderDetail)
+					// ### Sales Order Detail ###
+					salesOrderDetail := &models.SalesOrderDetail{}
+					salesOrderDetail.SalesOrderDetailUploadSOMap(v, now)
+					salesOrderDetail.SalesOrderDetailStatusChanMap(getSalesOrderDetailStatusResult)
+					salesOrderDetail.OrderStatusID = getSalesOrderDetailStatusResult.OrderStatus.ID
+					salesOrderDetail.Price = price
+					salesOrderDetail.ProductID = getProductResult.Product.ID
+					salesOrderDetail.Product = getProductResult.Product
+					salesOrderDetail.UomID = getUomResult.Uom.ID
+					salesOrderDetail.Uom = getUomResult.Uom
 
-				salesOrderSoRefCodes[v.NoOrder] = salesOrder
+					salesOrder.SalesOrderDetails = append(salesOrder.SalesOrderDetails, salesOrderDetail)
 
+					salesOrderSoRefCodes[v.NoOrder] = salesOrder
+				} else {
+
+					getUploadSOHistoriesResultChan := make(chan *models.SoUploadHistoryChan)
+					go c.soUploadHistoriesRepository.GetByID(v.SoUploadHistoryId, false, c.ctx, getUploadSOHistoriesResultChan)
+					getUploadSOHistoriesResult := <-getUploadSOHistoriesResultChan
+					message := getUploadSOHistoriesResult.SoUploadHistory
+
+					if v.UploadType == "retry" {
+
+						c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+						salesOrderSoRefCodes = nil
+						break
+					} else {
+
+						var myMap map[string]string
+						data, _ := json.Marshal(v)
+						json.Unmarshal(data, &myMap)
+
+						c.createSoUploadErrorLog(v.ErrorLine, strconv.Itoa(v.IDDistributor), v.SoUploadHistoryId, message.RequestId, message.AgentName, v.BulkCode, errors, &now, myMap)
+
+						continue
+					}
+				}
 			} else {
 
 				soRefCodes = append(soRefCodes, v.NoOrder)
@@ -299,10 +324,7 @@ func (c *uploadSOItemConsumerHandler) ProcessMessage() {
 
 					if v.UploadType == "retry" {
 
-						message.Status = constants.UPLOAD_STATUS_HISTORY_FAILED
-						uploadSOHistoryJourneysResultChan := make(chan *models.SoUploadHistoryChan)
-						go c.soUploadHistoriesRepository.UpdateByID(message.ID.Hex(), message, c.ctx, uploadSOHistoryJourneysResultChan)
-
+						c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 						salesOrderSoRefCodes = nil
 						break
 					} else {
@@ -311,15 +333,7 @@ func (c *uploadSOItemConsumerHandler) ProcessMessage() {
 						data, _ := json.Marshal(v)
 						json.Unmarshal(data, &myMap)
 
-						rowData := &models.RowDataSoUploadErrorLog{}
-						rowData.RowDataSoUploadErrorLogMap(myMap)
-
-						soUploadErrorLog := &models.SoUploadErrorLog{}
-						soUploadErrorLog.SoUploadErrorLogsMap(v.ErrorLine, message.ID.Hex(), message.RequestId, message.BulkCode, errors, &now)
-						soUploadErrorLog.RowData = *rowData
-
-						soUploadErrorLogssResultChan := make(chan *models.SoUploadErrorLogChan)
-						go c.soUploadErrorLogsRepository.Insert(soUploadErrorLog, c.ctx, soUploadErrorLogssResultChan)
+						c.createSoUploadErrorLog(v.ErrorLine, strconv.Itoa(v.IDDistributor), v.SoUploadHistoryId, message.RequestId, message.AgentName, v.BulkCode, errors, &now, myMap)
 
 						continue
 					}
@@ -441,4 +455,22 @@ func (c *uploadSOItemConsumerHandler) ProcessMessage() {
 		fmt.Println("error")
 		fmt.Println(err)
 	}
+}
+
+func (c *uploadSOItemConsumerHandler) createSoUploadErrorLog(errorLine int, agentId, soUploadHistoryId, requestId, agentName, bulkCode string, errors []string, now *time.Time, item map[string]string) {
+	soUploadErrorLog := &models.SoUploadErrorLog{}
+	soUploadErrorLog.SoUploadErrorLogsMap(errorLine, soUploadHistoryId, requestId, bulkCode, errors, now)
+	rowData := &models.RowDataSoUploadErrorLog{}
+	rowData.RowDataSoUploadErrorLogMap(item)
+	soUploadErrorLog.RowData = *rowData
+
+	soUploadErrorLogResultChan := make(chan *models.SoUploadErrorLogChan)
+	go c.soUploadErrorLogsRepository.Insert(soUploadErrorLog, c.ctx, soUploadErrorLogResultChan)
+}
+
+func (c *uploadSOItemConsumerHandler) updateSoUploadHistories(message *models.SoUploadHistory, status string) {
+	message.UpdatedAt = time.Now()
+	message.Status = status
+	soUploadHistoryJourneysResultChan := make(chan *models.SoUploadHistoryChan)
+	go c.soUploadHistoriesRepository.UpdateByID(message.ID.Hex(), message, c.ctx, soUploadHistoryJourneysResultChan)
 }
