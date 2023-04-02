@@ -247,6 +247,23 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 				}
 			}
 
+			nowWIB := time.Now().UTC().Add(7 * time.Hour)
+			duration := time.Hour*time.Duration(nowWIB.Hour()) + time.Minute*time.Duration(nowWIB.Minute()) + time.Second*time.Duration(nowWIB.Second()) + time.Nanosecond*time.Duration(nowWIB.Nanosecond())
+			parseTangalSJ, _ := time.Parse("2006-01-02", tanggalSJ)
+			if parseTangalSJ.Add(duration - 1*time.Minute).After(nowWIB) {
+				if key == "retry" {
+					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+
+					break
+				} else {
+					errors := []string{"Tanggal Surat Jalan TIDAK BOLEH MELEBIHI dari Tanggal Pembuatan Surat Jalan. Silahkan disesuaikan kembali"}
+
+					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
+
+					continue
+				}
+			}
+
 			var uploadDOField models.UploadDOField
 			uploadDOField.TanggalSJ = tanggalSJ
 			uploadDOField.UploadDOFieldMap(v, int(*message.UploadedBy), message.ID.Hex())

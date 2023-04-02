@@ -300,6 +300,8 @@ func InitUploadDOItemConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodb
 	deliveryOrderLogRepository := mongoRepo.InitDeliveryOrderLogRepository(mongodbClient)
 	salesOrderLogRepository := mongoRepo.InitSalesOrderLogRepository(mongodbClient)
 	salesOrderJourneysRepository := mongoRepo.InitSalesOrderJourneysRepository(mongodbClient)
-	handler := InitUploadDOItemConsumerHandlerInterface(deliveryOrderRepository, deliveryOrderDetailRepository, salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, warehouseRepository, brandRepository, uomRepository, agentRepository, storeRepository, productRepository, userRepository, salesmanRepository, deliveryOrderLogRepository, salesOrderLogRepository, salesOrderJourneysRepository, kafkaClient, ctx, args, database)
+	uploadSJHistoriesRepository := mongoRepo.InitDoUploadHistoriesRepositoryInterface(mongodbClient)
+	uploadSJErrorLogsRepository := mongoRepo.InitDoUploadErrorLogsRepositoryInterface(mongodbClient)
+	handler := InitUploadDOItemConsumerHandlerInterface(deliveryOrderRepository, deliveryOrderDetailRepository, salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, warehouseRepository, brandRepository, uomRepository, agentRepository, storeRepository, productRepository, userRepository, salesmanRepository, deliveryOrderLogRepository, salesOrderLogRepository, salesOrderJourneysRepository, uploadSJHistoriesRepository, uploadSJErrorLogsRepository, kafkaClient, ctx, args, database)
 	return handler
 }
