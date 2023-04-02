@@ -10,6 +10,7 @@ import (
 	"order-service/global/utils/model"
 	"order-service/global/utils/mongodb"
 	"os"
+	"strconv"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -65,42 +66,57 @@ func (r *salesOrderJourneysRepository) Get(request *models.SalesOrderJourneyRequ
 	asc := 1
 	desc := -1
 
-	if request.SortField == "created_at" && request.SortValue == "asc" {
-		sort = bson.M{
-			"created_at": asc,
+	if request.SortField == "so_code" {
+		if request.SortValue == "asc" {
+			sort = bson.M{
+				"so_code": asc,
+			}
+		} else if request.SortValue == "desc" {
+			sort = bson.M{
+				"so_code": desc,
+			}
 		}
-	} else if request.SortField == "so_code" && request.SortValue == "asc" {
-		sort = bson.M{
-			"so_code": asc,
+	} else if request.SortField == "status" {
+		if request.SortValue == "asc" {
+			sort = bson.M{
+				"status": asc,
+			}
+		} else if request.SortValue == "desc" {
+			sort = bson.M{
+				"status": desc,
+			}
 		}
-	} else if request.SortField == "status" && request.SortValue == "asc" {
-		sort = bson.M{
-			"status": asc,
+	} else if request.SortField == "action" {
+		if request.SortValue == "asc" {
+			sort = bson.M{
+				"action": asc,
+			}
+		} else if request.SortValue == "desc" {
+			sort = bson.M{
+				"action": desc,
+			}
 		}
-	} else if request.SortField == "created_at" && request.SortValue == "desc" {
-		sort = bson.M{
-			"created_at": desc,
-		}
-	} else if request.SortField == "so_code" && request.SortValue == "desc" {
-		sort = bson.M{
-			"so_code": desc,
-		}
-	} else if request.SortField == "status" && request.SortValue == "desc" {
-		sort = bson.M{
-			"status": desc,
-		}
-	} else {
-		sort = bson.M{
-			"created_at": desc,
+	} else if request.SortField == "created_at" {
+		if request.SortValue == "asc" {
+			sort = bson.M{
+				"created_at": asc,
+			}
+		} else if request.SortValue == "desc" {
+			sort = bson.M{
+				"created_at": desc,
+			}
 		}
 	}
 
 	if request.GlobalSearchValue != "" {
+		soId, _ := strconv.ParseInt(request.GlobalSearchValue, 10, 32)
+		createdAt, _ := time.Parse("2006-01-02", request.GlobalSearchValue)
 		filter = bson.M{
 			"$or": []bson.M{
 				{"status": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
-				{"created_at": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
-				{"so_id": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
+				{"action": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
+				{"created_at": bson.M{"$gte": createdAt, "$lte": createdAt.AddDate(0, 0, 1)}},
+				{"so_id": soId},
 			},
 		}
 	}
@@ -113,7 +129,11 @@ func (r *salesOrderJourneysRepository) Get(request *models.SalesOrderJourneyRequ
 		filter["status"] = request.Status
 	}
 
-	if request.StartDate != "" {
+	if request.Action != "" {
+		filter["action"] = request.Action
+	}
+
+	if request.StartDate != "" && request.EndDate == "" {
 		startDate, err := time.Parse("2006-01-02", request.StartDate)
 		if err != nil {
 			errorLogData := helper.NewWriteLog(model.ErrorLog{
@@ -127,10 +147,10 @@ func (r *salesOrderJourneysRepository) Get(request *models.SalesOrderJourneyRequ
 			resultChan <- response
 			return
 		}
-		filter["created_at"] = bson.M{"$gte": startDate, "$lte": startDate.Add(24 * time.Hour)}
+		filter["created_at"] = bson.M{"$gte": startDate, "$lte": startDate.AddDate(0, 0, 1)}
 	}
 
-	if request.EndDate != "" {
+	if request.EndDate != "" && request.StartDate == "" {
 		endDate, err := time.Parse("2006-01-02", request.EndDate)
 		if err != nil {
 			errorLogData := helper.NewWriteLog(model.ErrorLog{
@@ -144,7 +164,39 @@ func (r *salesOrderJourneysRepository) Get(request *models.SalesOrderJourneyRequ
 			resultChan <- response
 			return
 		}
-		filter["created_at"] = bson.M{"$gte": endDate, "$lte": endDate.Add(24 * time.Hour)}
+		filter["created_at"] = bson.M{"$gte": endDate, "$lte": endDate.AddDate(0, 0, 1)}
+	}
+
+	if request.StartDate != "" && request.EndDate != "" {
+		startDate, err := time.Parse("2006-01-02", request.StartDate)
+		if err != nil {
+			errorLogData := helper.NewWriteLog(model.ErrorLog{
+				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
+				SystemMessage: helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_GET, fmt.Sprintf("field %s harus memiliki format yyyy-mm-dd", "start_date")),
+				StatusCode:    http.StatusBadRequest,
+				Err:           fmt.Errorf("invalid Process"),
+			})
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+
+		endDate, err := time.Parse("2006-01-02", request.EndDate)
+		if err != nil {
+			errorLogData := helper.NewWriteLog(model.ErrorLog{
+				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
+				SystemMessage: helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_GET, fmt.Sprintf("field %s harus memiliki format yyyy-mm-dd", "end_date")),
+				StatusCode:    http.StatusBadRequest,
+				Err:           fmt.Errorf("invalid Process"),
+			})
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+
+		filter["created_at"] = bson.M{"$gte": startDate, "$lte": endDate.AddDate(0, 0, 1)}
 	}
 
 	option := options.Find().SetSkip(int64((request.Page - 1) * request.PerPage)).SetLimit(int64(request.PerPage)).SetSort(sort)
@@ -159,7 +211,7 @@ func (r *salesOrderJourneysRepository) Get(request *models.SalesOrderJourneyRequ
 	}
 
 	if total == 0 {
-		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
+		err = helper.NewError("data not found")
 		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
