@@ -125,7 +125,7 @@ func (c *deliveryOrderController) UpdateByID(ctx *gin.Context) {
 	intID, err := strconv.Atoi(id)
 
 	if err != nil {
-		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
 		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
 		return
 	}
@@ -198,7 +198,7 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByID(ctx *gin.Context
 	intID, err := strconv.Atoi(id)
 
 	if err != nil {
-		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
 		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
 		return
 	}
@@ -261,7 +261,7 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByDeliveryOrderID(ctx
 	intID, err := strconv.Atoi(id)
 
 	if err != nil {
-		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
 		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
 		return
 	}
@@ -347,16 +347,17 @@ func (c *deliveryOrderController) Export(ctx *gin.Context) {
 		return
 	}
 
-	deliveryOrderRequest.FileDate = time.Now().Format("2_January_2006")
-	fmt.Println(deliveryOrderRequest.FileDate)
+	fileDate := time.Now().Format("2_January_2006")
+	fmt.Println(fileDate)
 
-	errorLog := c.deliveryOrderUseCase.Export(deliveryOrderRequest)
-
+	fileName, errorLog := c.deliveryOrderUseCase.Export(deliveryOrderRequest, ctx)
+	fmt.Println(fileName)
 	if errorLog != nil {
 		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 		return
 	}
-	ctx.JSON(http.StatusOK, fmt.Sprintf("%s_%s.%s", constants.DELIVERY_ORDER_EXPORT_PATH, deliveryOrderRequest.FileDate, deliveryOrderRequest.FileType)) // Makesure dor response pattern
+	ctx.JSON(http.StatusOK, fmt.Sprintf("%s_%s.%s", constants.DELIVERY_ORDER_EXPORT_PATH, fileDate, deliveryOrderRequest.FileType)) // Makesure dor response pattern
+	// ctx.JSON(http.StatusOK, fmt.Sprintf("%s/%s.%s", constants.DELIVERY_ORDER_EXPORT_PATH, fileName, deliveryOrderRequest.FileType))
 	return
 }
 
@@ -382,7 +383,7 @@ func (c *deliveryOrderController) GetDetailsByDoId(ctx *gin.Context) {
 	doId, err := strconv.Atoi(doIds)
 
 	if err != nil {
-		err = helper.NewError("Parameter 'delivery order id' harus bernilai integer")
+		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
 		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByErrorWithMessage(err, http.StatusBadRequest, nil))
 		return
 	}
@@ -419,7 +420,7 @@ func (c *deliveryOrderController) GetDetailById(ctx *gin.Context) {
 	doId, err := strconv.Atoi(doIds)
 
 	if err != nil {
-		err = helper.NewError("Parameter 'delivery order id' harus bernilai integer")
+		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
 		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByErrorWithMessage(err, http.StatusBadRequest, nil))
 		return
 	}
@@ -462,7 +463,7 @@ func (c *deliveryOrderController) GetByID(ctx *gin.Context) {
 	id, err := strconv.Atoi(ids)
 
 	if err != nil {
-		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
 		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
 		return
 	}

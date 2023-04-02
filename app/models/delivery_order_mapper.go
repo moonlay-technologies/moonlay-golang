@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"strconv"
 	"time"
 )
 
@@ -429,6 +430,45 @@ func (doDetailEventLogResponse *DODetailEventLogResponse) DoDetailEventLogRespon
 	doDetailEventLogResponse.DeliveryQty = NullInt64{sql.NullInt64{Int64: int64(request.Qty), Valid: true}}
 	doDetailEventLogResponse.ProductUnit = request.Product.UnitMeasurementSmall
 	return
+}
+
+func (data *DeliveryOrder) MapToCsvRow() []string {
+	deliveryOrderCsv := DeliveryOrderCsvResponse{}
+	deliveryOrderCsv.DoDetailMap(data)
+	return []string{strconv.Itoa(deliveryOrderCsv.DoStatus),
+		deliveryOrderCsv.DoDate,
+		deliveryOrderCsv.SjNo.String,
+		deliveryOrderCsv.DoNo,
+		deliveryOrderCsv.OrderNo,
+		deliveryOrderCsv.SoDate,
+		deliveryOrderCsv.SoNo,
+		strconv.Itoa(deliveryOrderCsv.SoSource),
+		strconv.Itoa(deliveryOrderCsv.AgentID),
+		deliveryOrderCsv.AgentName,
+		strconv.Itoa(deliveryOrderCsv.GudangID),
+		deliveryOrderCsv.GudangName,
+		strconv.Itoa(deliveryOrderCsv.BrandID),
+		deliveryOrderCsv.BrandName,
+		strconv.Itoa(int(deliveryOrderCsv.KodeSalesman.Int64)),
+		deliveryOrderCsv.Salesman.String,
+		deliveryOrderCsv.KategoryToko.String,
+		deliveryOrderCsv.KodeTokoDbo.String,
+		deliveryOrderCsv.KodeToko.String,
+		deliveryOrderCsv.NamaToko.String,
+		strconv.Itoa(deliveryOrderCsv.KodeKecamatan),
+		deliveryOrderCsv.Kecamatan.String,
+		strconv.Itoa(deliveryOrderCsv.KodeCity),
+		deliveryOrderCsv.City.String,
+		strconv.Itoa(deliveryOrderCsv.KodeProvince),
+		deliveryOrderCsv.Province.String,
+		strconv.FormatFloat(deliveryOrderCsv.DoAmount, 'f', 6, 64),
+		deliveryOrderCsv.NamaSupir.String,
+		deliveryOrderCsv.PlatNo.String,
+		deliveryOrderCsv.Catatan.String,
+		deliveryOrderCsv.CreatedDate.String(),
+		deliveryOrderCsv.UpdatedDate.String(),
+		strconv.Itoa(deliveryOrderCsv.UserIDCreated),
+		strconv.Itoa(deliveryOrderCsv.UserIDModified)}
 }
 
 func (d *DeliveryOrderCsvResponse) DoDetailMap(r *DeliveryOrder) {

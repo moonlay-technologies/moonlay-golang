@@ -7,7 +7,9 @@ import (
 	"log"
 	"net/http"
 	"order-service/app/models"
+	"order-service/app/models/constants"
 	"order-service/global/utils/helper"
+	"os"
 	"strconv"
 
 	"github.com/bxcodec/dbresolver"
@@ -21,7 +23,7 @@ import (
 type UploadRepositoryInterface interface {
 	ReadFile(url string) ([]byte, error)
 	GetSosjRowData(agentId, storeCode, brandId, productSku, warehouseId, salesmanId, addressId string, resultChan chan *models.RowDataSosjUploadErrorLogChan)
-	UploadFile(data *bytes.Buffer, date string, fileType string) error
+	UploadFile(data *bytes.Buffer, fileName string, fileType string) error
 }
 
 type uploadRepository struct {
@@ -78,27 +80,29 @@ func (r *uploadRepository) GetSosjRowData(agentId, storeCode, brandId, productSk
 	}
 }
 
-func (r *uploadRepository) UploadFile(data *bytes.Buffer, date string, fileType string) error {
+func (r *uploadRepository) UploadFile(data *bytes.Buffer, fileName string, fileType string) error {
 
+	AccessKeyID := os.Getenv("S3_ACCESS_KEY_ID")
+	SecretAccessKey := os.Getenv("S3_SECRET_ACCESS_KEY")
 	session, err := session.NewSession(&aws.Config{
 		Region: aws.String("ap-southeast-1"),
 		Credentials: credentials.NewStaticCredentials(
-			"ASIAUHX63DBTOXGQIU4F",
-			"ADYRZWgcYMl3j9U7rmX/Sres0UOC+z+R7WJEUGtX",
-			"IQoJb3JpZ2luX2VjEGIaDmFwLXNvdXRoZWFzdC0xIkYwRAIgbb9Cu0hH/ZFIiApK7GKvR4Qsz4+dgKXWSfH34A58kZ0CIB8zYxOQ2gtlEn7A+SoV7UT4lwsjpwR/C/Y1mVKpwinXKvcCCDsQABoMMjkxNTE4NDg2NjMwIgw3hSmJLllh3sToJOgq1AJf3aus62JEYsyutdpVTt5sbx871q2E+ahnx6apIB7mwlEAeJ6pJXXtT3Ud3OF3XVVf9jg7xPMAmJ+s7ZskNAtzAyk8vTr5oT5b8lwi4Hpw4P/Xuy574E0lOHrsY6dbOgBHJmPSDHwLwjmMgdSu3xpn0SjkxzCrMvfYSWZ137nENcu/u2WWxYjlaoSpvAxu2y14cNYDSqT68CjfIehSrjdGm7QT2HOWxUy1uihRZQAqsignj17xw3OY3hRfLP3gSlRhSmCJKXL9unQScpLzd+kusmivLRfMcmS7PwRskuSkZVYxKyTB6GTuNHbvj/BeBzVnDOwK4JX71DGQkd+aNBIUjiAIdM7aEGW01Ydw0ajNYS9JuNmZ/S2wkk36HMXmSlgnGm1M04oueiAcTjhN918gnHXUC9tX2CluGwK9Y4DGJAQLh1QVj6VUsR2+NrkdtpEb76m7MPeOiaEGOqgB2EZc9o/uCCOO5e1HYIzquqabkduUKZBpiPxD5e3bCKzR39qLSMHSel7ftinCRUq8sPKsLriEFIulfXs9o+ukYcTeMDMdKCnFY5Sz159XHf0LLPhCehy+RaTYmqEVqkYF3d5xYcKrRzpBzra+zO0Q1MWm6+/KZ3ufhBRIxODpzx9JJF7JBizp7PKJh/Q1uGNVjvHMotd441Mr7rP5a9Y2XwCfgyYLiQvV",
+			AccessKeyID,
+			SecretAccessKey,
+			"",
 		)})
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	_, err = s3.New(session).PutObject(&s3.PutObjectInput{
-		Bucket:             aws.String("lambda-upload-srv"),
-		Key:                aws.String(fmt.Sprintf("lambda-upload-srv/order-service/export-delivery-orders/delivery_order_%s.%s", date, fileType)),
-		ACL:                aws.String("public-read"),
+		Bucket:             aws.String(constants.S3_EXPORT_BUCKET),
+		Key:                aws.String(fmt.Sprintf("%s/%s.%s", constants.S3_EXPORT_DO_PATH, fileName, fileType)),
+		ACL:                aws.String(constants.S3_EXPORT_ACL),
 		Body:               bytes.NewReader(data.Bytes()),
 		ContentLength:      aws.Int64(int64(len(data.Bytes()))),
 		ContentType:        aws.String("csv"),
-		ContentDisposition: aws.String("attachment"),
+		ContentDisposition: aws.String(constants.S3_EXPORT_CONTENT_DISPOSISTION),
 	})
 	return err
 }

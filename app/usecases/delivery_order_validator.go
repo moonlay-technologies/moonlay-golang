@@ -418,7 +418,7 @@ func (d *DeliveryOrderValidator) DeleteDeliveryOrderByIDValidator(sId string, ct
 	id, err := strconv.Atoi(sId)
 
 	if err != nil {
-		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
 		result.StatusCode = http.StatusBadRequest
 		result.Error = helper.WriteLog(err, result.StatusCode, err.Error())
 		ctx.JSON(result.StatusCode, result)
@@ -458,7 +458,7 @@ func (d *DeliveryOrderValidator) DeleteDeliveryOrderDetailByIDValidator(sId stri
 	id, err := strconv.Atoi(sId)
 
 	if err != nil {
-		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
 		result.StatusCode = http.StatusBadRequest
 		result.Error = helper.WriteLog(err, result.StatusCode, err.Error())
 		ctx.JSON(result.StatusCode, result)
@@ -727,7 +727,7 @@ func (c *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 		SortField:         sortField,
 		SortValue:         c.getQueryWithDefault("sort_value", "desc", ctx),
 		GlobalSearchValue: c.getQueryWithDefault("global_search_value", "", ctx),
-		FileType:          c.getQueryWithDefault("file_type", "csv", ctx),
+		FileType:          c.getQueryWithDefault("file_type", "xlsx", ctx),
 		ID:                intID,
 		SalesOrderID:      intSalesOrderID,
 		AgentID:           intAgentID,

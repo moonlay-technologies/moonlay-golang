@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"order-service/app/middlewares"
 	"order-service/app/models"
+	"order-service/app/models/constants"
 	"order-service/app/usecases"
 	"order-service/global/utils/helper"
 	baseModel "order-service/global/utils/model"
@@ -209,7 +210,7 @@ func (c *hostToHostController) GetSalesOrders(ctx *gin.Context) {
 
 	idInt, err = strconv.Atoi(id)
 	if err != nil {
-		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
 		result.StatusCode = http.StatusBadRequest
 		result.Error = errorLogData
@@ -451,7 +452,7 @@ func (c *hostToHostController) GetDeliveryOrders(ctx *gin.Context) {
 
 	intID, err = strconv.Atoi(id)
 	if err != nil {
-		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
 		errorLogData := helper.WriteLog(err, http.StatusBadRequest, err.Error())
 		result.StatusCode = http.StatusBadRequest
 		result.Error = errorLogData

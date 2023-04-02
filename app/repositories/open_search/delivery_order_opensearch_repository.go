@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
@@ -58,7 +59,14 @@ func (r *deliveryOrderOpenSearch) Create(request *models.DeliveryOrder, resultCh
 
 func (r *deliveryOrderOpenSearch) Get(request *models.DeliveryOrderRequest, isCountOnly bool, resultChan chan *models.DeliveryOrdersChan) {
 	response := &models.DeliveryOrdersChan{}
+	if isCountOnly {
+		request.Page = 0
+		request.PerPage = 0
+		request.SortField = ""
+		request.SortValue = ""
+	}
 	requestQuery := r.generateDeliveryOrderQueryOpenSearchTermRequest("", "", request)
+	fmt.Println("req query = ", string(requestQuery))
 	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery, true, isCountOnly)
 
 	if err.Err != nil {
@@ -1202,7 +1210,7 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchResult(ope
 			return &models.DeliveryOrders{}, errorLogData
 		}
 
-		// total = int64(openSearchQueryResult.Hits.Total.Value)
+		total = int64(openSearchQueryResult.Hits.Total.Value)
 
 		if int64(openSearchQueryResult.Hits.Total.Value) <= 0 {
 			err = helper.NewError("delivery_orders_opensearch data not found")

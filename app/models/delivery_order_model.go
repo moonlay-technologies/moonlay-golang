@@ -189,7 +189,7 @@ type DeliveryOrderExportRequest struct {
 	SortValue         string `json:"sort_value,omitempty" bson:"sort_value,omitempty"`
 	GlobalSearchValue string `json:"global_search_value,omitempty" bson:"global_search_value,omitempty"`
 	FileType          string `json:"file_type,omitempty"`
-	FileDate          string `json:"file_name,omitempty"`
+	FileName          string `json:"file_name,omitempty"`
 	AgentID           int    `json:"agentID,omitempty"`
 	StoreID           int    `json:"storeID,omitempty"`
 	BrandID           int    `json:"brand_id,omitempty"`

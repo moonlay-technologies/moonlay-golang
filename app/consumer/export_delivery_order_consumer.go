@@ -59,7 +59,7 @@ func (c *exportDeliveryOrderConsumerHandler) ProcessMessage() {
 			continue
 		}
 
-		_, errorLog := c.DeliveryOrderConsumerUseCase.Get(&deliveryOrder)
+		errorLog := c.DeliveryOrderConsumerUseCase.Get(&deliveryOrder)
 
 		if errorLog.Err != nil {
 			errorLogData := helper.WriteLogConsumer(constants.CREATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, nil)

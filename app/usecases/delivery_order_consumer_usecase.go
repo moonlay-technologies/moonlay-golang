@@ -6,13 +6,14 @@ import (
 	"database/sql"
 	"encoding/csv"
 	"fmt"
+	"math"
 	"net/http"
 	"order-service/app/models"
+	"order-service/app/models/constants"
 	"order-service/app/repositories"
 	openSearchRepositories "order-service/app/repositories/open_search"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/model"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -21,7 +22,7 @@ type DeliveryOrderConsumerUseCaseInterface interface {
 	SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromUpdateEvent(deliveryOrder *models.DeliveryOrder, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, deliveryOrderDetailId []*int, ctx context.Context) *model.ErrorLog
-	Get(request *models.DeliveryOrderExportRequest) (*models.DeliveryOrdersOpenSearchResponse, *model.ErrorLog)
+	Get(request *models.DeliveryOrderExportRequest) *model.ErrorLog
 }
 
 type deliveryOrderConsumerUseCase struct {
@@ -36,6 +37,7 @@ type deliveryOrderConsumerUseCase struct {
 	deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface
 	salesOrderOpenSearchRepository          openSearchRepositories.SalesOrderOpenSearchRepositoryInterface
 	SalesOrderOpenSearchUseCase             SalesOrderOpenSearchUseCaseInterface
+	pusherRepository                        repositories.PusherRepositoryInterface
 	ctx                                     context.Context
 }
 
@@ -51,6 +53,7 @@ func InitDeliveryOrderConsumerUseCaseInterface(salesOrderRepository repositories
 		deliveryOrderOpenSearchRepository:       deliveryOrderOpenSearchRepository,
 		deliveryOrderDetailOpenSearchRepository: deliveryOrderDetailOpenSearchRepository,
 		salesOrderOpenSearchRepository:          salesOrderOpenSearchRepository,
+		pusherRepository:                        repositories.InitPusherRepository(),
 		SalesOrderOpenSearchUseCase:             salesOrderOpenSearchUseCase,
 		ctx:                                     ctx,
 	}
@@ -349,136 +352,64 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromDeleteEvent(deliveryO
 	return &model.ErrorLog{}
 }
 
-func (u *deliveryOrderConsumerUseCase) Get(request *models.DeliveryOrderExportRequest) (*models.DeliveryOrdersOpenSearchResponse, *model.ErrorLog) {
+func (u *deliveryOrderConsumerUseCase) Get(request *models.DeliveryOrderExportRequest) *model.ErrorLog {
 	doRequest := &models.DeliveryOrderRequest{}
 	doRequest.DeliveryOrderExportMap(request)
-	// getDeliveryOrdersCountResultChan := make(chan *models.DeliveryOrdersChan)
-	// go u.deliveryOrderOpenSearchRepository.Get(doRequest, true, getDeliveryOrdersCountResultChan)
-	// getDeliveryOrdersCountResult := <-getDeliveryOrdersCountResultChan
+	getDeliveryOrdersCountResultChan := make(chan *models.DeliveryOrdersChan)
+	go u.deliveryOrderOpenSearchRepository.Get(doRequest, true, getDeliveryOrdersCountResultChan)
+	getDeliveryOrdersCountResult := <-getDeliveryOrdersCountResultChan
 
-	// if getDeliveryOrdersCountResult.Error != nil {
-	// 	fmt.Println("error = ", getDeliveryOrdersCountResult.Error)
-	// 	return &models.DeliveryOrdersOpenSearchResponse{}, getDeliveryOrdersCountResult.ErrorLog
-	// }
-	// fmt.Println("cekk 2")
-	// x := math.Ceil(float64(getDeliveryOrdersCountResult.Total / 50))
-	// fmt.Println(x)
-
-	getDeliveryOrdersResultChan := make(chan *models.DeliveryOrdersChan)
-	go u.deliveryOrderOpenSearchRepository.Get(doRequest, false, getDeliveryOrdersResultChan)
-	getDeliveryOrdersResult := <-getDeliveryOrdersResultChan
-
-	if getDeliveryOrdersResult.Error != nil {
-		return &models.DeliveryOrdersOpenSearchResponse{}, getDeliveryOrdersResult.ErrorLog
+	if getDeliveryOrdersCountResult.Error != nil {
+		fmt.Println("error = ", getDeliveryOrdersCountResult.Error)
+		return getDeliveryOrdersCountResult.ErrorLog
 	}
-	deliveryOrderResults := []*models.DeliveryOrderOpenSearchResponse{}
-	deliveryOrdersCsv := []*models.DeliveryOrderCsvResponse{}
 
+	doRequest.PerPage = 50
+	instalmentData := math.Ceil(float64(getDeliveryOrdersCountResult.Total) / float64(doRequest.PerPage))
 	b := new(bytes.Buffer)
 	writer := csv.NewWriter(b)
 	defer writer.Flush()
 
-	header := []string{
-		"do_status",
-		"do_date",
-		"sj_no",
-		"do_no",
-		"order_no",
-		"so_date",
-		"so_no",
-		"so_source",
-		"agent_id",
-		"agent_name",
-		"gudang_id",
-		"gudang_name",
-		"brand_id",
-		"brand_name",
-		"kode_salesman",
-		"salesman",
-		"kategory_toko",
-		"kode_toko_dbo",
-		"kode_toko",
-		"nama_toko",
-		"kode_kecamatan",
-		"kecamatan",
-		"kode_city",
-		"city",
-		"kode_province",
-		"province",
-		"do_amount",
-		"nama_supir",
-		"plat_no",
-		"catatan",
-		"created_date",
-		"updated_date",
-		"user_id_created",
-		"user_id_modified"}
-
-	if err := writer.Write(header); err != nil {
+	if err := writer.Write(constants.DELIVERY_ORDER_EXPORT_HEADER()); err != nil {
 		fmt.Println("error writer", err)
+		return helper.WriteLog(err, http.StatusInternalServerError, nil)
 	}
-	for _, v := range getDeliveryOrdersResult.DeliveryOrders {
-		deliveryOrder := models.DeliveryOrderOpenSearchResponse{}
-		deliveryOrder.DeliveryOrderOpenSearchResponseMap(v)
 
-		deliveryOrderResults = append(deliveryOrderResults, &deliveryOrder)
-		deliveryOrderCsv := &models.DeliveryOrderCsvResponse{}
-		deliveryOrderCsv.DoDetailMap(v)
-		deliveryOrdersCsv = append(deliveryOrdersCsv, deliveryOrderCsv)
+	for i := 0; i < int(instalmentData); i++ {
+		doRequest.Page = i + 1
+		getDeliveryOrdersResultChan := make(chan *models.DeliveryOrdersChan)
+		go u.deliveryOrderOpenSearchRepository.Get(doRequest, false, getDeliveryOrdersResultChan)
+		getDeliveryOrdersResult := <-getDeliveryOrdersResultChan
 
-		var csvRow []string
-		csvRow = append(csvRow,
-			strconv.Itoa(deliveryOrderCsv.DoStatus),
-			deliveryOrderCsv.DoDate,
-			deliveryOrderCsv.SjNo.String,
-			deliveryOrderCsv.DoNo,
-			deliveryOrderCsv.OrderNo,
-			deliveryOrderCsv.SoDate,
-			deliveryOrderCsv.SoNo,
-			strconv.Itoa(deliveryOrderCsv.SoSource),
-			strconv.Itoa(deliveryOrderCsv.AgentID),
-			deliveryOrderCsv.AgentName,
-			strconv.Itoa(deliveryOrderCsv.GudangID),
-			deliveryOrderCsv.GudangName,
-			strconv.Itoa(deliveryOrderCsv.BrandID),
-			deliveryOrderCsv.BrandName,
-			strconv.Itoa(int(deliveryOrderCsv.KodeSalesman.Int64)),
-			deliveryOrderCsv.Salesman.String,
-			deliveryOrderCsv.KategoryToko.String,
-			deliveryOrderCsv.KodeTokoDbo.String,
-			deliveryOrderCsv.KodeToko.String,
-			deliveryOrderCsv.NamaToko.String,
-			strconv.Itoa(deliveryOrderCsv.KodeKecamatan),
-			deliveryOrderCsv.Kecamatan.String,
-			strconv.Itoa(deliveryOrderCsv.KodeCity),
-			deliveryOrderCsv.City.String,
-			strconv.Itoa(deliveryOrderCsv.KodeProvince),
-			deliveryOrderCsv.Province.String,
-			strconv.FormatFloat(deliveryOrderCsv.DoAmount, 'f', 6, 64),
-			deliveryOrderCsv.NamaSupir.String,
-			deliveryOrderCsv.PlatNo.String,
-			deliveryOrderCsv.Catatan.String,
-			deliveryOrderCsv.CreatedDate.String(),
-			deliveryOrderCsv.UpdatedDate.String(),
-			strconv.Itoa(deliveryOrderCsv.UserIDCreated),
-			strconv.Itoa(deliveryOrderCsv.UserIDModified))
-
-		if err := writer.Write(csvRow); err != nil {
-			fmt.Println("error fill", err)
+		if getDeliveryOrdersResult.Error != nil {
+			return getDeliveryOrdersResult.ErrorLog
 		}
+		for _, v := range getDeliveryOrdersResult.DeliveryOrders {
+			if err := writer.Write(v.MapToCsvRow()); err != nil {
+				fmt.Println("error fill", err)
+				return helper.WriteLog(err, http.StatusInternalServerError, nil)
+			}
 
+		}
+		progres := math.Round(float64(i*doRequest.PerPage)/float64(getDeliveryOrdersCountResult.Total)) * 100
+		err := u.pusherRepository.Pubish(map[string]string{"message": fmt.Sprintf("%f", progres) + "%"})
+		if err != nil {
+			fmt.Println("pusher error = ", err.Error())
+			return helper.WriteLog(err, http.StatusInternalServerError, nil)
+		}
 	}
-
 	// Upload Files
-	err := u.uploadRepository.UploadFile(b, request.FileDate, request.FileType)
+	err := u.uploadRepository.UploadFile(b, request.FileName, request.FileType)
 	if err != nil {
 		fmt.Println("error upload", err)
+		return helper.WriteLog(err, http.StatusInternalServerError, nil)
 	}
 
-	deliveryOrders := &models.DeliveryOrdersOpenSearchResponse{
-		DeliveryOrders: deliveryOrderResults,
-		Total:          getDeliveryOrdersResult.Total,
+	err = u.pusherRepository.Pubish(map[string]string{"message": "100%"})
+	if err != nil {
+		fmt.Println("pusher error = ", err.Error())
+		return helper.WriteLog(err, http.StatusInternalServerError, nil)
 	}
 
-	return deliveryOrders, &model.ErrorLog{}
+	return &model.ErrorLog{}
 }

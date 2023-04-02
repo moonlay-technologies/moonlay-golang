@@ -7,5 +7,6 @@ const (
 	ERROR_ACTION_NAME_DELETE = "delete"
 	ERROR_ACTION_NAME_UPLOAD = "upload"
 
-	ERROR_INVALID_PROCESS = "Invalid Process"
+	ERROR_INVALID_PROCESS           = "Invalid Process"
+	ERROR_BAD_REQUEST_INT_ID_PARAMS = "Parameter 'id' harus bernilai integer"
 )

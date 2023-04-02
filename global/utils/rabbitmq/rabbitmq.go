@@ -3,15 +3,16 @@ package rabbitmq
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
-	maps "github.com/mitchellh/mapstructure"
-	log "github.com/sirupsen/logrus"
-	"github.com/streadway/amqp"
 	"os"
 	"reflect"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
+	maps "github.com/mitchellh/mapstructure"
+	log "github.com/sirupsen/logrus"
+	"github.com/streadway/amqp"
 )
 
 const (
@@ -162,7 +163,7 @@ func (rmq *rabbitMQ) RegisterExchange(exchangeName string, exchangeType string) 
 		exchangeName, // name
 		exchangeType, // type
 		true,         // durable
-		false,         // auto-deleted
+		false,        // auto-deleted
 		false,        // internal
 		false,        // no-wait
 		nil,          // arguments
@@ -320,7 +321,7 @@ func (rmq *rabbitMQ) ReadMessage(q amqp.Queue) (<-chan amqp.Delivery, *Channel, 
 	msg, err := ch.Consume(
 		q.Name, // queue
 		"",     // consumer
-		false,   // auto-ack
+		false,  // auto-ack
 		false,  // exclusive
 		false,  // no-local
 		false,  // no-wait
@@ -330,7 +331,7 @@ func (rmq *rabbitMQ) ReadMessage(q amqp.Queue) (<-chan amqp.Delivery, *Channel, 
 	return msg, ch, err
 }
 
-func (rmq *rabbitMQ) PublishMessage(queueName string, durable bool, autoDelete bool,exchange string, routingKey string, contentType string, headers map[string]interface{}, body interface{}, msgInfo *MessageInfo) error {
+func (rmq *rabbitMQ) PublishMessage(queueName string, durable bool, autoDelete bool, exchange string, routingKey string, contentType string, headers map[string]interface{}, body interface{}, msgInfo *MessageInfo) error {
 	ch, _ := rmq.NewChannel()
 	defer rmq.ChannelDone(ch)
 	b, _ := json.Marshal(body)

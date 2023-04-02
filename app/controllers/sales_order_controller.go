@@ -494,7 +494,7 @@ func (c *salesOrderController) DeleteByID(ctx *gin.Context) {
 	id, err := strconv.Atoi(sId)
 
 	if err != nil {
-		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
 		result.StatusCode = http.StatusBadRequest
 		result.Error = helper.WriteLog(err, result.StatusCode, nil)
 		ctx.JSON(result.StatusCode, result)
@@ -766,7 +766,7 @@ func (c *salesOrderController) DeleteDetailByID(ctx *gin.Context) {
 	id, err := strconv.Atoi(sId)
 
 	if err != nil {
-		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
 		result.StatusCode = http.StatusBadRequest
 		result.Error = helper.WriteLog(err, result.StatusCode, nil)
 		ctx.JSON(result.StatusCode, result)
@@ -854,7 +854,7 @@ func (c *salesOrderController) DeleteDetailBySOID(ctx *gin.Context) {
 	id, err := strconv.Atoi(sId)
 
 	if err != nil {
-		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
 		result.StatusCode = http.StatusBadRequest
 		result.Error = helper.WriteLog(err, result.StatusCode, nil)
 		ctx.JSON(result.StatusCode, result)
