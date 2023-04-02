@@ -38,6 +38,53 @@ func DELIVERY_ORDER_EXPORT_HEADER() []string {
 		"UserIDModified"}
 }
 
+func DELIVERY_ORDER_DETAIL_EXPORT_HEADER() []string {
+	return []string{
+		"DOStatus",
+		"DODate",
+		"SJNo",
+		"DONO",
+		"SODate",
+		"SONO",
+		"SOSource",
+		"AgentID",
+		"AgentName",
+		"GudangID",
+		"GudangName",
+		"BrandID",
+		"BrandName",
+		"KodeSalesman",
+		"Salesman",
+		"KategoriToko",
+		"KodeTokoDBO",
+		"KodeToko",
+		"NamaToko",
+		"KodeKecamatan",
+		"Kecamatan",
+		"Kode City",
+		"City",
+		"KodeProvince",
+		"Province",
+		"BrandID",
+		"BrandName",
+		"KategoriID_L1",
+		"KategoriName_L1",
+		"KategoriID_Last",
+		"KategoriName_Last",
+		"ItemCode",
+		"ItemName",
+		"UnitSatuan",
+		"Price",
+		"SOQty",
+		"SOQty_Sisa",
+		"DOQty",
+		"DOAmount",
+		"CreatedDate",
+		"LastUpdate",
+		"UserIDCreated",
+		"UserIDModified"}
+}
+
 func SALES_ORDER_EXPORT_HEADER() []string {
 	return []string{
 		"SOStatus",

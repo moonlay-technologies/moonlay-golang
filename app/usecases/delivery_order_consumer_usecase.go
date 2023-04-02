@@ -23,6 +23,7 @@ type DeliveryOrderConsumerUseCaseInterface interface {
 	SyncToOpenSearchFromUpdateEvent(deliveryOrder *models.DeliveryOrder, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, deliveryOrderDetailId []*int, ctx context.Context) *model.ErrorLog
 	Get(request *models.DeliveryOrderExportRequest) *model.ErrorLog
+	GetDetail(request *models.DeliveryOrderDetailExportRequest) *model.ErrorLog
 }
 
 type deliveryOrderConsumerUseCase struct {
@@ -400,6 +401,68 @@ func (u *deliveryOrderConsumerUseCase) Get(request *models.DeliveryOrderExportRe
 	}
 	// Upload Files
 	err := u.uploadRepository.UploadFile(b, constants.S3_EXPORT_DO_PATH, request.FileName, request.FileType)
+	if err != nil {
+		fmt.Println("error upload", err)
+		return helper.WriteLog(err, http.StatusInternalServerError, nil)
+	}
+
+	err = u.pusherRepository.Pubish(map[string]string{"message": "100%"})
+	if err != nil {
+		fmt.Println("pusher error = ", err.Error())
+		return helper.WriteLog(err, http.StatusInternalServerError, nil)
+	}
+
+	return &model.ErrorLog{}
+}
+
+func (u *deliveryOrderConsumerUseCase) GetDetail(request *models.DeliveryOrderDetailExportRequest) *model.ErrorLog {
+	doDetailRequest := &models.DeliveryOrderDetailOpenSearchRequest{}
+	doDetailRequest.DeliveryOrderDetailExportMap(request)
+	getDeliveryOrderDetailsCountResultChan := make(chan *models.DeliveryOrderDetailsOpenSearchChan)
+	go u.deliveryOrderDetailOpenSearchRepository.Get(doDetailRequest, true, getDeliveryOrderDetailsCountResultChan)
+	getDeliveryOrderDetailsCountResult := <-getDeliveryOrderDetailsCountResultChan
+
+	if getDeliveryOrderDetailsCountResult.Error != nil {
+		fmt.Println("error = ", getDeliveryOrderDetailsCountResult.Error)
+		return getDeliveryOrderDetailsCountResult.ErrorLog
+	}
+
+	doDetailRequest.PerPage = 50
+	instalmentData := math.Ceil(float64(getDeliveryOrderDetailsCountResult.Total) / float64(doDetailRequest.PerPage))
+	b := new(bytes.Buffer)
+	writer := csv.NewWriter(b)
+	defer writer.Flush()
+
+	if err := writer.Write(constants.DELIVERY_ORDER_DETAIL_EXPORT_HEADER()); err != nil {
+		fmt.Println("error writer", err)
+		return helper.WriteLog(err, http.StatusInternalServerError, nil)
+	}
+
+	for i := 0; i < int(instalmentData); i++ {
+		doDetailRequest.Page = i + 1
+		getDeliveryOrdersResultChan := make(chan *models.DeliveryOrderDetailsOpenSearchChan)
+		go u.deliveryOrderDetailOpenSearchRepository.Get(doDetailRequest, false, getDeliveryOrdersResultChan)
+		getDeliveryOrderDetailsResult := <-getDeliveryOrdersResultChan
+
+		if getDeliveryOrderDetailsResult.Error != nil {
+			return getDeliveryOrderDetailsResult.ErrorLog
+		}
+		for _, v := range getDeliveryOrderDetailsResult.DeliveryOrderDetailOpenSearch {
+			if err := writer.Write(v.MapToCsvRow()); err != nil {
+				fmt.Println("error fill", err)
+				return helper.WriteLog(err, http.StatusInternalServerError, nil)
+			}
+
+		}
+		progres := math.Round(float64(i*doDetailRequest.PerPage)/float64(getDeliveryOrderDetailsCountResult.Total)) * 100
+		err := u.pusherRepository.Pubish(map[string]string{"message": fmt.Sprintf("%f", progres) + "%"})
+		if err != nil {
+			fmt.Println("pusher error = ", err.Error())
+			return helper.WriteLog(err, http.StatusInternalServerError, nil)
+		}
+	}
+	// Upload Files
+	err := u.uploadRepository.UploadFile(b, constants.S3_EXPORT_DO_DETAIL_PATH, request.FileName, request.FileType)
 	if err != nil {
 		fmt.Println("error upload", err)
 		return helper.WriteLog(err, http.StatusInternalServerError, nil)

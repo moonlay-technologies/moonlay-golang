@@ -49,6 +49,7 @@ type DeliveryOrderUseCaseInterface interface {
 	DeleteDetailByDoID(deliveryOrderId int, sqlTransaction *sql.Tx) *model.ErrorLog
 	RetrySyncToKafka(logId string) (*models.DORetryProcessSyncToKafkaResponse, *model.ErrorLog)
 	Export(request *models.DeliveryOrderExportRequest, ctx context.Context) (string, *model.ErrorLog)
+	ExportDetail(request *models.DeliveryOrderDetailExportRequest, ctx context.Context) (string, *model.ErrorLog)
 }
 
 type deliveryOrderUseCase struct {
@@ -1269,9 +1270,26 @@ func (u *deliveryOrderUseCase) Export(request *models.DeliveryOrderExportRequest
 	return request.FileName, nil
 }
 
+func (u *deliveryOrderUseCase) ExportDetail(request *models.DeliveryOrderDetailExportRequest, ctx context.Context) (string, *model.ErrorLog) {
+	rand, err := helper.Generate(`[A-Za-z]{12}`)
+	fileHour := time.Now().Format("2January2006-15:04:05")
+	fileName := fmt.Sprintf("SJ-LIST-DETAIL-%s-%d-%s", fileHour, ctx.Value("user").(*models.UserClaims).UserID, rand)
+	request.FileName = fileName
+	keyKafka := []byte(uuid.New().String())
+	messageKafka, _ := json.Marshal(request)
+	err = u.kafkaClient.WriteToTopic(constants.EXPORT_DELIVERY_ORDER_DETAIL_TOPIC, keyKafka, messageKafka)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		return "", errorLogData
+	}
+
+	return request.FileName, nil
+}
+
 func (u *deliveryOrderUseCase) GetDetails(request *models.DeliveryOrderDetailOpenSearchRequest) (*models.DeliveryOrderDetailsOpenSearchResponses, *model.ErrorLog) {
 	getDeliveryOrderDetailsResultChan := make(chan *models.DeliveryOrderDetailsOpenSearchChan)
-	go u.deliveryOrderDetailOpenSearchRepository.Get(request, getDeliveryOrderDetailsResultChan)
+	go u.deliveryOrderDetailOpenSearchRepository.Get(request, false, getDeliveryOrderDetailsResultChan)
 	getDeliveryOrderDetailsResult := <-getDeliveryOrderDetailsResultChan
 
 	if getDeliveryOrderDetailsResult.Error != nil {

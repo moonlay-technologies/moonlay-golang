@@ -157,3 +157,118 @@ func (d *DeliveryOrderDetailOpenSearch) DoDetailMap(r *DeliveryOrder, rd *Delive
 	d.UpdatedAt = rd.UpdatedAt
 	d.DeletedAt = rd.DeletedAt
 }
+
+func (d *DeliveryOrderDetailOpenSearchRequest) DeliveryOrderDetailExportMap(r *DeliveryOrderDetailExportRequest) {
+	d.ID = r.ID
+	d.DoDetailID = r.DoDetailID
+	d.PerPage = 0
+	d.Page = 0
+	d.SortField = r.SortField
+	d.SortValue = r.SortValue
+	d.GlobalSearchValue = r.GlobalSearchValue
+	d.AgentID = r.AgentID
+	d.AgentName = ""
+	d.StoreID = r.StoreID
+	d.StoreName = ""
+	d.BrandID = r.BrandID
+	d.BrandName = ""
+	d.ProductID = r.ProductID
+	d.OrderSourceID = 0
+	d.OrderStatusID = r.OrderStatusID
+	d.SalesOrderID = r.SalesOrderID
+	d.SoCode = ""
+	d.WarehouseID = 0
+	d.DoCode = r.DoCode
+	d.DoDate = r.DoDate
+	d.DoRefCode = r.DoRefCode
+	d.DoRefDate = r.DoRefDate
+	d.DoRefferalCode = ""
+	d.TotalAmount = 0
+	d.TotalTonase = 0
+	d.CategoryID = r.CategoryID
+	d.SalesmanID = 0
+	d.ProvinceID = 0
+	d.CityID = 0
+	d.DistrictID = 0
+	d.VillageID = 0
+	d.StoreProvinceID = r.ProvinceID
+	d.StoreCityID = r.CityID
+	d.StoreDistrictID = r.DistrictID
+	d.StoreVillageID = 0
+	d.StartCreatedAt = r.StartCreatedAt
+	d.EndCreatedAt = r.EndCreatedAt
+	d.UpdatedAt = r.UpdatedAt
+	d.StartDoDate = r.StartDoDate
+	d.EndDoDate = r.EndDoDate
+}
+func (d *DeliveryOrderDetailOpenSearch) MapToCsvRow() []string {
+	store := Store{}
+	if d.Store != nil {
+		store.StoreCategory = d.Store.StoreCategory
+		store.StoreCode = d.Store.StoreCode
+		store.AliasCode = d.Store.AliasCode
+		store.Name = d.Store.Name
+		store.DistrictID = d.Store.DistrictID
+		store.DistrictName = d.Store.DistrictName
+		store.CityID = d.Store.CityID
+		store.CityName = d.Store.CityName
+		store.ProvinceID = d.Store.ProvinceID
+		store.ProvinceName = d.Store.ProvinceName
+	} else {
+		store.StoreCategory = NullString{NullString: sql.NullString{String: "", Valid: true}}
+		store.StoreCode = NullString{NullString: sql.NullString{String: "", Valid: true}}
+		store.AliasCode = NullString{NullString: sql.NullString{String: "", Valid: true}}
+		store.Name = NullString{NullString: sql.NullString{String: "", Valid: true}}
+		store.DistrictID = NullString{NullString: sql.NullString{String: "", Valid: true}}
+		store.DistrictName = NullString{NullString: sql.NullString{String: "", Valid: true}}
+		store.CityID = NullString{NullString: sql.NullString{String: "", Valid: true}}
+		store.CityName = NullString{NullString: sql.NullString{String: "", Valid: true}}
+		store.ProvinceID = NullString{NullString: sql.NullString{String: "", Valid: true}}
+		store.ProvinceName = NullString{NullString: sql.NullString{String: "", Valid: true}}
+	}
+	return []string{
+		strconv.Itoa(d.OrderStatusID),
+		d.DoDate,
+		d.DoRefCode,
+		d.DoCode,
+		d.SoDate.String,
+		d.SoCode.String,
+		strconv.Itoa(d.OrderSourceID), //object??
+		strconv.Itoa(d.AgentID),
+		d.Agent.Name,
+		strconv.Itoa(d.WarehouseID),
+		d.WarehouseName,
+		strconv.Itoa(d.BrandID),
+		d.BrandName,
+		strconv.Itoa(d.SalesmanID),
+		d.SalesmanName,
+		store.StoreCategory.String,
+		store.StoreCode.String,
+		store.AliasCode.String,
+		store.Name.String,
+		store.DistrictID.String,
+		store.DistrictName.String,
+		store.CityID.String,
+		store.CityName.String,
+		store.ProvinceID.String,
+		store.ProvinceName.String,
+		strconv.Itoa(d.BrandID),
+		d.BrandName,
+		strconv.Itoa(d.SoDetail.FirstCategoryId),
+		"*d.SoDetail.FirstCategoryName",
+		strconv.Itoa(d.SoDetail.LastCategoryId),
+		"*d.SoDetail.LastCategoryName",
+		d.SoDetail.ProductSKU,
+		d.SoDetail.ProductName,
+		d.UomName,
+		strconv.Itoa(int(d.SoDetail.Price)),
+		strconv.Itoa(d.SoDetail.Qty),
+		strconv.Itoa(d.SoDetail.ResidualQty),
+		strconv.Itoa(d.Qty),
+		"DO Amount",
+		d.CreatedAt.String(),
+		d.UpdatedAt.String(),
+		strconv.Itoa(d.SoDetail.CreatedBy),
+		strconv.Itoa(d.SoDetail.UpdatedBy),
+	}
+}
