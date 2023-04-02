@@ -272,3 +272,15 @@ func Test_SalesOrderUseCase_GetByOrderSourceID_ShouldError(t *testing.T) {
 	// Assert
 	assert.NotNil(t, err)
 }
+
+func Test_SalesOrderUseCase_Export_ShouldError(t *testing.T) {
+	// Arrange
+	salesOrderUseCase := newSalesOrderUseCase(false)
+	request := &models.SalesOrderExportRequest{}
+	request.ID = 1
+
+	// Act
+	_, err := salesOrderUseCase.Export(request, salesOrderUseCase.ctx)
+	// Assert
+	assert.NotNil(t, err)
+}
