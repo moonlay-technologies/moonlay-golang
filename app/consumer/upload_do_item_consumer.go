@@ -453,6 +453,7 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 
 				if createDeliveryOrderDetailResult.Error != nil {
 					sqlTransaction.Rollback()
+					fmt.Println(createDeliveryOrderDetailResult.Error.Error())
 				}
 
 				x.ID = int(createDeliveryOrderDetailResult.ID)
@@ -464,6 +465,7 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 
 				if updateSalesOrderDetailResult.Error != nil {
 					sqlTransaction.Rollback()
+					fmt.Println(updateSalesOrderDetailResult.Error.Error())
 				}
 
 				totalResidualQty += x.SoDetail.ResidualQty
@@ -475,10 +477,10 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 			go c.orderStatusRepository.GetByID(v.SalesOrder.OrderStatusID, false, c.ctx, getOrderStatusSOResultChan)
 			getOrderStatusSODetailResult := <-getOrderStatusSOResultChan
 
-			// if getOrderStatusSODetailResult.Error != nil {
-			// 	fmt.Println(getOrderStatusSODetailResult.Error.Error())
-			// 	errors = append(errors, getOrderStatusSODetailResult.Error.Error())
-			// }
+			if getOrderStatusSODetailResult.Error != nil {
+				sqlTransaction.Rollback()
+				fmt.Println(getOrderStatusSODetailResult.Error.Error())
+			}
 
 			v.SalesOrder.OrderStatus = getOrderStatusSODetailResult.OrderStatus
 			v.SalesOrder.OrderStatusName = getOrderStatusSODetailResult.OrderStatus.Name
@@ -502,6 +504,7 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 
 			if updateSalesOrderResult.Error != nil {
 				sqlTransaction.Rollback()
+				fmt.Println(updateSalesOrderResult.Error.Error())
 			}
 
 			sqlTransaction.Commit()
@@ -520,7 +523,7 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 			createDeliveryOrderLogResult := <-createDeliveryOrderLogResultChan
 
 			if createDeliveryOrderLogResult.Error != nil {
-				fmt.Println(createDeliveryOrderLogResult.Error)
+				fmt.Println(createDeliveryOrderLogResult.Error.Error())
 			}
 
 			deliveryOrderJourney := &models.DeliveryOrderJourney{
@@ -538,7 +541,7 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 			createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
 
 			if createDeliveryOrderJourneysResult.Error != nil {
-				// return &models.DeliveryOrderStoreResponse{}, createDeliveryOrderJourneysResult.ErrorLog
+				fmt.Println(createDeliveryOrderLogResult.Error.Error())
 			}
 
 			salesOrderLog := &models.SalesOrderLog{
@@ -555,7 +558,7 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 			createSalesOrderLogResult := <-createSalesOrderLogResultChan
 
 			if createSalesOrderLogResult.Error != nil {
-				fmt.Println(createSalesOrderLogResult.Error)
+				fmt.Println(createSalesOrderLogResult.Error.Error())
 			}
 
 			salesOrderJourney := &models.SalesOrderJourneys{
@@ -573,7 +576,7 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 			createSalesOrderJourneysResult := <-createSalesOrderJourneyChan
 
 			if createSalesOrderJourneysResult.Error != nil {
-				// return &models.DeliveryOrderStoreResponse{}, createSalesOrderJourneysResult.ErrorLog
+				fmt.Println(createSalesOrderJourneysResult.Error.Error())
 			}
 
 			keyKafka := []byte(v.DoCode)
