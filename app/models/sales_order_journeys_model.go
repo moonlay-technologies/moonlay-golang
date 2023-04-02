@@ -44,6 +44,7 @@ type SalesOrderJourneyRequest struct {
 	SoId              int    `json:"so_id,omitempty" bson:"so_id,omitempty"`
 	SoCode            string `json:"so_code,omitempty" bson:"so_code,omitempty"`
 	Status            string `json:"status,omitempty" bson:"status,omitempty"`
+	Action            string `json:"action,omitempty" bson:"action,omitempty"`
 	StartDate         string `json:"start_date,omitempty" bson:"start_date,omitempty"`
 	EndDate           string `json:"end_date,omitempty" bson:"end_date,omitempty"`
 }
