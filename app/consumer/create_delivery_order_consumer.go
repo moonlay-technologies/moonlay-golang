@@ -41,7 +41,7 @@ func InitCreateDeliveryOrderConsumerHandlerInterface(kafkaClient kafkadbo.KafkaC
 }
 
 func (c *createDeliveryOrderConsumerHandler) ProcessMessage() {
-	fmt.Println("process")
+	fmt.Println("process", constants.CREATE_DELIVERY_ORDER_TOPIC)
 	topic := c.args[1].(string)
 	groupID := c.args[2].(string)
 	reader := c.kafkaClient.SetConsumerGroupReader(topic, groupID)
@@ -51,7 +51,6 @@ func (c *createDeliveryOrderConsumerHandler) ProcessMessage() {
 		if err != nil {
 			break
 		}
-
 		fmt.Printf("message do at topic/partition/offset %v/%v/%v \n", m.Topic, m.Partition, m.Offset)
 
 		var deliveryOrder models.DeliveryOrder

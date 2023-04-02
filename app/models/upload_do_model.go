@@ -7,22 +7,26 @@ type UploadDORequest struct {
 }
 
 type UploadDOField struct {
-	IDDistributor   int
-	NoOrder         string
-	TanggalSJ       string
-	NoSJ            string
-	Catatan         string
-	CatatanInternal string
-	NamaSupir       string
-	PlatNo          string
-	KodeMerk        int
-	NamaMerk        string
-	KodeProduk      string
-	NamaProduk      string
-	QTYShip         int
-	Unit            string
-	KodeGudang      string
-	IDUser          int
+	IDDistributor     int
+	NoOrder           string
+	TanggalSJ         string
+	NoSJ              string
+	Catatan           string
+	CatatanInternal   string
+	NamaSupir         string
+	PlatNo            string
+	KodeMerk          int
+	NamaMerk          string
+	KodeProduk        string
+	NamaProduk        string
+	QTYShip           int
+	Unit              string
+	KodeGudang        string
+	IDUser            int
+	SjUploadHistoryId string
+	BulkCode          string
+	UploadType        string
+	ErrorLine         int
 }
 
 type UploadDOFieldsChan struct {

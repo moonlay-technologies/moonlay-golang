@@ -245,14 +245,6 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 			return &models.DeliveryOrderStoreResponse{}, getSalesOrderDetailResult.ErrorLog
 		}
 
-		getOrderStatusDetailResultChan := make(chan *models.OrderStatusChan)
-		go u.orderStatusRepository.GetByID(getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID, false, ctx, getOrderStatusDetailResultChan)
-		getOrderStatusDetailResult := <-getOrderStatusDetailResultChan
-
-		if getOrderStatusDetailResult.Error != nil {
-			return &models.DeliveryOrderStoreResponse{}, getOrderStatusDetailResult.ErrorLog
-		}
-
 		getSalesOrderDetailResult.SalesOrderDetail.UpdatedAt = &now
 		getSalesOrderDetailResult.SalesOrderDetail.SentQty += doDetail.Qty
 		getSalesOrderDetailResult.SalesOrderDetail.ResidualQty -= doDetail.Qty
@@ -303,7 +295,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		deliveryOrderDetail.SalesOrderDetailChanMap(getSalesOrderDetailResult)
 		deliveryOrderDetail.OrderStatusID = deliveryOrder.OrderStatusID
 		deliveryOrderDetail.OrderStatusName = deliveryOrder.OrderStatusName
-		deliveryOrderDetail.OrderStatus = getOrderStatusDetailResult.OrderStatus
+		deliveryOrderDetail.OrderStatus = deliveryOrder.OrderStatus
 
 		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
 		go u.deliveryOrderDetailRepository.Insert(deliveryOrderDetail, sqlTransaction, ctx, createDeliveryOrderDetailResultChan)
@@ -383,6 +375,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	deliveryOrderJourney := &models.DeliveryOrderJourney{
 		DoId:      deliveryOrder.ID,
 		DoCode:    deliveryOrder.DoCode,
+		DoDate:    deliveryOrder.DoDate,
 		Status:    constants.DO_STATUS_OPEN,
 		Remark:    "",
 		Reason:    "",
@@ -683,6 +676,7 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 	deliveryOrderJourney := &models.DeliveryOrderJourney{
 		DoId:      deliveryOrder.ID,
 		DoCode:    deliveryOrder.DoCode,
+		DoDate:    deliveryOrder.DoDate,
 		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
 		Remark:    "",
 		Reason:    "",
@@ -966,6 +960,7 @@ func (u *deliveryOrderUseCase) UpdateDODetailByID(id int, request *models.Delive
 	deliveryOrderJourney := &models.DeliveryOrderJourney{
 		DoId:      deliveryOrder.ID,
 		DoCode:    deliveryOrder.DoCode,
+		DoDate:    deliveryOrder.DoDate,
 		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
 		Remark:    "",
 		Reason:    "",
@@ -1190,6 +1185,7 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 	deliveryOrderJourney := &models.DeliveryOrderJourney{
 		DoId:      deliveryOrder.ID,
 		DoCode:    deliveryOrder.DoCode,
+		DoDate:    deliveryOrder.DoDate,
 		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
 		Remark:    "",
 		Reason:    "",
@@ -1815,6 +1811,7 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 		deliveryOrderJourney := &models.DeliveryOrderJourney{
 			DoId:      getDeliveryOrderByIDResult.DeliveryOrder.ID,
 			DoCode:    getDeliveryOrderByIDResult.DeliveryOrder.DoCode,
+			DoDate:    getDeliveryOrderByIDResult.DeliveryOrder.DoDate,
 			Status:    constants.DO_STATUS_OPEN,
 			Remark:    "",
 			Reason:    "",
@@ -1834,6 +1831,7 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 	deliveryOrderJourney := &models.DeliveryOrderJourney{
 		DoId:      getDeliveryOrderByIDResult.DeliveryOrder.ID,
 		DoCode:    getDeliveryOrderByIDResult.DeliveryOrder.DoCode,
+		DoDate:    getDeliveryOrderByIDResult.DeliveryOrder.DoDate,
 		Status:    constants.DO_STATUS_CNCL,
 		Remark:    "",
 		Reason:    "",
@@ -1940,6 +1938,7 @@ func (u deliveryOrderUseCase) DeleteDetailByID(id int, sqlTransaction *sql.Tx) *
 	deliveryOrderJourney := &models.DeliveryOrderJourney{
 		DoId:      getDeliveryOrderByIDResult.DeliveryOrder.ID,
 		DoCode:    getDeliveryOrderByIDResult.DeliveryOrder.DoCode,
+		DoDate:    getDeliveryOrderByIDResult.DeliveryOrder.DoDate,
 		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
 		Remark:    "",
 		Reason:    "",
@@ -2063,6 +2062,7 @@ func (u deliveryOrderUseCase) DeleteDetailByDoID(id int, sqlTransaction *sql.Tx)
 	deliveryOrderJourney := &models.DeliveryOrderJourney{
 		DoId:      getDeliveryOrderByIDResult.DeliveryOrder.ID,
 		DoCode:    getDeliveryOrderByIDResult.DeliveryOrder.DoCode,
+		DoDate:    getDeliveryOrderByIDResult.DeliveryOrder.DoDate,
 		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
 		Remark:    "",
 		Reason:    "",

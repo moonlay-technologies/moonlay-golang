@@ -269,13 +269,14 @@ func (salesOrder *SalesOrder) SalesOrderOpenSearchChanMap(request *SalesOrderCha
 	if salesOrder.DeletedAt == defaultSo.DeletedAt {
 		salesOrder.DeletedAt = request.SalesOrder.DeletedAt
 	}
-	for _, v := range request.SalesOrder.SalesOrderDetails {
-		for k, y := range salesOrder.SalesOrderDetails {
+	for k, v := range request.SalesOrder.SalesOrderDetails {
+		for _, y := range salesOrder.SalesOrderDetails {
 			if y.ID == v.ID {
-				salesOrder.SalesOrderDetails[k] = v
+				request.SalesOrder.SalesOrderDetails[k] = y
 			}
 		}
 	}
+	salesOrder.SalesOrderDetails = request.SalesOrder.SalesOrderDetails
 	return
 }
 

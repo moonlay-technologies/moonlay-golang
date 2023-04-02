@@ -478,6 +478,9 @@ func (r *salesOrderDetail) UpdateByID(id int, request *models.SalesOrderDetail, 
 		return
 	}
 
+	salesOrderRedisKey := fmt.Sprintf("%s*", constants.SALES_ORDER_DETAIL)
+	_, err = r.redisdb.Client().Del(ctx, salesOrderRedisKey).Result()
+
 	response.ID = salesOrderDetailID
 	response.SalesOrderDetail = request
 	resultChan <- response

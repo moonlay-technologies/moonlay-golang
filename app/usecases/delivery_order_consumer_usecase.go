@@ -67,8 +67,6 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromCreateEvent(deliveryO
 		errorLogData := helper.WriteLog(getSalesOrderResult.Error, http.StatusInternalServerError, nil)
 		return errorLogData
 	}
-
-	deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
 	deliveryOrder.SalesOrder.SoCode = getSalesOrderResult.SalesOrder.SoCode
 	deliveryOrder.SalesOrder.SoDate = getSalesOrderResult.SalesOrder.SoDate
 	deliveryOrder.SalesOrder.SoRefDate = getSalesOrderResult.SalesOrder.SoRefDate
