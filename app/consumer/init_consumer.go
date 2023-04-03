@@ -248,7 +248,7 @@ func InitUploadSOSJItemConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongo
 	deliveryOrderLogRepository := mongoRepo.InitDeliveryOrderLogRepository(mongodbClient)
 	sosjUploadHistoriesRepository := mongoRepo.InitSOSJUploadHistoriesRepositoryInterface(mongodbClient)
 	sosjUploadErrorLogsRepository := mongoRepo.InitSOSJUploadErrorLogsRepositoryInterface(mongodbClient)
-	uploadRepository := repositories.InitUploadRepository(requestValidationRepository, database)
+	uploadRepository := repositories.InitUploadRepository(database)
 	createSalesOrderConsumer := InitCreateSalesOrderConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
 	handler := InitUploadSOSJItemConsumerHandlerInterface(orderSourceRepository, orderStatusRepository, productRepository, uomRepository, agentRepository, storeRepository, userRepository, salesmanRepository, brandRepository, salesOrderRepository, salesOrderDetailRepository, salesOrderLogRepository, salesOrderJourneysRepository, salesOrderDetailJourneysRepository, warehouseRepository, deliveryOrderRepository, deliveryOrderDetailRepository, deliveryOrderLogRepository, sosjUploadHistoriesRepository, sosjUploadErrorLogsRepository, uploadRepository, createSalesOrderConsumer, kafkaClient, database, ctx, args)
 	return handler
