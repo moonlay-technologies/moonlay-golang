@@ -686,10 +686,6 @@ func (d *SalesOrderRequest) SalesOrderExportMap(r *SalesOrderExportRequest) {
 	d.StoreVillageID = r.StoreDistrictID
 }
 
-func (d *SalesOrderCsvResponse) DoDetailMap(r *SalesOrder) {
-
-}
-
 func (data *SalesOrder) MapToCsvRow() []string {
 	return []string{
 		data.OrderStatusName,

@@ -289,3 +289,29 @@ type GetSalesOrderDetailRequest struct {
 	StartCreatedAt    string `json:"start_created_at,omitempty"`
 	EndCreatedAt      string `json:"end_created_at,omitempty"`
 }
+
+type SalesOrderDetailExportRequest struct {
+	ID                int    `json:"id,omitempty"`
+	SoID              int    `json:"so_id,omitempty"`
+	SortField         string `json:"sort_field,omitempty" bson:"sort_field,omitempty"`
+	SortValue         string `json:"sort_value,omitempty" bson:"sort_value,omitempty"`
+	GlobalSearchValue string `json:"global_search_value,omitempty" bson:"global_search_value,omitempty"`
+	FileType          string `json:"file_type,omitempty"`
+	FileName          string `json:"file_name,omitempty"`
+	AgentID           int    `json:"agent_id,omitempty"`
+	StoreID           int    `json:"store_id,omitempty"`
+	BrandID           int    `json:"brand_id,omitempty"`
+	OrderSourceID     int    `json:"order_source_id,omitempty"`
+	OrderStatusID     int    `json:"order_status_id,omitempty"`
+	StartSoDate       string `json:"start_so_date,omitempty"`
+	EndSoDate         string `json:"end_so_date,omitempty"`
+	ProductID         int    `json:"product_id,omitempty"`
+	CategoryID        int    `json:"category_id,omitempty"`
+	SalesmanID        int    `json:"salesman_id,omitempty"`
+	ProvinceID        int    `json:"province_id,omitempty"`
+	CityID            int    `json:"city_id,omitempty"`
+	DistrictID        int    `json:"district_id,omitempty"`
+	VillageID         int    `json:"village_id,omitempty"`
+	StartCreatedAt    string `json:"start_created_at,omitempty"`
+	EndCreatedAt      string `json:"end_created_at,omitempty"`
+}

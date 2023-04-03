@@ -273,3 +273,76 @@ func (v *SalesOrderDetail) SalesOrderDetailUploadSOMap(soDetail *UploadSOField, 
 	v.StartDateSyncToEs = &now
 	v.UpdatedAt = &now
 }
+
+func (d *GetSalesOrderDetailRequest) SalesOrderDetailExportMap(r *SalesOrderDetailExportRequest) {
+	d.ID = r.ID
+	d.SoID = r.SoID
+	d.PerPage = 0
+	d.Page = 0
+	d.SortField = r.SortField
+	d.SortValue = r.SortValue
+	d.GlobalSearchValue = r.GlobalSearchValue
+	d.AgentID = r.AgentID
+	d.StoreID = r.StoreID
+	d.BrandID = r.BrandID
+	d.OrderSourceID = r.OrderSourceID
+	d.OrderStatusID = r.OrderStatusID
+	d.StartSoDate = r.StartSoDate
+	d.EndSoDate = r.EndSoDate
+	d.ProductID = r.ProductID
+	d.CategoryID = r.CategoryID
+	d.SalesmanID = r.SalesmanID
+	d.ProvinceID = r.ProvinceID
+	d.CityID = r.CityID
+	d.DistrictID = r.DistrictID
+	d.VillageID = r.VillageID
+	d.StartCreatedAt = r.StartCreatedAt
+	d.EndCreatedAt = r.EndCreatedAt
+
+}
+
+func (data *SalesOrderDetailOpenSearch) MapToCsvRow(s *SalesOrder) []string {
+	return []string{
+		s.OrderStatusName,
+		s.OrderSourceName,
+		data.ReferralCode.String,
+		data.SoRefCode,
+		data.SoCode,
+		data.SoDate,
+		strconv.Itoa(data.AgentId),
+		data.AgentName,
+		strconv.Itoa(int(data.SalesmanID)),
+		data.SalesmanName,
+		strconv.Itoa(data.StoreID),
+		data.Store.AliasCode.String,
+		data.StoreCode,
+		data.StoreName,
+		data.Store.DistrictID.String,
+		data.StoreDistrictName,
+		data.Store.CityID.String,
+		data.StoreCityName,
+		strconv.Itoa(data.StoreProvinceID),
+		data.StoreProvinceName,
+		strconv.Itoa(data.BrandID),
+		data.BrandName,
+		strconv.Itoa(data.FirstCategoryId),
+		*data.FirstCategoryName,
+		strconv.Itoa(data.LastCategoryId),
+		*data.LastCategoryName,
+		data.ProductSKU,
+		data.ProductName,
+		data.UomName,
+		strconv.Itoa(int(data.Price)),
+		strconv.Itoa(data.Qty),
+		strconv.Itoa((data.Qty * int(data.Price))),
+		"doQty",
+		"doAmount",
+		data.OrderStatusName,
+		"alasanCancel",
+		data.CreatedAt.String(),
+		data.UpdatedAt.String(),
+		strconv.Itoa(data.CreatedBy),
+		strconv.Itoa(s.LatestUpdatedBy),
+		s.InternalComment.String,
+	}
+}

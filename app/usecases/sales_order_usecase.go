@@ -48,6 +48,7 @@ type SalesOrderUseCaseInterface interface {
 	DeleteDetailById(id int, sqlTransaction *sql.Tx) *model.ErrorLog
 	RetrySyncToKafka(logId string) (*models.SORetryProcessSyncToKafkaResponse, *model.ErrorLog)
 	Export(request *models.SalesOrderExportRequest, ctx context.Context) (string, *model.ErrorLog)
+	ExportDetail(request *models.SalesOrderDetailExportRequest, ctx context.Context) (string, *model.ErrorLog)
 }
 
 type salesOrderUseCase struct {
@@ -1829,7 +1830,7 @@ func (u *salesOrderUseCase) updateSOValidation(salesOrderId int, orderStatusName
 
 func (u *salesOrderUseCase) GetDetails(request *models.GetSalesOrderDetailRequest) (*models.SalesOrderDetailsOpenSearchResponse, *baseModel.ErrorLog) {
 	getSalesOrderDetailsResultChan := make(chan *models.SalesOrderDetailsOpenSearchChan)
-	go u.salesOrderDetailOpenSearchRepository.Get(request, getSalesOrderDetailsResultChan)
+	go u.salesOrderDetailOpenSearchRepository.Get(request, false, getSalesOrderDetailsResultChan)
 	getSalesOrderDetailsResult := <-getSalesOrderDetailsResultChan
 
 	if getSalesOrderDetailsResult.Error != nil {
@@ -2168,6 +2169,28 @@ func (u *salesOrderUseCase) Export(request *models.SalesOrderExportRequest, ctx 
 	keyKafka := []byte(uuid.New().String())
 	messageKafka, _ := json.Marshal(request)
 	err = u.kafkaClient.WriteToTopic(constants.EXPORT_SALES_ORDER_TOPIC, keyKafka, messageKafka)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		return "", errorLogData
+	}
+
+	return request.FileName, nil
+}
+
+func (u *salesOrderUseCase) ExportDetail(request *models.SalesOrderDetailExportRequest, ctx context.Context) (string, *model.ErrorLog) {
+	rand, err := helper.Generate(`[A-Za-z]{12}`)
+	fileHour := time.Now().Format("2January2006-15:04:05")
+	if ctx == nil {
+		err = fmt.Errorf("nil context")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		return "", errorLogData
+	}
+	fileName := fmt.Sprintf("SO-LIST-DETAIL-%s-%d-%s", fileHour, ctx.Value("user").(*models.UserClaims).UserID, rand)
+	request.FileName = fileName
+	keyKafka := []byte(uuid.New().String())
+	messageKafka, _ := json.Marshal(request)
+	err = u.kafkaClient.WriteToTopic(constants.EXPORT_SALES_ORDER_DETAIL_TOPIC, keyKafka, messageKafka)
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
