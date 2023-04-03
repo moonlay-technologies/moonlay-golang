@@ -149,15 +149,6 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromCreateEvent(deliveryO
 		}
 	}
 
-	removeCacheSalesOrderResultChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.RemoveCacheByID(deliveryOrder.SalesOrderID, ctx, removeCacheSalesOrderResultChan)
-	removeCacheSalesOrderResult := <-removeCacheSalesOrderResultChan
-
-	if removeCacheSalesOrderResult.Error != nil {
-		errorLogData := helper.WriteLog(removeCacheSalesOrderResult.Error, http.StatusInternalServerError, nil)
-		return errorLogData
-	}
-
 	deliveryOrder.IsDoneSyncToEs = "1"
 	deliveryOrder.EndDateSyncToEs = &now
 	deliveryOrder.UpdatedAt = &now
@@ -177,6 +168,15 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromCreateEvent(deliveryO
 	if createDeliveryOrderResult.Error != nil {
 		fmt.Println(createDeliveryOrderResult.Error)
 		return createDeliveryOrderResult.ErrorLog
+	}
+
+	removeCacheSalesOrderResultChan := make(chan *models.SalesOrderChan)
+	go u.salesOrderRepository.RemoveCacheByID(deliveryOrder.SalesOrderID, ctx, removeCacheSalesOrderResultChan)
+	removeCacheSalesOrderResult := <-removeCacheSalesOrderResultChan
+
+	if removeCacheSalesOrderResult.Error != nil {
+		errorLogData := helper.WriteLog(removeCacheSalesOrderResult.Error, http.StatusInternalServerError, nil)
+		return errorLogData
 	}
 
 	return &model.ErrorLog{}
@@ -395,7 +395,7 @@ func (u *deliveryOrderConsumerUseCase) Get(request *models.DeliveryOrderExportRe
 		progres := math.Round(float64(i*doRequest.PerPage)/float64(getDeliveryOrdersCountResult.Total)) * 100
 		err := u.pusherRepository.Pubish(map[string]string{"message": fmt.Sprintf("%f", progres) + "%"})
 		if err != nil {
-			fmt.Println("pusher error = ", err.Error())
+			fmt.Println(err.Error())
 			return helper.WriteLog(err, http.StatusInternalServerError, nil)
 		}
 	}
@@ -408,7 +408,7 @@ func (u *deliveryOrderConsumerUseCase) Get(request *models.DeliveryOrderExportRe
 
 	err = u.pusherRepository.Pubish(map[string]string{"message": "100%"})
 	if err != nil {
-		fmt.Println("pusher error = ", err.Error())
+		fmt.Println(err.Error())
 		return helper.WriteLog(err, http.StatusInternalServerError, nil)
 	}
 

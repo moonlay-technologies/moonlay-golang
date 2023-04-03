@@ -25,6 +25,7 @@ type SalesOrderOpenSearchUseCaseInterface interface {
 	SyncDetailToOpenSearchFromUpdateEvent(salesOrder *models.SalesOrder, salesOrderDetail *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	SyncDetailToOpenSearchFromDeleteEvent(salesOrderDetail *models.SalesOrderDetail, ctx context.Context) *model.ErrorLog
 	Get(request *models.SalesOrderExportRequest) *model.ErrorLog
+	GetDetails(request *models.SalesOrderDetailExportRequest) *model.ErrorLog
 }
 
 type SalesOrderOpenSearchUseCase struct {
@@ -467,6 +468,80 @@ func (u *SalesOrderOpenSearchUseCase) Get(request *models.SalesOrderExportReques
 		err := u.pusherRepository.Pubish(map[string]string{"message": fmt.Sprintf("%f", progres) + "%"})
 		if err != nil {
 			fmt.Println("pusher error = ", err.Error())
+			return helper.WriteLog(err, http.StatusInternalServerError, nil)
+		}
+	}
+	// Upload Files
+	err := u.uploadRepository.UploadFile(b, constants.S3_EXPORT_SO_PATH, request.FileName, request.FileType)
+	if err != nil {
+		fmt.Println("error upload", err)
+		return helper.WriteLog(err, http.StatusInternalServerError, nil)
+	}
+
+	err = u.pusherRepository.Pubish(map[string]string{"message": "100%"})
+	if err != nil {
+		fmt.Println(err.Error())
+		return helper.WriteLog(err, http.StatusInternalServerError, nil)
+	}
+
+	return &model.ErrorLog{}
+}
+
+func (u *SalesOrderOpenSearchUseCase) GetDetails(request *models.SalesOrderDetailExportRequest) *model.ErrorLog {
+	soDetailRequest := &models.GetSalesOrderDetailRequest{}
+	soDetailRequest.SalesOrderDetailExportMap(request)
+	getSalesOrderDetailsCountResultChan := make(chan *models.SalesOrderDetailsOpenSearchChan)
+	go u.salesOrderDetailOpenSearchRepository.Get(soDetailRequest, false, getSalesOrderDetailsCountResultChan)
+	getSalesOrderDetailsCountResult := <-getSalesOrderDetailsCountResultChan
+
+	if getSalesOrderDetailsCountResult.Error != nil {
+		fmt.Println("error = ", getSalesOrderDetailsCountResult.Error)
+		return getSalesOrderDetailsCountResult.ErrorLog
+	}
+
+	soDetailRequest.PerPage = 50
+	instalmentData := math.Ceil(float64(getSalesOrderDetailsCountResult.Total) / float64(soDetailRequest.PerPage))
+	b := new(bytes.Buffer)
+	writer := csv.NewWriter(b)
+	defer writer.Flush()
+
+	if err := writer.Write(constants.SALES_ORDER_DETAIL_EXPORT_HEADER()); err != nil {
+		fmt.Println("error writer", err)
+		return helper.WriteLog(err, http.StatusInternalServerError, nil)
+	}
+
+	for i := 0; i < int(instalmentData); i++ {
+		soDetailRequest.Page = i + 1
+		getSalesOrderDetailsResultChan := make(chan *models.SalesOrderDetailsOpenSearchChan)
+		go u.salesOrderDetailOpenSearchRepository.Get(soDetailRequest, false, getSalesOrderDetailsResultChan)
+		getSalesDetailOrdersResult := <-getSalesOrderDetailsResultChan
+
+		if getSalesDetailOrdersResult.Error != nil {
+			return getSalesDetailOrdersResult.ErrorLog
+		}
+
+		for _, v := range getSalesDetailOrdersResult.SalesOrderDetails {
+
+			soRequest := &models.SalesOrderRequest{ID: v.SalesOrderID}
+
+			getSalesOrderResultChan := make(chan *models.SalesOrderChan)
+			go u.salesOrderOpenSearchRepository.GetByID(soRequest, getSalesOrderResultChan)
+			getSalesOrdersResult := <-getSalesOrderResultChan
+
+			if getSalesOrdersResult.Error != nil {
+				return getSalesOrdersResult.ErrorLog
+			}
+
+			if err := writer.Write(v.MapToCsvRow(getSalesOrdersResult.SalesOrder)); err != nil {
+				fmt.Println("error fill", err)
+				return helper.WriteLog(err, http.StatusInternalServerError, nil)
+			}
+
+		}
+		progres := math.Round(float64(i*soDetailRequest.PerPage)/float64(getSalesOrderDetailsCountResult.Total)) * 100
+		err := u.pusherRepository.Pubish(map[string]string{"message": fmt.Sprintf("%f", progres) + "%"})
+		if err != nil {
+			fmt.Println(err.Error())
 			return helper.WriteLog(err, http.StatusInternalServerError, nil)
 		}
 	}
