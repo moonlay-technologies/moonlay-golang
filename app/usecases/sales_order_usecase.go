@@ -189,13 +189,6 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 	}
 
 	if len(request.SoRefCode) < 1 {
-		// x := 5 - len(strconv.Itoa(request.AgentID))
-		// var str strings.Builder
-		// for i := 0; i < x; i++ {
-		// 	str.WriteString("0")
-		// }
-		// agentId := str.String() + strconv.Itoa(request.AgentID)
-
 		request.SoRefCode = helper.GenerateSORefCode(request.AgentID, request.SoDate)
 	}
 
