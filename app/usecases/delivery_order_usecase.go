@@ -1257,6 +1257,11 @@ func (u *deliveryOrderUseCase) Get(request *models.DeliveryOrderRequest) (*model
 func (u *deliveryOrderUseCase) Export(request *models.DeliveryOrderExportRequest, ctx context.Context) (string, *model.ErrorLog) {
 	rand, err := helper.Generate(`[A-Za-z]{12}`)
 	fileHour := time.Now().Format("2January2006-15:04:05")
+	if ctx == nil {
+		err = fmt.Errorf("nil context")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		return "", errorLogData
+	}
 	fileName := fmt.Sprintf("SJ-LIST-SUMMARY-%s-%d-%s", fileHour, ctx.Value("user").(*models.UserClaims).UserID, rand)
 	request.FileName = fileName
 	keyKafka := []byte(uuid.New().String())
@@ -1274,6 +1279,11 @@ func (u *deliveryOrderUseCase) Export(request *models.DeliveryOrderExportRequest
 func (u *deliveryOrderUseCase) ExportDetail(request *models.DeliveryOrderDetailExportRequest, ctx context.Context) (string, *model.ErrorLog) {
 	rand, err := helper.Generate(`[A-Za-z]{12}`)
 	fileHour := time.Now().Format("2January2006-15:04:05")
+	if ctx == nil {
+		err = fmt.Errorf("nil context")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		return "", errorLogData
+	}
 	fileName := fmt.Sprintf("SJ-LIST-DETAIL-%s-%d-%s", fileHour, ctx.Value("user").(*models.UserClaims).UserID, rand)
 	request.FileName = fileName
 	keyKafka := []byte(uuid.New().String())

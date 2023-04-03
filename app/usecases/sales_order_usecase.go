@@ -2165,6 +2165,11 @@ func (u *salesOrderUseCase) DeleteDetailBySOId(id int, sqlTransaction *sql.Tx) *
 func (u *salesOrderUseCase) Export(request *models.SalesOrderExportRequest, ctx context.Context) (string, *model.ErrorLog) {
 	rand, err := helper.Generate(`[A-Za-z]{12}`)
 	fileHour := time.Now().Format("2January2006-15:04:05")
+	if ctx == nil {
+		err = fmt.Errorf("nil context")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		return "", errorLogData
+	}
 	fileName := fmt.Sprintf("SO-LIST-SUMMARY-%s-%d-%s", fileHour, ctx.Value("user").(*models.UserClaims).UserID, rand)
 	request.FileName = fileName
 	keyKafka := []byte(uuid.New().String())

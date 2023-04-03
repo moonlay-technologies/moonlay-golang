@@ -280,7 +280,7 @@ func Test_SalesOrderUseCase_Export_ShouldError(t *testing.T) {
 	request.ID = 1
 
 	// Act
-	_, err := salesOrderUseCase.Export(request, salesOrderUseCase.ctx)
+	_, err := salesOrderUseCase.Export(request, nil)
 	// Assert
 	assert.NotNil(t, err)
 }

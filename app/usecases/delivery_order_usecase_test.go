@@ -292,7 +292,7 @@ func Test_DeliveryOrderUseCase_Export_ShouldError(t *testing.T) {
 	request.ID = 1
 
 	// Act
-	_, err := deliveryOrderUseCase.Export(request, deliveryOrderUseCase.ctx)
+	_, err := deliveryOrderUseCase.Export(request, nil)
 	// Assert
 	assert.NotNil(t, err)
 }
@@ -304,7 +304,7 @@ func Test_DeliveryOrderUseCase_ExportDetail_ShouldError(t *testing.T) {
 	request.ID = 1
 
 	// Act
-	_, err := deliveryOrderUseCase.ExportDetail(request, deliveryOrderUseCase.ctx)
+	_, err := deliveryOrderUseCase.ExportDetail(request, nil)
 	// Assert
 	assert.NotNil(t, err)
 }
