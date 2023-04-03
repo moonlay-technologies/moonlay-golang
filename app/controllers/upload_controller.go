@@ -247,6 +247,9 @@ func (c *uploadController) RetryUploadSOSJ(ctx *gin.Context) {
 }
 
 func (c *uploadController) GetSosjUploadHistories(ctx *gin.Context) {
+	ctx.Set("full_path", ctx.FullPath())
+	ctx.Set("method", ctx.Request.Method)
+
 	sosjUploadHistoriesRequest, err := c.salesOrderValidator.GetSosjUploadHistoriesValidator(ctx)
 	if err != nil {
 		return

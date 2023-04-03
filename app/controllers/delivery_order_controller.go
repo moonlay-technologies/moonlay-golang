@@ -478,8 +478,8 @@ func (c *deliveryOrderController) GetBySalesmanID(ctx *gin.Context) {
 func (c *deliveryOrderController) GetByID(ctx *gin.Context) {
 	var id int
 
-	// ctx.Set("full_path", ctx.FullPath())
-	// ctx.Set("method", ctx.Request.Method)
+	ctx.Set("full_path", ctx.FullPath())
+	ctx.Set("method", ctx.Request.Method)
 
 	ids := ctx.Param("id")
 	id, err := strconv.Atoi(ids)
@@ -558,6 +558,9 @@ func (c *deliveryOrderController) GetDOJourneysByDoID(ctx *gin.Context) {
 }
 
 func (c *deliveryOrderController) GetDoUploadHistories(ctx *gin.Context) {
+	ctx.Set("full_path", ctx.FullPath())
+	ctx.Set("method", ctx.Request.Method)
+
 	doUploadHistoriesRequest, err := c.deliveryOrderValidator.GetDOUploadHistoriesValidator(ctx)
 	if err != nil {
 		return
