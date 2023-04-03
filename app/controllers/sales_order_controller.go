@@ -13,6 +13,7 @@ import (
 	"order-service/global/utils/helper"
 	baseModel "order-service/global/utils/model"
 	"strconv"
+	"time"
 
 	"github.com/bxcodec/dbresolver"
 	"github.com/gin-gonic/gin"
@@ -39,6 +40,7 @@ type SalesOrderControllerInterface interface {
 	DeleteDetailByID(ctx *gin.Context)
 	DeleteDetailBySOID(ctx *gin.Context)
 	RetrySyncToKafka(ctx *gin.Context)
+	Export(ctx *gin.Context)
 }
 
 type salesOrderController struct {
@@ -494,7 +496,7 @@ func (c *salesOrderController) DeleteByID(ctx *gin.Context) {
 	id, err := strconv.Atoi(sId)
 
 	if err != nil {
-		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
 		result.StatusCode = http.StatusBadRequest
 		result.Error = helper.WriteLog(err, result.StatusCode, nil)
 		ctx.JSON(result.StatusCode, result)
@@ -766,7 +768,7 @@ func (c *salesOrderController) DeleteDetailByID(ctx *gin.Context) {
 	id, err := strconv.Atoi(sId)
 
 	if err != nil {
-		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
 		result.StatusCode = http.StatusBadRequest
 		result.Error = helper.WriteLog(err, result.StatusCode, nil)
 		ctx.JSON(result.StatusCode, result)
@@ -854,7 +856,7 @@ func (c *salesOrderController) DeleteDetailBySOID(ctx *gin.Context) {
 	id, err := strconv.Atoi(sId)
 
 	if err != nil {
-		err = helper.NewError("Parameter 'id' harus bernilai integer")
+		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
 		result.StatusCode = http.StatusBadRequest
 		result.Error = helper.WriteLog(err, result.StatusCode, nil)
 		ctx.JSON(result.StatusCode, result)
@@ -959,4 +961,23 @@ func (c *salesOrderController) RetrySyncToKafka(ctx *gin.Context) {
 	result.Data = retryToKafka
 	result.StatusCode = http.StatusOK
 	ctx.JSON(http.StatusOK, result)
+}
+func (c *salesOrderController) Export(ctx *gin.Context) {
+	salesOrderRequest, err := c.salesOrderValidator.ExportSalesOrderValidator(ctx)
+	if err != nil {
+		return
+	}
+
+	fileDate := time.Now().Format("2_January_2006")
+	fmt.Println(fileDate)
+
+	fileName, errorLog := c.salesOrderUseCase.Export(salesOrderRequest, ctx)
+	fmt.Println(fileName)
+	if errorLog != nil {
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+		return
+	}
+	ctx.JSON(http.StatusOK, fmt.Sprintf("%s_%s.%s", constants.SALES_ORDER_EXPORT_PATH, fileDate, salesOrderRequest.FileType)) // Makesure dor response pattern
+	// ctx.JSON(http.StatusOK, fmt.Sprintf("%s/%s.%s", constants.SALES_ORDER_EXPORT_PATH, fileName, deliveryOrderRequest.FileType))
+	return
 }

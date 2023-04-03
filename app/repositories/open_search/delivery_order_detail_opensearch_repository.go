@@ -12,7 +12,7 @@ import (
 
 type DeliveryOrderDetailOpenSearchRepositoryInterface interface {
 	Create(request *models.DeliveryOrderDetailOpenSearch, result chan *models.DeliveryOrderDetailOpenSearchChan)
-	Get(request *models.DeliveryOrderDetailOpenSearchRequest, result chan *models.DeliveryOrderDetailsOpenSearchChan)
+	Get(request *models.DeliveryOrderDetailOpenSearchRequest, isCountOnly bool, result chan *models.DeliveryOrderDetailsOpenSearchChan)
 	GetByID(request *models.DeliveryOrderRequest, resultChan chan *models.DeliveryOrderDetailOpenSearchChan)
 	generateDeliveryOrderQueryOpenSearchResult(openSearchQueryJson []byte) (*models.DeliveryOrderDetailsOpenSearch, *model.ErrorLog)
 	generateDeliveryOrderQueryOpenSearchTermRequest(term_field string, term_value interface{}, request *models.DeliveryOrderDetailOpenSearchRequest) []byte
@@ -46,7 +46,7 @@ func (r *deliveryOrderDetailOpenSearch) Create(request *models.DeliveryOrderDeta
 	return
 }
 
-func (r *deliveryOrderDetailOpenSearch) Get(request *models.DeliveryOrderDetailOpenSearchRequest, resultChan chan *models.DeliveryOrderDetailsOpenSearchChan) {
+func (r *deliveryOrderDetailOpenSearch) Get(request *models.DeliveryOrderDetailOpenSearchRequest, isCountOnly bool, resultChan chan *models.DeliveryOrderDetailsOpenSearchChan) {
 	response := &models.DeliveryOrderDetailsOpenSearchChan{}
 	requestQuery := r.generateDeliveryOrderQueryOpenSearchTermRequest("", "", request)
 	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery)

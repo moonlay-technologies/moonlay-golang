@@ -35,6 +35,7 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 		{
 			salesOrderControllerGroup.POST("", salesOrderController.Create)
 			salesOrderControllerGroup.GET("", salesOrderController.Get)
+			salesOrderControllerGroup.GET("export", salesOrderController.Export)
 			salesOrderControllerGroup.GET(":so-id", salesOrderController.GetByID)
 			salesOrderControllerGroup.GET("details/:so-detail-id", salesOrderController.GetDetailsById)
 			salesOrderControllerGroup.GET(":so-id/details", salesOrderController.GetDetailsBySoId)
@@ -70,6 +71,8 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 			deliveryOrderControllerGroup.POST("", deliveryOrderController.Create)
 			deliveryOrderControllerGroup.GET(":id", deliveryOrderController.GetByID)
 			deliveryOrderControllerGroup.GET("", deliveryOrderController.Get)
+			deliveryOrderControllerGroup.GET("export", deliveryOrderController.Export)
+			deliveryOrderControllerGroup.GET("export/delivery-order-details", deliveryOrderController.ExportDetail)
 			deliveryOrderControllerGroup.GET("/details", deliveryOrderController.GetDetails)
 			deliveryOrderControllerGroup.GET(":id/details", deliveryOrderController.GetDetailsByDoId)
 			deliveryOrderControllerGroup.GET(":id/details/:do-detail-id", deliveryOrderController.GetDetailById)

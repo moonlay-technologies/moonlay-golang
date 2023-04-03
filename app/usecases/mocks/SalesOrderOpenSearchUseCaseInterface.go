@@ -113,3 +113,6 @@ func (_m *SalesOrderOpenSearchUseCaseInterface) SyncDetailToOpenSearchFromDelete
 
 	return r0
 }
+func (_m *SalesOrderOpenSearchUseCaseInterface) Get(request *models.SalesOrderExportRequest) *model.ErrorLog {
+	return nil
+}

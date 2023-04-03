@@ -19,6 +19,10 @@ type OpenSearchGetResponse struct {
 	Source      interface{} `json:"_source,omitempty"`
 }
 
+type OpenSearchCountResponse struct {
+	Count int64 `json:"count,omitempty"`
+}
+
 type OpenSearchQueryResponse struct {
 	Took    int                     `json:"took,omitempty"`
 	TimeOut bool                    `json:"time_out,omitempty"`
