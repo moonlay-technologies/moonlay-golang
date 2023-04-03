@@ -84,8 +84,8 @@ func (c *salesOrderController) GetByID(ctx *gin.Context) {
 	var resultErrorLog *baseModel.ErrorLog
 	var id int
 
-	// ctx.Set("full_path", ctx.FullPath())
-	// ctx.Set("method", ctx.Request.Method)
+	ctx.Set("full_path", ctx.FullPath())
+	ctx.Set("method", ctx.Request.Method)
 
 	ids := ctx.Param("so-id")
 	id, err := strconv.Atoi(ids)
@@ -692,6 +692,9 @@ func (c *salesOrderController) GetSOJourneyBySoId(ctx *gin.Context) {
 }
 
 func (c *salesOrderController) GetSOUploadHistories(ctx *gin.Context) {
+	ctx.Set("full_path", ctx.FullPath())
+	ctx.Set("method", ctx.Request.Method)
+
 	soUploadHistoriesRequest, err := c.salesOrderValidator.GetSOUploadHistoriesValidator(ctx)
 	if err != nil {
 		return

@@ -34,7 +34,7 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 		salesOrderControllerGroup.Use()
 		{
 			salesOrderControllerGroup.POST("", salesOrderController.Create)
-			salesOrderControllerGroup.GET("upload-histories", salesOrderController.GetSOUploadHistories)
+			salesOrderControllerGroup.GET("/upload-histories", salesOrderController.GetSOUploadHistories)
 			salesOrderControllerGroup.GET("/upload-histories/:id", salesOrderController.GetSoUploadHistoriesById)
 			salesOrderControllerGroup.GET("/upload-histories-by-request-id/:id/error-items", salesOrderController.GetSoUploadErrorLogByReqId)
 			salesOrderControllerGroup.GET("/upload-histories/:id/error-items", salesOrderController.GetSoUploadErrorLogBySoUploadHistoryId)
@@ -69,7 +69,7 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 		deliveryOrderControllerGroup.Use()
 		{
 			deliveryOrderControllerGroup.POST("", deliveryOrderController.Create)
-			deliveryOrderControllerGroup.GET("upload-histories", deliveryOrderController.GetDoUploadHistories)
+			deliveryOrderControllerGroup.GET("upload-histories-all", deliveryOrderController.GetDoUploadHistories)
 			deliveryOrderControllerGroup.GET("/upload-histories/:sj-id", deliveryOrderController.GetDoUploadHistoriesById)
 			deliveryOrderControllerGroup.GET("/upload-histories-by-request-id/:sj-id/error-items", deliveryOrderController.GetDoUploadErrorLogByReqId)
 			deliveryOrderControllerGroup.GET("/upload-histories/:sj-id/error-items", deliveryOrderController.GetDoUploadErrorLogByDoUploadHistoryId)
