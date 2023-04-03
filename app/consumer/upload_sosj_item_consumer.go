@@ -45,12 +45,13 @@ type uploadSOSJItemConsumerHandler struct {
 	sosjUploadErrorLogsRepository      mongoRepositories.SosjUploadErrorLogsRepositoryInterface
 	uploadRepository                   repositories.UploadRepositoryInterface
 	kafkaClient                        kafkadbo.KafkaClientInterface
+	createSalesOrderConsumer           CreateSalesOrderConsumerHandlerInterface
 	ctx                                context.Context
 	args                               []interface{}
 	db                                 dbresolver.DB
 }
 
-func InitUploadSOSJItemConsumerHandlerInterface(orderSourceRepository repositories.OrderSourceRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, productRepository repositories.ProductRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface, salesOrderJourneysRepository mongoRepositories.SalesOrderJourneysRepositoryInterface, salesOrderDetailJourneysRepository mongoRepositories.SalesOrderDetailJourneysRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, deliveryOrderDetailRepository repositories.DeliveryOrderDetailRepositoryInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, sosjUploadHistoriesRepository mongoRepositories.SOSJUploadHistoriesRepositoryInterface, sosjUploadErrorLogsRepository mongoRepositories.SosjUploadErrorLogsRepositoryInterface, uploadRepository repositories.UploadRepositoryInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UploadSOSJItemConsumerHandlerInterface {
+func InitUploadSOSJItemConsumerHandlerInterface(orderSourceRepository repositories.OrderSourceRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, productRepository repositories.ProductRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface, salesOrderJourneysRepository mongoRepositories.SalesOrderJourneysRepositoryInterface, salesOrderDetailJourneysRepository mongoRepositories.SalesOrderDetailJourneysRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, deliveryOrderDetailRepository repositories.DeliveryOrderDetailRepositoryInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, sosjUploadHistoriesRepository mongoRepositories.SOSJUploadHistoriesRepositoryInterface, sosjUploadErrorLogsRepository mongoRepositories.SosjUploadErrorLogsRepositoryInterface, uploadRepository repositories.UploadRepositoryInterface, createSalesOrderConsumer CreateSalesOrderConsumerHandlerInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UploadSOSJItemConsumerHandlerInterface {
 	return &uploadSOSJItemConsumerHandler{
 		orderSourceRepository:              orderSourceRepository,
 		orderStatusRepository:              orderStatusRepository,
@@ -73,6 +74,7 @@ func InitUploadSOSJItemConsumerHandlerInterface(orderSourceRepository repositori
 		sosjUploadHistoriesRepository:      sosjUploadHistoriesRepository,
 		sosjUploadErrorLogsRepository:      sosjUploadErrorLogsRepository,
 		uploadRepository:                   uploadRepository,
+		createSalesOrderConsumer:           createSalesOrderConsumer,
 		kafkaClient:                        kafkaClient,
 		ctx:                                ctx,
 		args:                               args,
@@ -524,6 +526,8 @@ func (c *uploadSOSJItemConsumerHandler) ProcessMessage() {
 					}
 
 					doDetail.ID = createDeliveryOrderDetailResult.DeliveryOrderDetail.ID
+
+					x.DeliveryOrderDetails[i] = doDetail
 				}
 
 			}
@@ -570,11 +574,11 @@ func (c *uploadSOSJItemConsumerHandler) ProcessMessage() {
 			keyKafka := []byte(v.SoCode)
 			messageKafka, _ := json.Marshal(v)
 
-			err = c.kafkaClient.WriteToTopic(constants.CREATE_SALES_ORDER_TOPIC, keyKafka, messageKafka)
-
+			err = c.createSalesOrderConsumer.CreateSoConsumer(v, messageKafka, constants.CREATE_SALES_ORDER_TOPIC, 0, 0, string(keyKafka), nil)
 			if err != nil {
 				fmt.Println(err.Error())
 			}
+
 			for _, x := range v.DeliveryOrders {
 
 				deliveryOrderLog := &models.DeliveryOrderLog{
@@ -620,6 +624,7 @@ func (c *uploadSOSJItemConsumerHandler) ProcessMessage() {
 				}
 				keyKafka := []byte(x.DoCode)
 				messageKafka, _ := json.Marshal(x)
+
 				err := c.kafkaClient.WriteToTopic(constants.CREATE_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
 
 				if err != nil {

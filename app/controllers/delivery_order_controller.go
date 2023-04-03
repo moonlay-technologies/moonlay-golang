@@ -478,8 +478,8 @@ func (c *deliveryOrderController) GetBySalesmanID(ctx *gin.Context) {
 func (c *deliveryOrderController) GetByID(ctx *gin.Context) {
 	var id int
 
-	ctx.Set("full_path", ctx.FullPath())
-	ctx.Set("method", ctx.Request.Method)
+	// ctx.Set("full_path", ctx.FullPath())
+	// ctx.Set("method", ctx.Request.Method)
 
 	ids := ctx.Param("id")
 	id, err := strconv.Atoi(ids)

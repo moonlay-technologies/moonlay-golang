@@ -281,7 +281,7 @@ func (u *uploadUseCase) RetryUploadSO(soUploadHistoryId string, ctx context.Cont
 	getSoUploadHistoriesResult := <-getSoUploadHistoriesResultChan
 
 	if getSoUploadHistoriesResult.Error != nil {
-		errorLogData := helper.WriteLog(getSoUploadHistoriesResult.Error, http.StatusInternalServerError, nil)
+		errorLogData := helper.WriteLog(getSoUploadHistoriesResult.Error, getSoUploadHistoriesResult.ErrorLog.StatusCode, nil)
 		return errorLogData
 	}
 
@@ -293,10 +293,10 @@ func (u *uploadUseCase) RetryUploadSO(soUploadHistoryId string, ctx context.Cont
 
 	soUploadHistoryJourneysResultChan := make(chan *models.SoUploadHistoryChan)
 	go u.soUploadHistoriesRepository.UpdateByID(soUploadHistoryId, getSoUploadHistoriesResult.SoUploadHistory, ctx, soUploadHistoryJourneysResultChan)
-	sosjUploadHistoryJourneysResult := <-soUploadHistoryJourneysResultChan
+	soUploadHistoryJourneysResult := <-soUploadHistoryJourneysResultChan
 
-	if sosjUploadHistoryJourneysResult.Error != nil {
-		errorLogData := helper.WriteLog(sosjUploadHistoryJourneysResult.Error, http.StatusInternalServerError, nil)
+	if soUploadHistoryJourneysResult.Error != nil {
+		errorLogData := helper.WriteLog(soUploadHistoryJourneysResult.Error, soUploadHistoryJourneysResult.ErrorLog.StatusCode, nil)
 		return errorLogData
 	}
 
@@ -322,7 +322,7 @@ func (u *uploadUseCase) RetryUploadDO(sjUploadHistoryId string, ctx context.Cont
 	getSoUploadHistoriesResult := <-getSoUploadHistoriesResultChan
 
 	if getSoUploadHistoriesResult.Error != nil {
-		errorLogData := helper.WriteLog(getSoUploadHistoriesResult.Error, http.StatusInternalServerError, nil)
+		errorLogData := helper.WriteLog(getSoUploadHistoriesResult.Error, getSoUploadHistoriesResult.ErrorLog.StatusCode, nil)
 		return errorLogData
 	}
 
@@ -334,10 +334,10 @@ func (u *uploadUseCase) RetryUploadDO(sjUploadHistoryId string, ctx context.Cont
 
 	sjUploadHistoryJourneysResultChan := make(chan *models.DoUploadHistoryChan)
 	go u.doUploadHistoriesRepository.UpdateByID(sjUploadHistoryId, getSoUploadHistoriesResult.DoUploadHistory, ctx, sjUploadHistoryJourneysResultChan)
-	sjsjUploadHistoryJourneysResult := <-sjUploadHistoryJourneysResultChan
+	sjUploadHistoryJourneysResult := <-sjUploadHistoryJourneysResultChan
 
-	if sjsjUploadHistoryJourneysResult.Error != nil {
-		errorLogData := helper.WriteLog(sjsjUploadHistoryJourneysResult.Error, http.StatusInternalServerError, nil)
+	if sjUploadHistoryJourneysResult.Error != nil {
+		errorLogData := helper.WriteLog(sjUploadHistoryJourneysResult.Error, sjUploadHistoryJourneysResult.ErrorLog.StatusCode, nil)
 		return errorLogData
 	}
 
@@ -363,7 +363,7 @@ func (u *uploadUseCase) RetryUploadSOSJ(sosjUploadHistoryId string, ctx context.
 	getSosjUploadHistoriesResult := <-getSOSJUploadHistoriesResultChan
 
 	if getSosjUploadHistoriesResult.Error != nil {
-		errorLogData := helper.WriteLog(getSosjUploadHistoriesResult.Error, http.StatusInternalServerError, nil)
+		errorLogData := helper.WriteLog(getSosjUploadHistoriesResult.Error, getSosjUploadHistoriesResult.ErrorLog.StatusCode, nil)
 		return errorLogData
 	}
 
@@ -378,7 +378,7 @@ func (u *uploadUseCase) RetryUploadSOSJ(sosjUploadHistoryId string, ctx context.
 	sosjUploadHistoryJourneysResult := <-sosjUploadHistoryJourneysResultChan
 
 	if sosjUploadHistoryJourneysResult.Error != nil {
-		errorLogData := helper.WriteLog(sosjUploadHistoryJourneysResult.Error, http.StatusInternalServerError, nil)
+		errorLogData := helper.WriteLog(sosjUploadHistoryJourneysResult.Error, sosjUploadHistoryJourneysResult.ErrorLog.StatusCode, nil)
 		return errorLogData
 	}
 

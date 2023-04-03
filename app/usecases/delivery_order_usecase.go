@@ -2209,7 +2209,6 @@ func (u *deliveryOrderUseCase) RetrySyncToKafka(logId string) (*models.DORetryPr
 
 	result := models.DORetryProcessSyncToKafkaResponse{
 		DeliveryOrderLogEventId: logId,
-		Status:                  constants.LOG_STATUS_MONGO_DEFAULT,
 		Message:                 "on progres",
 	}
 	return &result, nil

@@ -29,12 +29,13 @@ type uploadSOFileConsumerHandler struct {
 	requestValidationRepository repositories.RequestValidationRepositoryInterface
 	soUploadHistoriesRepository mongoRepositories.SoUploadHistoriesRepositoryInterface
 	soUploadErrorLogsRepository mongoRepositories.SoUploadErrorLogsRepositoryInterface
+	salesOrderRepository        repositories.SalesOrderRepositoryInterface
 	ctx                         context.Context
 	args                        []interface{}
 	db                          dbresolver.DB
 }
 
-func InitUploadSOFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, uploadRepository repositories.UploadRepositoryInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, requestValidationRepository repositories.RequestValidationRepositoryInterface, soUploadHistoriesRepository mongoRepositories.SoUploadHistoriesRepositoryInterface, soUploadErrorLogsRepository mongoRepositories.SoUploadErrorLogsRepositoryInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UploadSOFileConsumerHandlerInterface {
+func InitUploadSOFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, uploadRepository repositories.UploadRepositoryInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, requestValidationRepository repositories.RequestValidationRepositoryInterface, soUploadHistoriesRepository mongoRepositories.SoUploadHistoriesRepositoryInterface, soUploadErrorLogsRepository mongoRepositories.SoUploadErrorLogsRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UploadSOFileConsumerHandlerInterface {
 	return &uploadSOFileConsumerHandler{
 		kafkaClient:                 kafkaClient,
 		uploadRepository:            uploadRepository,
@@ -42,6 +43,7 @@ func InitUploadSOFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientIn
 		requestValidationRepository: requestValidationRepository,
 		soUploadHistoriesRepository: soUploadHistoriesRepository,
 		soUploadErrorLogsRepository: soUploadErrorLogsRepository,
+		salesOrderRepository:        salesOrderRepository,
 		ctx:                         ctx,
 		args:                        args,
 		db:                          db,
@@ -186,19 +188,39 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				}
 			}
 
+			// Get Sales Order By Code
+			getSalesOrderResultChan := make(chan *models.SalesOrderChan)
+			go c.salesOrderRepository.GetBySoRefCode(v["NoOrder"], false, c.ctx, getSalesOrderResultChan)
+			getSalesOrderResult := <-getSalesOrderResultChan
+
+			if getSalesOrderResult.Error != nil || getSalesOrderResult.Total > 0 {
+
+				if key == "retry" {
+					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errorMessage := fmt.Sprintf("No Order %s telah digunakan. Silahkan gunakan No Order lain.", v["NoOrder"])
+					if getSalesOrderResult.Error != nil {
+						errorMessage = getSalesOrderResult.Error.Error()
+					}
+					fmt.Println(errorMessage)
+					errors := []string{errorMessage}
+
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
+
+					continue
+				}
+			}
+
 			if brandIds[v["NoOrder"]] != nil {
 
 				var isBreak bool
 
 				if brandIds[v["NoOrder"]][0]["KodeMerk"] != v["KodeMerk"] {
-					if key == "retry" {
-						c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
-					} else {
-						var errors []string
-						errors = append(errors, fmt.Sprintf("No Order %s memiliki lebih dari 1 Kode Merk", v["NoOrder"]))
+					fmt.Println("No Order " + v["NoOrder"] + " memiliki lebih dari 1 Kode Merk")
 
-						c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
-					}
+					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+
 					isBreak = true
 					break
 				}
@@ -469,7 +491,7 @@ func (c *uploadSOFileConsumerHandler) createSoUploadErrorLog(errorLine int, agen
 	soUploadErrorLog := &models.SoUploadErrorLog{}
 	soUploadErrorLog.SoUploadErrorLogsMap(errorLine, soUploadHistoryId, requestId, bulkCode, errors, now)
 	rowData := &models.RowDataSoUploadErrorLog{}
-	rowData.RowDataSoUploadErrorLogMap(item)
+	rowData.RowDataSoUploadErrorLogMap(item, agentName)
 	soUploadErrorLog.RowData = *rowData
 
 	soUploadErrorLogResultChan := make(chan *models.SoUploadErrorLogChan)
