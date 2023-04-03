@@ -491,7 +491,7 @@ func (c *uploadSOFileConsumerHandler) createSoUploadErrorLog(errorLine int, agen
 	soUploadErrorLog := &models.SoUploadErrorLog{}
 	soUploadErrorLog.SoUploadErrorLogsMap(errorLine, soUploadHistoryId, requestId, bulkCode, errors, now)
 	rowData := &models.RowDataSoUploadErrorLog{}
-	rowData.RowDataSoUploadErrorLogMap(item)
+	rowData.RowDataSoUploadErrorLogMap(item, agentName)
 	soUploadErrorLog.RowData = *rowData
 
 	soUploadErrorLogResultChan := make(chan *models.SoUploadErrorLogChan)

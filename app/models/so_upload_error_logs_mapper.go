@@ -17,13 +17,14 @@ func (result *SoUploadErrorLog) SoUploadErrorLogsMap(line int, soUploadHistoryId
 	result.UpdatedAt = now
 }
 
-func (result *RowDataSoUploadErrorLog) RowDataSoUploadErrorLogMap(item map[string]string) {
+func (result *RowDataSoUploadErrorLog) RowDataSoUploadErrorLogMap(item map[string]string, agentName string) {
 	namaToko := item["NamaToko"]
 	namaSalesman := item["NamaSalesman"]
 	namaMerk := item["NamaMerk"]
 	namaAlamat := item["NamaAlamat"]
 
 	result.AgentId = item["IDDistributor"]
+	result.AgentName = &agentName
 	result.StoreCode = item["KodeToko"]
 	result.StoreName = &namaToko
 	result.SalesId = item["IDSalesman"]
