@@ -84,8 +84,8 @@ func (c *salesOrderController) GetByID(ctx *gin.Context) {
 	var resultErrorLog *baseModel.ErrorLog
 	var id int
 
-	ctx.Set("full_path", ctx.FullPath())
-	ctx.Set("method", ctx.Request.Method)
+	// ctx.Set("full_path", ctx.FullPath())
+	// ctx.Set("method", ctx.Request.Method)
 
 	ids := ctx.Param("so-id")
 	id, err := strconv.Atoi(ids)
