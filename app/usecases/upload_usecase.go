@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"order-service/app/models"
@@ -320,7 +321,9 @@ func (u *uploadUseCase) RetryUploadDO(sjUploadHistoryId string, ctx context.Cont
 	getSoUploadHistoriesResultChan := make(chan *models.DoUploadHistoryChan)
 	go u.doUploadHistoriesRepository.GetByID(sjUploadHistoryId, false, ctx, getSoUploadHistoriesResultChan)
 	getSoUploadHistoriesResult := <-getSoUploadHistoriesResultChan
-
+	a, _ := json.Marshal(getSoUploadHistoriesResult.ErrorLog)
+	fmt.Println("Yang ini errornya", string(a))
+	fmt.Println("Yang ini statusnya", getSoUploadHistoriesResult.ErrorLog.StatusCode)
 	if getSoUploadHistoriesResult.Error != nil {
 		errorLogData := helper.WriteLog(getSoUploadHistoriesResult.Error, getSoUploadHistoriesResult.ErrorLog.StatusCode, nil)
 		return errorLogData
