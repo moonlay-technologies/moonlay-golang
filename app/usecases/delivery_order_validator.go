@@ -235,9 +235,10 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderByIDValidator(id int, insert
 			result := &baseModel.Response{
 				Error: helper.NewWriteLog(baseModel.ErrorLog{
 					Message:       err.Error(),
-					SystemMessage: err,
+					SystemMessage: err.Error(),
 					StatusCode:    422,
 				}),
+				StatusCode: 422,
 			}
 			ctx.JSON(result.StatusCode, result)
 			return err
@@ -308,9 +309,10 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByDoIDValidator(id int
 			result := &baseModel.Response{
 				Error: helper.NewWriteLog(baseModel.ErrorLog{
 					Message:       err.Error(),
-					SystemMessage: err,
+					SystemMessage: err.Error(),
 					StatusCode:    422,
 				}),
+				StatusCode: 422,
 			}
 			ctx.JSON(result.StatusCode, result)
 			return err
@@ -394,9 +396,10 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByIDValidator(detailId
 		result := &baseModel.Response{
 			Error: helper.NewWriteLog(baseModel.ErrorLog{
 				Message:       err.Error(),
-				SystemMessage: err,
+				SystemMessage: err.Error(),
 				StatusCode:    422,
 			}),
+			StatusCode: 422,
 		}
 		ctx.JSON(result.StatusCode, result)
 		return err
