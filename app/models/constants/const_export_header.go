@@ -159,12 +159,10 @@ func SALES_ORDER_DETAIL_EXPORT_HEADER() []string {
 		"DOQty",
 		"DOAmount",
 		"SOItemStatus",
-		"InternalNotes",
 		"AlasanCancel",
 		"CreatedDate",
 		"LastUpdate",
 		"UserIDCreated",
 		"UserIDModified",
-		"OrderNotes",
 		"InternalNotes"}
 }

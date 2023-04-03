@@ -333,6 +333,21 @@ func InitExportSalesOrderConsumer(kafkaClient kafkadbo.KafkaClientInterface, mon
 	return handler
 }
 
+func InitExportSalesOrderDetailConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodbClient mongodb.MongoDBInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, database dbresolver.DB, redisdb redisdb.RedisInterface, ctx context.Context, args []interface{}) UpdateSalesOrderConsumerHandlerInterface {
+	salesOrderRepository := repositories.InitSalesOrderRepository(database, redisdb)
+	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(database, redisdb)
+	orderStatusRepository := repositories.InitOrderStatusRepository(database, redisdb)
+	productRepository := repositories.InitProductRepository(database, redisdb)
+	uomRepository := repositories.InitUomRepository(database, redisdb)
+	categoryRepository := repositories.InitCategoryRepository(database, redisdb)
+	uploadRepository := repositories.InitUploadRepository(database)
+	salesOrderOpenSearchRepository := openSearchRepo.InitSalesOrderOpenSearchRepository(opensearchClient)
+	salesOrderDetailOpenSearchRepository := openSearchRepo.InitSalesOrderDetailOpenSearchRepository(opensearchClient)
+	salesOrderOpenSearchUseCase := usecases.InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, productRepository, uomRepository, salesOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, categoryRepository, uploadRepository)
+	handler := InitExportSalesOrderDetailConsumerHandlerInterface(kafkaClient, salesOrderOpenSearchUseCase, database, ctx, args)
+	return handler
+}
+
 func InitUploadDOFileConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodbClient mongodb.MongoDBInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, database dbresolver.DB, redisdb redisdb.RedisInterface, ctx context.Context, args []interface{}) UploadSOSJFileConsumerHandlerInterface {
 	orderSourceRepository := repositories.InitOrderSourceRepository(database, redisdb)
 	requestValidationRepository := repositories.InitRequestValidationRepository(database)
