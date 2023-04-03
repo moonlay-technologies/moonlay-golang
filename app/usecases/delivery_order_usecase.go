@@ -2211,6 +2211,8 @@ func (u *deliveryOrderUseCase) RetrySyncToKafka(logId string) (*models.DORetryPr
 		DeliveryOrderLogEventId: logId,
 		Message:                 "on progres",
 	}
+	a, _ := json.Marshal(result)
+	fmt.Println("retry kafka", string(a))
 	return &result, nil
 
 }
