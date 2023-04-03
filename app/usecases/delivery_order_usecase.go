@@ -516,7 +516,7 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 				balanceQty := x.Qty - v.Qty
 				v.Qty = x.Qty
 				orderStatusID := 19
-				if v.Qty > 0 {
+				if v.Qty == x.Qty {
 					orderStatusID = 18
 				}
 				getOrderStatusResultChan := make(chan *models.OrderStatusChan)
@@ -1042,7 +1042,7 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 				balanceQty := x.Qty - v.Qty
 				v.Qty = x.Qty
 				orderStatusID := 19
-				if v.Qty > 0 {
+				if v.Qty == x.Qty {
 					orderStatusID = 18
 				}
 				getOrderStatusResultChan := make(chan *models.OrderStatusChan)
