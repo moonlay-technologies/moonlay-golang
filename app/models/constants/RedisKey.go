@@ -6,6 +6,7 @@ const (
 	SALES_ORDER_DETAIL                     = "sales-order-detail"
 	SALES_ORDER_DETAIL_BY_SOID_SKU_UOMCODE = "sales-order-detail-by-soid-sku-uomcode"
 	SALES_ORDER_BY_CODE                    = "sales-order-by-code"
+	SALES_ORDER_BY_SO_REF_CODE             = "sales-order-by-so-ref-code"
 	SALES_ORDER_BY_AGENT_REF_CODE          = "sales-order-by-agent-ref-code"
 
 	DELIVERY_ORDER                             = "delivery-order"

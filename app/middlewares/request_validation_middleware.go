@@ -407,7 +407,7 @@ func (u *requestValidationMiddleware) UploadMandatoryValidation(request []*model
 
 	for _, value := range request {
 		if len(value.Value) < 1 {
-			error := fmt.Sprintf("Data %s tidak boleh kosong", value.Field)
+			error := fmt.Sprintf("%s Tidak Boleh Kosong. Silahkan isi %s yang sesuai.", value.Field, value.Field)
 			errors = append(errors, error)
 		}
 	}
