@@ -776,7 +776,7 @@ func (c *salesOrderController) DeleteDetailByID(ctx *gin.Context) {
 	}
 	mustActiveField := []*models.MustActiveRequest{
 		{
-			Table:    "sales_orders",
+			Table:    "sales_order_details",
 			ReqField: "id",
 			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", id),
 		},
@@ -864,7 +864,7 @@ func (c *salesOrderController) DeleteDetailBySOID(ctx *gin.Context) {
 	}
 	mustActiveField := []*models.MustActiveRequest{
 		{
-			Table:    "sales_orders",
+			Table:    "sales_order_details",
 			ReqField: "id",
 			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", id),
 		},
