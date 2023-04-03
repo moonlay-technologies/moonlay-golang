@@ -1,30 +1,38 @@
 package repositories
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"order-service/app/models"
+	"order-service/app/models/constants"
 	"order-service/global/utils/helper"
+	"os"
 	"strconv"
 
 	"github.com/bxcodec/dbresolver"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 type UploadRepositoryInterface interface {
 	ReadFile(url string) ([]byte, error)
 	GetSosjRowData(agentId, storeCode, brandId, productSku, warehouseId, salesmanId, addressId string, resultChan chan *models.RowDataSosjUploadErrorLogChan)
+	UploadFile(data *bytes.Buffer, filePath string, fileName string, fileType string) error
 }
 
 type uploadRepository struct {
-	requestValidationRepository RequestValidationRepositoryInterface
-	db                          dbresolver.DB
+	db dbresolver.DB
 }
 
-func InitUploadRepository(requestValidationRepository RequestValidationRepositoryInterface, db dbresolver.DB) UploadRepositoryInterface {
+func InitUploadRepository(db dbresolver.DB) UploadRepositoryInterface {
 	return &uploadRepository{
-		requestValidationRepository: requestValidationRepository,
-		db:                          db,
+		db: db,
 	}
 }
 
@@ -70,4 +78,31 @@ func (r *uploadRepository) GetSosjRowData(agentId, storeCode, brandId, productSk
 		resultChan <- response
 		return
 	}
+}
+
+func (r *uploadRepository) UploadFile(data *bytes.Buffer, filePath string, fileName string, fileType string) error {
+
+	AccessKeyID := os.Getenv("S3_ACCESS_KEY_ID")
+	SecretAccessKey := os.Getenv("S3_SECRET_ACCESS_KEY")
+	session, err := session.NewSession(&aws.Config{
+		Region: aws.String("ap-southeast-1"),
+		Credentials: credentials.NewStaticCredentials(
+			AccessKeyID,
+			SecretAccessKey,
+			"",
+		)})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = s3.New(session).PutObject(&s3.PutObjectInput{
+		Bucket:             aws.String(constants.S3_EXPORT_BUCKET),
+		Key:                aws.String(fmt.Sprintf("%s/%s.%s", filePath, fileName, fileType)),
+		ACL:                aws.String(constants.S3_EXPORT_ACL),
+		Body:               bytes.NewReader(data.Bytes()),
+		ContentLength:      aws.Int64(int64(len(data.Bytes()))),
+		ContentType:        aws.String("csv"),
+		ContentDisposition: aws.String(constants.S3_EXPORT_CONTENT_DISPOSISTION),
+	})
+	return err
 }

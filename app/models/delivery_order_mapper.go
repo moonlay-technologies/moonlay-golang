@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"strconv"
 	"time"
 )
 
@@ -344,6 +345,55 @@ func (deliveryOrderJourney *DeliveryOrderJourneysResponse) DeliveryOrderJourneyR
 	return
 }
 
+func (d *DeliveryOrderRequest) DeliveryOrderExportMap(r *DeliveryOrderExportRequest) {
+	d.ID = r.ID
+	d.PerPage = 0
+	d.Page = 0
+	d.SortField = r.SortField
+	d.SortValue = r.SortValue
+	d.GlobalSearchValue = r.GlobalSearchValue
+	d.Keyword = ""
+	d.AgentID = r.AgentID
+	d.AgentName = ""
+	d.StoreID = r.StoreID
+	d.StoreName = ""
+	d.BrandID = r.BrandID
+	d.BrandName = ""
+	d.ProductID = r.ProductID
+	d.OrderSourceID = r.OrderSourceID
+	d.OrderStatusID = r.OrderStatusID
+	d.SalesOrderID = r.SalesOrderID
+	d.SoCode = ""
+	d.WarehouseID = r.WarehouseID
+	d.WarehouseCode = r.WarehouseCode
+	d.DoCode = r.DoCode
+	d.DoDate = r.DoDate
+	d.DoRefCode = r.DoRefCode
+	d.DoRefDate = r.DoRefDate
+	d.DoRefferalCode = ""
+	d.TotalAmount = 0
+	d.TotalTonase = 0
+	d.ProductSKU = ""
+	d.ProductCode = ""
+	d.ProductName = ""
+	d.CategoryID = r.CategoryID
+	d.SalesmanID = r.SalesmanID
+	d.ProvinceID = r.ProvinceID
+	d.CityID = r.CityID
+	d.DistrictID = r.DistrictID
+	d.VillageID = r.VillageID
+	d.StoreProvinceID = r.StoreProvinceID
+	d.StoreCityID = r.StoreCityID
+	d.StoreDistrictID = r.StoreDistrictID
+	d.StoreVillageID = r.StoreVillageID
+	d.StoreCode = r.StoreCode
+	d.StartCreatedAt = r.StartCreatedAt
+	d.EndCreatedAt = r.EndCreatedAt
+	d.UpdatedAt = r.UpdatedAt
+	d.StartDoDate = r.StartDoDate
+	d.EndDoDate = r.EndDoDate
+}
+
 func (deliveryOrderEventLog *DeliveryOrderEventLogResponse) DeliveryOrderEventLogResponseMap(request *GetDeliveryOrderLog, status string) {
 	deliveryOrderEventLog.ID = request.ID
 	deliveryOrderEventLog.RequestID = request.RequestID
@@ -379,5 +429,82 @@ func (doDetailEventLogResponse *DODetailEventLogResponse) DoDetailEventLogRespon
 	doDetailEventLogResponse.ProductName = request.ProductName
 	doDetailEventLogResponse.DeliveryQty = NullInt64{sql.NullInt64{Int64: int64(request.Qty), Valid: true}}
 	doDetailEventLogResponse.ProductUnit = request.Product.UnitMeasurementSmall
+	return
+}
+
+func (data *DeliveryOrder) MapToCsvRow() []string {
+	deliveryOrderCsv := DeliveryOrderCsvResponse{}
+	deliveryOrderCsv.DoDetailMap(data)
+	return []string{strconv.Itoa(deliveryOrderCsv.DoStatus),
+		deliveryOrderCsv.DoDate,
+		deliveryOrderCsv.SjNo.String,
+		deliveryOrderCsv.DoNo,
+		deliveryOrderCsv.OrderNo,
+		deliveryOrderCsv.SoDate,
+		deliveryOrderCsv.SoNo,
+		strconv.Itoa(deliveryOrderCsv.SoSource),
+		strconv.Itoa(deliveryOrderCsv.AgentID),
+		deliveryOrderCsv.AgentName,
+		strconv.Itoa(deliveryOrderCsv.GudangID),
+		deliveryOrderCsv.GudangName,
+		strconv.Itoa(deliveryOrderCsv.BrandID),
+		deliveryOrderCsv.BrandName,
+		strconv.Itoa(int(deliveryOrderCsv.KodeSalesman.Int64)),
+		deliveryOrderCsv.Salesman.String,
+		deliveryOrderCsv.KategoryToko.String,
+		deliveryOrderCsv.KodeTokoDbo.String,
+		deliveryOrderCsv.KodeToko.String,
+		deliveryOrderCsv.NamaToko.String,
+		strconv.Itoa(deliveryOrderCsv.KodeKecamatan),
+		deliveryOrderCsv.Kecamatan.String,
+		strconv.Itoa(deliveryOrderCsv.KodeCity),
+		deliveryOrderCsv.City.String,
+		strconv.Itoa(deliveryOrderCsv.KodeProvince),
+		deliveryOrderCsv.Province.String,
+		strconv.FormatFloat(deliveryOrderCsv.DoAmount, 'f', 6, 64),
+		deliveryOrderCsv.NamaSupir.String,
+		deliveryOrderCsv.PlatNo.String,
+		deliveryOrderCsv.Catatan.String,
+		deliveryOrderCsv.CreatedDate.String(),
+		deliveryOrderCsv.UpdatedDate.String(),
+		strconv.Itoa(deliveryOrderCsv.UserIDCreated),
+		strconv.Itoa(deliveryOrderCsv.UserIDModified)}
+}
+
+func (d *DeliveryOrderCsvResponse) DoDetailMap(r *DeliveryOrder) {
+	d.DoStatus = r.OrderStatusID
+	d.DoDate = r.DoDate
+	d.SjNo = r.DoRefCode
+	d.DoNo = r.DoCode
+	d.OrderNo = r.SalesOrder.SoCode
+	d.SoDate = r.SalesOrder.SoDate
+	d.SoNo = r.SalesOrder.SoCode
+	d.SoSource = r.SalesOrder.OrderSourceID
+	d.AgentID = r.AgentID
+	d.AgentName = r.AgentName
+	d.GudangID = r.WarehouseID
+	d.GudangName = r.WarehouseName
+	d.BrandID = r.SalesOrder.BrandID
+	d.BrandName = r.SalesOrder.BrandName
+	d.KodeSalesman = r.SalesOrder.SalesmanID
+	d.Salesman = r.SalesOrder.SalesmanName
+	d.KategoryToko = r.Store.StoreCategory
+	d.KodeTokoDbo = r.SalesOrder.StoreCode
+	d.KodeToko = r.Store.AliasCode
+	d.NamaToko = r.SalesOrder.StoreName
+	d.KodeKecamatan = r.SalesOrder.StoreDistrictID
+	d.Kecamatan = r.SalesOrder.StoreDistrictName
+	d.KodeCity = r.SalesOrder.StoreCityID
+	d.City = r.SalesOrder.StoreCityName
+	d.KodeProvince = r.SalesOrder.StoreProvinceID
+	d.Province = r.SalesOrder.StoreProvinceName
+	d.DoAmount = 0
+	d.NamaSupir = r.DriverName
+	d.PlatNo = r.PlatNumber
+	d.Catatan = r.Note
+	d.CreatedDate = r.CreatedAt
+	d.UpdatedDate = r.UpdatedAt
+	d.UserIDCreated = r.CreatedBy
+	d.UserIDModified = r.LatestUpdatedBy
 	return
 }

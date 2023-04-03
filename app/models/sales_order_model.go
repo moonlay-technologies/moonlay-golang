@@ -285,3 +285,70 @@ type SalesOrdersOpenSearchResponse struct {
 	SalesOrders []*SalesOrderOpenSearchResponse `json:"sales_orders,omitempty"`
 	Total       int64                           `json:"total,omitempty"`
 }
+type SalesOrderExportRequest struct {
+	ID                int    `json:"id,omitempty"`
+	SortField         string `json:"sort_field,omitempty" bson:"sort_field,omitempty"`
+	SortValue         string `json:"sort_value,omitempty" bson:"sort_value,omitempty"`
+	GlobalSearchValue string `json:"global_search_value,omitempty" bson:"global_search_value,omitempty"`
+	FileType          string `json:"file_type,omitempty"`
+	FileName          string `json:"file_name,omitempty"`
+	AgentID           int    `json:"agent_id,omitempty"`
+	StoreID           int    `json:"store_id,omitempty"`
+	BrandID           int    `json:"brand_id,omitempty"`
+	OrderSourceID     int    `json:"order_source_id,omitempty"`
+	OrderStatusID     int    `json:"order_status_id,omitempty"`
+	StartSoDate       string `json:"start_so_date,omitempty"`
+	EndSoDate         string `json:"end_so_date,omitempty"`
+	SoRefCode         string `json:"so_ref_code,omitempty" bson:"so_ref_code,omitempty"`
+	ProductID         int    `json:"product_id,omitempty"`
+	CategoryID        int    `json:"category_id,omitempty"`
+	SalesmanID        int    `json:"salesman_id,omitempty"`
+	ProvinceID        int    `json:"province_id,omitempty"`
+	CityID            int    `json:"city_id,omitempty"`
+	DistrictID        int    `json:"district_id,omitempty"`
+	VillageID         int    `json:"village_id,omitempty"`
+	SoDate            string `json:"so_date,omitempty"`
+	StoreProvinceID   int    `json:"store_province_id,omitempty"`
+	StoreCityID       int    `json:"store_city_id,omitempty"`
+	StoreDistrictID   int    `json:"store_district_id,omitempty"`
+	StoreVillageID    int    `json:"store_village_id,omitempty"`
+	StartCreatedAt    string `json:"start_created_at,omitempty"`
+	EndCreatedAt      string `json:"end_created_at,omitempty"`
+	UpdatedAt         string `json:"updated_at,omitempty"`
+}
+
+type SalesOrderCsvResponse struct {
+	SOStatus          string
+	SOSource          string
+	KodeReferralOrder string
+	OrderNo           string
+	SONO              string
+	SODate            string
+	DistributorID     string
+	DistributorName   string
+	KodeSalesman      string
+	Salesman          string
+	TokoType          string
+	KodeTokoDBO       string
+	KodeToko          string
+	TokoName          string
+	KodeKecamatan     string
+	Kecamatan         string
+	KodeCity          string
+	City              string
+	KodeProvince      string
+	Province          string
+	BrandID           string
+	BrandName         string
+	SOAmount          string
+	DOAmount          string
+	OrderNotes        string
+	InternalNotes     string
+	AlasanCancel      string
+	AlasanReject      string
+	SORefDate         string
+	CreatedDate       string
+	LastUpdate        string
+	UserIDCreated     string
+	UserIDModified    string
+}

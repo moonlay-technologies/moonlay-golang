@@ -654,3 +654,76 @@ func (salesOrder *SalesOrder) SalesOrderUploadSOMap(request *UploadSOField, now 
 	salesOrder.StartDateSyncToEs = &now
 	salesOrder.StartCreatedDate = &now
 }
+
+func (d *SalesOrderRequest) SalesOrderExportMap(r *SalesOrderExportRequest) {
+	d.ID = r.ID
+	d.PerPage = 0
+	d.Page = 0
+	d.SortField = ""
+	d.SortValue = ""
+	d.GlobalSearchValue = r.GlobalSearchValue
+	d.AgentID = r.AgentID
+	d.StoreID = r.StoreID
+	d.BrandID = r.BrandID
+	d.OrderSourceID = r.OrderSourceID
+	d.OrderStatusID = r.OrderStatusID
+	d.StartSoDate = r.StartSoDate
+	d.EndSoDate = r.EndSoDate
+	d.ProductID = r.ProductID
+	d.CategoryID = r.CategoryID
+	d.SalesmanID = r.SalesmanID
+	d.ProvinceID = r.ProvinceID
+	d.CityID = r.CityID
+	d.DistrictID = r.DistrictID
+	d.VillageID = r.VillageID
+	d.StartCreatedAt = r.StartCreatedAt
+	d.EndCreatedAt = r.EndCreatedAt
+	d.Keyword = ""
+	d.SoDate = r.SoDate
+	d.StoreProvinceID = r.StoreProvinceID
+	d.StoreCityID = r.StoreCityID
+	d.StoreDistrictID = r.StoreDistrictID
+	d.StoreVillageID = r.StoreDistrictID
+}
+
+func (d *SalesOrderCsvResponse) DoDetailMap(r *SalesOrder) {
+
+}
+
+func (data *SalesOrder) MapToCsvRow() []string {
+	return []string{
+		data.OrderStatusName,
+		data.OrderSourceName,
+		data.ReferralCode.String,
+		data.SoRefCode.String,
+		data.SoCode,
+		data.SoDate,
+		strconv.Itoa(data.AgentID),
+		data.AgentName.String,
+		strconv.Itoa(int(data.SalesmanID.Int64)),
+		data.SalesmanName.String,
+		strconv.Itoa(data.StoreID),
+		data.Store.AliasCode.String,
+		data.StoreCode.String,
+		data.StoreName.String,
+		data.Store.DistrictID.String,
+		data.StoreDistrictName.String,
+		data.Store.CityID.String,
+		data.StoreCityName.String,
+		strconv.Itoa(data.StoreProvinceID),
+		data.StoreProvinceName.String,
+		strconv.Itoa(data.BrandID),
+		data.BrandName,
+		"soAmount",
+		"doAmount",
+		data.Note.String,
+		data.InternalComment.String,
+		"alasanCancel",
+		"alasanReject",
+		data.SoRefDate.String,
+		data.CreatedAt.String(),
+		data.UpdatedAt.String(),
+		strconv.Itoa(data.CreatedBy),
+		strconv.Itoa(data.LatestUpdatedBy),
+	}
+}

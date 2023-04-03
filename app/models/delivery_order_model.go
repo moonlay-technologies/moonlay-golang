@@ -183,6 +183,44 @@ type DeliveryOrderRequest struct {
 	EndDoDate         string  `json:"end_do_date,omitempty"`
 }
 
+type DeliveryOrderExportRequest struct {
+	ID                int    `json:"id,omitempty"`
+	SortField         string `json:"sort_field,omitempty" bson:"sort_field,omitempty"`
+	SortValue         string `json:"sort_value,omitempty" bson:"sort_value,omitempty"`
+	GlobalSearchValue string `json:"global_search_value,omitempty" bson:"global_search_value,omitempty"`
+	FileType          string `json:"file_type,omitempty"`
+	FileName          string `json:"file_name,omitempty"`
+	AgentID           int    `json:"agentID,omitempty"`
+	StoreID           int    `json:"storeID,omitempty"`
+	BrandID           int    `json:"brand_id,omitempty"`
+	ProductID         int    `json:"product_id,omitempty"`
+	OrderSourceID     int    `json:"order_source_id,omitempty"`
+	OrderStatusID     int    `json:"order_status_id,omitempty"`
+	SalesOrderID      int    `json:"sales_order_id,omitempty"`
+	WarehouseID       int    `json:"warehouse_id,omitempty"`
+	WarehouseCode     string `json:"warehouse_code,omitempty"`
+	DoCode            string `json:"do_code,omitempty"`
+	DoDate            string `json:"do_date,omitempty"`
+	DoRefCode         string `json:"do_ref_code,omitempty"`
+	DoRefDate         string `json:"do_ref_date,omitempty"`
+	CategoryID        int    `json:"category_id,omitempty"`
+	SalesmanID        int    `json:"salesman_id,omitempty"`
+	ProvinceID        int    `json:"province_id,omitempty"`
+	CityID            int    `json:"city_id,omitempty"`
+	DistrictID        int    `json:"district_id,omitempty"`
+	VillageID         int    `json:"village_id,omitempty"`
+	StoreProvinceID   int    `json:"store_province_id,omitempty"`
+	StoreCityID       int    `json:"store_city_id,omitempty"`
+	StoreDistrictID   int    `json:"store_district_id,omitempty"`
+	StoreVillageID    int    `json:"store_village_id,omitempty"`
+	StoreCode         string `json:"store_code,omitempty"`
+	StartCreatedAt    string `json:"start_created_at,omitempty"`
+	EndCreatedAt      string `json:"end_created_at,omitempty"`
+	UpdatedAt         string `json:"updated_at,omitempty"`
+	StartDoDate       string `json:"start_do_date,omitempty"`
+	EndDoDate         string `json:"end_do_date,omitempty"`
+}
+
 type DeliveryOrders struct {
 	DeliveryOrders []*DeliveryOrder `json:"delivery_orders,omitempty"`
 	Total          int64            `json:"total,omitempty"`
@@ -261,4 +299,41 @@ type DeliveryOrderOpenSearchResponses struct {
 type DeliveryOrdersOpenSearchResponses struct {
 	DeliveryOrders []*DeliveryOrderOpenSearchResponses `json:"delivery_orders,omitempty"`
 	Total          int64                               `json:"total,omitempty"`
+}
+
+type DeliveryOrderCsvResponse struct {
+	DoStatus       int        `json:"do_status,omitempty" bson:"so_status,omitempty"`
+	DoDate         string     `json:"do_date,omitempty" bson:"do_date,omitempty"`
+	SjNo           NullString `json:"sj_no,omitempty" bson:"sj_no,omitempty"`
+	DoNo           string     `json:"do_no,omitempty" bson:"do_no,omitempty"`
+	OrderNo        string     `json:"order_no,omitempty" bson:"order_no,omitempty"`
+	SoDate         string     `json:"so_date,omitempty" bson:"so_date,omitempty"`
+	SoNo           string     `json:"so_no,omitempty" bson:"so_no,omitempty"`
+	SoSource       int        `json:"so_source,omitempty" bson:"so_source,omitempty"`
+	AgentID        int        `json:"agent_id,omitempty" bson:"agent_id,omitempty"`
+	AgentName      string     `json:"agent_name,omitempty" bson:"agent_name,omitempty"`
+	GudangID       int        `json:"gudang_id,omitempty" bson:"gudang_id"`
+	GudangName     string     `json:"gudang_name,omitempty" bson:"gudang_name,omitempty"`
+	BrandID        int        `json:"brand_id,omitempty" bson:"brand_id,omitempty"`
+	BrandName      string     `json:"brand_name,omitempty" bson:"brand_name,omitempty"`
+	KodeSalesman   NullInt64  `json:"kode_salesman,omitempty" bson:"kode_salesman,omitempty"`
+	Salesman       NullString `json:"salesman,omitempty" bson:"salesman,omitempty"`
+	KategoryToko   NullString `json:"kategory_toko,omitempty" bson:"kategory_toko,omitempty"`
+	KodeTokoDbo    NullString `json:"kode_toko_dbo,omitempty" bson:"kode_toko_dbo,omitempty"`
+	KodeToko       NullString `json:"kode_toko,omitempty" bson:"kode_toko,omitempty"`
+	NamaToko       NullString `json:"nama_toko,omitempty" bson:"nama_toko,omitempty"`
+	KodeKecamatan  int        `json:"kode_kecamatan,omitempty" bson:"kode_kecamatan,omitempty"`
+	Kecamatan      NullString `json:"kecamatan,omitempty" bson:"kecamatan,omitempty"`
+	KodeCity       int        `json:"kode_city,omitempty" bson:"kode_city,omitempty"`
+	City           NullString `json:"city,omitempty" bson:"city,omitempty"`
+	KodeProvince   int        `json:"kode_province,omitempty" bson:"kode_province,omitempty"`
+	Province       NullString `json:"province,omitempty" bson:"province,omitempty"`
+	DoAmount       float64    `json:"do_amount,omitempty" bson:"do_amount,omitempty"`
+	NamaSupir      NullString `json:"nama_supir,omitempty" bson:"nama_supir"`
+	PlatNo         NullString `json:"plat_no,omitempty" bson:"plat_no"`
+	Catatan        NullString `json:"catatan,omitempty" bson:"catatan"`
+	CreatedDate    *time.Time `json:"created_date,omitempty" bson:"created_date"`
+	UpdatedDate    *time.Time `json:"updated_date,omitempty" bson:"updated_date"`
+	UserIDCreated  int        `json:"user_id_created,omitempty" bson:"user_id_created"`
+	UserIDModified int        `json:"user_id_modified" bson:"user_id_modified"`
 }

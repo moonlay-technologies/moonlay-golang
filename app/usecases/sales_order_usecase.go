@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/bxcodec/dbresolver"
+	"github.com/google/uuid"
 )
 
 type SalesOrderUseCaseInterface interface {
@@ -46,6 +47,7 @@ type SalesOrderUseCaseInterface interface {
 	DeleteDetailBySOId(id int, sqlTransaction *sql.Tx) *model.ErrorLog
 	DeleteDetailById(id int, sqlTransaction *sql.Tx) *model.ErrorLog
 	RetrySyncToKafka(logId string) (*models.SORetryProcessSyncToKafkaResponse, *model.ErrorLog)
+	Export(request *models.SalesOrderExportRequest, ctx context.Context) (string, *model.ErrorLog)
 }
 
 type salesOrderUseCase struct {
@@ -438,7 +440,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 
 func (u *salesOrderUseCase) Get(request *models.SalesOrderRequest) (*models.SalesOrdersOpenSearchResponse, *baseModel.ErrorLog) {
 	getSalesOrdersResultChan := make(chan *models.SalesOrdersChan)
-	go u.salesOrderOpenSearchRepository.Get(request, getSalesOrdersResultChan)
+	go u.salesOrderOpenSearchRepository.Get(request, false, getSalesOrdersResultChan)
 	getSalesOrdersResult := <-getSalesOrdersResultChan
 
 	if getSalesOrdersResult.Error != nil {
@@ -2158,4 +2160,26 @@ func (u *salesOrderUseCase) DeleteDetailBySOId(id int, sqlTransaction *sql.Tx) *
 	}
 
 	return nil
+}
+
+func (u *salesOrderUseCase) Export(request *models.SalesOrderExportRequest, ctx context.Context) (string, *model.ErrorLog) {
+	rand, err := helper.Generate(`[A-Za-z]{12}`)
+	fileHour := time.Now().Format("2January2006-15:04:05")
+	if ctx == nil {
+		err = fmt.Errorf("nil context")
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		return "", errorLogData
+	}
+	fileName := fmt.Sprintf("SO-LIST-SUMMARY-%s-%d-%s", fileHour, ctx.Value("user").(*models.UserClaims).UserID, rand)
+	request.FileName = fileName
+	keyKafka := []byte(uuid.New().String())
+	messageKafka, _ := json.Marshal(request)
+	err = u.kafkaClient.WriteToTopic(constants.EXPORT_SALES_ORDER_TOPIC, keyKafka, messageKafka)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		return "", errorLogData
+	}
+
+	return request.FileName, nil
 }

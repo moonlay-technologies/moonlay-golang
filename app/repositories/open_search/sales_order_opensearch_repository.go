@@ -14,7 +14,7 @@ import (
 
 type SalesOrderOpenSearchRepositoryInterface interface {
 	Create(request *models.SalesOrder, result chan *models.SalesOrderChan)
-	Get(request *models.SalesOrderRequest, result chan *models.SalesOrdersChan)
+	Get(request *models.SalesOrderRequest, IsCountOnly bool, result chan *models.SalesOrdersChan)
 	GetByID(request *models.SalesOrderRequest, result chan *models.SalesOrderChan)
 	GetDetailByID(id int, result chan *models.SalesOrderChan)
 	GetBySalesmanID(request *models.SalesOrderRequest, result chan *models.SalesOrdersChan)
@@ -22,7 +22,7 @@ type SalesOrderOpenSearchRepositoryInterface interface {
 	GetByAgentID(request *models.SalesOrderRequest, result chan *models.SalesOrdersChan)
 	GetByOrderStatusID(request *models.SalesOrderRequest, result chan *models.SalesOrdersChan)
 	GetByOrderSourceID(request *models.SalesOrderRequest, result chan *models.SalesOrdersChan)
-	generateSalesOrderQueryOpenSearchResult(openSearchQueryJson []byte, withSalesOrderDetails bool) (*models.SalesOrders, *model.ErrorLog)
+	generateSalesOrderQueryOpenSearchResult(openSearchQueryJson []byte, withSalesOrderDetails bool, isCountOnly bool) (*models.SalesOrders, *model.ErrorLog)
 	generateSalesOrderQueryOpenSearchTermRequest(term_field string, term_value interface{}, request *models.SalesOrderRequest) []byte
 }
 
@@ -56,10 +56,10 @@ func (r *salesOrderOpenSearch) Create(request *models.SalesOrder, resultChan cha
 	return
 }
 
-func (r *salesOrderOpenSearch) Get(request *models.SalesOrderRequest, resultChan chan *models.SalesOrdersChan) {
+func (r *salesOrderOpenSearch) Get(request *models.SalesOrderRequest, IsCountOnly bool, resultChan chan *models.SalesOrdersChan) {
 	response := &models.SalesOrdersChan{}
 	requestQuery := r.generateSalesOrderQueryOpenSearchTermRequest("", "", request)
-	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true)
+	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true, false)
 
 	if err.Err != nil {
 		response.Error = err.Err
@@ -77,7 +77,7 @@ func (r *salesOrderOpenSearch) Get(request *models.SalesOrderRequest, resultChan
 func (r *salesOrderOpenSearch) GetByID(request *models.SalesOrderRequest, resultChan chan *models.SalesOrderChan) {
 	response := &models.SalesOrderChan{}
 	requestQuery := r.generateSalesOrderQueryOpenSearchTermRequest("id", request.ID, request)
-	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true)
+	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true, false)
 
 	if err.Err != nil {
 		response.Error = err.Err
@@ -94,7 +94,7 @@ func (r *salesOrderOpenSearch) GetByID(request *models.SalesOrderRequest, result
 func (r *salesOrderOpenSearch) GetDetailByID(id int, resultChan chan *models.SalesOrderChan) {
 	response := &models.SalesOrderChan{}
 	requestQuery := r.generateSalesOrderQueryOpenSearchTermRequest("sales_order_details.id", id, nil)
-	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true)
+	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true, false)
 
 	if err.Err != nil {
 		response.Error = err.Err
@@ -111,7 +111,7 @@ func (r *salesOrderOpenSearch) GetDetailByID(id int, resultChan chan *models.Sal
 func (r *salesOrderOpenSearch) GetBySalesmanID(request *models.SalesOrderRequest, resultChan chan *models.SalesOrdersChan) {
 	response := &models.SalesOrdersChan{}
 	requestQuery := r.generateSalesOrderQueryOpenSearchTermRequest("user_id", request.SalesmanID, request)
-	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true)
+	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true, false)
 
 	if err.Err != nil {
 		response.Error = err.Err
@@ -128,7 +128,7 @@ func (r *salesOrderOpenSearch) GetBySalesmanID(request *models.SalesOrderRequest
 func (r *salesOrderOpenSearch) GetByStoreID(request *models.SalesOrderRequest, resultChan chan *models.SalesOrdersChan) {
 	response := &models.SalesOrdersChan{}
 	requestQuery := r.generateSalesOrderQueryOpenSearchTermRequest("store_id", request.StoreID, request)
-	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true)
+	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true, false)
 
 	if err.Err != nil {
 		response.Error = err.Err
@@ -145,7 +145,7 @@ func (r *salesOrderOpenSearch) GetByStoreID(request *models.SalesOrderRequest, r
 func (r *salesOrderOpenSearch) GetByAgentID(request *models.SalesOrderRequest, resultChan chan *models.SalesOrdersChan) {
 	response := &models.SalesOrdersChan{}
 	requestQuery := r.generateSalesOrderQueryOpenSearchTermRequest("agent_id", request.AgentID, request)
-	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true)
+	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true, false)
 
 	if err.Err != nil {
 		response.Error = err.Err
@@ -162,7 +162,7 @@ func (r *salesOrderOpenSearch) GetByAgentID(request *models.SalesOrderRequest, r
 func (r *salesOrderOpenSearch) GetByOrderStatusID(request *models.SalesOrderRequest, resultChan chan *models.SalesOrdersChan) {
 	response := &models.SalesOrdersChan{}
 	requestQuery := r.generateSalesOrderQueryOpenSearchTermRequest("order_status_id", request.OrderStatusID, request)
-	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true)
+	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true, false)
 
 	if err.Err != nil {
 		response.Error = err.Err
@@ -179,7 +179,7 @@ func (r *salesOrderOpenSearch) GetByOrderStatusID(request *models.SalesOrderRequ
 func (r *salesOrderOpenSearch) GetByOrderSourceID(request *models.SalesOrderRequest, resultChan chan *models.SalesOrdersChan) {
 	response := &models.SalesOrdersChan{}
 	requestQuery := r.generateSalesOrderQueryOpenSearchTermRequest("order_source_id", request.OrderSourceID, request)
-	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true)
+	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true, false)
 
 	if err.Err != nil {
 		response.Error = err.Err
@@ -417,46 +417,65 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 	return openSearchQueryJson
 }
 
-func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchResult(openSearchQueryJson []byte, withSalesOrderDetails bool) (*models.SalesOrders, *model.ErrorLog) {
-	openSearchQueryResult, err := r.openSearch.Query(constants.SALES_ORDERS_INDEX, openSearchQueryJson)
-
-	if err != nil {
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-		return &models.SalesOrders{}, errorLogData
-	}
-
-	if openSearchQueryResult.Hits.Total.Value == 0 {
-		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
-		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
-		return &models.SalesOrders{}, errorLogData
-	}
-
+func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchResult(openSearchQueryJson []byte, withSalesOrderDetails bool, isCountOnly bool) (*models.SalesOrders, *model.ErrorLog) {
 	salesOrders := []*models.SalesOrder{}
+	var total int64 = 0
 
-	if openSearchQueryResult.Hits.Total.Value > 0 {
-		for _, v := range openSearchQueryResult.Hits.Hits {
-			obj := v.Source.(map[string]interface{})
-			salesOrder := &models.SalesOrder{}
-			jsonStr, err := json.Marshal(v.Source)
-			if err != nil {
-				fmt.Println(err)
+	if isCountOnly {
+		openSearchQueryResult, err := r.openSearch.Count(constants.DELIVERY_ORDERS_INDEX, openSearchQueryJson)
+		if err != nil {
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			return &models.SalesOrders{}, errorLogData
+		}
+
+		if openSearchQueryResult <= 0 {
+			err = helper.NewError("delivery_orders_opensearch data not found")
+			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
+			return &models.SalesOrders{}, errorLogData
+		}
+
+		total = openSearchQueryResult
+	} else {
+		openSearchQueryResult, err := r.openSearch.Query(constants.SALES_ORDERS_INDEX, openSearchQueryJson)
+
+		if err != nil {
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			return &models.SalesOrders{}, errorLogData
+		}
+
+		if openSearchQueryResult.Hits.Total.Value == 0 {
+			err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
+			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
+			return &models.SalesOrders{}, errorLogData
+		}
+
+		total = int64(openSearchQueryResult.Hits.Total.Value)
+
+		if openSearchQueryResult.Hits.Total.Value > 0 {
+			for _, v := range openSearchQueryResult.Hits.Hits {
+				obj := v.Source.(map[string]interface{})
+				salesOrder := &models.SalesOrder{}
+				jsonStr, err := json.Marshal(v.Source)
+				if err != nil {
+					fmt.Println(err)
+				}
+				if err := json.Unmarshal(jsonStr, &salesOrder); err != nil {
+					fmt.Println(err)
+				}
+
+				layout := time.RFC3339
+				createdAt, _ := time.Parse(layout, obj["created_at"].(string))
+				salesOrder.CreatedAt = &createdAt
+				updatedAt, _ := time.Parse(layout, obj["updated_at"].(string))
+				salesOrder.UpdatedAt = &updatedAt
+
+				salesOrders = append(salesOrders, salesOrder)
 			}
-			if err := json.Unmarshal(jsonStr, &salesOrder); err != nil {
-				fmt.Println(err)
-			}
-
-			layout := time.RFC3339
-			createdAt, _ := time.Parse(layout, obj["created_at"].(string))
-			salesOrder.CreatedAt = &createdAt
-			updatedAt, _ := time.Parse(layout, obj["updated_at"].(string))
-			salesOrder.UpdatedAt = &updatedAt
-
-			salesOrders = append(salesOrders, salesOrder)
 		}
 	}
 
 	result := &models.SalesOrders{
-		Total:       int64(openSearchQueryResult.Hits.Total.Value),
+		Total:       total,
 		SalesOrders: salesOrders,
 	}
 

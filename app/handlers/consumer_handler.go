@@ -60,9 +60,13 @@ func MainConsumerHandler(kafkaClient kafkadbo.KafkaClientInterface, mongodbClien
 		break
 	case constants.UPDATE_DELIVERY_ORDER_DETAIL_TOPIC:
 		wg.Add(1)
-		salesOrderDetailConsumer := consumer.InitUpdateDeliveryOrderDetailConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
-		go salesOrderDetailConsumer.ProcessMessage()
+		deliveryOrderDetailConsumer := consumer.InitUpdateDeliveryOrderDetailConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
+		go deliveryOrderDetailConsumer.ProcessMessage()
 		break
+	case constants.EXPORT_SALES_ORDER_TOPIC:
+		wg.Add(1)
+		salesOrderConsumer := consumer.InitExportSalesOrderConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
+		go salesOrderConsumer.ProcessMessage()
 	case constants.UPLOAD_SO_FILE_TOPIC:
 		wg.Add(1)
 		uploadSOFileConsumer := consumer.InitUploadSOFileConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
@@ -84,8 +88,17 @@ func MainConsumerHandler(kafkaClient kafkadbo.KafkaClientInterface, mongodbClien
 		go uploadSOSJItemConsumer.ProcessMessage()
 	case constants.DELETE_DELIVERY_ORDER_DETAIL_TOPIC:
 		wg.Add(1)
-		salesOrderDetailConsumer := consumer.InitDeleteDeliveryOrderDetailConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
-		go salesOrderDetailConsumer.ProcessMessage()
+		deliveryOrderDetailConsumer := consumer.InitDeleteDeliveryOrderDetailConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
+		go deliveryOrderDetailConsumer.ProcessMessage()
+		break
+	case constants.EXPORT_DELIVERY_ORDER_TOPIC:
+		wg.Add(1)
+		deliveryOrderConsumer := consumer.InitExportDeliveryOrderConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
+		go deliveryOrderConsumer.ProcessMessage()
+	case constants.EXPORT_DELIVERY_ORDER_DETAIL_TOPIC:
+		wg.Add(1)
+		deliveryOrderConsumer := consumer.InitExportDeliveryOrderDetailConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
+		go deliveryOrderConsumer.ProcessMessage()
 	case constants.UPLOAD_DO_FILE_TOPIC:
 		wg.Add(1)
 		uploadDOFileConsumer := consumer.InitUploadDOFileConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)

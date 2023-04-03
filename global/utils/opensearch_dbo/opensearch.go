@@ -28,6 +28,7 @@ type OpenSearchClientInterface interface {
 	CreateDocument(index string, documentID string, document []byte) (string, error)
 	GetByID(index string, documentID string) (*model.OpenSearchGetResponse, error)
 	Query(index string, query []byte) (*model.OpenSearchQueryResponse, error)
+	Count(index string, query []byte) (int64, error)
 	GetConnection() *opensearch.Client
 }
 
@@ -112,7 +113,7 @@ func (os *openSearchClient) GetByID(index string, documentID string) (*model.Ope
 	response, err := req.Do(os.ctx, os.client)
 
 	if err != nil {
-		fmt.Println("Error Insert Index Open Search : ", err.Error())
+		fmt.Println("Error Get Index Open Search : ", err.Error())
 		return &model.OpenSearchGetResponse{}, err
 	}
 
@@ -147,7 +148,7 @@ func (os *openSearchClient) Query(index string, query []byte) (*model.OpenSearch
 	response, err := req.Do(os.ctx, os.client)
 
 	if err != nil {
-		fmt.Println("Error Insert Index Open Search : ", err.Error())
+		fmt.Println("Error Query Index Open Search : ", err.Error())
 		return &model.OpenSearchQueryResponse{}, err
 	}
 
@@ -171,6 +172,41 @@ func (os *openSearchClient) Query(index string, query []byte) (*model.OpenSearch
 	}
 
 	return searchResponse, nil
+}
+
+func (os *openSearchClient) Count(index string, query []byte) (int64, error) {
+	req := opensearchapi.CountRequest{
+		Index: []string{index},
+		Body:  bytes.NewReader(query),
+	}
+
+	response, err := req.Do(os.ctx, os.client)
+
+	if err != nil {
+		fmt.Println("Error Count Index Open Search : ", err.Error())
+		return 0, err
+	}
+
+	if response.IsError() == true {
+		errStr := fmt.Sprintf("Error failed Count Document to open_search")
+		err = helper.NewError(errStr)
+		fmt.Println(errStr)
+		fmt.Println(response.Status())
+		return 0, err
+	}
+
+	searchResponse := &model.OpenSearchCountResponse{}
+
+	err = json.NewDecoder(response.Body).Decode(searchResponse)
+
+	if err != nil {
+		errStr := fmt.Sprintf("Error decode Query document result")
+		fmt.Println(errStr)
+		fmt.Println(err)
+		return 0, err
+	}
+
+	return searchResponse.Count, nil
 }
 
 func (os *openSearchClient) GetConnection() *opensearch.Client {

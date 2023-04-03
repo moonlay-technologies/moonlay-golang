@@ -327,3 +327,34 @@ type DeliveryOrderDetailLogData struct {
 	WarehouseID   int        `json:"warehouse_id,omitempty" bson:"warehouse_id"`
 	WarehouseName string     `json:"warehouse_name,omitempty" bson:"warehouse_name"`
 }
+
+type DeliveryOrderDetailExportRequest struct {
+	ID                int    `json:"id,omitempty"`
+	DoDetailID        int    `json:"do_detail_id,omitempty"`
+	SortField         string `json:"sort_field,omitempty" bson:"sort_field,omitempty"`
+	SortValue         string `json:"sort_value,omitempty" bson:"sort_value,omitempty"`
+	GlobalSearchValue string `json:"global_search_value,omitempty" bson:"global_search_value,omitempty"`
+	FileType          string `json:"file_type,omitempty"`
+	FileName          string `json:"file_name,omitempty"`
+	AgentID           int    `json:"agentID,omitempty"`
+	StoreID           int    `json:"storeID,omitempty"`
+	BrandID           int    `json:"brand_id,omitempty"`
+	ProductID         int    `json:"product_id,omitempty"`
+	OrderStatusID     int    `json:"order_status_id,omitempty"`
+	DeliveryOrderID   int    `json:"delivery_order_id,omitempty" bson:"delivery_order_id"`
+	SalesOrderID      int    `json:"sales_order_id,omitempty"`
+	StartDoDate       string `json:"start_do_date,omitempty"`
+	EndDoDate         string `json:"end_do_date,omitempty"`
+	DoRefCode         string `json:"do_ref_code,omitempty"`
+	DoRefDate         string `json:"do_ref_date,omitempty"`
+	DoCode            string `json:"do_code,omitempty"`
+	DoDate            string `json:"do_date,omitempty"`
+	CategoryID        int    `json:"category_id,omitempty"`
+	SalesmanID        int    `json:"salesman_id,omitempty"`
+	ProvinceID        int    `json:"province_id,omitempty"`
+	CityID            int    `json:"city_id,omitempty"`
+	DistrictID        int    `json:"district_id,omitempty"`
+	StartCreatedAt    string `json:"start_created_at,omitempty"`
+	EndCreatedAt      string `json:"end_created_at,omitempty"`
+	UpdatedAt         string `json:"updated_at,omitempty"`
+}
