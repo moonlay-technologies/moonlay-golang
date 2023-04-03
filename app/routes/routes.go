@@ -51,7 +51,7 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 			salesOrderControllerGroup.GET("/retry-to-sync-kafka/:log-id", salesOrderController.RetrySyncToKafka)
 			salesOrderControllerGroup.GET("upload-histories", salesOrderController.GetSOUploadHistories)
 			salesOrderControllerGroup.GET("/upload-histories/:id", salesOrderController.GetSoUploadHistoriesById)
-			salesOrderControllerGroup.GET("/upload-histories/items/:id", salesOrderController.GetSoUploadErrorLogByReqId)
+			salesOrderControllerGroup.GET("/upload-histories-by-request-id/:id/error-items", salesOrderController.GetSoUploadErrorLogByReqId)
 			salesOrderControllerGroup.GET("/upload-histories/:id/error-items", salesOrderController.GetSoUploadErrorLogBySoUploadHistoryId)
 		}
 
@@ -82,7 +82,7 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 			deliveryOrderControllerGroup.GET(":id/journeys", deliveryOrderController.GetDOJourneysByDoID)
 			deliveryOrderControllerGroup.GET("upload-histories", deliveryOrderController.GetDoUploadHistories)
 			deliveryOrderControllerGroup.GET("/upload-histories/:sj-id", deliveryOrderController.GetDoUploadHistoriesById)
-			deliveryOrderControllerGroup.GET("/upload-histories/items/:sj-id", deliveryOrderController.GetDoUploadErrorLogByReqId)
+			deliveryOrderControllerGroup.GET("/upload-histories-by-request-id/:sj-id/error-items", deliveryOrderController.GetDoUploadErrorLogByReqId)
 			deliveryOrderControllerGroup.GET("/upload-histories/:sj-id/error-items", deliveryOrderController.GetDoUploadErrorLogByDoUploadHistoryId)
 			deliveryOrderControllerGroup.PUT(":id", deliveryOrderController.UpdateByID)
 			deliveryOrderControllerGroup.PUT(":id/details", deliveryOrderController.UpdateDeliveryOrderDetailByDeliveryOrderID)
