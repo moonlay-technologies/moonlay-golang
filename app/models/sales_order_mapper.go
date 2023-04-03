@@ -508,36 +508,51 @@ func (salesOrder *SalesOrderOpenSearchResponse) SalesOrderOpenSearchResponseMap(
 
 func (salesOrder *SalesOrder) SalesOrderForDOMap(request *SalesOrder) {
 	salesOrder.ID = request.ID
+	salesOrder.AgentID = request.AgentID
 	salesOrder.AgentName = request.AgentName
 	salesOrder.AgentEmail = request.AgentEmail
 	salesOrder.AgentName = request.AgentName
 	salesOrder.AgentProvinceName = request.AgentProvinceName
+	salesOrder.AgentProvinceID = request.AgentProvinceID
 	salesOrder.AgentCityName = request.AgentCityName
+	salesOrder.AgentCityID = request.AgentCityID
 	salesOrder.AgentDistrictName = request.AgentDistrictName
+	salesOrder.AgentDistrictID = request.AgentDistrictID
 	salesOrder.AgentVillageName = request.AgentVillageName
+	salesOrder.AgentVillageID = request.AgentVillageID
 	salesOrder.AgentAddress = request.AgentAddress
 	salesOrder.AgentPhone = request.AgentPhone
 	salesOrder.AgentMainMobilePhone = request.AgentMainMobilePhone
 
+	salesOrder.StoreID = request.StoreID
 	salesOrder.StoreName = request.StoreName
 	salesOrder.StoreCode = request.StoreCode
 	salesOrder.StoreEmail = request.StoreEmail
 	salesOrder.StoreName = request.StoreName
 	salesOrder.StoreProvinceName = request.StoreProvinceName
+	salesOrder.StoreProvinceID = request.StoreProvinceID
 	salesOrder.StoreCityName = request.StoreCityName
+	salesOrder.StoreCityID = request.StoreCityID
 	salesOrder.StoreDistrictName = request.StoreDistrictName
+	salesOrder.StoreDistrictID = request.StoreDistrictID
 	salesOrder.StoreVillageName = request.StoreVillageName
+	salesOrder.StoreVillageID = request.StoreVillageID
 	salesOrder.StoreAddress = request.StoreAddress
 	salesOrder.StorePhone = request.StorePhone
 	salesOrder.StoreMainMobilePhone = request.StoreMainMobilePhone
 
+	salesOrder.BrandID = request.BrandID
 	salesOrder.BrandName = request.BrandName
 
+	salesOrder.UserID = request.UserID
 	salesOrder.UserFirstName = request.UserFirstName
 	salesOrder.UserLastName = request.UserLastName
 	salesOrder.UserEmail = request.UserEmail
+	salesOrder.UserRoleID = request.UserRoleID
 
+	salesOrder.OrderSourceID = request.OrderSourceID
 	salesOrder.OrderSourceName = request.OrderSourceName
+	salesOrder.OrderStatusID = request.OrderStatusID
 	salesOrder.OrderStatusName = request.OrderStatusName
 
 	salesOrder.SoCode = request.SoCode
@@ -552,6 +567,7 @@ func (salesOrder *SalesOrder) SalesOrderForDOMap(request *SalesOrder) {
 	salesOrder.TotalAmount = request.TotalAmount
 	salesOrder.TotalTonase = request.TotalTonase
 
+	salesOrder.SalesmanID = request.SalesmanID
 	salesOrder.SalesmanName = request.SalesmanName
 	salesOrder.SalesmanEmail = request.SalesmanEmail
 	salesOrder.CreatedAt = request.CreatedAt
