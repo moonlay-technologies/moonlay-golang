@@ -132,7 +132,7 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 			a, _ := json.Marshal(getAgentResult)
 			fmt.Println("Data agent ygy", string(a))
 			if getAgentResult.Error != nil {
-				fmt.Println(getAgentResult.Error.Error())
+				fmt.Println(getAgentResult.Error)
 				errors = append(errors, getAgentResult.Error.Error())
 			}
 
