@@ -176,7 +176,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 					Value: v["UnitProduk"],
 				},
 			})
-			if len(mandatoryError) > 1 {
+			if len(mandatoryError) >= 1 {
 
 				if key == "retry" {
 					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
@@ -282,7 +282,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				})
 			}
 			intTypeResult, intTypeError := c.requestValidationMiddleware.UploadIntTypeValidation(intType)
-			if len(intTypeError) > 1 {
+			if len(intTypeError) >= 1 {
 
 				if key == "retry" {
 					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
@@ -342,7 +342,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				},
 			}
 			mustActiveError := c.requestValidationMiddleware.UploadMustActiveValidation(mustActiveField)
-			if len(mustActiveError) > 1 {
+			if len(mustActiveError) >= 1 {
 				if key == "retry" {
 					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 

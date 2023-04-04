@@ -24,6 +24,7 @@ type DeliveryOrderRepositoryInterface interface {
 	//GetByAgentID(id int, countOnly bool, ctx context.Context, result chan *models.DeliveryOrderChan)
 	UpdateByID(id int, deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.DeliveryOrderChan)
 	DeleteByID(request *models.DeliveryOrder, ctx context.Context, resultChan chan *models.DeliveryOrderChan)
+	GetByDoRefCode(doRefCode string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderChan)
 }
 
 type deliveryOrder struct {
@@ -568,4 +569,90 @@ func (r *deliveryOrder) DeleteByID(request *models.DeliveryOrder, ctx context.Co
 	response.DeliveryOrder = request
 	resultChan <- response
 	return
+}
+
+func (r *deliveryOrder) GetByDoRefCode(doRefCode string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderChan) {
+	response := &models.DeliveryOrderChan{}
+	var deliveryOrder models.DeliveryOrder
+	var total int64
+
+	deliveryOrderRedisKey := fmt.Sprintf("%s:%s", constants.DELIVERY_ORDER_BY_DO_REF_CODE, doRefCode)
+	deliveryOrderOnRedis, err := r.redisdb.Client().Get(ctx, deliveryOrderRedisKey).Result()
+
+	if err == redis.Nil {
+		err = r.db.QueryRow("SELECT COUNT(*) as total FROM delivery_orders WHERE deleted_at IS NULL AND do_ref_code = ?", doRefCode).Scan(&total)
+
+		if err != nil {
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+
+		if total == 0 {
+			err = helper.NewError("delivery_order data not found")
+			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
+			response.Error = err
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
+
+		if countOnly == false {
+			deliveryOrder = models.DeliveryOrder{}
+			err = r.db.QueryRow(""+
+				"SELECT do.id, sales_order_id, warehouse_id, do.order_status_id, do.order_source_id, do.agent_id, do_code, do_date, do_ref_code, do_ref_date, driver_name, plat_number, do.note, do.created_at, so.so_code, so.so_date, w.code, w.name, w.province_id, w.city_id, w.district_id, w.village_id, provinces.name as province_name, cities.name as city_name, districts.name as district_name, villages.name as village_name, order_statuses.name as order_status_name, order_sources.source_name as order_source_name, agents.name as agent_name "+
+				"FROM delivery_orders as do "+
+				"INNER JOIN "+constants.SALES_ORDERS_TABLE+" as so ON so.id = do.sales_order_id "+
+				"INNER JOIN warehouses as w ON w.id = do.warehouse_id "+
+				"INNER JOIN provinces ON provinces.id = w.province_id "+
+				"INNER JOIN cities ON cities.province_id = provinces.id "+
+				"INNER JOIN districts ON districts.city_id = cities.id "+
+				"INNER JOIN villages ON villages.district_id = districts.id "+
+				"INNER JOIN order_statuses ON order_statuses.id = do.order_status_id "+
+				"INNER JOIN order_sources  ON order_sources.id = do.order_source_id "+
+				"INNER JOIN agents ON agents.id = do.agent_id "+
+				"WHERE do.deleted_at IS NULL AND do.do_ref_code = ?", doRefCode).
+				Scan(&deliveryOrder.ID, &deliveryOrder.SalesOrderID, &deliveryOrder.WarehouseID, &deliveryOrder.OrderStatusID, &deliveryOrder.OrderSourceID, &deliveryOrder.AgentID, &deliveryOrder.DoCode, &deliveryOrder.DoDate, &deliveryOrder.DoRefCode, &deliveryOrder.DoRefDate, &deliveryOrder.DriverName, &deliveryOrder.PlatNumber, &deliveryOrder.Note, &deliveryOrder.CreatedAt, &deliveryOrder.SalesOrderCode, &deliveryOrder.SalesOrderDate, &deliveryOrder.WarehouseCode, &deliveryOrder.WarehouseName, &deliveryOrder.WarehouseProvinceID, &deliveryOrder.WarehouseCityID, &deliveryOrder.WarehouseDistrictID, &deliveryOrder.WarehouseVillageID, &deliveryOrder.WarehouseProvinceName, &deliveryOrder.WarehouseCityName, &deliveryOrder.WarehouseDistrictName, &deliveryOrder.WarehouseVillageName, &deliveryOrder.OrderStatusName, &deliveryOrder.OrderSourceName, &deliveryOrder.AgentName)
+
+			if err != nil {
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+				response.Error = err
+				response.ErrorLog = errorLogData
+				resultChan <- response
+				return
+			}
+
+			deliveryOrderJson, _ := json.Marshal(deliveryOrder)
+			setDeliveryOrderOnRedis := r.redisdb.Client().Set(ctx, deliveryOrderRedisKey, deliveryOrderJson, 1*time.Hour)
+
+			if setDeliveryOrderOnRedis.Err() != nil {
+				errorLogData := helper.WriteLog(setDeliveryOrderOnRedis.Err(), http.StatusInternalServerError, nil)
+				response.Error = setDeliveryOrderOnRedis.Err()
+				response.ErrorLog = errorLogData
+				resultChan <- response
+				return
+			}
+
+			response.Total = total
+			response.DeliveryOrder = &deliveryOrder
+			resultChan <- response
+			return
+		}
+
+	} else if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	} else {
+		total = 1
+		_ = json.Unmarshal([]byte(deliveryOrderOnRedis), &deliveryOrder)
+		response.DeliveryOrder = &deliveryOrder
+		response.Total = total
+		resultChan <- response
+		return
+	}
 }

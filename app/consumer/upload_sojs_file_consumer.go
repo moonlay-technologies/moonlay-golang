@@ -162,7 +162,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 					Value: rowData.ProductUnit,
 				},
 			})
-			if len(mandatoryError) > 1 {
+			if len(mandatoryError) >= 1 {
 				if key == "retry" {
 
 					c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
@@ -207,7 +207,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 				})
 			}
 			intTypeResult, intTypeError := c.requestValidationMiddleware.UploadIntTypeValidation(intType)
-			if len(intTypeError) > 1 {
+			if len(intTypeError) >= 1 {
 				if key == "retry" {
 
 					c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
@@ -264,7 +264,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 				},
 			}
 			mustActiveError := c.requestValidationMiddleware.UploadMustActiveValidation(mustActiveField)
-			if len(mustActiveError) > 1 {
+			if len(mustActiveError) >= 1 {
 				if key == "retry" {
 					c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 					break
