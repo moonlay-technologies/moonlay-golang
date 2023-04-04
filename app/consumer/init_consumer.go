@@ -356,7 +356,11 @@ func InitUploadDOFileConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodb
 	uploadSJHistoriesRepository := mongoRepo.InitDoUploadHistoriesRepositoryInterface(mongodbClient)
 	uploadSJErrorLogsRepository := mongoRepo.InitDoUploadErrorLogsRepositoryInterface(mongodbClient)
 	warehouseRepository := repositories.InitWarehouseRepository(database, redisdb)
-	handler := InitUploadDOFileConsumerHandlerInterface(kafkaClient, uploadRepository, requestValidationMiddleware, requestValidationRepository, uploadSJHistoriesRepository, uploadSJErrorLogsRepository, warehouseRepository, ctx, args, database)
+	orderStatusRepository := repositories.InitOrderStatusRepository(database, redisdb)
+	salesOrderRepository := repositories.InitSalesOrderRepository(database, redisdb)
+	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(database, redisdb)
+	deliveryOrderRepository := repositories.InitDeliveryRepository(database, redisdb)
+	handler := InitUploadDOFileConsumerHandlerInterface(kafkaClient, uploadRepository, requestValidationMiddleware, requestValidationRepository, uploadSJHistoriesRepository, uploadSJErrorLogsRepository, warehouseRepository, salesOrderRepository, salesOrderDetailRepository, deliveryOrderRepository, orderStatusRepository, ctx, args, database)
 	return handler
 }
 

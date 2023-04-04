@@ -144,7 +144,7 @@ func (r *warehouse) GetByCode(code string, countOnly bool, ctx context.Context, 
 		if countOnly == false {
 			warehouse = models.Warehouse{}
 			err = r.db.QueryRow(""+
-				"SELECT w.id, w.code, w.name, owner_id, w.province_id, p.name as province_name, w.city_id, c.name as city_name, w.district_id, d.name as district_name, w.village_id, v.name as village_name, w.address, w.phone, w.main_mobile_phone, w.email, w.pic_name, w.status, w.warehouse_type_id, w.is_main FROM warehouses as w "+
+				"SELECT w.id, w.code, w.name, w.owner_id, w.province_id, p.name as province_name, w.city_id, c.name as city_name, w.district_id, d.name as district_name, w.village_id, v.name as village_name, w.address, w.phone, w.main_mobile_phone, w.email, w.pic_name, w.status, w.warehouse_type_id, w.is_main FROM warehouses as w "+
 				"INNER JOIN provinces as p on p.id = w.province_id "+
 				"INNER JOIN cities as c on c.id = w.city_id "+
 				"INNER JOIN districts as d on d.id = w.district_id "+
