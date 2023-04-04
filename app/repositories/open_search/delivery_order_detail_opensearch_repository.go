@@ -14,7 +14,7 @@ type DeliveryOrderDetailOpenSearchRepositoryInterface interface {
 	Create(request *models.DeliveryOrderDetailOpenSearch, result chan *models.DeliveryOrderDetailOpenSearchChan)
 	Get(request *models.DeliveryOrderDetailOpenSearchRequest, isCountOnly bool, result chan *models.DeliveryOrderDetailsOpenSearchChan)
 	GetByID(request *models.DeliveryOrderRequest, resultChan chan *models.DeliveryOrderDetailOpenSearchChan)
-	generateDeliveryOrderQueryOpenSearchResult(openSearchQueryJson []byte) (*models.DeliveryOrderDetailsOpenSearch, *model.ErrorLog)
+	generateDeliveryOrderQueryOpenSearchResult(openSearchQueryJson []byte, isCountOnly bool) (*models.DeliveryOrderDetailsOpenSearch, *model.ErrorLog)
 	generateDeliveryOrderQueryOpenSearchTermRequest(term_field string, term_value interface{}, request *models.DeliveryOrderDetailOpenSearchRequest) []byte
 }
 
@@ -49,7 +49,7 @@ func (r *deliveryOrderDetailOpenSearch) Create(request *models.DeliveryOrderDeta
 func (r *deliveryOrderDetailOpenSearch) Get(request *models.DeliveryOrderDetailOpenSearchRequest, isCountOnly bool, resultChan chan *models.DeliveryOrderDetailsOpenSearchChan) {
 	response := &models.DeliveryOrderDetailsOpenSearchChan{}
 	requestQuery := r.generateDeliveryOrderQueryOpenSearchTermRequest("", "", request)
-	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery)
+	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery, isCountOnly)
 
 	if err.Err != nil {
 		response.Error = err.Err
@@ -67,7 +67,7 @@ func (r *deliveryOrderDetailOpenSearch) Get(request *models.DeliveryOrderDetailO
 func (r *deliveryOrderDetailOpenSearch) GetByID(request *models.DeliveryOrderRequest, resultChan chan *models.DeliveryOrderDetailOpenSearchChan) {
 	response := &models.DeliveryOrderDetailOpenSearchChan{}
 	requestQuery := r.generateDeliveryOrderQueryOpenSearchTermRequest("id", request.ID, nil)
-	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery)
+	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery, false)
 
 	if err.Err != nil {
 		response.Error = err.Err
@@ -337,34 +337,53 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 	return openSearchQueryJson
 }
 
-func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchResult(openSearchQueryJson []byte) (*models.DeliveryOrderDetailsOpenSearch, *model.ErrorLog) {
-	openSearchQueryResult, err := r.openSearch.Query(constants.DELIVERY_ORDER_DETAILS_INDEX, openSearchQueryJson)
-
-	if err != nil {
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-		return &models.DeliveryOrderDetailsOpenSearch{}, errorLogData
-	}
-
-	if openSearchQueryResult.Hits.Total.Value == 0 {
-		err = helper.NewError("delivery_orders_opensearch data not found")
-		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
-		return &models.DeliveryOrderDetailsOpenSearch{}, errorLogData
-	}
-
+func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchResult(openSearchQueryJson []byte, isCountOnly bool) (*models.DeliveryOrderDetailsOpenSearch, *model.ErrorLog) {
 	deliveryOrderDetails := []*models.DeliveryOrderDetailOpenSearch{}
+	var total int64 = 0
 
-	if openSearchQueryResult.Hits.Total.Value > 0 {
-		for _, v := range openSearchQueryResult.Hits.Hits {
-			obj := v.Source.(map[string]interface{})
-			deliveryOrderDetail := models.DeliveryOrderDetailOpenSearch{}
-			objJson, _ := json.Marshal(obj)
-			json.Unmarshal(objJson, &deliveryOrderDetail)
-			deliveryOrderDetails = append(deliveryOrderDetails, &deliveryOrderDetail)
+	if isCountOnly {
+		openSearchQueryResult, err := r.openSearch.Count(constants.DELIVERY_ORDERS_INDEX, openSearchQueryJson)
+		if err != nil {
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			return &models.DeliveryOrderDetailsOpenSearch{}, errorLogData
+		}
+
+		if openSearchQueryResult <= 0 {
+			err = helper.NewError("delivery_orders_opensearch data not found")
+			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
+			return &models.DeliveryOrderDetailsOpenSearch{}, errorLogData
+		}
+
+		total = openSearchQueryResult
+	} else {
+		openSearchQueryResult, err := r.openSearch.Query(constants.DELIVERY_ORDER_DETAILS_INDEX, openSearchQueryJson)
+
+		if err != nil {
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			return &models.DeliveryOrderDetailsOpenSearch{}, errorLogData
+		}
+
+		if openSearchQueryResult.Hits.Total.Value == 0 {
+			err = helper.NewError("delivery_orders_opensearch data not found")
+			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
+			return &models.DeliveryOrderDetailsOpenSearch{}, errorLogData
+		}
+
+		total = int64(openSearchQueryResult.Hits.Total.Value)
+
+		if openSearchQueryResult.Hits.Total.Value > 0 {
+			for _, v := range openSearchQueryResult.Hits.Hits {
+				obj := v.Source.(map[string]interface{})
+				deliveryOrderDetail := models.DeliveryOrderDetailOpenSearch{}
+				objJson, _ := json.Marshal(obj)
+				json.Unmarshal(objJson, &deliveryOrderDetail)
+				deliveryOrderDetails = append(deliveryOrderDetails, &deliveryOrderDetail)
+			}
 		}
 	}
 
 	result := &models.DeliveryOrderDetailsOpenSearch{
-		Total:                int64(openSearchQueryResult.Hits.Total.Value),
+		Total:                total,
 		DeliveryOrderDetails: deliveryOrderDetails,
 	}
 

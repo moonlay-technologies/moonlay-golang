@@ -59,7 +59,7 @@ func (r *salesOrderOpenSearch) Create(request *models.SalesOrder, resultChan cha
 func (r *salesOrderOpenSearch) Get(request *models.SalesOrderRequest, IsCountOnly bool, resultChan chan *models.SalesOrdersChan) {
 	response := &models.SalesOrdersChan{}
 	requestQuery := r.generateSalesOrderQueryOpenSearchTermRequest("", "", request)
-	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true, false)
+	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true, IsCountOnly)
 
 	if err.Err != nil {
 		response.Error = err.Err

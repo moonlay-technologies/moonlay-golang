@@ -1474,6 +1474,28 @@ func (u *deliveryOrderUseCase) GetBySalesmansID(request *models.DeliveryOrderReq
 
 	deliveryOrderResult := []*models.DeliveryOrderOpenSearchResponses{}
 	for _, v := range getDeliveryOrdersResult.DeliveryOrders {
+		if v.Agent == nil {
+			getAgentResultChan := make(chan *models.AgentChan)
+			go u.agentRepository.GetByID(v.AgentID, false, u.ctx, getAgentResultChan)
+			getAgentResult := <-getAgentResultChan
+
+			if getAgentResult.Error != nil {
+				v.Agent = &models.Agent{}
+			} else {
+				v.Agent = getAgentResult.Agent
+			}
+		}
+		if v.Store == nil {
+			getStoreResultChan := make(chan *models.StoreChan)
+			go u.storeRepository.GetByID(v.StoreID, false, u.ctx, getStoreResultChan)
+			getStoreResult := <-getStoreResultChan
+
+			if getStoreResult.Error != nil {
+				v.Store = &models.Store{}
+			} else {
+				v.Store = getStoreResult.Store
+			}
+		}
 		deliveryOrder := models.DeliveryOrderOpenSearchResponses{
 			ID:                    v.ID,
 			SoCode:                v.SalesOrder.SoCode,

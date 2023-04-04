@@ -9,6 +9,7 @@ const (
 	CREATE_SALES_ORDER_DETAIL_TOPIC = "create-sales-order-detail"
 	UPDATE_SALES_ORDER_DETAIL_TOPIC = "update-sales-order-detail"
 	DELETE_SALES_ORDER_DETAIL_TOPIC = "delete-sales-order-detail"
+	EXPORT_SALES_ORDER_DETAIL_TOPIC = "export-sales-order-detail"
 
 	CREATE_DELIVERY_ORDER_TOPIC = "create-delivery-order"
 	UPDATE_DELIVERY_ORDER_TOPIC = "update-delivery-order"

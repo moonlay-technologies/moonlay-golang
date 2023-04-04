@@ -14,9 +14,9 @@ import (
 
 type SalesOrderDetailOpenSearchRepositoryInterface interface {
 	Create(request *models.SalesOrderDetailOpenSearch, resultChan chan *models.SalesOrderDetailOpenSearchChan)
-	Get(request *models.GetSalesOrderDetailRequest, result chan *models.SalesOrderDetailsOpenSearchChan)
+	Get(request *models.GetSalesOrderDetailRequest, isCountOnly bool, result chan *models.SalesOrderDetailsOpenSearchChan)
 	generateSalesOrderDetailQueryOpenSearchTermRequest(term_field string, term_value interface{}, request *models.GetSalesOrderDetailRequest) []byte
-	generateSalesOrderDetailQueryOpenSearchResult(openSearchQueryJson []byte, withSalesOrderDetails bool) (*models.SalesOrderDetailsOpenSearch, *model.ErrorLog)
+	generateSalesOrderDetailQueryOpenSearchResult(openSearchQueryJson []byte, isCountOnly bool) (*models.SalesOrderDetailsOpenSearch, *model.ErrorLog)
 }
 
 type salesOrderDetailOpenSearch struct {
@@ -48,10 +48,10 @@ func (r *salesOrderDetailOpenSearch) Create(request *models.SalesOrderDetailOpen
 	return
 }
 
-func (r *salesOrderDetailOpenSearch) Get(request *models.GetSalesOrderDetailRequest, resultChan chan *models.SalesOrderDetailsOpenSearchChan) {
+func (r *salesOrderDetailOpenSearch) Get(request *models.GetSalesOrderDetailRequest, isCountOnly bool, resultChan chan *models.SalesOrderDetailsOpenSearchChan) {
 	response := &models.SalesOrderDetailsOpenSearchChan{}
 	requestQuery := r.generateSalesOrderDetailQueryOpenSearchTermRequest("", "", request)
-	result, err := r.generateSalesOrderDetailQueryOpenSearchResult(requestQuery, true)
+	result, err := r.generateSalesOrderDetailQueryOpenSearchResult(requestQuery, isCountOnly)
 
 	if err.Err != nil {
 		response.Error = err.Err
@@ -300,46 +300,65 @@ func (r *salesOrderDetailOpenSearch) generateSalesOrderDetailQueryOpenSearchTerm
 	return openSearchQueryJson
 }
 
-func (r *salesOrderDetailOpenSearch) generateSalesOrderDetailQueryOpenSearchResult(openSearchQueryJson []byte, withSalesOrderDetails bool) (*models.SalesOrderDetailsOpenSearch, *model.ErrorLog) {
-	openSearchQueryResult, err := r.openSearch.Query(constants.SALES_ORDER_DETAILS_INDEX, openSearchQueryJson)
-
-	if err != nil {
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-		return &models.SalesOrderDetailsOpenSearch{}, errorLogData
-	}
-
-	if openSearchQueryResult.Hits.Total.Value == 0 {
-		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
-		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
-		return &models.SalesOrderDetailsOpenSearch{}, errorLogData
-	}
-
+func (r *salesOrderDetailOpenSearch) generateSalesOrderDetailQueryOpenSearchResult(openSearchQueryJson []byte, isCountOnly bool) (*models.SalesOrderDetailsOpenSearch, *model.ErrorLog) {
 	salesOrderDetails := []*models.SalesOrderDetailOpenSearch{}
+	var total int64 = 0
 
-	if openSearchQueryResult.Hits.Total.Value > 0 {
-		for _, v := range openSearchQueryResult.Hits.Hits {
-			obj := v.Source.(map[string]interface{})
-			salesOrderDetail := &models.SalesOrderDetailOpenSearch{}
-			jsonStr, err := json.Marshal(v.Source)
-			if err != nil {
-				fmt.Println(err)
+	if isCountOnly {
+		openSearchQueryResult, err := r.openSearch.Count(constants.DELIVERY_ORDERS_INDEX, openSearchQueryJson)
+		if err != nil {
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			return &models.SalesOrderDetailsOpenSearch{}, errorLogData
+		}
+
+		if openSearchQueryResult <= 0 {
+			err = helper.NewError("delivery_orders_opensearch data not found")
+			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
+			return &models.SalesOrderDetailsOpenSearch{}, errorLogData
+		}
+
+		total = openSearchQueryResult
+	} else {
+		openSearchQueryResult, err := r.openSearch.Query(constants.SALES_ORDER_DETAILS_INDEX, openSearchQueryJson)
+
+		if err != nil {
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			return &models.SalesOrderDetailsOpenSearch{}, errorLogData
+		}
+
+		if openSearchQueryResult.Hits.Total.Value == 0 {
+			err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
+			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
+			return &models.SalesOrderDetailsOpenSearch{}, errorLogData
+		}
+
+		total = int64(openSearchQueryResult.Hits.Total.Value)
+
+		if openSearchQueryResult.Hits.Total.Value > 0 {
+			for _, v := range openSearchQueryResult.Hits.Hits {
+				obj := v.Source.(map[string]interface{})
+				salesOrderDetail := &models.SalesOrderDetailOpenSearch{}
+				jsonStr, err := json.Marshal(v.Source)
+				if err != nil {
+					fmt.Println(err)
+				}
+				if err := json.Unmarshal(jsonStr, &salesOrderDetail); err != nil {
+					fmt.Println(err)
+				}
+
+				layout := time.RFC3339
+				createdAt, _ := time.Parse(layout, obj["created_at"].(string))
+				salesOrderDetail.CreatedAt = &createdAt
+				updatedAt, _ := time.Parse(layout, obj["updated_at"].(string))
+				salesOrderDetail.UpdatedAt = &updatedAt
+
+				salesOrderDetails = append(salesOrderDetails, salesOrderDetail)
 			}
-			if err := json.Unmarshal(jsonStr, &salesOrderDetail); err != nil {
-				fmt.Println(err)
-			}
-
-			layout := time.RFC3339
-			createdAt, _ := time.Parse(layout, obj["created_at"].(string))
-			salesOrderDetail.CreatedAt = &createdAt
-			updatedAt, _ := time.Parse(layout, obj["updated_at"].(string))
-			salesOrderDetail.UpdatedAt = &updatedAt
-
-			salesOrderDetails = append(salesOrderDetails, salesOrderDetail)
 		}
 	}
 
 	result := &models.SalesOrderDetailsOpenSearch{
-		Total:             int64(openSearchQueryResult.Hits.Total.Value),
+		Total:             total,
 		SalesOrderDetails: salesOrderDetails,
 	}
 

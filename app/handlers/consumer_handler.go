@@ -67,6 +67,10 @@ func MainConsumerHandler(kafkaClient kafkadbo.KafkaClientInterface, mongodbClien
 		wg.Add(1)
 		salesOrderConsumer := consumer.InitExportSalesOrderConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
 		go salesOrderConsumer.ProcessMessage()
+	case constants.EXPORT_SALES_ORDER_DETAIL_TOPIC:
+		wg.Add(1)
+		salesOrderConsumer := consumer.InitExportSalesOrderDetailConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
+		go salesOrderConsumer.ProcessMessage()
 	case constants.UPLOAD_SO_FILE_TOPIC:
 		wg.Add(1)
 		uploadSOFileConsumer := consumer.InitUploadSOFileConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)

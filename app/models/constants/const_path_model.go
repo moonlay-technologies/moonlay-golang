@@ -12,6 +12,7 @@ const (
 	DELIVERY_ORDER_EXPORT_PATH        = "apis.dbo.dev/noncore-assets/download/excel/delivery_order"
 	DELIVERY_ORDER_DETAIL_EXPORT_PATH = "apis.dbo.dev/noncore-assets/download/excel/delivery_order_detail"
 	SALES_ORDER_EXPORT_PATH           = "apis.dbo.dev/noncore-assets/download/excel/sales_order"
+	SALES_ORDER_DETAIL_EXPORT_PATH    = "apis.dbo.dev/noncore-assets/download/excel/sales_order_detail"
 	UPLOAD_SOSJ_PATH                  = "upload-sosj"
 	UPLOAD_DO_PATH                    = "upload-delivery-orders"
 	UPLOAD_SO_PATH                    = "upload-sales-orders"
@@ -20,4 +21,5 @@ const (
 	// DELIVERY_ORDER_EXPORT_PATH="https://lambda-upload-srv.s3.ap-southeast-1.amazonaws.com/lambda-upload-srv/order-service/export-delivery-orders"
 	// DELIVERY_ORDER_DETAIL_EXPORT_PATH="https://lambda-upload-srv.s3.ap-southeast-1.amazonaws.com/lambda-upload-srv/order-service/export-delivery-order-details"
 	// SALES_ORDER_EXPORT_PATH="https://lambda-upload-srv.s3.ap-southeast-1.amazonaws.com/lambda-upload-srv/order-service/export-sales-orders"
+	// SALES_ORDER_DETAIL_EXPORT_PATH="https://lambda-upload-srv.s3.ap-southeast-1.amazonaws.com/lambda-upload-srv/order-service/export-sales-orders-details"
 )
