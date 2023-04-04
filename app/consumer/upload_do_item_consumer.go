@@ -129,7 +129,8 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 			getAgentResultChan := make(chan *models.AgentChan)
 			go c.agentRepository.GetByID(v.IDDistributor, false, c.ctx, getAgentResultChan)
 			getAgentResult := <-getAgentResultChan
-
+			a, _ := json.Marshal(getAgentResult)
+			fmt.Println("Data agent ygy", string(a))
 			if getAgentResult.Error != nil {
 				fmt.Println(getAgentResult.Error.Error())
 				errors = append(errors, getAgentResult.Error.Error())
