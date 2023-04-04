@@ -41,6 +41,7 @@ type SalesOrderControllerInterface interface {
 	DeleteDetailBySOID(ctx *gin.Context)
 	RetrySyncToKafka(ctx *gin.Context)
 	Export(ctx *gin.Context)
+	ExportDetail(ctx *gin.Context)
 }
 
 type salesOrderController struct {
