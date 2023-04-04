@@ -40,7 +40,7 @@ func InitHTTPRoute(g *gin.Engine, database dbresolver.DB, redisdb redisdb.RedisI
 			salesOrderControllerGroup.GET("/upload-histories/:id/error-items", salesOrderController.GetSoUploadErrorLogBySoUploadHistoryId)
 			salesOrderControllerGroup.GET("", salesOrderController.Get)
 			salesOrderControllerGroup.GET("export", salesOrderController.Export)
-			salesOrderControllerGroup.GET("export/sales-ord er-details", salesOrderController.ExportDetail)
+			salesOrderControllerGroup.GET("export/sales-order-details", salesOrderController.ExportDetail)
 			salesOrderControllerGroup.GET(":so-id", salesOrderController.GetByID)
 			salesOrderControllerGroup.GET("details/:so-detail-id", salesOrderController.GetDetailsById)
 			salesOrderControllerGroup.GET(":so-id/details", salesOrderController.GetDetailsBySoId)
