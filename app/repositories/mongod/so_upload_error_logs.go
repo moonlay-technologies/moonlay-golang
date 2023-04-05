@@ -126,7 +126,7 @@ func (r *soUploadErrorLogsRepository) Get(request *models.GetSoUploadErrorLogsRe
 	}
 
 	if total == 0 {
-		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
+		err = helper.NewError("data not found")
 		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
