@@ -951,17 +951,6 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 		return &models.SalesOrderResponse{}, getOrderStatusResult.ErrorLog
 	}
 
-	errorValidation := u.updateSOValidation(salesOrder.ID, getOrderStatusResult.OrderStatus.Name, ctx)
-
-	if errorValidation != nil {
-		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, errorValidation.Error())},
-			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
-			StatusCode:    http.StatusUnprocessableEntity,
-		})
-		return &models.SalesOrderResponse{}, errorLogData
-	}
-
 	var status string
 	switch request.Status {
 	case constants.SO_STATUS_APPV:
@@ -970,17 +959,6 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 		status = "rejected"
 	case constants.SO_STATUS_CNCL:
 		status = "cancelled"
-	default:
-		status = "undefined"
-	}
-
-	if status == "undefined" {
-		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, "status tidak terdaftar")},
-			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
-			StatusCode:    http.StatusUnprocessableEntity,
-		})
-		return &models.SalesOrderResponse{}, errorLogData
 	}
 
 	// Get Order Status By Name
@@ -1067,8 +1045,9 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 	}
 
 	salesOrderUpdateReq := &models.SalesOrder{
-		OrderStatusID: getOrderStatusResult.OrderStatus.ID,
-		UpdatedAt:     &now,
+		OrderStatusID:   getOrderStatusResult.OrderStatus.ID,
+		LatestUpdatedBy: ctx.Value("user").(*models.UserClaims).UserID,
+		UpdatedAt:       &now,
 	}
 
 	// Update Sales Order
@@ -1098,6 +1077,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 
 		salesOrderDetail := &models.SalesOrderDetail{
 			OrderStatusID: getOrderDetailStatusResult.OrderStatus.ID,
+			UpdatedBy:     ctx.Value("user").(*models.UserClaims).UserID,
 			UpdatedAt:     &now,
 		}
 

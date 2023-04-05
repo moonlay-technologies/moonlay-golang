@@ -235,6 +235,11 @@ func (c *salesOrderController) UpdateByID(ctx *gin.Context) {
 		}
 	}
 
+	err = c.salesOrderValidator.UpdateSalesOrderByIdValidator(updateRequest, ctx)
+	if err != nil {
+		return
+	}
+
 	dbTransaction, err := c.db.BeginTx(ctx, nil)
 
 	if err != nil {
