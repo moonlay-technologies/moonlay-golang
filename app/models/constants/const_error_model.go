@@ -9,4 +9,5 @@ const (
 
 	ERROR_INVALID_PROCESS           = "Invalid Process"
 	ERROR_BAD_REQUEST_INT_ID_PARAMS = "Parameter 'id' harus bernilai integer"
+	ERROR_DATA_NOT_FOUND            = "data not found"
 )
