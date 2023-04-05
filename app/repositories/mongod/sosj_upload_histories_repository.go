@@ -152,6 +152,14 @@ func (r *sosjUploadHistoriesRepository) Get(request *models.GetSosjUploadHistori
 		filter["uploaded_by"] = request.UploadedBy
 	}
 
+	if request.UploadedByName != "" {
+		filter["uploaded_by_name"] = bson.M{"$regex": ".*" + request.UploadedByName + ".*", "$options": "i"}
+	}
+
+	if request.UploadedByEmail != "" {
+		filter["uploaded_by_email"] = request.UploadedByEmail
+	}
+
 	if request.CreatedAt != "" {
 		createdAt, err := time.Parse("2006-01-02", request.CreatedAt)
 		if err != nil {
