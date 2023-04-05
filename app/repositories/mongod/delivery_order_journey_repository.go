@@ -109,7 +109,7 @@ func (r *deliveryOrderJourneysRepository) Get(request *models.DeliveryOrderJourn
 	}
 
 	if total == 0 {
-		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
+		err = helper.NewError("data not found")
 		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
@@ -166,7 +166,7 @@ func (r *deliveryOrderJourneysRepository) GetByDoID(doID int, countOnly bool, ct
 		return
 	}
 	if total == 0 {
-		err = helper.NewError("data not found")
+		err = helper.NewError(constants.ERROR_DATA_NOT_FOUND)
 		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData

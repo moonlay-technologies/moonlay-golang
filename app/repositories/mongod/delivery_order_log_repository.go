@@ -198,7 +198,7 @@ func (r *deliveryOrderLogRepository) Get(request *models.DeliveryOrderEventLogRe
 	}
 
 	if total == 0 {
-		err = helper.NewError("data not found")
+		err = helper.NewError(constants.ERROR_DATA_NOT_FOUND)
 		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData

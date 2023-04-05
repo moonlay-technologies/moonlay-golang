@@ -676,8 +676,8 @@ func (c *SalesOrderValidator) GetSosjUploadHistoriesValidator(ctx *gin.Context) 
 
 	sortField := c.getQueryWithDefault("sort_field", "created_at", ctx)
 
-	if sortField != "agent_name" && sortField != "file_name" && sortField != "status" && sortField != "created_at" {
-		err = helper.NewError("Parameter 'sort_field' harus bernilai 'agent_name' or 'file_name' or 'status' or 'created_at' ")
+	if sortField != "agent_name" && sortField != "file_name" && sortField != "status" && sortField != "uploaded_by_name" && sortField != "created_at" {
+		err = helper.NewError("Parameter 'sort_field' harus bernilai 'agent_name' or 'file_name' or 'status' or `uploaded_by_name` or 'created_at' ")
 		result.StatusCode = http.StatusBadRequest
 		result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
 		ctx.JSON(result.StatusCode, result)
