@@ -220,9 +220,8 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 					continue
 				}
 			}
-			warehouseName := getWarehouseResult.Warehouse.Name
 
-			if getWarehouseResult.Warehouse.OwnerID != agentId {
+			if getWarehouseResult.ErrorLog.StatusCode != http.StatusNotFound {
 				if key == "retry" {
 					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 					break
@@ -231,10 +230,11 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 					if getWhBy == "agentId" {
 						errors = []string{fmt.Sprintf("Gudang Utama pada Distributor %s Tidak Ditemukan. Silahkan Periksa Kode Gudang Utama Anda atau gunakan Kode Gudang yang lain.", message.AgentName)}
 					}
-					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
+					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, "", errors, &now, v)
 					continue
 				}
 			}
+			warehouseName := getWarehouseResult.Warehouse.Name
 
 			if getWarehouseResult.Warehouse.Status != 1 {
 				if key == "retry" {
