@@ -54,7 +54,7 @@ func (r *warehouse) GetByID(ID int, countOnly bool, ctx context.Context, resultC
 
 		if total == 0 {
 			err = helper.NewError("warehouse data not found")
-			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -134,7 +134,7 @@ func (r *warehouse) GetByCode(code string, countOnly bool, ctx context.Context, 
 
 		if total == 0 {
 			err = helper.NewError("warehouse data not found")
-			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -216,7 +216,7 @@ func (r *warehouse) GetByAgentID(agentID int, countOnly bool, ctx context.Contex
 
 		if total == 0 {
 			err = helper.NewError("warehouse data not found")
-			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
