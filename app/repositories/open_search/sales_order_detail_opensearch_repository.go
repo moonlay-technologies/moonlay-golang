@@ -312,7 +312,7 @@ func (r *salesOrderDetailOpenSearch) generateSalesOrderDetailQueryOpenSearchResu
 		}
 
 		if openSearchQueryResult <= 0 {
-			err = helper.NewError("delivery_orders_opensearch data not found")
+			err = helper.NewError("sales_order_details_opensearch data not found")
 			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 			return &models.SalesOrderDetailsOpenSearch{}, errorLogData
 		}
