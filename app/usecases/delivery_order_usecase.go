@@ -513,12 +513,14 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 	for _, x := range request.DeliveryOrderDetails {
 		for _, v := range getDeliveryOrderDetailResult.DeliveryOrderDetails {
 			if x.ID == v.ID {
-				balanceQty := x.Qty - v.Qty
-				v.Qty = x.Qty
-				orderStatusID := 19
+				orderStatusID := v.OrderStatusID
 				if v.Qty == x.Qty {
 					orderStatusID = 18
+				} else if x.Qty == 0 {
+					orderStatusID = 19
 				}
+				balanceQty := x.Qty - v.Qty
+				v.Qty = x.Qty
 				getOrderStatusResultChan := make(chan *models.OrderStatusChan)
 				go u.orderStatusRepository.GetByID(orderStatusID, false, ctx, getOrderStatusResultChan)
 				getOrderStatusResult := <-getOrderStatusResultChan
@@ -797,12 +799,14 @@ func (u *deliveryOrderUseCase) UpdateDODetailByID(id int, request *models.Delive
 	totalQty := 0
 	for _, v := range getDeliveryOrderDetailsResult.DeliveryOrderDetails {
 		if request.ID == v.ID {
+			orderStatusID := v.OrderStatusID
+			if v.Qty == request.Qty {
+				orderStatusID = 18
+			} else if request.Qty == 0 {
+				orderStatusID = 19
+			}
 			balanceQty := request.Qty - v.Qty
 			v.Qty = request.Qty
-			orderStatusID := 19
-			if v.Qty > 0 {
-				orderStatusID = 18
-			}
 			getOrderStatusResultChan := make(chan *models.OrderStatusChan)
 			go u.orderStatusRepository.GetByID(orderStatusID, false, ctx, getOrderStatusResultChan)
 			getOrderStatusResult := <-getOrderStatusResultChan
@@ -1039,12 +1043,14 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 	for _, x := range request {
 		for _, v := range getDeliveryOrderDetailResult.DeliveryOrderDetails {
 			if x.ID == v.ID {
-				balanceQty := x.Qty - v.Qty
-				v.Qty = x.Qty
-				orderStatusID := 19
+				orderStatusID := v.OrderStatusID
 				if v.Qty == x.Qty {
 					orderStatusID = 18
+				} else if x.Qty == 0 {
+					orderStatusID = 19
 				}
+				balanceQty := x.Qty - v.Qty
+				v.Qty = x.Qty
 				getOrderStatusResultChan := make(chan *models.OrderStatusChan)
 				go u.orderStatusRepository.GetByID(orderStatusID, false, ctx, getOrderStatusResultChan)
 				getOrderStatusResult := <-getOrderStatusResultChan
@@ -1084,11 +1090,9 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 					if getOrderStatusDetailResult.Error != nil {
 						return &models.DeliveryOrderDetails{}, getOrderStatusDetailResult.ErrorLog
 					}
-
 					getSalesOrderDetailResult.SalesOrderDetail.UpdatedAt = &now
 					getSalesOrderDetailResult.SalesOrderDetail.SentQty += balanceQty
 					getSalesOrderDetailResult.SalesOrderDetail.ResidualQty -= balanceQty
-
 					if getSalesOrderDetailResult.SalesOrderDetail.SentQty == 0 {
 						getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID = 11
 					} else if getSalesOrderDetailResult.SalesOrderDetail.SentQty == getSalesOrderDetailResult.SalesOrderDetail.Qty {

@@ -122,9 +122,11 @@ func (d *DeliveryOrderDetailOpenSearch) DoDetailMap(r *DeliveryOrder, rd *Delive
 	d.SoCode = NullString{sql.NullString{String: r.SalesOrder.SoCode, Valid: true}}
 	d.SoDate = NullString{sql.NullString{String: r.SalesOrder.SoDate, Valid: true}}
 	d.SoRefDate = r.SalesOrder.SoRefDate
-	d.SoDetailID = rd.SoDetail.ID
-	d.SoDetailCode = rd.SoDetail.SoDetailCode
-	d.SoDetail = rd.SoDetail
+	d.SoDetailID = rd.SoDetailID
+	if rd.SoDetail != nil {
+		d.SoDetailCode = rd.SoDetail.SoDetailCode
+		d.SoDetail = rd.SoDetail
+	}
 	d.AgentID = r.AgentID
 	d.Agent = r.Agent
 	d.StoreID = r.StoreID
@@ -137,11 +139,15 @@ func (d *DeliveryOrderDetailOpenSearch) DoDetailMap(r *DeliveryOrder, rd *Delive
 		d.SalesmanName = r.Salesman.Name
 		d.Salesman = r.Salesman
 	}
-	d.BrandID = rd.Brand.ID
-	d.BrandName = rd.Brand.Name
-	d.Brand = rd.Brand
+	d.BrandID = rd.BrandID
+	if r.Brand != nil {
+		d.BrandName = rd.Brand.Name
+		d.Brand = rd.Brand
+	}
 	d.ProductID = rd.ProductID
-	d.Product = rd.Product
+	if rd.Product != nil {
+		d.Product = rd.Product
+	}
 	d.UomID = rd.UomID
 	d.Uom = rd.Uom
 	d.DoDetailCode = rd.DoDetailCode
