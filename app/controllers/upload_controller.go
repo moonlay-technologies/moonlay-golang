@@ -180,9 +180,10 @@ func (c *uploadController) RetryUploadSO(ctx *gin.Context) {
 		return
 	}
 
-	result.Data = map[string]string{
-		"so_upload_history_id": id,
-		"message":              "upload on progress",
+	result.Data = models.RetryUploadSOResponse{
+		SoUploadHistoryId: id,
+		Message:           "upload on progress",
+		Status:            "in progress",
 	}
 
 	result.StatusCode = http.StatusOK
@@ -236,9 +237,10 @@ func (c *uploadController) RetryUploadSOSJ(ctx *gin.Context) {
 		return
 	}
 
-	result.Data = map[string]string{
-		"sosj_upload_history_id": id,
-		"message":                "upload on progress",
+	result.Data = models.RetryUploadSOSJResponse{
+		SosjUploadHistoryId: id,
+		Message:             "upload on progress",
+		Status:              "in progress",
 	}
 
 	result.StatusCode = http.StatusOK
