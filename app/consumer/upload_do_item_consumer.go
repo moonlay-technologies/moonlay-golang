@@ -129,9 +129,10 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 			getAgentResultChan := make(chan *models.AgentChan)
 			go c.agentRepository.GetByID(v.IDDistributor, false, c.ctx, getAgentResultChan)
 			getAgentResult := <-getAgentResultChan
-
+			a, _ := json.Marshal(getAgentResult)
+			fmt.Println("Data agent ygy", string(a))
 			if getAgentResult.Error != nil {
-				fmt.Println(getAgentResult.Error.Error())
+				fmt.Println(getAgentResult.Error)
 				errors = append(errors, getAgentResult.Error.Error())
 			}
 
@@ -149,11 +150,6 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 				errors = append(errors, getWarehouseResult.Error.Error())
 			}
 
-			getUploadSOHistoriesResultChan := make(chan *models.DoUploadHistoryChan)
-			go c.doUploadHistoriesRepository.GetByID(v.SjUploadHistoryId, false, c.ctx, getUploadSOHistoriesResultChan)
-			getUploadSOHistoriesResult := <-getUploadSOHistoriesResultChan
-			message := getUploadSOHistoriesResult.DoUploadHistory
-
 			// Get Sales Order By SoCode / NoOrder
 			getSalesOrderResultChan := make(chan *models.SalesOrderChan)
 			go c.salesOrderRepository.GetByCode(v.NoOrder, false, c.ctx, getSalesOrderResultChan)
@@ -162,22 +158,6 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 			if getSalesOrderResult.Error != nil {
 				fmt.Println(getSalesOrderResult.Error.Error())
 				errors = append(errors, getSalesOrderResult.Error.Error())
-
-				if v.UploadType == "retry" {
-
-					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
-					deliveryOrderRefCodes = nil
-					break
-				} else {
-
-					var myMap map[string]string
-					data, _ := json.Marshal(v)
-					json.Unmarshal(data, &myMap)
-
-					c.createSjUploadErrorLog(v.ErrorLine, strconv.Itoa(v.IDDistributor), v.SjUploadHistoryId, message.RequestId, getAgentResult.Agent.Name, message.BulkCode, getWarehouseResult.Warehouse.Name, errors, &now, myMap)
-					continue
-				}
-
 			}
 
 			// Get Order Status for SO
@@ -202,22 +182,6 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 			if getSODetailBySoIdSkuAndUomCodeResult.Error != nil {
 				fmt.Println(getSODetailBySoIdSkuAndUomCodeResult.Error.Error())
 				errors = append(errors, getSODetailBySoIdSkuAndUomCodeResult.Error.Error())
-
-				if v.UploadType == "retry" {
-
-					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
-					deliveryOrderRefCodes = nil
-					break
-
-				} else {
-
-					var myMap map[string]string
-					data, _ := json.Marshal(v)
-					json.Unmarshal(data, &myMap)
-
-					c.createSjUploadErrorLog(v.ErrorLine, strconv.Itoa(v.IDDistributor), v.SjUploadHistoryId, message.RequestId, getAgentResult.Agent.Name, message.BulkCode, getWarehouseResult.Warehouse.Name, errors, &now, myMap)
-					continue
-				}
 			}
 
 			// Get Brand by ID / KodeMerk
@@ -376,7 +340,7 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 					deliveryOrder.WarehouseChanMap(getWarehouseResult)
 					deliveryOrder.AgentMap(getAgentResult.Agent)
 					deliveryOrder.DoCode = helper.GenerateDOCode(getAgentResult.Agent.ID, getOrderSourceResult.OrderSource.Code)
-					deliveryOrder.DoDate = now.Format("2006-01-02")
+					deliveryOrder.DoDate = v.TanggalSJ
 					deliveryOrder.OrderStatus = getOrderStatusResult.OrderStatus
 					deliveryOrder.OrderStatusID = getOrderStatusResult.OrderStatus.ID
 					deliveryOrder.OrderSource = getOrderSourceResult.OrderSource

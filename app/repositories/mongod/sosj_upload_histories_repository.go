@@ -152,6 +152,14 @@ func (r *sosjUploadHistoriesRepository) Get(request *models.GetSosjUploadHistori
 		filter["uploaded_by"] = request.UploadedBy
 	}
 
+	if request.UploadedByName != "" {
+		filter["uploaded_by_name"] = bson.M{"$regex": ".*" + request.UploadedByName + ".*", "$options": "i"}
+	}
+
+	if request.UploadedByEmail != "" {
+		filter["uploaded_by_email"] = request.UploadedByEmail
+	}
+
 	if request.CreatedAt != "" {
 		createdAt, err := time.Parse("2006-01-02", request.CreatedAt)
 		if err != nil {
@@ -313,7 +321,7 @@ func (r *sosjUploadHistoriesRepository) Get(request *models.GetSosjUploadHistori
 	}
 
 	if total == 0 {
-		err = helper.NewError("data not found")
+		err = helper.NewError(constants.ERROR_DATA_NOT_FOUND)
 		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
@@ -374,7 +382,7 @@ func (r *sosjUploadHistoriesRepository) GetByID(ID string, countOnly bool, ctx c
 	}
 
 	if total == 0 {
-		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
+		err = helper.NewError(constants.ERROR_DATA_NOT_FOUND)
 		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
@@ -451,7 +459,7 @@ func (r *sosjUploadHistoriesRepository) UpdateByID(ID string, request *models.Up
 	}
 
 	if total == 0 {
-		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
+		err = helper.NewError(constants.ERROR_DATA_NOT_FOUND)
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData

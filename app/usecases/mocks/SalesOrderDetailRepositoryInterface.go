@@ -46,6 +46,11 @@ func (_m *SalesOrderDetailRepositoryInterface) UpdateByID(id int, request *model
 	_m.Called(id, request, sqlTransaction, ctx, result)
 }
 
+// GetBySOIDAndSku provides a mock function with given fields: salesOrderID, sku, uomCode, countOnly, ctx, result
+func (_m *SalesOrderDetailRepositoryInterface) GetBySOIDAndSku(salesOrderID int, sku string, countOnly bool, ctx context.Context, result chan *models.SalesOrderDetailsChan) {
+	_m.Called(salesOrderID, sku, countOnly, ctx, result)
+}
+
 type mockConstructorTestingTNewSalesOrderDetailRepositoryInterface interface {
 	mock.TestingT
 	Cleanup(func())

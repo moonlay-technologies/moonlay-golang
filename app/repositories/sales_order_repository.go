@@ -153,7 +153,7 @@ func (r *salesOrder) GetByCode(soCode string, countOnly bool, ctx context.Contex
 
 		if total == 0 {
 			err = helper.NewError("sales_order data not found")
-			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response

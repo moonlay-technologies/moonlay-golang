@@ -36,6 +36,10 @@ func (_m *DeliveryOrderRepositoryInterface) UpdateByID(id int, deliveryOrder *mo
 	_m.Called(id, deliveryOrder, sqlTransaction, ctx, result)
 }
 
+// UpdateByID provides a mock function with given fields: id, deliveryOrder, sqlTransaction, ctx, result
+func (_m *DeliveryOrderRepositoryInterface) GetByDoRefCode(doRefCode string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderChan) {
+	_m.Called(doRefCode, countOnly, ctx, resultChan)
+}
 type mockConstructorTestingTNewDeliveryOrderRepositoryInterface interface {
 	mock.TestingT
 	Cleanup(func())

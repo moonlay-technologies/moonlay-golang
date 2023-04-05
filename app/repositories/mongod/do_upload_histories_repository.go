@@ -307,7 +307,7 @@ func (r *doUploadHistoriesRepository) Get(request *models.GetDoUploadHistoriesRe
 	}
 
 	if total == 0 {
-		err = helper.NewError("data not found")
+		err = helper.NewError(constants.ERROR_DATA_NOT_FOUND)
 		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
@@ -367,7 +367,7 @@ func (r *doUploadHistoriesRepository) GetByID(ID string, countOnly bool, ctx con
 	}
 
 	if total == 0 {
-		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
+		err = helper.NewError(constants.ERROR_DATA_NOT_FOUND)
 		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
@@ -423,7 +423,7 @@ func (r *doUploadHistoriesRepository) GetByHistoryID(ID string, countOnly bool, 
 	}
 
 	if total == 0 {
-		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
+		err = helper.NewError(constants.ERROR_DATA_NOT_FOUND)
 		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData

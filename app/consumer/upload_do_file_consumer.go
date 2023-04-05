@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"order-service/app/middlewares"
 	"order-service/app/models"
 	"order-service/app/models/constants"
@@ -11,6 +12,7 @@ import (
 	mongoRepositories "order-service/app/repositories/mongod"
 	"order-service/global/utils/helper"
 	kafkadbo "order-service/global/utils/kafka"
+	"strconv"
 	"strings"
 	"time"
 
@@ -29,12 +31,16 @@ type uploadDOFileConsumerHandler struct {
 	sjUploadHistoriesRepository mongoRepositories.DoUploadHistoriesRepositoryInterface
 	sjUploadErrorLogsRepository mongoRepositories.DoUploadErrorLogsRepositoryInterface
 	warehouseRepository         repositories.WarehouseRepositoryInterface
+	salesOrderRepository        repositories.SalesOrderRepositoryInterface
+	salesOrderDetailRepository  repositories.SalesOrderDetailRepositoryInterface
+	deliveryOrderRepository     repositories.DeliveryOrderRepositoryInterface
+	orderStatusRepository       repositories.OrderStatusRepositoryInterface
 	ctx                         context.Context
 	args                        []interface{}
 	db                          dbresolver.DB
 }
 
-func InitUploadDOFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, uploadRepository repositories.UploadRepositoryInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, requestValidationRepository repositories.RequestValidationRepositoryInterface, sjUploadHistoriesRepository mongoRepositories.DoUploadHistoriesRepositoryInterface, sjUploadErrorLogsRepository mongoRepositories.DoUploadErrorLogsRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, ctx context.Context, args []interface{}, db dbresolver.DB) UploadDOFileConsumerHandlerInterface {
+func InitUploadDOFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, uploadRepository repositories.UploadRepositoryInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, requestValidationRepository repositories.RequestValidationRepositoryInterface, sjUploadHistoriesRepository mongoRepositories.DoUploadHistoriesRepositoryInterface, sjUploadErrorLogsRepository mongoRepositories.DoUploadErrorLogsRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, ctx context.Context, args []interface{}, db dbresolver.DB) UploadDOFileConsumerHandlerInterface {
 	return &uploadDOFileConsumerHandler{
 		kafkaClient:                 kafkaClient,
 		uploadRepository:            uploadRepository,
@@ -43,6 +49,10 @@ func InitUploadDOFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientIn
 		sjUploadHistoriesRepository: sjUploadHistoriesRepository,
 		sjUploadErrorLogsRepository: sjUploadErrorLogsRepository,
 		warehouseRepository:         warehouseRepository,
+		salesOrderRepository:        salesOrderRepository,
+		salesOrderDetailRepository:  salesOrderDetailRepository,
+		deliveryOrderRepository:     deliveryOrderRepository,
+		orderStatusRepository:       orderStatusRepository,
 		ctx:                         ctx,
 		args:                        args,
 		db:                          db,
@@ -118,23 +128,6 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 
 		var uploadDOFields []*models.UploadDOField
 		for i, v := range results {
-			warehouseName := ""
-			if len(v["KodeGudang"]) > 0 {
-				getWarehouseResultChan := make(chan *models.WarehouseChan)
-				go c.warehouseRepository.GetByCode(v["KodeGudang"], false, c.ctx, getWarehouseResultChan)
-				getWarehouseResult := <-getWarehouseResultChan
-				if getWarehouseResult.Error != nil {
-					if key == "retry" {
-						c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
-						break
-					} else {
-						errors := []string{getWarehouseResult.Error.Error()}
-						c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
-						continue
-					}
-				}
-				warehouseName = getWarehouseResult.Warehouse.Name
-			}
 			mandatoryError := c.requestValidationMiddleware.UploadMandatoryValidation([]*models.TemplateRequest{
 				{
 					Field: "IDDistributor",
@@ -169,13 +162,13 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 					Value: v["Unit"],
 				},
 			})
-			if len(mandatoryError) > 1 {
+			if len(mandatoryError) >= 1 {
 				if key == "retry" {
 					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 					break
 				} else {
 					errors := mandatoryError
-					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
+					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, "", errors, &now, v)
 					continue
 				}
 			}
@@ -195,13 +188,61 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 				},
 			}
 			intTypeResult, intTypeError := c.requestValidationMiddleware.UploadIntTypeValidation(intType)
-			if len(intTypeError) > 1 {
+			if len(intTypeError) >= 1 {
 				if key == "retry" {
 					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 					break
 				} else {
 					errors := intTypeError
+					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, "", errors, &now, v)
+					continue
+				}
+			}
+
+			agentId, _ := strconv.Atoi(v["IDDistributor"])
+			getWarehouseResultChan := make(chan *models.WarehouseChan)
+			var getWhBy string
+			if len(v["KodeGudang"]) > 0 {
+				getWhBy = "code"
+				go c.warehouseRepository.GetByCode(v["KodeGudang"], false, c.ctx, getWarehouseResultChan)
+			} else {
+				getWhBy = "agentId"
+				go c.warehouseRepository.GetByAgentID(agentId, false, c.ctx, getWarehouseResultChan)
+			}
+			getWarehouseResult := <-getWarehouseResultChan
+			if getWarehouseResult.Error != nil && getWarehouseResult.ErrorLog.StatusCode != http.StatusNotFound {
+				if key == "retry" {
+					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{getWarehouseResult.Error.Error()}
+					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, "", errors, &now, v)
+					continue
+				}
+			}
+			warehouseName := getWarehouseResult.Warehouse.Name
+
+			if getWarehouseResult.Warehouse.OwnerID != agentId {
+				if key == "retry" {
+					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{fmt.Sprintf("Gudang dengan Kode %s Tidak Ditemukan pada Distributor %s. Silahkan gunakan Kode Gudang yang lain.", v["KodeGudang"], message.AgentName)}
+					if getWhBy == "agentId" {
+						errors = []string{fmt.Sprintf("Gudang Utama pada Distributor %s Tidak Ditemukan. Silahkan Periksa Kode Gudang Utama Anda atau gunakan Kode Gudang yang lain.", message.AgentName)}
+					}
 					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
+					continue
+				}
+			}
+
+			if getWarehouseResult.Warehouse.Status != 1 {
+				if key == "retry" {
+					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{fmt.Sprintf("Gudang dengan Kode %s sudah Tidak Aktif pada Distributor %s. Silahkan gunakan Kode Gudang yang lain.", v["KodeGudang"], message.AgentName)}
+					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, "", errors, &now, v)
 					continue
 				}
 			}
@@ -222,12 +263,167 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 				helper.GenerateMustActive("agents", "IDDistributor", intTypeResult["IDDistributor"], "active"),
 			}
 			mustActiveError := c.requestValidationMiddleware.UploadMustActiveValidation(mustActiveField)
-			if len(mustActiveError) > 1 {
+			if len(mustActiveError) >= 1 {
 				if key == "retry" {
 					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 					break
 				} else {
 					errors := mustActiveError
+
+					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
+					continue
+				}
+			}
+
+			getSalesOrderResultChan := make(chan *models.SalesOrderChan)
+			go c.salesOrderRepository.GetByCode(v["NoOrder"], false, c.ctx, getSalesOrderResultChan)
+			getSalesOrderResult := <-getSalesOrderResultChan
+			if getSalesOrderResult.Error != nil {
+				if key == "retry" {
+					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{getSalesOrderResult.Error.Error()}
+					if getSalesOrderResult.ErrorLog.StatusCode == http.StatusNotFound {
+						errors = []string{fmt.Sprintf("Nomer Order = %s Tidak Ditemukan. Silahkan gunakan Nomer Order yang lain.", v["NoOrder"])}
+					}
+					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
+					continue
+				}
+			}
+
+			brandId, _ := strconv.Atoi(v["KodeMerk"])
+			if getSalesOrderResult.SalesOrder.BrandID != brandId {
+				if key == "retry" {
+					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{fmt.Sprintf("Kode Merek = %s di Surat Jalan BERBEDA dengan Kode Merek yang terdapat pada No Order = %s. Silahkan menggunakan Kode Merek yang sama untuk Surat Jalan dan Order.", v["KodeMerk"], v["NoOrder"])}
+
+					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
+					continue
+				}
+			}
+
+			getSODetailBySoIdAndSkuResultChan := make(chan *models.SalesOrderDetailsChan)
+			go c.salesOrderDetailRepository.GetBySOIDAndSku(getSalesOrderResult.SalesOrder.ID, v["KodeProduk"], false, c.ctx, getSODetailBySoIdAndSkuResultChan)
+			getSODetailBySoIdAndSkuResult := <-getSODetailBySoIdAndSkuResultChan
+
+			if getSODetailBySoIdAndSkuResult.Error != nil {
+				if key == "retry" {
+					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+
+				} else {
+					errors := []string{getSODetailBySoIdAndSkuResult.Error.Error()}
+					if getSODetailBySoIdAndSkuResult.ErrorLog.StatusCode == http.StatusNotFound {
+						errors = []string{fmt.Sprintf("Kode Produk = %s pada data SJ Tidak ditemukan di No. Order = %s. Silahkan gunakan kode product yang lain.", v["KodeProduk"], v["NoOrder"])}
+					}
+
+					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
+					continue
+				}
+			}
+
+			isUomExist := false
+			soDetail := &models.SalesOrderDetail{}
+			for _, y := range getSODetailBySoIdAndSkuResult.SalesOrderDetails {
+				if y.UomCode == v["Unit"] {
+					isUomExist = true
+					soDetail = y
+					break
+				}
+			}
+
+			if !isUomExist {
+				if key == "retry" {
+					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+
+				} else {
+					errors := []string{fmt.Sprintf("Satuan produk untuk SKU %s di data order dan file upload surat jalan tidak sesuai. Mohon sesuaikan kembali", v["KodeProduk"])}
+
+					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
+					continue
+				}
+			}
+
+			qtyShip, _ := strconv.Atoi(v["QTYShip"])
+			if qtyShip > soDetail.Qty {
+				if key == "retry" {
+					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+
+				} else {
+					errors := []string{fmt.Sprintf("QTY SJ untuk Kode Produk = %s Lebih Besar dari QTY Order %s. Silahkan QTY SJ disesuaikan kembali.", v["KodeProduk"], v["NoOrder"])}
+
+					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
+					continue
+				}
+			}
+
+			if qtyShip > soDetail.ResidualQty {
+				if key == "retry" {
+					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+
+				} else {
+					errors := []string{fmt.Sprintf("QTY SJ untuk Kode Produk = %s Melebihi Sisa QTY Order %s. Silahkan menyesuaikan kembali QTY produk.", v["KodeProduk"], v["NoOrder"])}
+
+					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
+					continue
+				}
+			}
+
+			getOrderStatusSOResultChan := make(chan *models.OrderStatusChan)
+			go c.orderStatusRepository.GetByID(getSalesOrderResult.SalesOrder.OrderStatusID, false, c.ctx, getOrderStatusSOResultChan)
+			getOrderStatusResult := <-getOrderStatusSOResultChan
+
+			if getOrderStatusResult.Error != nil {
+				if key == "retry" {
+					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{getSalesOrderResult.Error.Error()}
+
+					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
+					continue
+				}
+			}
+
+			if getOrderStatusResult.OrderStatus.Name != "open" && getOrderStatusResult.OrderStatus.Name != "partial" {
+				if key == "retry" {
+					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{fmt.Sprintf("Status Sales Order %s. Mohon sesuaikan kembali.", getOrderStatusResult.OrderStatus.Name)}
+
+					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
+					continue
+				}
+			}
+
+			getDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
+			go c.deliveryOrderRepository.GetByDoRefCode(v["NoSJ"], false, c.ctx, getDeliveryOrderResultChan)
+			getDeliveryOrderResult := <-getDeliveryOrderResultChan
+			if getDeliveryOrderResult.Error != nil && getDeliveryOrderResult.ErrorLog.StatusCode != http.StatusNotFound {
+				if key == "retry" {
+					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{getDeliveryOrderResult.Error.Error()}
+
+					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
+					continue
+				}
+			}
+
+			if getDeliveryOrderResult.Total > 0 {
+				if key == "retry" {
+					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{fmt.Sprintf("No. Surat Jalan = %s Sudah Terpakai pada Distributor %s, silahkan gunakan No. Surat Jalan lain.", v["NoSJ"], getDeliveryOrderResult.DeliveryOrder.AgentName)}
 
 					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
 					continue
@@ -250,6 +446,22 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 			nowWIB := time.Now().UTC().Add(7 * time.Hour)
 			duration := time.Hour*time.Duration(nowWIB.Hour()) + time.Minute*time.Duration(nowWIB.Minute()) + time.Second*time.Duration(nowWIB.Second()) + time.Nanosecond*time.Duration(nowWIB.Nanosecond())
 			parseTangalSJ, _ := time.Parse("2006-01-02", tanggalSJ)
+			tanggalOrder, _ := time.Parse("2006-01-02", getSalesOrderResult.SalesOrder.SoDate)
+
+			if tanggalOrder.Add(duration + 1*time.Minute).Before(parseTangalSJ.Add(duration)) {
+				if key == "retry" {
+					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+
+					break
+				} else {
+					errors := []string{"Tanggal Surat Jalan TIDAK BOLEH LEBIH AWAL dari Tanggal Order. Silahkan disesuaikan kembali"}
+
+					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
+
+					continue
+				}
+			}
+
 			if parseTangalSJ.Add(duration - 1*time.Minute).After(nowWIB) {
 				if key == "retry" {
 					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
