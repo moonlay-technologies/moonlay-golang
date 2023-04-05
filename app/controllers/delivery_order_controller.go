@@ -358,8 +358,7 @@ func (c *deliveryOrderController) Export(ctx *gin.Context) {
 		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 		return
 	}
-	ctx.JSON(http.StatusOK, fmt.Sprintf("%s_%s.%s", constants.DELIVERY_ORDER_EXPORT_PATH, fileDate, deliveryOrderRequest.FileType)) // Makesure dor response pattern
-	// ctx.JSON(http.StatusOK, fmt.Sprintf("%s/%s.%s", constants.DELIVERY_ORDER_EXPORT_PATH, fileName, deliveryOrderRequest.FileType))
+	ctx.JSON(http.StatusOK, fmt.Sprintf("%s/%s.%s", constants.DELIVERY_ORDER_EXPORT_PATH, fileName, deliveryOrderRequest.FileType))
 	return
 }
 
@@ -378,8 +377,7 @@ func (c *deliveryOrderController) ExportDetail(ctx *gin.Context) {
 		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 		return
 	}
-	ctx.JSON(http.StatusOK, fmt.Sprintf("%s_%s.%s", constants.DELIVERY_ORDER_DETAIL_EXPORT_PATH, fileDate, deliveryOrderDetailRequest.FileType)) // Makesure dor response pattern
-	// ctx.JSON(http.StatusOK, fmt.Sprintf("%s/%s.%s", constants.DELIVERY_ORDER_DETAIL_EXPORT_PATH, fileName, deliveryOrderRequest.FileType))
+	ctx.JSON(http.StatusOK, fmt.Sprintf("%s/%s.%s", constants.DELIVERY_ORDER_DETAIL_EXPORT_PATH, fileName, deliveryOrderDetailRequest.FileType))
 	return
 }
 

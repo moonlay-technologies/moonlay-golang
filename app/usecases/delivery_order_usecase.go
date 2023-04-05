@@ -798,13 +798,15 @@ func (u *deliveryOrderUseCase) UpdateDODetailByID(id int, request *models.Delive
 	totalSentQty := 0
 	totalQty := 0
 	for _, v := range getDeliveryOrderDetailsResult.DeliveryOrderDetails {
-		if request.ID == v.ID {
+
+		if id == v.ID {
 			orderStatusID := v.OrderStatusID
 			if v.Qty == request.Qty {
 				orderStatusID = 18
 			} else if request.Qty == 0 {
 				orderStatusID = 19
 			}
+
 			balanceQty := request.Qty - v.Qty
 			v.Qty = request.Qty
 			getOrderStatusResultChan := make(chan *models.OrderStatusChan)
@@ -984,7 +986,7 @@ func (u *deliveryOrderUseCase) UpdateDODetailByID(id int, request *models.Delive
 
 	keyKafka := []byte(deliveryOrder.DoCode)
 	messageKafka, _ := json.Marshal(deliveryOrder)
-	err := u.kafkaClient.WriteToTopic(constants.UPDATE_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
+	err := u.kafkaClient.WriteToTopic(constants.UPDATE_DELIVERY_ORDER_DETAIL_TOPIC, keyKafka, messageKafka)
 
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -1093,6 +1095,8 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 					getSalesOrderDetailResult.SalesOrderDetail.UpdatedAt = &now
 					getSalesOrderDetailResult.SalesOrderDetail.SentQty += balanceQty
 					getSalesOrderDetailResult.SalesOrderDetail.ResidualQty -= balanceQty
+					totalSentQty += getSalesOrderDetailResult.SalesOrderDetail.SentQty
+
 					if getSalesOrderDetailResult.SalesOrderDetail.SentQty == 0 {
 						getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID = 11
 					} else if getSalesOrderDetailResult.SalesOrderDetail.SentQty == getSalesOrderDetailResult.SalesOrderDetail.Qty {

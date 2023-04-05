@@ -172,7 +172,7 @@ func (d *DeliveryOrderValidator) CreateDeliveryOrderValidator(insertRequest *mod
 		return err
 	}
 
-	err = d.requestValidationMiddleware.MustActiveValidation422(ctx, mustActiveField422)
+	err = d.requestValidationMiddleware.MustActiveValidationCustomCode(422, ctx, mustActiveField422)
 	if err != nil {
 		return err
 	}
@@ -450,7 +450,7 @@ func (d *DeliveryOrderValidator) DeleteDeliveryOrderByIDValidator(sId string, ct
 		return err
 	}
 
-	err = d.requestValidationMiddleware.MustActiveValidation422(ctx, mustActiveField422)
+	err = d.requestValidationMiddleware.MustActiveValidationCustomCode(422, ctx, mustActiveField422)
 	if err != nil {
 		return err
 	}
@@ -490,7 +490,7 @@ func (d *DeliveryOrderValidator) DeleteDeliveryOrderDetailByIDValidator(sId stri
 		return err
 	}
 
-	err = d.requestValidationMiddleware.MustActiveValidation422(ctx, mustActiveField422)
+	err = d.requestValidationMiddleware.MustActiveValidationCustomCode(422, ctx, mustActiveField422)
 	if err != nil {
 		return err
 	}
@@ -635,10 +635,10 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderValidator(ctx *gin.Context) (*m
 	return deliveryOrderReqeuest, nil
 }
 
-func (c *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) (*models.DeliveryOrderExportRequest, error) {
+func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) (*models.DeliveryOrderExportRequest, error) {
 	var result baseModel.Response
 
-	sortField := c.getQueryWithDefault("sort_field", "created_at", ctx)
+	sortField := d.getQueryWithDefault("sort_field", "created_at", ctx)
 
 	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "store_id" && sortField != "created_at" && sortField != "updated_at" {
 		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
@@ -648,102 +648,133 @@ func (c *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 		return nil, err
 	}
 
-	intID, err := c.getIntQueryWithDefault("id", "0", false, ctx)
+	intID, err := d.getIntQueryWithDefault("id", "0", false, ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	intSalesOrderID, err := c.getIntQueryWithDefault("sales_order_id", "0", false, ctx)
+	mustActiveFields := []*models.MustActiveRequest{}
+
+	intSalesOrderID, m, err := d.getIntQueryWithMustActive("sales_order_id", "0", false, "sales_orders", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intSalesOrderID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intAgentID, m, err := d.getIntQueryWithMustActive("agent_id", "0", false, "agents", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intAgentID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intStoreID, m, err := d.getIntQueryWithMustActive("store_id", "0", false, "stores", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intStoreID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intBrandID, m, err := d.getIntQueryWithMustActive("brand_id", "0", false, "brands", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intBrandID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intOrderStatusID, m, err := d.getIntQueryWithMustActive("order_status_id", "0", false, "order_statuses", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intOrderStatusID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intProductID, m, err := d.getIntQueryWithMustActive("product_id", "0", false, "products", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intProductID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intCategoryID, m, err := d.getIntQueryWithMustActive("category_id", "0", false, "categories", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intCategoryID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "salesmans", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intSalesmanID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	err = d.requestValidationMiddleware.MustActiveValidationCustomCode(404, ctx, mustActiveFields)
 	if err != nil {
 		return nil, err
 	}
 
-	intAgentID, err := c.getIntQueryWithDefault("agent_id", "0", false, ctx)
+	intProvinceID, err := d.getIntQueryWithDefault("province_id", "0", false, ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	intStoreID, err := c.getIntQueryWithDefault("store_id", "0", false, ctx)
+	intCityID, err := d.getIntQueryWithDefault("city_id", "0", false, ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	intBrandID, err := c.getIntQueryWithDefault("brand_id", "0", false, ctx)
+	intDistrictID, err := d.getIntQueryWithDefault("district_id", "0", false, ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	intOrderStatusID, err := c.getIntQueryWithDefault("order_status_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intProductID, err := c.getIntQueryWithDefault("product_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intCategoryID, err := c.getIntQueryWithDefault("category_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intSalesmanID, err := c.getIntQueryWithDefault("salesman_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intProvinceID, err := c.getIntQueryWithDefault("province_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intCityID, err := c.getIntQueryWithDefault("city_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intDistrictID, err := c.getIntQueryWithDefault("district_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intVillageID, err := c.getIntQueryWithDefault("village_id", "0", false, ctx)
+	intVillageID, err := d.getIntQueryWithDefault("village_id", "0", false, ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	dateFields := []*models.DateInputRequest{}
 
-	startDoDate, dateFields := c.getQueryWithDateValidation("start_do_date", "", dateFields, ctx)
+	startDoDate, dateFields := d.getQueryWithDateValidation("start_do_date", "", dateFields, ctx)
 
-	endDoDate, dateFields := c.getQueryWithDateValidation("end_do_date", "", dateFields, ctx)
+	endDoDate, dateFields := d.getQueryWithDateValidation("end_do_date", "", dateFields, ctx)
 
-	startCreatedAt, dateFields := c.getQueryWithDateValidation("start_created_at", "", dateFields, ctx)
+	startCreatedAt, dateFields := d.getQueryWithDateValidation("start_created_at", "", dateFields, ctx)
 
-	endCreatedAt, dateFields := c.getQueryWithDateValidation("end_created_at", "", dateFields, ctx)
+	endCreatedAt, dateFields := d.getQueryWithDateValidation("end_created_at", "", dateFields, ctx)
 
-	err = c.requestValidationMiddleware.DateInputValidation(ctx, dateFields, constants.ERROR_ACTION_NAME_GET)
+	err = d.requestValidationMiddleware.DateInputValidation(ctx, dateFields, constants.ERROR_ACTION_NAME_GET)
 	if err != nil {
 		return nil, err
 	}
 
 	deliveryOrderReqeuest := &models.DeliveryOrderExportRequest{
 		SortField:         sortField,
-		SortValue:         c.getQueryWithDefault("sort_value", "desc", ctx),
-		GlobalSearchValue: c.getQueryWithDefault("global_search_value", "", ctx),
-		FileType:          c.getQueryWithDefault("file_type", "xlsx", ctx),
+		SortValue:         d.getQueryWithDefault("sort_value", "desc", ctx),
+		GlobalSearchValue: d.getQueryWithDefault("global_search_value", "", ctx),
+		FileType:          d.getQueryWithDefault("file_type", "xlsx", ctx),
 		ID:                intID,
 		SalesOrderID:      intSalesOrderID,
 		AgentID:           intAgentID,
 		StoreID:           intStoreID,
 		BrandID:           intBrandID,
 		OrderStatusID:     intOrderStatusID,
-		DoCode:            c.getQueryWithDefault("do_code", "", ctx),
+		DoCode:            d.getQueryWithDefault("do_code", "", ctx),
 		StartDoDate:       startDoDate,
 		EndDoDate:         endDoDate,
-		DoRefCode:         c.getQueryWithDefault("do_ref_code", "", ctx),
-		DoRefDate:         c.getQueryWithDefault("do_ref_date", "", ctx),
+		DoRefCode:         d.getQueryWithDefault("do_ref_code", "", ctx),
+		DoRefDate:         d.getQueryWithDefault("do_ref_date", "", ctx),
 		ProductID:         intProductID,
 		CategoryID:        intCategoryID,
 		SalesmanID:        intSalesmanID,
@@ -753,15 +784,15 @@ func (c *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 		VillageID:         intVillageID,
 		StartCreatedAt:    startCreatedAt,
 		EndCreatedAt:      endCreatedAt,
-		UpdatedAt:         c.getQueryWithDefault("updated_at", "", ctx),
+		UpdatedAt:         d.getQueryWithDefault("updated_at", "", ctx),
 	}
 	return deliveryOrderReqeuest, nil
 }
 
-func (c *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Context) (*models.DeliveryOrderDetailExportRequest, error) {
+func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Context) (*models.DeliveryOrderDetailExportRequest, error) {
 	var result baseModel.Response
 
-	sortField := c.getQueryWithDefault("sort_field", "created_at", ctx)
+	sortField := d.getQueryWithDefault("sort_field", "created_at", ctx)
 
 	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "store_id" && sortField != "created_at" && sortField != "updated_at" {
 		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
@@ -771,91 +802,125 @@ func (c *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		return nil, err
 	}
 
-	intID, err := c.getIntQueryWithDefault("id", "0", false, ctx)
+	intID, err := d.getIntQueryWithDefault("id", "0", false, ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	intDeliveryOrderID, err := c.getIntQueryWithDefault("do_id", "0", false, ctx)
+	mustActiveFields := []*models.MustActiveRequest{}
+
+	intDeliveryOrderID, m, err := d.getIntQueryWithMustActive("do_id", "0", false, "delivery_orders", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intDeliveryOrderID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intSalesOrderID, m, err := d.getIntQueryWithMustActive("sales_order_id", "0", false, "sales_orders", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intSalesOrderID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intAgentID, m, err := d.getIntQueryWithMustActive("agent_id", "0", false, "agents", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intAgentID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intStoreID, m, err := d.getIntQueryWithMustActive("store_id", "0", false, "stores", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intStoreID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intBrandID, m, err := d.getIntQueryWithMustActive("brand_id", "0", false, "brands", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intBrandID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intOrderStatusID, m, err := d.getIntQueryWithMustActive("order_status_id", "0", false, "order_statuses", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intOrderStatusID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intProductID, m, err := d.getIntQueryWithMustActive("product_id", "0", false, "products", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intProductID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intCategoryID, m, err := d.getIntQueryWithMustActive("category_id", "0", false, "categories", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intCategoryID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "salesmans", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intSalesmanID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	err = d.requestValidationMiddleware.MustActiveValidationCustomCode(404, ctx, mustActiveFields)
 	if err != nil {
 		return nil, err
 	}
 
-	intSalesOrderID, err := c.getIntQueryWithDefault("sales_order_id", "0", false, ctx)
+	intProvinceID, err := d.getIntQueryWithDefault("province_id", "0", false, ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	intAgentID, err := c.getIntQueryWithDefault("agent_id", "0", false, ctx)
+	intCityID, err := d.getIntQueryWithDefault("city_id", "0", false, ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	intStoreID, err := c.getIntQueryWithDefault("store_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intBrandID, err := c.getIntQueryWithDefault("brand_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intOrderStatusID, err := c.getIntQueryWithDefault("order_status_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intProductID, err := c.getIntQueryWithDefault("product_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intCategoryID, err := c.getIntQueryWithDefault("category_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intSalesmanID, err := c.getIntQueryWithDefault("salesman_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intProvinceID, err := c.getIntQueryWithDefault("province_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intCityID, err := c.getIntQueryWithDefault("city_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intDistrictID, err := c.getIntQueryWithDefault("district_id", "0", false, ctx)
+	intDistrictID, err := d.getIntQueryWithDefault("district_id", "0", false, ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	dateFields := []*models.DateInputRequest{}
 
-	startDoDate, dateFields := c.getQueryWithDateValidation("start_do_date", "", dateFields, ctx)
+	startDoDate, dateFields := d.getQueryWithDateValidation("start_do_date", "", dateFields, ctx)
 
-	endDoDate, dateFields := c.getQueryWithDateValidation("end_do_date", "", dateFields, ctx)
+	endDoDate, dateFields := d.getQueryWithDateValidation("end_do_date", "", dateFields, ctx)
 
-	startCreatedAt, dateFields := c.getQueryWithDateValidation("start_created_at", "", dateFields, ctx)
+	startCreatedAt, dateFields := d.getQueryWithDateValidation("start_created_at", "", dateFields, ctx)
 
-	endCreatedAt, dateFields := c.getQueryWithDateValidation("end_created_at", "", dateFields, ctx)
+	endCreatedAt, dateFields := d.getQueryWithDateValidation("end_created_at", "", dateFields, ctx)
 
-	err = c.requestValidationMiddleware.DateInputValidation(ctx, dateFields, constants.ERROR_ACTION_NAME_GET)
+	err = d.requestValidationMiddleware.DateInputValidation(ctx, dateFields, constants.ERROR_ACTION_NAME_GET)
 	if err != nil {
 		return nil, err
 	}
 
 	deliveryOrderDetailExportRequest := &models.DeliveryOrderDetailExportRequest{
 		SortField:         sortField,
-		SortValue:         c.getQueryWithDefault("sort_value", "desc", ctx),
-		GlobalSearchValue: c.getQueryWithDefault("global_search_value", "", ctx),
-		FileType:          c.getQueryWithDefault("file_type", "xlsx", ctx),
+		SortValue:         d.getQueryWithDefault("sort_value", "desc", ctx),
+		GlobalSearchValue: d.getQueryWithDefault("global_search_value", "", ctx),
+		FileType:          d.getQueryWithDefault("file_type", "xlsx", ctx),
 		ID:                intID,
 		DeliveryOrderID:   intDeliveryOrderID,
 		SalesOrderID:      intSalesOrderID,
@@ -863,11 +928,11 @@ func (c *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		StoreID:           intStoreID,
 		BrandID:           intBrandID,
 		OrderStatusID:     intOrderStatusID,
-		DoCode:            c.getQueryWithDefault("do_code", "", ctx),
+		DoCode:            d.getQueryWithDefault("do_code", "", ctx),
 		StartDoDate:       startDoDate,
 		EndDoDate:         endDoDate,
-		DoRefCode:         c.getQueryWithDefault("do_ref_code", "", ctx),
-		DoRefDate:         c.getQueryWithDefault("do_ref_date", "", ctx),
+		DoRefCode:         d.getQueryWithDefault("do_ref_code", "", ctx),
+		DoRefDate:         d.getQueryWithDefault("do_ref_date", "", ctx),
 		ProductID:         intProductID,
 		CategoryID:        intCategoryID,
 		SalesmanID:        intSalesmanID,
@@ -876,7 +941,7 @@ func (c *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		DistrictID:        intDistrictID,
 		StartCreatedAt:    startCreatedAt,
 		EndCreatedAt:      endCreatedAt,
-		UpdatedAt:         c.getQueryWithDefault("updated_at", "", ctx),
+		UpdatedAt:         d.getQueryWithDefault("updated_at", "", ctx),
 	}
 	return deliveryOrderDetailExportRequest, nil
 }
@@ -1450,4 +1515,27 @@ func (d *DeliveryOrderValidator) getIntQueryWithDefault(param string, empty stri
 		return 0, err
 	}
 	return result, nil
+}
+
+func (d *DeliveryOrderValidator) getIntQueryWithMustActive(param string, empty string, isNotZero bool, table string, clause string, ctx *gin.Context) (int, *models.MustActiveRequest, error) {
+	var response baseModel.Response
+	sResult := d.getQueryWithDefault(param, empty, ctx)
+	result, err := strconv.Atoi(sResult)
+	if err != nil {
+		err = helper.NewError(fmt.Sprintf("Parameter '%s' harus bernilai integer", param))
+		response.StatusCode = http.StatusBadRequest
+		response.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		ctx.JSON(response.StatusCode, response)
+		return 0, nil, err
+	}
+	if result == 0 && isNotZero {
+		err = helper.NewError(fmt.Sprintf("Parameter '%s' harus bernilai integer > 0", param))
+		response.StatusCode = http.StatusBadRequest
+		response.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		ctx.JSON(response.StatusCode, response)
+		return 0, nil, err
+	}
+	mustActiveField := &models.MustActiveRequest{Table: table, ReqField: param, Clause: fmt.Sprintf(clause, result)}
+
+	return result, mustActiveField, nil
 }
