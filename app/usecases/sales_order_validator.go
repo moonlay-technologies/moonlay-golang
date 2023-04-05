@@ -777,10 +777,33 @@ func (d *SalesOrderValidator) getIntQueryWithDefault(param string, empty string,
 	return result, nil
 }
 
-func (c *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*models.SalesOrderExportRequest, error) {
+func (d *SalesOrderValidator) getIntQueryWithMustActive(param string, empty string, isNotZero bool, table string, clause string, ctx *gin.Context) (int, *models.MustActiveRequest, error) {
+	var response baseModel.Response
+	sResult := d.getQueryWithDefault(param, empty, ctx)
+	result, err := strconv.Atoi(sResult)
+	if err != nil {
+		err = helper.NewError(fmt.Sprintf("Parameter '%s' harus bernilai integer", param))
+		response.StatusCode = http.StatusBadRequest
+		response.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		ctx.JSON(response.StatusCode, response)
+		return 0, nil, err
+	}
+	if result == 0 && isNotZero {
+		err = helper.NewError(fmt.Sprintf("Parameter '%s' harus bernilai integer > 0", param))
+		response.StatusCode = http.StatusBadRequest
+		response.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
+		ctx.JSON(response.StatusCode, response)
+		return 0, nil, err
+	}
+	mustActiveField := &models.MustActiveRequest{Table: table, ReqField: param, Clause: fmt.Sprintf(clause, result)}
+
+	return result, mustActiveField, nil
+}
+
+func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*models.SalesOrderExportRequest, error) {
 	var result baseModel.Response
 
-	sortField := c.getQueryWithDefault("sort_field", "created_at", ctx)
+	sortField := d.getQueryWithDefault("sort_field", "created_at", ctx)
 
 	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "store_id" && sortField != "created_at" && sortField != "updated_at" {
 		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
@@ -790,91 +813,122 @@ func (c *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 		return nil, err
 	}
 
-	intID, err := c.getIntQueryWithDefault("id", "0", false, ctx)
+	intID, err := d.getIntQueryWithDefault("id", "0", false, ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	intAgentID, err := c.getIntQueryWithDefault("agent_id", "0", false, ctx)
+	mustActiveFields := []*models.MustActiveRequest{}
+
+	intAgentID, m, err := d.getIntQueryWithMustActive("agent_id", "0", false, "agents", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intAgentID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intStoreID, m, err := d.getIntQueryWithMustActive("store_id", "0", false, "stores", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intStoreID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intBrandID, m, err := d.getIntQueryWithMustActive("brand_id", "0", false, "brands", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intBrandID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intOrderSourceID, m, err := d.getIntQueryWithMustActive("order_source_id", "0", false, "order_sources", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intOrderSourceID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intOrderStatusID, m, err := d.getIntQueryWithMustActive("order_status_id", "0", false, "order_statuses", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intOrderStatusID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intProductID, m, err := d.getIntQueryWithMustActive("product_id", "0", false, "products", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intProductID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intCategoryID, m, err := d.getIntQueryWithMustActive("category_id", "0", false, "categories", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intCategoryID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "salesmans", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intSalesmanID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	err = d.requestValidationMiddleware.MustActiveValidationCustomCode(404, ctx, mustActiveFields)
 	if err != nil {
 		return nil, err
 	}
 
-	intStoreID, err := c.getIntQueryWithDefault("store_id", "0", false, ctx)
+	intProvinceID, err := d.getIntQueryWithDefault("province_id", "0", false, ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	intBrandID, err := c.getIntQueryWithDefault("brand_id", "0", false, ctx)
+	intCityID, err := d.getIntQueryWithDefault("city_id", "0", false, ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	intOrderSourceID, err := c.getIntQueryWithDefault("order_source_id", "0", false, ctx)
+	intDistrictID, err := d.getIntQueryWithDefault("district_id", "0", false, ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	intOrderStatusID, err := c.getIntQueryWithDefault("order_status_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intProductID, err := c.getIntQueryWithDefault("product_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intCategoryID, err := c.getIntQueryWithDefault("category_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intSalesmanID, err := c.getIntQueryWithDefault("salesman_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intProvinceID, err := c.getIntQueryWithDefault("province_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intCityID, err := c.getIntQueryWithDefault("city_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intDistrictID, err := c.getIntQueryWithDefault("district_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intVillageID, err := c.getIntQueryWithDefault("village_id", "0", false, ctx)
+	intVillageID, err := d.getIntQueryWithDefault("village_id", "0", false, ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	dateFields := []*models.DateInputRequest{}
 
-	startSoDate, dateFields := c.getQueryWithDateValidation("start_so_date", "", dateFields, ctx)
+	startSoDate, dateFields := d.getQueryWithDateValidation("start_so_date", "", dateFields, ctx)
 
-	endSoDate, dateFields := c.getQueryWithDateValidation("end_so_date", "", dateFields, ctx)
+	endSoDate, dateFields := d.getQueryWithDateValidation("end_so_date", "", dateFields, ctx)
 
-	startCreatedAt, dateFields := c.getQueryWithDateValidation("start_created_at", "", dateFields, ctx)
+	startCreatedAt, dateFields := d.getQueryWithDateValidation("start_created_at", "", dateFields, ctx)
 
-	endCreatedAt, dateFields := c.getQueryWithDateValidation("end_created_at", "", dateFields, ctx)
+	endCreatedAt, dateFields := d.getQueryWithDateValidation("end_created_at", "", dateFields, ctx)
 
-	err = c.requestValidationMiddleware.DateInputValidation(ctx, dateFields, constants.ERROR_ACTION_NAME_GET)
+	err = d.requestValidationMiddleware.DateInputValidation(ctx, dateFields, constants.ERROR_ACTION_NAME_GET)
 	if err != nil {
 		return nil, err
 	}
 
 	salesOrderReqeuest := &models.SalesOrderExportRequest{
 		SortField:         sortField,
-		SortValue:         c.getQueryWithDefault("sort_value", "desc", ctx),
-		GlobalSearchValue: c.getQueryWithDefault("global_search_value", "", ctx),
-		FileType:          c.getQueryWithDefault("file_type", "xlsx", ctx),
+		SortValue:         d.getQueryWithDefault("sort_value", "desc", ctx),
+		GlobalSearchValue: d.getQueryWithDefault("global_search_value", "", ctx),
+		FileType:          d.getQueryWithDefault("file_type", "xlsx", ctx),
 		ID:                intID,
 		AgentID:           intAgentID,
 		StoreID:           intStoreID,
@@ -892,15 +946,15 @@ func (c *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 		VillageID:         intVillageID,
 		StartCreatedAt:    startCreatedAt,
 		EndCreatedAt:      endCreatedAt,
-		UpdatedAt:         c.getQueryWithDefault("updated_at", "", ctx),
+		UpdatedAt:         d.getQueryWithDefault("updated_at", "", ctx),
 	}
 	return salesOrderReqeuest, nil
 }
 
-func (c *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) (*models.SalesOrderDetailExportRequest, error) {
+func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) (*models.SalesOrderDetailExportRequest, error) {
 	var result baseModel.Response
 
-	sortField := c.getQueryWithDefault("sort_field", "created_at", ctx)
+	sortField := d.getQueryWithDefault("sort_field", "created_at", ctx)
 
 	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "store_id" && sortField != "created_at" && sortField != "updated_at" {
 		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
@@ -910,91 +964,122 @@ func (c *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) 
 		return nil, err
 	}
 
-	intID, err := c.getIntQueryWithDefault("id", "0", false, ctx)
+	intID, err := d.getIntQueryWithDefault("id", "0", false, ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	intAgentID, err := c.getIntQueryWithDefault("agent_id", "0", false, ctx)
+	mustActiveFields := []*models.MustActiveRequest{}
+
+	intAgentID, m, err := d.getIntQueryWithMustActive("agent_id", "0", false, "agents", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intAgentID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intStoreID, m, err := d.getIntQueryWithMustActive("store_id", "0", false, "stores", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intStoreID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intBrandID, m, err := d.getIntQueryWithMustActive("brand_id", "0", false, "brands", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intBrandID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intOrderSourceID, m, err := d.getIntQueryWithMustActive("order_source_id", "0", false, "order_sources", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intOrderSourceID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intOrderStatusID, m, err := d.getIntQueryWithMustActive("order_status_id", "0", false, "order_statuses", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intOrderStatusID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intProductID, m, err := d.getIntQueryWithMustActive("product_id", "0", false, "products", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intProductID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intCategoryID, m, err := d.getIntQueryWithMustActive("category_id", "0", false, "categories", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intCategoryID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "salesmans", "id = %d AND deleted_at IS NULL", ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intSalesmanID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	err = d.requestValidationMiddleware.MustActiveValidationCustomCode(404, ctx, mustActiveFields)
 	if err != nil {
 		return nil, err
 	}
 
-	intStoreID, err := c.getIntQueryWithDefault("store_id", "0", false, ctx)
+	intProvinceID, err := d.getIntQueryWithDefault("province_id", "0", false, ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	intBrandID, err := c.getIntQueryWithDefault("brand_id", "0", false, ctx)
+	intCityID, err := d.getIntQueryWithDefault("city_id", "0", false, ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	intOrderSourceID, err := c.getIntQueryWithDefault("order_source_id", "0", false, ctx)
+	intDistrictID, err := d.getIntQueryWithDefault("district_id", "0", false, ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	intOrderStatusID, err := c.getIntQueryWithDefault("order_status_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intProductID, err := c.getIntQueryWithDefault("product_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intCategoryID, err := c.getIntQueryWithDefault("category_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intSalesmanID, err := c.getIntQueryWithDefault("salesman_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intProvinceID, err := c.getIntQueryWithDefault("province_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intCityID, err := c.getIntQueryWithDefault("city_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intDistrictID, err := c.getIntQueryWithDefault("district_id", "0", false, ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	intVillageID, err := c.getIntQueryWithDefault("village_id", "0", false, ctx)
+	intVillageID, err := d.getIntQueryWithDefault("village_id", "0", false, ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	dateFields := []*models.DateInputRequest{}
 
-	startSoDate, dateFields := c.getQueryWithDateValidation("start_so_date", "", dateFields, ctx)
+	startSoDate, dateFields := d.getQueryWithDateValidation("start_so_date", "", dateFields, ctx)
 
-	endSoDate, dateFields := c.getQueryWithDateValidation("end_so_date", "", dateFields, ctx)
+	endSoDate, dateFields := d.getQueryWithDateValidation("end_so_date", "", dateFields, ctx)
 
-	startCreatedAt, dateFields := c.getQueryWithDateValidation("start_created_at", "", dateFields, ctx)
+	startCreatedAt, dateFields := d.getQueryWithDateValidation("start_created_at", "", dateFields, ctx)
 
-	endCreatedAt, dateFields := c.getQueryWithDateValidation("end_created_at", "", dateFields, ctx)
+	endCreatedAt, dateFields := d.getQueryWithDateValidation("end_created_at", "", dateFields, ctx)
 
-	err = c.requestValidationMiddleware.DateInputValidation(ctx, dateFields, constants.ERROR_ACTION_NAME_GET)
+	err = d.requestValidationMiddleware.DateInputValidation(ctx, dateFields, constants.ERROR_ACTION_NAME_GET)
 	if err != nil {
 		return nil, err
 	}
 
 	salesOrderDetailReqeuest := &models.SalesOrderDetailExportRequest{
 		SortField:         sortField,
-		SortValue:         c.getQueryWithDefault("sort_value", "desc", ctx),
-		GlobalSearchValue: c.getQueryWithDefault("global_search_value", "", ctx),
-		FileType:          c.getQueryWithDefault("file_type", "xlsx", ctx),
+		SortValue:         d.getQueryWithDefault("sort_value", "desc", ctx),
+		GlobalSearchValue: d.getQueryWithDefault("global_search_value", "", ctx),
+		FileType:          d.getQueryWithDefault("file_type", "xlsx", ctx),
 		ID:                intID,
 		AgentID:           intAgentID,
 		StoreID:           intStoreID,
