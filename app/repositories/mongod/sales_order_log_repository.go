@@ -251,7 +251,7 @@ func (r *salesOrderLogRepository) GetByID(ID string, countOnly bool, ctx context
 
 	if total == 0 {
 		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
@@ -298,7 +298,7 @@ func (r *salesOrderLogRepository) GetByCollumn(collumnName string, value string,
 
 	if total == 0 {
 		err = helper.NewError(helper.DefaultStatusText[http.StatusNotFound])
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response
