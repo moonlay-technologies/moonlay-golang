@@ -470,6 +470,9 @@ func (r *salesOrderDetail) UpdateByID(id int, request *models.SalesOrderDetail, 
 		return
 	}
 
+	salesOrderRedisKey := fmt.Sprintf("%s:%d", constants.SALES_ORDER_DETAIL, id)
+	_, err = r.redisdb.Client().Del(ctx, salesOrderRedisKey).Result()
+
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
@@ -477,9 +480,6 @@ func (r *salesOrderDetail) UpdateByID(id int, request *models.SalesOrderDetail, 
 		resultChan <- response
 		return
 	}
-
-	salesOrderRedisKey := fmt.Sprintf("%s*", constants.SALES_ORDER_DETAIL)
-	_, err = r.redisdb.Client().Del(ctx, salesOrderRedisKey).Result()
 
 	response.ID = salesOrderDetailID
 	response.SalesOrderDetail = request
