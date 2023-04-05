@@ -292,6 +292,34 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 				}
 			}
 
+			getOrderStatusSOResultChan := make(chan *models.OrderStatusChan)
+			go c.orderStatusRepository.GetByID(getSalesOrderResult.SalesOrder.OrderStatusID, false, c.ctx, getOrderStatusSOResultChan)
+			getOrderStatusResult := <-getOrderStatusSOResultChan
+
+			if getOrderStatusResult.Error != nil {
+				if key == "retry" {
+					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{getSalesOrderResult.Error.Error()}
+
+					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
+					continue
+				}
+			}
+
+			if getOrderStatusResult.OrderStatus.Name != "open" && getOrderStatusResult.OrderStatus.Name != "partial" {
+				if key == "retry" {
+					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{fmt.Sprintf("Status Sales Order %s. Mohon sesuaikan kembali.", getOrderStatusResult.OrderStatus.Name)}
+
+					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
+					continue
+				}
+			}
+
 			brandId, _ := strconv.Atoi(v["KodeMerk"])
 			if getSalesOrderResult.SalesOrder.BrandID != brandId {
 				if key == "retry" {
@@ -375,34 +403,6 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 				}
 			}
 
-			getOrderStatusSOResultChan := make(chan *models.OrderStatusChan)
-			go c.orderStatusRepository.GetByID(getSalesOrderResult.SalesOrder.OrderStatusID, false, c.ctx, getOrderStatusSOResultChan)
-			getOrderStatusResult := <-getOrderStatusSOResultChan
-
-			if getOrderStatusResult.Error != nil {
-				if key == "retry" {
-					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
-					break
-				} else {
-					errors := []string{getSalesOrderResult.Error.Error()}
-
-					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
-					continue
-				}
-			}
-
-			if getOrderStatusResult.OrderStatus.Name != "open" && getOrderStatusResult.OrderStatus.Name != "partial" {
-				if key == "retry" {
-					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
-					break
-				} else {
-					errors := []string{fmt.Sprintf("Status Sales Order %s. Mohon sesuaikan kembali.", getOrderStatusResult.OrderStatus.Name)}
-
-					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
-					continue
-				}
-			}
-
 			getDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
 			go c.deliveryOrderRepository.GetByDoRefCode(v["NoSJ"], false, c.ctx, getDeliveryOrderResultChan)
 			getDeliveryOrderResult := <-getDeliveryOrderResultChan
@@ -448,7 +448,7 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 			parseTangalSJ, _ := time.Parse("2006-01-02", tanggalSJ)
 			tanggalOrder, _ := time.Parse("2006-01-02", getSalesOrderResult.SalesOrder.SoDate)
 
-			if tanggalOrder.Add(duration + 1*time.Minute).Before(parseTangalSJ.Add(duration)) {
+			if parseTangalSJ.Add(duration + 1*time.Minute).Before(tanggalOrder.Add(duration)) {
 				if key == "retry" {
 					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 
