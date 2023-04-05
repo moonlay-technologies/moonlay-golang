@@ -39,3 +39,9 @@ type UploadSOFieldsChan struct {
 	Error          error
 	ID             int64 `json:"id,omitempty" bson:"id,omitempty"`
 }
+
+type RetryUploadSOResponse struct {
+	SoUploadHistoryId string `json:"so_upload_history_id"`
+	Message           string `json:"message"`
+	Status            string `json:"status"`
+}
