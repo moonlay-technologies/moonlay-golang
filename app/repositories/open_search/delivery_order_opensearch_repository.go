@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
@@ -66,7 +65,6 @@ func (r *deliveryOrderOpenSearch) Get(request *models.DeliveryOrderRequest, isCo
 		request.SortValue = ""
 	}
 	requestQuery := r.generateDeliveryOrderQueryOpenSearchTermRequest("", "", request)
-	fmt.Println("req query = ", string(requestQuery))
 	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery, true, isCountOnly)
 
 	if err.Err != nil {

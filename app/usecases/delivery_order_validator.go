@@ -8,7 +8,6 @@ import (
 	"order-service/app/models"
 	"order-service/app/models/constants"
 	"order-service/global/utils/helper"
-	baseModel "order-service/global/utils/model"
 	"strconv"
 	"strings"
 	"time"
@@ -51,7 +50,6 @@ func InitDeliveryOrderValidator(requestValidationMiddleware middlewares.RequestV
 }
 
 func (d *DeliveryOrderValidator) CreateDeliveryOrderValidator(insertRequest *models.DeliveryOrderStoreRequest, ctx *gin.Context) error {
-	var result baseModel.Response
 	dateField := []*models.DateInputRequest{
 		{
 			Field: "so_date",
@@ -80,7 +78,7 @@ func (d *DeliveryOrderValidator) CreateDeliveryOrderValidator(insertRequest *mod
 		{
 			Table:    "sales_orders",
 			ReqField: "sales_order_id",
-			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", insertRequest.SalesOrderID),
+			Clause:   fmt.Sprintf(constants.CLAUSE_ID_VALIDATION, insertRequest.SalesOrderID),
 		},
 		{
 			Table:    "warehouses a JOIN agents b JOIN sales_orders c ON a.owner_id = b.id AND c.agent_id = b.id",
@@ -99,7 +97,7 @@ func (d *DeliveryOrderValidator) CreateDeliveryOrderValidator(insertRequest *mod
 		},
 	}
 	now := time.Now().UTC().Add(7 * time.Hour)
-	sDoDate := now.Format("2006-01-02")
+	sDoDate := now.Format(constants.DATE_FORMAT_COMMON)
 	sDoDateEqualMonth := fmt.Sprintf("MONTH(so_date) = MONTH('%s') AND MONTH(so_date) = MONTH('%s')", insertRequest.DoRefDate, sDoDate)
 	sDoDateHigherOrEqualSoDate := fmt.Sprintf("DATE(so_date) <= DATE('%s') AND DATE(so_date) <= DATE('%s')", insertRequest.DoRefDate, sDoDate)
 	// sDoDateLowerOrEqualSoRefDate := fmt.Sprintf("DAY(so_ref_date) >= DAY('%s') AND DAY(so_ref_date) >= DAY(%s)", insertRequest.DoRefDate, sDoDate)
@@ -125,9 +123,7 @@ func (d *DeliveryOrderValidator) CreateDeliveryOrderValidator(insertRequest *mod
 	for _, x := range insertRequest.DeliveryOrderDetails {
 		if x.Qty < 0 {
 			err = helper.NewError(fmt.Sprintf("qty delivery order detail %d must equal or higher than 0", x.SoDetailID))
-			result.StatusCode = http.StatusUnprocessableEntity
-			result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-			ctx.JSON(result.StatusCode, result)
+			ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
 			return err
 		}
 
@@ -179,9 +175,7 @@ func (d *DeliveryOrderValidator) CreateDeliveryOrderValidator(insertRequest *mod
 
 	if totalQty <= 0 {
 		err = helper.NewError("total qty must higher than 0")
-		result.StatusCode = http.StatusUnprocessableEntity
-		result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity))
 		return err
 	}
 	return nil
@@ -206,7 +200,7 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderByIDValidator(id int, insert
 		{
 			Table:    "delivery_orders",
 			ReqField: "delivery_order_id",
-			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", id),
+			Clause:   fmt.Sprintf(constants.CLAUSE_ID_VALIDATION, id),
 		},
 		{
 			Table:    "sales_orders s JOIN delivery_orders d ON d.sales_order_id = s.id",
@@ -231,16 +225,8 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderByIDValidator(id int, insert
 
 	for _, v := range insertRequest.DeliveryOrderDetails {
 		if v.Qty < 0 {
-			err := helper.NewError("qty must be higher or equal 0")
-			result := &baseModel.Response{
-				Error: helper.NewWriteLog(baseModel.ErrorLog{
-					Message:       err.Error(),
-					SystemMessage: err.Error(),
-					StatusCode:    422,
-				}),
-				StatusCode: 422,
-			}
-			ctx.JSON(result.StatusCode, result)
+			err := helper.NewError(constants.ERROR_QTY_CANT_NEGATIVE)
+			ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity))
 			return err
 		}
 		mustActiveField417 = append(mustActiveField417, &models.MustActiveRequest{
@@ -280,7 +266,7 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByDoIDValidator(id int
 		{
 			Table:    "delivery_orders",
 			ReqField: "delivery_order_id",
-			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", id),
+			Clause:   fmt.Sprintf(constants.CLAUSE_ID_VALIDATION, id),
 		},
 		{
 			Table:    "sales_orders s JOIN delivery_orders d ON d.sales_order_id = s.id",
@@ -305,22 +291,14 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByDoIDValidator(id int
 
 	for _, v := range insertRequest {
 		if v.Qty < 0 {
-			err := helper.NewError("qty must be higher or equal 0")
-			result := &baseModel.Response{
-				Error: helper.NewWriteLog(baseModel.ErrorLog{
-					Message:       err.Error(),
-					SystemMessage: err.Error(),
-					StatusCode:    422,
-				}),
-				StatusCode: 422,
-			}
-			ctx.JSON(result.StatusCode, result)
+			err := helper.NewError(constants.ERROR_QTY_CANT_NEGATIVE)
+			ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity))
 			return err
 		}
 		mustActiveField417 = append(mustActiveField417, &models.MustActiveRequest{
 			Table:    "delivery_order_details",
 			ReqField: "delivery_order_detail_id",
-			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", v.ID),
+			Clause:   fmt.Sprintf(constants.CLAUSE_ID_VALIDATION, v.ID),
 		})
 		mustActiveField417 = append(mustActiveField417, &models.MustActiveRequest{
 			Table:    "sales_order_details s JOIN delivery_order_details d ON d.so_detail_id = s.id",
@@ -363,7 +341,7 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByIDValidator(detailId
 		{
 			Table:    "delivery_order_details",
 			ReqField: "delivery_order_detail_id",
-			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", detailId),
+			Clause:   fmt.Sprintf(constants.CLAUSE_ID_VALIDATION, detailId),
 		},
 		{
 			Table:    "sales_order_details s JOIN delivery_order_details d ON d.so_detail_id = s.id",
@@ -392,16 +370,8 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByIDValidator(detailId
 		},
 	}
 	if insertRequest.Qty < 0 {
-		err := helper.NewError("qty must be higher or equal 0")
-		result := &baseModel.Response{
-			Error: helper.NewWriteLog(baseModel.ErrorLog{
-				Message:       err.Error(),
-				SystemMessage: err.Error(),
-				StatusCode:    422,
-			}),
-			StatusCode: 422,
-		}
-		ctx.JSON(result.StatusCode, result)
+		err := helper.NewError(constants.ERROR_QTY_CANT_NEGATIVE)
+		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity))
 		return err
 	}
 
@@ -419,14 +389,11 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByIDValidator(detailId
 }
 
 func (d *DeliveryOrderValidator) DeleteDeliveryOrderByIDValidator(sId string, ctx *gin.Context) error {
-	var result baseModel.Response
 	id, err := strconv.Atoi(sId)
 
 	if err != nil {
 		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
-		result.StatusCode = http.StatusBadRequest
-		result.Error = helper.WriteLog(err, result.StatusCode, err.Error())
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
 		return err
 	}
 	mustActiveField := []*models.MustActiveRequest{
@@ -440,7 +407,7 @@ func (d *DeliveryOrderValidator) DeleteDeliveryOrderByIDValidator(sId string, ct
 		{
 			Table:         "delivery_orders",
 			ReqField:      "id",
-			Clause:        fmt.Sprintf("id = %d AND deleted_at IS NULL", id),
+			Clause:        fmt.Sprintf(constants.CLAUSE_ID_VALIDATION, id),
 			CustomMessage: fmt.Sprintf("DO id = %d was deleted", id),
 		},
 	}
@@ -459,14 +426,11 @@ func (d *DeliveryOrderValidator) DeleteDeliveryOrderByIDValidator(sId string, ct
 }
 
 func (d *DeliveryOrderValidator) DeleteDeliveryOrderDetailByIDValidator(sId string, ctx *gin.Context) error {
-	var result baseModel.Response
 	id, err := strconv.Atoi(sId)
 
 	if err != nil {
 		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
-		result.StatusCode = http.StatusBadRequest
-		result.Error = helper.WriteLog(err, result.StatusCode, err.Error())
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
 		return err
 	}
 	mustActiveField := []*models.MustActiveRequest{
@@ -480,7 +444,7 @@ func (d *DeliveryOrderValidator) DeleteDeliveryOrderDetailByIDValidator(sId stri
 		{
 			Table:         "delivery_order_details",
 			ReqField:      "id",
-			Clause:        fmt.Sprintf("id = %d AND deleted_at IS NULL", id),
+			Clause:        fmt.Sprintf(constants.CLAUSE_ID_VALIDATION, id),
 			CustomMessage: fmt.Sprintf("DO detail id = %d was deleted", id),
 		},
 	}
@@ -499,8 +463,6 @@ func (d *DeliveryOrderValidator) DeleteDeliveryOrderDetailByIDValidator(sId stri
 }
 
 func (c *DeliveryOrderValidator) GetDeliveryOrderValidator(ctx *gin.Context) (*models.DeliveryOrderRequest, error) {
-	var result baseModel.Response
-
 	pageInt, err := c.getIntQueryWithDefault("page", "1", true, ctx)
 	if err != nil {
 		return nil, err
@@ -515,9 +477,7 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderValidator(ctx *gin.Context) (*m
 
 	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "created_at" && sortField != "updated_at" {
 		err = helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
-		result.StatusCode = http.StatusBadRequest
-		result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
 		return nil, err
 	}
 
@@ -636,15 +596,11 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderValidator(ctx *gin.Context) (*m
 }
 
 func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) (*models.DeliveryOrderExportRequest, error) {
-	var result baseModel.Response
-
 	sortField := d.getQueryWithDefault("sort_field", "created_at", ctx)
 
 	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "store_id" && sortField != "created_at" && sortField != "updated_at" {
 		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
-		result.StatusCode = http.StatusBadRequest
-		result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
 		return nil, err
 	}
 
@@ -654,8 +610,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 	}
 
 	mustActiveFields := []*models.MustActiveRequest{}
-
-	intSalesOrderID, m, err := d.getIntQueryWithMustActive("sales_order_id", "0", false, "sales_orders", "id = %d AND deleted_at IS NULL", ctx)
+	intSalesOrderID, m, err := d.getIntQueryWithMustActive("sales_order_id", "0", false, "sales_orders", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -663,7 +618,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intAgentID, m, err := d.getIntQueryWithMustActive("agent_id", "0", false, "agents", "id = %d AND deleted_at IS NULL", ctx)
+	intAgentID, m, err := d.getIntQueryWithMustActive("agent_id", "0", false, "agents", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -671,7 +626,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intStoreID, m, err := d.getIntQueryWithMustActive("store_id", "0", false, "stores", "id = %d AND deleted_at IS NULL", ctx)
+	intStoreID, m, err := d.getIntQueryWithMustActive("store_id", "0", false, "stores", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -679,7 +634,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intBrandID, m, err := d.getIntQueryWithMustActive("brand_id", "0", false, "brands", "id = %d AND deleted_at IS NULL", ctx)
+	intBrandID, m, err := d.getIntQueryWithMustActive("brand_id", "0", false, "brands", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -687,7 +642,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intOrderStatusID, m, err := d.getIntQueryWithMustActive("order_status_id", "0", false, "order_statuses", "id = %d AND deleted_at IS NULL", ctx)
+	intOrderStatusID, m, err := d.getIntQueryWithMustActive("order_status_id", "0", false, "order_statuses", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -695,7 +650,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intProductID, m, err := d.getIntQueryWithMustActive("product_id", "0", false, "products", "id = %d AND deleted_at IS NULL", ctx)
+	intProductID, m, err := d.getIntQueryWithMustActive("product_id", "0", false, "products", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -703,7 +658,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intCategoryID, m, err := d.getIntQueryWithMustActive("category_id", "0", false, "categories", "id = %d AND deleted_at IS NULL", ctx)
+	intCategoryID, m, err := d.getIntQueryWithMustActive("category_id", "0", false, "categories", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -711,7 +666,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "salesmans", "id = %d AND deleted_at IS NULL", ctx)
+	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "salesmans", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -719,9 +674,11 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	err = d.requestValidationMiddleware.MustActiveValidationCustomCode(404, ctx, mustActiveFields)
-	if err != nil {
-		return nil, err
+	if len(mustActiveFields) > 0 {
+		err = d.requestValidationMiddleware.MustActiveValidationCustomCode(404, ctx, mustActiveFields)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	intProvinceID, err := d.getIntQueryWithDefault("province_id", "0", false, ctx)
@@ -750,12 +707,38 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 
 	endDoDate, dateFields := d.getQueryWithDateValidation("end_do_date", "", dateFields, ctx)
 
-	startCreatedAt, dateFields := d.getQueryWithDateValidation("start_created_at", "", dateFields, ctx)
+	startCreatedAt, dateFields := d.getQueryWithDateValidation("start_created_at", time.Now().AddDate(0, -1, 0).Format(constants.DATE_FORMAT_COMMON), dateFields, ctx)
 
-	endCreatedAt, dateFields := d.getQueryWithDateValidation("end_created_at", "", dateFields, ctx)
+	endCreatedAt, dateFields := d.getQueryWithDateValidation("end_created_at", time.Now().Format(constants.DATE_FORMAT_COMMON), dateFields, ctx)
 
 	err = d.requestValidationMiddleware.DateInputValidation(ctx, dateFields, constants.ERROR_ACTION_NAME_GET)
 	if err != nil {
+		return nil, err
+	}
+
+	dStartDate, err := time.Parse(constants.DATE_FORMAT_COMMON, startCreatedAt)
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		return nil, err
+	}
+
+	dEndDate, err := time.Parse(constants.DATE_FORMAT_COMMON, endCreatedAt)
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		return nil, err
+	}
+
+	if dStartDate.Before(time.Now().AddDate(0, -3, 0)) {
+		err = helper.NewError("Proses export tidak dapat dilakukan karena file yang akan di-export lebih dari 3 bulan dari periode tanggal buat. Silahkan cek file export kembali")
+		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity))
+		return nil, err
+	}
+
+	if dStartDate.After(dEndDate) {
+		err = helper.NewError("Proses export tidak dapat dilakukan karena tanggal selesai melebihi tanggal mulai. Silahkan cek file export kembali")
+		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity))
 		return nil, err
 	}
 
@@ -790,15 +773,12 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 }
 
 func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Context) (*models.DeliveryOrderDetailExportRequest, error) {
-	var result baseModel.Response
 
 	sortField := d.getQueryWithDefault("sort_field", "created_at", ctx)
 
 	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "store_id" && sortField != "created_at" && sortField != "updated_at" {
 		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
-		result.StatusCode = http.StatusBadRequest
-		result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
 		return nil, err
 	}
 
@@ -809,7 +789,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 
 	mustActiveFields := []*models.MustActiveRequest{}
 
-	intDeliveryOrderID, m, err := d.getIntQueryWithMustActive("do_id", "0", false, "delivery_orders", "id = %d AND deleted_at IS NULL", ctx)
+	intDeliveryOrderID, m, err := d.getIntQueryWithMustActive("do_id", "0", false, "delivery_orders", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -817,7 +797,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intSalesOrderID, m, err := d.getIntQueryWithMustActive("sales_order_id", "0", false, "sales_orders", "id = %d AND deleted_at IS NULL", ctx)
+	intSalesOrderID, m, err := d.getIntQueryWithMustActive("sales_order_id", "0", false, "sales_orders", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -825,7 +805,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intAgentID, m, err := d.getIntQueryWithMustActive("agent_id", "0", false, "agents", "id = %d AND deleted_at IS NULL", ctx)
+	intAgentID, m, err := d.getIntQueryWithMustActive("agent_id", "0", false, "agents", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -833,7 +813,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intStoreID, m, err := d.getIntQueryWithMustActive("store_id", "0", false, "stores", "id = %d AND deleted_at IS NULL", ctx)
+	intStoreID, m, err := d.getIntQueryWithMustActive("store_id", "0", false, "stores", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -841,7 +821,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intBrandID, m, err := d.getIntQueryWithMustActive("brand_id", "0", false, "brands", "id = %d AND deleted_at IS NULL", ctx)
+	intBrandID, m, err := d.getIntQueryWithMustActive("brand_id", "0", false, "brands", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -849,7 +829,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intOrderStatusID, m, err := d.getIntQueryWithMustActive("order_status_id", "0", false, "order_statuses", "id = %d AND deleted_at IS NULL", ctx)
+	intOrderStatusID, m, err := d.getIntQueryWithMustActive("order_status_id", "0", false, "order_statuses", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -857,7 +837,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intProductID, m, err := d.getIntQueryWithMustActive("product_id", "0", false, "products", "id = %d AND deleted_at IS NULL", ctx)
+	intProductID, m, err := d.getIntQueryWithMustActive("product_id", "0", false, "products", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -865,7 +845,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intCategoryID, m, err := d.getIntQueryWithMustActive("category_id", "0", false, "categories", "id = %d AND deleted_at IS NULL", ctx)
+	intCategoryID, m, err := d.getIntQueryWithMustActive("category_id", "0", false, "categories", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -873,7 +853,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "salesmans", "id = %d AND deleted_at IS NULL", ctx)
+	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "salesmans", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -947,8 +927,6 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 }
 
 func (c *DeliveryOrderValidator) GetDeliveryOrderDetailValidator(ctx *gin.Context) (*models.DeliveryOrderDetailOpenSearchRequest, error) {
-	var result baseModel.Response
-
 	pageInt, err := c.getIntQueryWithDefault("page", "1", true, ctx)
 	if err != nil {
 		return nil, err
@@ -963,9 +941,7 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderDetailValidator(ctx *gin.Contex
 
 	if sortField != "order_status_id" && sortField != "do_code" && sortField != "so_code" && sortField != "agent_id" && sortField != "store_id" && sortField != "product_id" && sortField != "qty" {
 		err = helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_code' or 'so_code' or 'agent_id' or 'store_id' or 'product_id' or 'qty'")
-		result.StatusCode = http.StatusBadRequest
-		result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
 		return nil, err
 	}
 
@@ -1094,8 +1070,6 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderDetailValidator(ctx *gin.Contex
 }
 
 func (c *DeliveryOrderValidator) GetDeliveryOrderDetailByDoIDValidator(ctx *gin.Context) (*models.DeliveryOrderDetailRequest, error) {
-	var result baseModel.Response
-
 	pageInt, err := c.getIntQueryWithDefault("page", "1", true, ctx)
 	if err != nil {
 		return nil, err
@@ -1110,9 +1084,7 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderDetailByDoIDValidator(ctx *gin.
 
 	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "created_at" && sortField != "updated_at" {
 		err = helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
-		result.StatusCode = http.StatusBadRequest
-		result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
 		return nil, err
 	}
 
@@ -1345,8 +1317,6 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderBySalesmanIDValidator(ctx *gin.
 }
 
 func (c *DeliveryOrderValidator) GetDeliveryOrderSyncToKafkaHistoriesValidator(ctx *gin.Context) (*models.DeliveryOrderEventLogRequest, error) {
-	var result baseModel.Response
-
 	pageInt, err := c.getIntQueryWithDefault("page", "1", true, ctx)
 	if err != nil {
 		return nil, err
@@ -1361,9 +1331,7 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderSyncToKafkaHistoriesValidator(c
 
 	if sortField != "do_code" && sortField != "status" && sortField != "agent_name" && sortField != "created_at" {
 		err = helper.NewError("Parameter 'sort_field' harus bernilai 'do_code' or 'status' or 'agent_name' or 'created_at' ")
-		result.StatusCode = http.StatusBadRequest
-		result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
 		return nil, err
 	}
 
@@ -1406,8 +1374,6 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderJourneysValidator(ctx *gin.Cont
 }
 
 func (c *DeliveryOrderValidator) GetDOUploadHistoriesValidator(ctx *gin.Context) (*models.GetDoUploadHistoriesRequest, error) {
-	var result baseModel.Response
-
 	pageInt, err := c.getIntQueryWithDefault("page", "1", true, ctx)
 	if err != nil {
 		return nil, err
@@ -1422,9 +1388,7 @@ func (c *DeliveryOrderValidator) GetDOUploadHistoriesValidator(ctx *gin.Context)
 
 	if sortField != "agent_name" && sortField != "file_name" && sortField != "status" && sortField != "created_at" {
 		err = helper.NewError("Parameter 'sort_field' harus bernilai 'agent_name' or 'file_name' or 'status' or 'created_at' ")
-		result.StatusCode = http.StatusBadRequest
-		result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
 		return nil, err
 	}
 
@@ -1497,42 +1461,32 @@ func (d *DeliveryOrderValidator) getQueryWithDateValidation(param string, empty 
 }
 
 func (d *DeliveryOrderValidator) getIntQueryWithDefault(param string, empty string, isNotZero bool, ctx *gin.Context) (int, error) {
-	var response baseModel.Response
 	sResult := d.getQueryWithDefault(param, empty, ctx)
 	result, err := strconv.Atoi(sResult)
 	if err != nil {
 		err = helper.NewError(fmt.Sprintf("Parameter '%s' harus bernilai integer", param))
-		response.StatusCode = http.StatusBadRequest
-		response.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(response.StatusCode, response)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
 		return 0, err
 	}
 	if result == 0 && isNotZero {
 		err = helper.NewError(fmt.Sprintf("Parameter '%s' harus bernilai integer > 0", param))
-		response.StatusCode = http.StatusBadRequest
-		response.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(response.StatusCode, response)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
 		return 0, err
 	}
 	return result, nil
 }
 
 func (d *DeliveryOrderValidator) getIntQueryWithMustActive(param string, empty string, isNotZero bool, table string, clause string, ctx *gin.Context) (int, *models.MustActiveRequest, error) {
-	var response baseModel.Response
 	sResult := d.getQueryWithDefault(param, empty, ctx)
 	result, err := strconv.Atoi(sResult)
 	if err != nil {
 		err = helper.NewError(fmt.Sprintf("Parameter '%s' harus bernilai integer", param))
-		response.StatusCode = http.StatusBadRequest
-		response.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(response.StatusCode, response)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
 		return 0, nil, err
 	}
 	if result == 0 && isNotZero {
 		err = helper.NewError(fmt.Sprintf("Parameter '%s' harus bernilai integer > 0", param))
-		response.StatusCode = http.StatusBadRequest
-		response.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(response.StatusCode, response)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
 		return 0, nil, err
 	}
 	mustActiveField := &models.MustActiveRequest{Table: table, ReqField: param, Clause: fmt.Sprintf(clause, result)}

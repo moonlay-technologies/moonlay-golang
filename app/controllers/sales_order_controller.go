@@ -13,7 +13,6 @@ import (
 	"order-service/global/utils/helper"
 	baseModel "order-service/global/utils/model"
 	"strconv"
-	"time"
 
 	"github.com/bxcodec/dbresolver"
 	"github.com/gin-gonic/gin"
@@ -507,7 +506,7 @@ func (c *salesOrderController) DeleteByID(ctx *gin.Context) {
 		{
 			Table:    "sales_orders",
 			ReqField: "id",
-			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", id),
+			Clause:   fmt.Sprintf(constants.CLAUSE_ID_VALIDATION, id),
 		},
 	}
 
@@ -782,7 +781,7 @@ func (c *salesOrderController) DeleteDetailByID(ctx *gin.Context) {
 		{
 			Table:    "sales_order_details",
 			ReqField: "id",
-			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", id),
+			Clause:   fmt.Sprintf(constants.CLAUSE_ID_VALIDATION, id),
 		},
 	}
 
@@ -870,7 +869,7 @@ func (c *salesOrderController) DeleteDetailBySOID(ctx *gin.Context) {
 		{
 			Table:    "sales_order_details",
 			ReqField: "id",
-			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", id),
+			Clause:   fmt.Sprintf(constants.CLAUSE_ID_VALIDATION, id),
 		},
 	}
 
@@ -973,11 +972,7 @@ func (c *salesOrderController) Export(ctx *gin.Context) {
 		return
 	}
 
-	fileDate := time.Now().Format("2_January_2006")
-	fmt.Println(fileDate)
-
 	fileName, errorLog := c.salesOrderUseCase.Export(salesOrderRequest, ctx)
-	fmt.Println(fileName)
 	if errorLog != nil {
 		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 		return
@@ -992,11 +987,7 @@ func (c *salesOrderController) ExportDetail(ctx *gin.Context) {
 		return
 	}
 
-	fileDate := time.Now().Format("2_January_2006")
-	fmt.Println(fileDate)
-
 	fileName, errorLog := c.salesOrderUseCase.ExportDetail(salesOrderRequest, ctx)
-	fmt.Println(fileName)
 	if errorLog != nil {
 		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 		return

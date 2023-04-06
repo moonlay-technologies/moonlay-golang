@@ -101,7 +101,7 @@ func (c *SalesOrderValidator) CreateSalesOrderValidator(insertRequest *models.Sa
 		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
 			Table:    "uoms",
 			ReqField: fmt.Sprintf("sales_order_details[%d].uom_id", i),
-			Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", v.UomID),
+			Clause:   fmt.Sprintf(constants.CLAUSE_ID_VALIDATION, v.UomID),
 		})
 		mustActiveField = append(mustActiveField, &models.MustActiveRequest{
 			Table:    "brands",
@@ -820,7 +820,7 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 
 	mustActiveFields := []*models.MustActiveRequest{}
 
-	intAgentID, m, err := d.getIntQueryWithMustActive("agent_id", "0", false, "agents", "id = %d AND deleted_at IS NULL", ctx)
+	intAgentID, m, err := d.getIntQueryWithMustActive("agent_id", "0", false, "agents", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -828,7 +828,7 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intStoreID, m, err := d.getIntQueryWithMustActive("store_id", "0", false, "stores", "id = %d AND deleted_at IS NULL", ctx)
+	intStoreID, m, err := d.getIntQueryWithMustActive("store_id", "0", false, "stores", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -836,7 +836,7 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intBrandID, m, err := d.getIntQueryWithMustActive("brand_id", "0", false, "brands", "id = %d AND deleted_at IS NULL", ctx)
+	intBrandID, m, err := d.getIntQueryWithMustActive("brand_id", "0", false, "brands", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -844,7 +844,7 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intOrderSourceID, m, err := d.getIntQueryWithMustActive("order_source_id", "0", false, "order_sources", "id = %d AND deleted_at IS NULL", ctx)
+	intOrderSourceID, m, err := d.getIntQueryWithMustActive("order_source_id", "0", false, "order_sources", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -852,7 +852,7 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intOrderStatusID, m, err := d.getIntQueryWithMustActive("order_status_id", "0", false, "order_statuses", "id = %d AND deleted_at IS NULL", ctx)
+	intOrderStatusID, m, err := d.getIntQueryWithMustActive("order_status_id", "0", false, "order_statuses", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -860,7 +860,7 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intProductID, m, err := d.getIntQueryWithMustActive("product_id", "0", false, "products", "id = %d AND deleted_at IS NULL", ctx)
+	intProductID, m, err := d.getIntQueryWithMustActive("product_id", "0", false, "products", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -868,7 +868,7 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intCategoryID, m, err := d.getIntQueryWithMustActive("category_id", "0", false, "categories", "id = %d AND deleted_at IS NULL", ctx)
+	intCategoryID, m, err := d.getIntQueryWithMustActive("category_id", "0", false, "categories", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -876,7 +876,7 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "salesmans", "id = %d AND deleted_at IS NULL", ctx)
+	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "salesmans", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -971,7 +971,7 @@ func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) 
 
 	mustActiveFields := []*models.MustActiveRequest{}
 
-	intAgentID, m, err := d.getIntQueryWithMustActive("agent_id", "0", false, "agents", "id = %d AND deleted_at IS NULL", ctx)
+	intAgentID, m, err := d.getIntQueryWithMustActive("agent_id", "0", false, "agents", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -979,7 +979,7 @@ func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intStoreID, m, err := d.getIntQueryWithMustActive("store_id", "0", false, "stores", "id = %d AND deleted_at IS NULL", ctx)
+	intStoreID, m, err := d.getIntQueryWithMustActive("store_id", "0", false, "stores", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -987,7 +987,7 @@ func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intBrandID, m, err := d.getIntQueryWithMustActive("brand_id", "0", false, "brands", "id = %d AND deleted_at IS NULL", ctx)
+	intBrandID, m, err := d.getIntQueryWithMustActive("brand_id", "0", false, "brands", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -995,7 +995,7 @@ func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intOrderSourceID, m, err := d.getIntQueryWithMustActive("order_source_id", "0", false, "order_sources", "id = %d AND deleted_at IS NULL", ctx)
+	intOrderSourceID, m, err := d.getIntQueryWithMustActive("order_source_id", "0", false, "order_sources", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1003,7 +1003,7 @@ func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intOrderStatusID, m, err := d.getIntQueryWithMustActive("order_status_id", "0", false, "order_statuses", "id = %d AND deleted_at IS NULL", ctx)
+	intOrderStatusID, m, err := d.getIntQueryWithMustActive("order_status_id", "0", false, "order_statuses", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1011,7 +1011,7 @@ func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intProductID, m, err := d.getIntQueryWithMustActive("product_id", "0", false, "products", "id = %d AND deleted_at IS NULL", ctx)
+	intProductID, m, err := d.getIntQueryWithMustActive("product_id", "0", false, "products", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1019,7 +1019,7 @@ func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intCategoryID, m, err := d.getIntQueryWithMustActive("category_id", "0", false, "categories", "id = %d AND deleted_at IS NULL", ctx)
+	intCategoryID, m, err := d.getIntQueryWithMustActive("category_id", "0", false, "categories", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1027,7 +1027,7 @@ func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "salesmans", "id = %d AND deleted_at IS NULL", ctx)
+	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "salesmans", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
