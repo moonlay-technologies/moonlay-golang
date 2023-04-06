@@ -12,6 +12,7 @@ import (
 	mongoRepositories "order-service/app/repositories/mongod"
 	"order-service/global/utils/helper"
 	kafkadbo "order-service/global/utils/kafka"
+	"order-service/global/utils/redisdb"
 	"strconv"
 	"strings"
 	"time"
@@ -36,11 +37,12 @@ type uploadDOFileConsumerHandler struct {
 	deliveryOrderRepository     repositories.DeliveryOrderRepositoryInterface
 	orderStatusRepository       repositories.OrderStatusRepositoryInterface
 	ctx                         context.Context
+	redisdb                     redisdb.RedisInterface
 	args                        []interface{}
 	db                          dbresolver.DB
 }
 
-func InitUploadDOFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, uploadRepository repositories.UploadRepositoryInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, requestValidationRepository repositories.RequestValidationRepositoryInterface, sjUploadHistoriesRepository mongoRepositories.DoUploadHistoriesRepositoryInterface, sjUploadErrorLogsRepository mongoRepositories.DoUploadErrorLogsRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, ctx context.Context, args []interface{}, db dbresolver.DB) UploadDOFileConsumerHandlerInterface {
+func InitUploadDOFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, uploadRepository repositories.UploadRepositoryInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, requestValidationRepository repositories.RequestValidationRepositoryInterface, sjUploadHistoriesRepository mongoRepositories.DoUploadHistoriesRepositoryInterface, sjUploadErrorLogsRepository mongoRepositories.DoUploadErrorLogsRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, ctx context.Context, redisdb redisdb.RedisInterface, args []interface{}, db dbresolver.DB) UploadDOFileConsumerHandlerInterface {
 	return &uploadDOFileConsumerHandler{
 		kafkaClient:                 kafkaClient,
 		uploadRepository:            uploadRepository,
@@ -54,6 +56,7 @@ func InitUploadDOFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientIn
 		deliveryOrderRepository:     deliveryOrderRepository,
 		orderStatusRepository:       orderStatusRepository,
 		ctx:                         ctx,
+		redisdb:                     redisdb,
 		args:                        args,
 		db:                          db,
 	}
@@ -201,21 +204,21 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 
 			agentId, _ := strconv.Atoi(v["IDDistributor"])
 			getWarehouseResultChan := make(chan *models.WarehouseChan)
-			var getWhBy string
 			if len(v["KodeGudang"]) > 0 {
-				getWhBy = "code"
 				go c.warehouseRepository.GetByCode(v["KodeGudang"], false, c.ctx, getWarehouseResultChan)
 			} else {
-				getWhBy = "agentId"
 				go c.warehouseRepository.GetByAgentID(agentId, false, c.ctx, getWarehouseResultChan)
 			}
 			getWarehouseResult := <-getWarehouseResultChan
-			if getWarehouseResult.Error != nil && getWarehouseResult.ErrorLog.StatusCode != http.StatusNotFound {
+			if getWarehouseResult.Error != nil {
 				if key == "retry" {
 					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 					break
 				} else {
 					errors := []string{getWarehouseResult.Error.Error()}
+					if getWarehouseResult.ErrorLog.StatusCode == http.StatusNotFound {
+						errors = []string{fmt.Sprintf("Gudang dengan Kode %s Tidak Ditemukan pada Distributor %s. Silahkan gunakan Kode Gudang yang lain.", v["KodeGudang"], message.AgentName)}
+					}
 					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, "", errors, &now, v)
 					continue
 				}
@@ -227,10 +230,9 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 					break
 				} else {
-					errors := []string{fmt.Sprintf("Gudang dengan Kode %s Tidak Ditemukan pada Distributor %s. Silahkan gunakan Kode Gudang yang lain.", v["KodeGudang"], message.AgentName)}
-					if getWhBy == "agentId" {
-						errors = []string{fmt.Sprintf("Gudang Utama pada Distributor %s Tidak Ditemukan. Silahkan Periksa Kode Gudang Utama Anda atau gunakan Kode Gudang yang lain.", message.AgentName)}
-					}
+
+					errors := []string{fmt.Sprintf("Gudang Utama pada Distributor %s Tidak Ditemukan. Silahkan Periksa Kode Gudang Utama Anda atau gunakan Kode Gudang yang lain.", message.AgentName)}
+
 					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
 					continue
 				}
@@ -275,6 +277,12 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 				}
 			}
 
+			salesOrderRedisKey := fmt.Sprintf("%s:%s", constants.SALES_ORDER_BY_CODE, v["NoOrder"])
+			_, err := c.redisdb.Client().Del(c.ctx, salesOrderRedisKey).Result()
+			if err != nil {
+				fmt.Println(err)
+			}
+
 			getSalesOrderResultChan := make(chan *models.SalesOrderChan)
 			go c.salesOrderRepository.GetByCode(v["NoOrder"], false, c.ctx, getSalesOrderResultChan)
 			getSalesOrderResult := <-getSalesOrderResultChan
@@ -292,6 +300,34 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 				}
 			}
 
+			getOrderStatusSOResultChan := make(chan *models.OrderStatusChan)
+			go c.orderStatusRepository.GetByID(getSalesOrderResult.SalesOrder.OrderStatusID, false, c.ctx, getOrderStatusSOResultChan)
+			getOrderStatusResult := <-getOrderStatusSOResultChan
+
+			if getOrderStatusResult.Error != nil {
+				if key == "retry" {
+					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{getSalesOrderResult.Error.Error()}
+
+					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
+					continue
+				}
+			}
+
+			if getOrderStatusResult.OrderStatus.Name != "open" && getOrderStatusResult.OrderStatus.Name != "partial" {
+				if key == "retry" {
+					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{fmt.Sprintf("Status Sales Order %s. Mohon sesuaikan kembali.", getOrderStatusResult.OrderStatus.Name)}
+
+					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
+					continue
+				}
+			}
+
 			brandId, _ := strconv.Atoi(v["KodeMerk"])
 			if getSalesOrderResult.SalesOrder.BrandID != brandId {
 				if key == "retry" {
@@ -303,6 +339,12 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
 					continue
 				}
+			}
+
+			salesOrderDetailRedisKey := fmt.Sprintf("%s:%d", constants.SALES_ORDER_DETAIL_BY_SOID_SKU, getSalesOrderResult.SalesOrder.ID)
+			_, err = c.redisdb.Client().Del(c.ctx, salesOrderDetailRedisKey).Result()
+			if err != nil {
+				fmt.Println(err)
 			}
 
 			getSODetailBySoIdAndSkuResultChan := make(chan *models.SalesOrderDetailsChan)
@@ -375,32 +417,10 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 				}
 			}
 
-			getOrderStatusSOResultChan := make(chan *models.OrderStatusChan)
-			go c.orderStatusRepository.GetByID(getSalesOrderResult.SalesOrder.OrderStatusID, false, c.ctx, getOrderStatusSOResultChan)
-			getOrderStatusResult := <-getOrderStatusSOResultChan
-
-			if getOrderStatusResult.Error != nil {
-				if key == "retry" {
-					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
-					break
-				} else {
-					errors := []string{getSalesOrderResult.Error.Error()}
-
-					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
-					continue
-				}
-			}
-
-			if getOrderStatusResult.OrderStatus.Name != "open" && getOrderStatusResult.OrderStatus.Name != "partial" {
-				if key == "retry" {
-					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
-					break
-				} else {
-					errors := []string{fmt.Sprintf("Status Sales Order %s. Mohon sesuaikan kembali.", getOrderStatusResult.OrderStatus.Name)}
-
-					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
-					continue
-				}
+			deliveryOrderRedisKey := fmt.Sprintf("%s:%s", constants.DELIVERY_ORDER_BY_DO_REF_CODE, v["NoSJ"])
+			_, err = c.redisdb.Client().Del(c.ctx, deliveryOrderRedisKey).Result()
+			if err != nil {
+				fmt.Println(err)
 			}
 
 			getDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
@@ -446,9 +466,9 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 			nowWIB := time.Now().UTC().Add(7 * time.Hour)
 			duration := time.Hour*time.Duration(nowWIB.Hour()) + time.Minute*time.Duration(nowWIB.Minute()) + time.Second*time.Duration(nowWIB.Second()) + time.Nanosecond*time.Duration(nowWIB.Nanosecond())
 			parseTangalSJ, _ := time.Parse("2006-01-02", tanggalSJ)
-			tanggalOrder, _ := time.Parse("2006-01-02", getSalesOrderResult.SalesOrder.SoDate)
+			tanggalOrder, _ := time.Parse(time.RFC3339, getSalesOrderResult.SalesOrder.SoDate)
 
-			if tanggalOrder.Add(duration + 1*time.Minute).Before(parseTangalSJ.Add(duration)) {
+			if parseTangalSJ.Add(duration + 1*time.Minute).Before(tanggalOrder.Add(duration)) {
 				if key == "retry" {
 					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 
