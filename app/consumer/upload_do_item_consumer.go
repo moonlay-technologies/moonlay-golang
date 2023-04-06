@@ -263,7 +263,7 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 					deliveryOrderDetail.Note = models.NullString{NullString: sql.NullString{String: v.Catatan, Valid: true}}
 					deliveryOrderDetail.Uom = getUomDetailResult.Uom
 					deliveryOrderDetail.ProductChanMap(getProductDetailResult)
-					deliveryOrderDetail.SalesOrderDetailChanMap(getSODetailBySoIdSkuAndUomCodeResult)
+					deliveryOrderDetail.SalesOrderDetailMap(getSODetailBySoIdSkuAndUomCodeResult.SalesOrderDetail)
 					deliveryOrderDetail.OrderStatusID = deliveryOrder.OrderStatusID
 					deliveryOrderDetail.OrderStatusName = deliveryOrder.OrderStatusName
 					deliveryOrderDetail.OrderStatus = deliveryOrder.OrderStatus
@@ -364,7 +364,7 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 					deliveryOrderDetail.Note = models.NullString{NullString: sql.NullString{String: v.Catatan, Valid: true}}
 					deliveryOrderDetail.Uom = getUomDetailResult.Uom
 					deliveryOrderDetail.ProductChanMap(getProductDetailResult)
-					deliveryOrderDetail.SalesOrderDetailChanMap(getSODetailBySoIdSkuAndUomCodeResult)
+					deliveryOrderDetail.SalesOrderDetailMap(getSODetailBySoIdSkuAndUomCodeResult.SalesOrderDetail)
 					deliveryOrderDetail.OrderStatusID = deliveryOrder.OrderStatusID
 					deliveryOrderDetail.OrderStatusName = deliveryOrder.OrderStatusName
 					deliveryOrderDetail.OrderStatus = deliveryOrder.OrderStatus
