@@ -14,7 +14,6 @@ import (
 	"order-service/global/utils/model"
 	baseModel "order-service/global/utils/model"
 	"strconv"
-	"time"
 
 	"github.com/bxcodec/dbresolver"
 	"github.com/gin-gonic/gin"
@@ -349,11 +348,7 @@ func (c *deliveryOrderController) Export(ctx *gin.Context) {
 		return
 	}
 
-	fileDate := time.Now().Format("2_January_2006")
-	fmt.Println(fileDate)
-
 	fileName, errorLog := c.deliveryOrderUseCase.Export(deliveryOrderRequest, ctx)
-	fmt.Println(fileName)
 	if errorLog != nil {
 		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 		return
@@ -368,11 +363,7 @@ func (c *deliveryOrderController) ExportDetail(ctx *gin.Context) {
 		return
 	}
 
-	fileDate := time.Now().Format("2_January_2006")
-	fmt.Println(fileDate)
-
 	fileName, errorLog := c.deliveryOrderUseCase.ExportDetail(deliveryOrderDetailRequest, ctx)
-	fmt.Println(fileName)
 	if errorLog != nil {
 		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 		return

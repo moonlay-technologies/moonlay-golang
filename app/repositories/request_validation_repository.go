@@ -55,7 +55,6 @@ func (r *requestValidationRepository) MustActiveValidation(values []*models.Must
 	response := &models.MustActiveRequestChan{}
 	var total int64
 	var query = ""
-	fmt.Println(query)
 	for k, value := range values {
 		if k == len(values)-1 {
 			query += fmt.Sprintf("SELECT COUNT(*) as total FROM %s WHERE %s ", value.Table, value.Clause)

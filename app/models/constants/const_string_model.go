@@ -36,4 +36,9 @@ const (
 	ORDER_STATUS_PARTIAL   = "partial"
 	ORDER_STATUS_PENDING   = "pending"
 	ORDER_STATUS_REJECTED  = "rejected"
+
+	DATE_FORMAT_COMMON = "2006-01-02"
+	DATE_FORMAT_EXPORT = "2_January_2006"
+
+	CLAUSE_ID_VALIDATION = "id = %d AND deleted_at IS NULL"
 )

@@ -259,7 +259,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 				{
 					Table:    "uoms",
 					ReqField: "Unit",
-					Clause:   fmt.Sprintf("id = %d AND deleted_at IS NULL", intTypeResult["Unit"]),
+					Clause:   fmt.Sprintf(constants.CLAUSE_ID_VALIDATION, intTypeResult["Unit"]),
 					Id:       intTypeResult["Unit"],
 				},
 			}
