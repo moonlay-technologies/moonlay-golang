@@ -492,10 +492,10 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 
 		if request.GlobalSearchValue != "" {
 			match := map[string]interface{}{
-				"multi_match": map[string]interface{}{
-					"query":  request.GlobalSearchValue,
+				"query_string": map[string]interface{}{
+					"query":  "*" + request.GlobalSearchValue + "*",
 					"fields": []string{"do_code", "do_ref_code", "sales_order.so_code", "store.store_code", "store.name"},
-					"type":   "phrase_prefix",
+					// "type":   "phrase_prefix",
 				},
 			}
 
