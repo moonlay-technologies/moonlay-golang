@@ -123,7 +123,7 @@ func (d *DeliveryOrderValidator) CreateDeliveryOrderValidator(insertRequest *mod
 	for _, x := range insertRequest.DeliveryOrderDetails {
 		if x.Qty < 0 {
 			err = helper.NewError(fmt.Sprintf("qty delivery order detail %d must equal or higher than 0", x.SoDetailID))
-			ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+			ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 			return err
 		}
 
@@ -175,7 +175,7 @@ func (d *DeliveryOrderValidator) CreateDeliveryOrderValidator(insertRequest *mod
 
 	if totalQty <= 0 {
 		err = helper.NewError("total qty must higher than 0")
-		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity))
+		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity, ""))
 		return err
 	}
 	return nil
@@ -226,7 +226,7 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderByIDValidator(id int, insert
 	for _, v := range insertRequest.DeliveryOrderDetails {
 		if v.Qty < 0 {
 			err := helper.NewError(constants.ERROR_QTY_CANT_NEGATIVE)
-			ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity))
+			ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity, ""))
 			return err
 		}
 		mustActiveField417 = append(mustActiveField417, &models.MustActiveRequest{
@@ -292,7 +292,7 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByDoIDValidator(id int
 	for _, v := range insertRequest {
 		if v.Qty < 0 {
 			err := helper.NewError(constants.ERROR_QTY_CANT_NEGATIVE)
-			ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity))
+			ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity, ""))
 			return err
 		}
 		mustActiveField417 = append(mustActiveField417, &models.MustActiveRequest{
@@ -371,7 +371,7 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByIDValidator(detailId
 	}
 	if insertRequest.Qty < 0 {
 		err := helper.NewError(constants.ERROR_QTY_CANT_NEGATIVE)
-		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity))
+		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity, ""))
 		return err
 	}
 
@@ -393,7 +393,7 @@ func (d *DeliveryOrderValidator) DeleteDeliveryOrderByIDValidator(sId string, ct
 
 	if err != nil {
 		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return err
 	}
 	mustActiveField := []*models.MustActiveRequest{
@@ -430,7 +430,7 @@ func (d *DeliveryOrderValidator) DeleteDeliveryOrderDetailByIDValidator(sId stri
 
 	if err != nil {
 		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return err
 	}
 	mustActiveField := []*models.MustActiveRequest{
@@ -477,7 +477,7 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderValidator(ctx *gin.Context) (*m
 
 	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "created_at" && sortField != "updated_at" {
 		err = helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
 
@@ -600,7 +600,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 
 	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "store_id" && sortField != "created_at" && sortField != "updated_at" {
 		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
 
@@ -719,26 +719,26 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 	dStartDate, err := time.Parse(constants.DATE_FORMAT_COMMON, startCreatedAt)
 
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
 
 	dEndDate, err := time.Parse(constants.DATE_FORMAT_COMMON, endCreatedAt)
 
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
 
 	if dStartDate.Before(time.Now().AddDate(0, -3, 0)) {
 		err = helper.NewError("Proses export tidak dapat dilakukan karena file yang akan di-export lebih dari 3 bulan dari periode tanggal buat. Silahkan cek file export kembali")
-		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity))
+		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity, constants.ERROR_INVALID_PROCESS))
 		return nil, err
 	}
 
 	if dStartDate.After(dEndDate) {
 		err = helper.NewError("Proses export tidak dapat dilakukan karena tanggal selesai melebihi tanggal mulai. Silahkan cek file export kembali")
-		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity))
+		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity, constants.ERROR_INVALID_PROCESS))
 		return nil, err
 	}
 
@@ -778,7 +778,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 
 	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "store_id" && sortField != "created_at" && sortField != "updated_at" {
 		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
 
@@ -896,6 +896,32 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		return nil, err
 	}
 
+	dStartDate, err := time.Parse(constants.DATE_FORMAT_COMMON, startCreatedAt)
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
+		return nil, err
+	}
+
+	dEndDate, err := time.Parse(constants.DATE_FORMAT_COMMON, endCreatedAt)
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
+		return nil, err
+	}
+
+	if dStartDate.Before(time.Now().AddDate(0, -3, 0)) {
+		err = helper.NewError("Proses export tidak dapat dilakukan karena file yang akan di-export lebih dari 3 bulan dari periode tanggal buat. Silahkan cek file export kembali")
+		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity, constants.ERROR_INVALID_PROCESS))
+		return nil, err
+	}
+
+	if dStartDate.After(dEndDate) {
+		err = helper.NewError("Proses export tidak dapat dilakukan karena tanggal selesai melebihi tanggal mulai. Silahkan cek file export kembali")
+		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity, constants.ERROR_INVALID_PROCESS))
+		return nil, err
+	}
+
 	deliveryOrderDetailExportRequest := &models.DeliveryOrderDetailExportRequest{
 		SortField:         sortField,
 		SortValue:         d.getQueryWithDefault("sort_value", "desc", ctx),
@@ -941,7 +967,7 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderDetailValidator(ctx *gin.Contex
 
 	if sortField != "order_status_id" && sortField != "do_code" && sortField != "so_code" && sortField != "agent_id" && sortField != "store_id" && sortField != "product_id" && sortField != "qty" {
 		err = helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_code' or 'so_code' or 'agent_id' or 'store_id' or 'product_id' or 'qty'")
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
 
@@ -1084,7 +1110,7 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderDetailByDoIDValidator(ctx *gin.
 
 	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "created_at" && sortField != "updated_at" {
 		err = helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
 
@@ -1331,7 +1357,7 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderSyncToKafkaHistoriesValidator(c
 
 	if sortField != "do_code" && sortField != "status" && sortField != "agent_name" && sortField != "created_at" {
 		err = helper.NewError("Parameter 'sort_field' harus bernilai 'do_code' or 'status' or 'agent_name' or 'created_at' ")
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
 
@@ -1388,7 +1414,7 @@ func (c *DeliveryOrderValidator) GetDOUploadHistoriesValidator(ctx *gin.Context)
 
 	if sortField != "agent_name" && sortField != "file_name" && sortField != "status" && sortField != "created_at" {
 		err = helper.NewError("Parameter 'sort_field' harus bernilai 'agent_name' or 'file_name' or 'status' or 'created_at' ")
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
 
@@ -1465,12 +1491,12 @@ func (d *DeliveryOrderValidator) getIntQueryWithDefault(param string, empty stri
 	result, err := strconv.Atoi(sResult)
 	if err != nil {
 		err = helper.NewError(fmt.Sprintf("Parameter '%s' harus bernilai integer", param))
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return 0, err
 	}
 	if result == 0 && isNotZero {
 		err = helper.NewError(fmt.Sprintf("Parameter '%s' harus bernilai integer > 0", param))
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return 0, err
 	}
 	return result, nil
@@ -1481,12 +1507,12 @@ func (d *DeliveryOrderValidator) getIntQueryWithMustActive(param string, empty s
 	result, err := strconv.Atoi(sResult)
 	if err != nil {
 		err = helper.NewError(fmt.Sprintf("Parameter '%s' harus bernilai integer", param))
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return 0, nil, err
 	}
 	if result == 0 && isNotZero {
 		err = helper.NewError(fmt.Sprintf("Parameter '%s' harus bernilai integer > 0", param))
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return 0, nil, err
 	}
 	mustActiveField := &models.MustActiveRequest{Table: table, ReqField: param, Clause: fmt.Sprintf(clause, result)}

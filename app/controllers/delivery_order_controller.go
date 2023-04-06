@@ -90,7 +90,7 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 	dbTransaction, err := c.db.BeginTx(ctx, nil)
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError))
+		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 		return
 	}
 
@@ -99,7 +99,7 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 		err = dbTransaction.Rollback()
 
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError))
+			ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 			return
 		}
 
@@ -110,7 +110,7 @@ func (c *deliveryOrderController) Create(ctx *gin.Context) {
 	err = dbTransaction.Commit()
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError))
+		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 		return
 	}
 
@@ -127,7 +127,7 @@ func (c *deliveryOrderController) UpdateByID(ctx *gin.Context) {
 
 	if err != nil {
 		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return
 	}
 
@@ -162,7 +162,7 @@ func (c *deliveryOrderController) UpdateByID(ctx *gin.Context) {
 	dbTransaction, err := c.db.BeginTx(ctx, nil)
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError))
+		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 		return
 	}
 
@@ -171,7 +171,7 @@ func (c *deliveryOrderController) UpdateByID(ctx *gin.Context) {
 		err = dbTransaction.Rollback()
 
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError))
+			ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 			return
 		}
 
@@ -183,7 +183,7 @@ func (c *deliveryOrderController) UpdateByID(ctx *gin.Context) {
 
 	if err != nil {
 		errorLog = helper.WriteLog(err, http.StatusInternalServerError, nil)
-		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError))
+		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 		return
 	}
 
@@ -200,7 +200,7 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByID(ctx *gin.Context
 
 	if err != nil {
 		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return
 	}
 	updateRequest := &models.DeliveryOrderDetailUpdateByIDRequest{}
@@ -226,7 +226,7 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByID(ctx *gin.Context
 	dbTransaction, err := c.db.BeginTx(ctx, nil)
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError))
+		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 		return
 	}
 
@@ -235,7 +235,7 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByID(ctx *gin.Context
 		err = dbTransaction.Rollback()
 
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError))
+			ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 			return
 		}
 
@@ -246,7 +246,7 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByID(ctx *gin.Context
 	err = dbTransaction.Commit()
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError))
+		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 		return
 	}
 
@@ -263,7 +263,7 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByDeliveryOrderID(ctx
 
 	if err != nil {
 		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return
 	}
 
@@ -288,7 +288,7 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByDeliveryOrderID(ctx
 	dbTransaction, err := c.db.BeginTx(ctx, nil)
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError))
+		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 		return
 	}
 
@@ -297,7 +297,7 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByDeliveryOrderID(ctx
 		err = dbTransaction.Rollback()
 
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError))
+			ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 			return
 		}
 
@@ -307,7 +307,7 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByDeliveryOrderID(ctx
 
 	err = dbTransaction.Commit()
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError))
+		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 		return
 	}
 
@@ -353,7 +353,11 @@ func (c *deliveryOrderController) Export(ctx *gin.Context) {
 		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 		return
 	}
-	ctx.JSON(http.StatusOK, fmt.Sprintf("%s/%s.%s", constants.DELIVERY_ORDER_EXPORT_PATH, fileName, deliveryOrderRequest.FileType))
+	response := &models.DeliveryOrderExportResponse{
+		StatusCode: http.StatusOK,
+		UrlFile:    fmt.Sprintf("%s/%s.%s", constants.DELIVERY_ORDER_EXPORT_PATH, fileName, deliveryOrderRequest.FileType),
+	}
+	ctx.JSON(response.StatusCode, response)
 	return
 }
 
@@ -368,7 +372,11 @@ func (c *deliveryOrderController) ExportDetail(ctx *gin.Context) {
 		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 		return
 	}
-	ctx.JSON(http.StatusOK, fmt.Sprintf("%s/%s.%s", constants.DELIVERY_ORDER_DETAIL_EXPORT_PATH, fileName, deliveryOrderDetailRequest.FileType))
+	response := &models.DeliveryOrderExportResponse{
+		StatusCode: http.StatusOK,
+		UrlFile:    fmt.Sprintf("%s/%s.%s", constants.DELIVERY_ORDER_DETAIL_EXPORT_PATH, fileName, deliveryOrderDetailRequest.FileType),
+	}
+	ctx.JSON(response.StatusCode, response)
 	return
 }
 
@@ -475,7 +483,7 @@ func (c *deliveryOrderController) GetByID(ctx *gin.Context) {
 
 	if err != nil {
 		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return
 	}
 
@@ -628,14 +636,14 @@ func (c *deliveryOrderController) DeleteByID(ctx *gin.Context) {
 
 	id, err = strconv.Atoi(sId)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return
 	}
 
 	dbTransaction, err := c.db.BeginTx(ctx, nil)
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError))
+		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 		return
 	}
 	errorLog := c.deliveryOrderUseCase.DeleteByID(id, dbTransaction)
@@ -644,7 +652,7 @@ func (c *deliveryOrderController) DeleteByID(ctx *gin.Context) {
 		err = dbTransaction.Rollback()
 
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError))
+			ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 			return
 		}
 
@@ -669,14 +677,14 @@ func (c *deliveryOrderController) DeleteDetailByID(ctx *gin.Context) {
 
 	id, err = strconv.Atoi(sId)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return
 	}
 
 	dbTransaction, err := c.db.BeginTx(ctx, nil)
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError))
+		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 		return
 	}
 
@@ -686,7 +694,7 @@ func (c *deliveryOrderController) DeleteDetailByID(ctx *gin.Context) {
 		err = dbTransaction.Rollback()
 
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError))
+			ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 			return
 		}
 
@@ -711,14 +719,14 @@ func (c *deliveryOrderController) DeleteDetailByDoID(ctx *gin.Context) {
 
 	id, err = strconv.Atoi(sId)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest))
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return
 	}
 
 	dbTransaction, err := c.db.BeginTx(ctx, nil)
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError))
+		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 		return
 	}
 
@@ -728,7 +736,7 @@ func (c *deliveryOrderController) DeleteDetailByDoID(ctx *gin.Context) {
 		err = dbTransaction.Rollback()
 
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError))
+			ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 			return
 		}
 

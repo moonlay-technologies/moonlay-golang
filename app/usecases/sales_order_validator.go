@@ -924,6 +924,32 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 		return nil, err
 	}
 
+	dStartDate, err := time.Parse(constants.DATE_FORMAT_COMMON, startCreatedAt)
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
+		return nil, err
+	}
+
+	dEndDate, err := time.Parse(constants.DATE_FORMAT_COMMON, endCreatedAt)
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
+		return nil, err
+	}
+
+	if dStartDate.Before(time.Now().AddDate(0, -3, 0)) {
+		err = helper.NewError("Proses export tidak dapat dilakukan karena file yang akan di-export lebih dari 3 bulan dari periode tanggal buat. Silahkan cek file export kembali")
+		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity, constants.ERROR_INVALID_PROCESS))
+		return nil, err
+	}
+
+	if dStartDate.After(dEndDate) {
+		err = helper.NewError("Proses export tidak dapat dilakukan karena tanggal selesai melebihi tanggal mulai. Silahkan cek file export kembali")
+		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity, constants.ERROR_INVALID_PROCESS))
+		return nil, err
+	}
+
 	salesOrderReqeuest := &models.SalesOrderExportRequest{
 		SortField:         sortField,
 		SortValue:         d.getQueryWithDefault("sort_value", "desc", ctx),
@@ -1072,6 +1098,32 @@ func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) 
 
 	err = d.requestValidationMiddleware.DateInputValidation(ctx, dateFields, constants.ERROR_ACTION_NAME_GET)
 	if err != nil {
+		return nil, err
+	}
+
+	dStartDate, err := time.Parse(constants.DATE_FORMAT_COMMON, startCreatedAt)
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
+		return nil, err
+	}
+
+	dEndDate, err := time.Parse(constants.DATE_FORMAT_COMMON, endCreatedAt)
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
+		return nil, err
+	}
+
+	if dStartDate.Before(time.Now().AddDate(0, -3, 0)) {
+		err = helper.NewError("Proses export tidak dapat dilakukan karena file yang akan di-export lebih dari 3 bulan dari periode tanggal buat. Silahkan cek file export kembali")
+		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity, constants.ERROR_INVALID_PROCESS))
+		return nil, err
+	}
+
+	if dStartDate.After(dEndDate) {
+		err = helper.NewError("Proses export tidak dapat dilakukan karena tanggal selesai melebihi tanggal mulai. Silahkan cek file export kembali")
+		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity, constants.ERROR_INVALID_PROCESS))
 		return nil, err
 	}
 
