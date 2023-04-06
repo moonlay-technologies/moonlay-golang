@@ -179,8 +179,8 @@ func (c *SalesOrderValidator) CreateSalesOrderValidator(insertRequest *models.Sa
 	}
 
 	now := time.Now().UTC().Add(7 * time.Hour)
-	parseSoDate, _ := time.Parse("2006-01-02", insertRequest.SoDate)
-	parseSoRefDate, _ := time.Parse("2006-01-02", insertRequest.SoRefDate)
+	parseSoDate, _ := time.Parse(constants.DATE_FORMAT_COMMON, insertRequest.SoDate)
+	parseSoRefDate, _ := time.Parse(constants.DATE_FORMAT_COMMON, insertRequest.SoRefDate)
 	duration := time.Hour*time.Duration(now.Hour()) + time.Minute*time.Duration(now.Minute()) + time.Second*time.Duration(now.Second()) + time.Nanosecond*time.Duration(now.Nanosecond())
 
 	soDate := parseSoDate.UTC().Add(duration)

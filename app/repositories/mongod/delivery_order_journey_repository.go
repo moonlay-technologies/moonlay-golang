@@ -82,7 +82,7 @@ func (r *deliveryOrderJourneysRepository) Get(request *models.DeliveryOrderJourn
 	}
 
 	if request.CreatedAt != "" {
-		createdAt, err := time.Parse("2006-01-02", request.CreatedAt)
+		createdAt, err := time.Parse(constants.DATE_FORMAT_COMMON, request.CreatedAt)
 		if err != nil {
 			errorLogData := helper.NewWriteLog(model.ErrorLog{
 				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",

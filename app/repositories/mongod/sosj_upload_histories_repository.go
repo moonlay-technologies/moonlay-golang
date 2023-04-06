@@ -161,7 +161,7 @@ func (r *sosjUploadHistoriesRepository) Get(request *models.GetSosjUploadHistori
 	}
 
 	if request.CreatedAt != "" {
-		createdAt, err := time.Parse("2006-01-02", request.CreatedAt)
+		createdAt, err := time.Parse(constants.DATE_FORMAT_COMMON, request.CreatedAt)
 		if err != nil {
 			errorLogData := helper.NewWriteLog(model.ErrorLog{
 				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
@@ -178,7 +178,7 @@ func (r *sosjUploadHistoriesRepository) Get(request *models.GetSosjUploadHistori
 	}
 
 	if request.StartUploadAt != "" && request.EndUploadAt == "" {
-		startUploadAt, err := time.Parse("2006-01-02", request.StartUploadAt)
+		startUploadAt, err := time.Parse(constants.DATE_FORMAT_COMMON, request.StartUploadAt)
 		if err != nil {
 			errorLogData := helper.NewWriteLog(model.ErrorLog{
 				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
@@ -195,7 +195,7 @@ func (r *sosjUploadHistoriesRepository) Get(request *models.GetSosjUploadHistori
 	}
 
 	if request.EndUploadAt != "" && request.StartUploadAt == "" {
-		endUploadAt, err := time.Parse("2006-01-02", request.EndUploadAt)
+		endUploadAt, err := time.Parse(constants.DATE_FORMAT_COMMON, request.EndUploadAt)
 		if err != nil {
 			errorLogData := helper.NewWriteLog(model.ErrorLog{
 				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
@@ -212,7 +212,7 @@ func (r *sosjUploadHistoriesRepository) Get(request *models.GetSosjUploadHistori
 	}
 
 	if request.FinishProcessDateStart != "" && request.FinishProcessDateEnd == "" {
-		finishProcessDateStart, err := time.Parse("2006-01-02", request.FinishProcessDateStart)
+		finishProcessDateStart, err := time.Parse(constants.DATE_FORMAT_COMMON, request.FinishProcessDateStart)
 		if err != nil {
 			errorLogData := helper.NewWriteLog(model.ErrorLog{
 				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
@@ -229,7 +229,7 @@ func (r *sosjUploadHistoriesRepository) Get(request *models.GetSosjUploadHistori
 	}
 
 	if request.FinishProcessDateEnd != "" && request.FinishProcessDateStart == "" {
-		finishProcessDateEnd, err := time.Parse("2006-01-02", request.FinishProcessDateEnd)
+		finishProcessDateEnd, err := time.Parse(constants.DATE_FORMAT_COMMON, request.FinishProcessDateEnd)
 		if err != nil {
 			errorLogData := helper.NewWriteLog(model.ErrorLog{
 				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
@@ -246,7 +246,7 @@ func (r *sosjUploadHistoriesRepository) Get(request *models.GetSosjUploadHistori
 	}
 
 	if request.StartUploadAt != "" && request.EndUploadAt != "" {
-		startUploadAt, err := time.Parse("2006-01-02", request.StartUploadAt)
+		startUploadAt, err := time.Parse(constants.DATE_FORMAT_COMMON, request.StartUploadAt)
 		if err != nil {
 			errorLogData := helper.NewWriteLog(model.ErrorLog{
 				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
@@ -260,7 +260,7 @@ func (r *sosjUploadHistoriesRepository) Get(request *models.GetSosjUploadHistori
 			return
 		}
 
-		endUploadAt, err := time.Parse("2006-01-02", request.EndUploadAt)
+		endUploadAt, err := time.Parse(constants.DATE_FORMAT_COMMON, request.EndUploadAt)
 		if err != nil {
 			errorLogData := helper.NewWriteLog(model.ErrorLog{
 				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
@@ -278,7 +278,7 @@ func (r *sosjUploadHistoriesRepository) Get(request *models.GetSosjUploadHistori
 	}
 
 	if request.FinishProcessDateStart != "" && request.FinishProcessDateEnd != "" {
-		finishProcessDateStart, err := time.Parse("2006-01-02", request.FinishProcessDateStart)
+		finishProcessDateStart, err := time.Parse(constants.DATE_FORMAT_COMMON, request.FinishProcessDateStart)
 		if err != nil {
 			errorLogData := helper.NewWriteLog(model.ErrorLog{
 				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
@@ -292,7 +292,7 @@ func (r *sosjUploadHistoriesRepository) Get(request *models.GetSosjUploadHistori
 			return
 		}
 
-		finishProcessDateEnd, err := time.Parse("2006-01-02", request.FinishProcessDateEnd)
+		finishProcessDateEnd, err := time.Parse(constants.DATE_FORMAT_COMMON, request.FinishProcessDateEnd)
 		if err != nil {
 			errorLogData := helper.NewWriteLog(model.ErrorLog{
 				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
