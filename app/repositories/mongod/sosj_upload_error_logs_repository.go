@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"math"
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
@@ -59,16 +58,6 @@ func (r *sosjUploadErrorLogsRepository) Get(request *models.GetSosjUploadErrorLo
 	asc := 1
 	desc := -1
 
-	page := request.Page
-	if page == 0 {
-		page = 1
-	}
-
-	perPage := request.PerPage
-	if perPage == 0 {
-		perPage = math.MaxInt
-	}
-
 	if request.SortField == "updated_at" {
 		if request.SortValue == "asc" {
 			sort = bson.M{
@@ -111,7 +100,7 @@ func (r *sosjUploadErrorLogsRepository) Get(request *models.GetSosjUploadErrorLo
 		filter["sosj_upload_history_id"] = sosjUploadHistoryID
 	}
 
-	option := options.Find().SetSkip(int64((page - 1) * perPage)).SetLimit(int64(perPage)).SetSort(sort)
+	option := options.Find().SetSort(sort)
 	total, err := collection.CountDocuments(ctx, filter)
 
 	if err != nil {
