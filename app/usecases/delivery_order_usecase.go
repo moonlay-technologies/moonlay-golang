@@ -214,7 +214,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	deliveryOrder.WarehouseChanMap(getWarehouseResult)
 	deliveryOrder.AgentMap(getAgentResult.Agent)
 	deliveryOrder.DoCode = helper.GenerateDOCode(getAgentResult.Agent.ID, getOrderSourceResult.OrderSource.Code)
-	deliveryOrder.DoDate = now.Format("2006-01-02")
+	deliveryOrder.DoDate = now.Format(constants.DATE_FORMAT_COMMON)
 	deliveryOrder.OrderStatus = getOrderStatusResult.OrderStatus
 	deliveryOrder.OrderStatusID = getOrderStatusResult.OrderStatus.ID
 	deliveryOrder.OrderSource = getOrderSourceResult.OrderSource
@@ -236,88 +236,95 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		return &models.DeliveryOrderStoreResponse{}, createDeliveryOrderResult.ErrorLog
 	}
 
+	getSalesOrderDetailsResultChan := make(chan *models.SalesOrderDetailsChan)
+	go u.salesOrderDetailRepository.GetBySalesOrderID(getSalesOrderResult.SalesOrder.ID, false, ctx, getSalesOrderDetailsResultChan)
+	getSalesOrderDetailsResult := <-getSalesOrderDetailsResultChan
+
+	if getSalesOrderDetailsResult.Error != nil {
+		return &models.DeliveryOrderStoreResponse{}, getSalesOrderDetailsResult.ErrorLog
+	}
+
 	deliveryOrderDetails := []*models.DeliveryOrderDetail{}
 	totalResidualQty := 0
-	for _, doDetail := range request.DeliveryOrderDetails {
-		getSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
-		go u.salesOrderDetailRepository.GetByID(doDetail.SoDetailID, false, ctx, getSalesOrderDetailResultChan)
-		getSalesOrderDetailResult := <-getSalesOrderDetailResultChan
+	for _, soDetail := range getSalesOrderDetailsResult.SalesOrderDetails {
+		for _, doDetail := range request.DeliveryOrderDetails {
+			if doDetail.SoDetailID == soDetail.ID {
 
-		if getSalesOrderDetailResult.Error != nil {
-			return &models.DeliveryOrderStoreResponse{}, getSalesOrderDetailResult.ErrorLog
+				soDetail.UpdatedAt = &now
+				soDetail.SentQty += doDetail.Qty
+				soDetail.ResidualQty -= doDetail.Qty
+				totalResidualQty += soDetail.ResidualQty
+				statusName := "partial"
+
+				if soDetail.ResidualQty == 0 {
+					statusName = "closed"
+				}
+
+				getOrderStatusSODetailResultChan := make(chan *models.OrderStatusChan)
+				go u.orderStatusRepository.GetByNameAndType(statusName, "sales_order_detail", false, ctx, getOrderStatusSODetailResultChan)
+				getOrderStatusSODetailResult := <-getOrderStatusSODetailResultChan
+
+				if getOrderStatusSODetailResult.Error != nil {
+					return &models.DeliveryOrderStoreResponse{}, getOrderStatusSODetailResult.ErrorLog
+				}
+				soDetail.OrderStatusID = getOrderStatusSODetailResult.OrderStatus.ID
+				soDetail.OrderStatusName = getOrderStatusSODetailResult.OrderStatus.Name
+				soDetail.OrderStatus = getOrderStatusSODetailResult.OrderStatus
+
+				getProductDetailResultChan := make(chan *models.ProductChan)
+				go u.productRepository.GetByID(soDetail.ProductID, false, ctx, getProductDetailResultChan)
+				getProductDetailResult := <-getProductDetailResultChan
+
+				if getProductDetailResult.Error != nil {
+					return &models.DeliveryOrderStoreResponse{}, getProductDetailResult.ErrorLog
+				}
+
+				getUomDetailResultChan := make(chan *models.UomChan)
+				go u.uomRepository.GetByID(soDetail.UomID, false, ctx, getUomDetailResultChan)
+				getUomDetailResult := <-getUomDetailResultChan
+
+				if getUomDetailResult.Error != nil {
+					return &models.DeliveryOrderStoreResponse{}, getUomDetailResult.ErrorLog
+				}
+
+				doDetailCode, _ := helper.GenerateDODetailCode(createDeliveryOrderResult.DeliveryOrder.ID, getAgentResult.Agent.ID, getProductDetailResult.Product.ID, getUomDetailResult.Uom.ID)
+
+				deliveryOrderDetail := &models.DeliveryOrderDetail{}
+				deliveryOrderDetail.DeliveryOrderDetailStoreRequestMap(doDetail, now)
+				deliveryOrderDetail.DeliveryOrderID = int(createDeliveryOrderResult.ID)
+				deliveryOrderDetail.BrandID = getBrandResult.Brand.ID
+				deliveryOrderDetail.DoDetailCode = doDetailCode
+				deliveryOrderDetail.Note = models.NullString{NullString: sql.NullString{String: doDetail.Note, Valid: true}}
+				deliveryOrderDetail.Uom = getUomDetailResult.Uom
+				deliveryOrderDetail.ProductChanMap(getProductDetailResult)
+				deliveryOrderDetail.SalesOrderDetailMap(soDetail)
+				deliveryOrderDetail.OrderStatusID = deliveryOrder.OrderStatusID
+				deliveryOrderDetail.OrderStatusName = deliveryOrder.OrderStatusName
+				deliveryOrderDetail.OrderStatus = deliveryOrder.OrderStatus
+
+				createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
+				go u.deliveryOrderDetailRepository.Insert(deliveryOrderDetail, sqlTransaction, ctx, createDeliveryOrderDetailResultChan)
+				createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
+
+				if createDeliveryOrderDetailResult.Error != nil {
+					return &models.DeliveryOrderStoreResponse{}, createDeliveryOrderDetailResult.ErrorLog
+				}
+
+				updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
+				go u.salesOrderDetailRepository.UpdateByID(soDetail.ID, soDetail, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
+				updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
+
+				if updateSalesOrderDetailResult.Error != nil {
+					return &models.DeliveryOrderStoreResponse{}, updateSalesOrderDetailResult.ErrorLog
+				}
+
+				deliveryOrderDetail.ID = int(createDeliveryOrderDetailResult.ID)
+				deliveryOrderDetails = append(deliveryOrderDetails, deliveryOrderDetail)
+				getSalesOrderResult.SalesOrder.SalesOrderDetails = append(getSalesOrderResult.SalesOrder.SalesOrderDetails, soDetail)
+			} else {
+				totalResidualQty += soDetail.ResidualQty
+			}
 		}
-
-		getSalesOrderDetailResult.SalesOrderDetail.UpdatedAt = &now
-		getSalesOrderDetailResult.SalesOrderDetail.SentQty += doDetail.Qty
-		getSalesOrderDetailResult.SalesOrderDetail.ResidualQty -= doDetail.Qty
-		totalResidualQty += getSalesOrderDetailResult.SalesOrderDetail.ResidualQty
-		statusName := "partial"
-
-		if getSalesOrderDetailResult.SalesOrderDetail.ResidualQty == 0 {
-			statusName = "closed"
-		}
-
-		getOrderStatusSODetailResultChan := make(chan *models.OrderStatusChan)
-		go u.orderStatusRepository.GetByNameAndType(statusName, "sales_order_detail", false, ctx, getOrderStatusSODetailResultChan)
-		getOrderStatusSODetailResult := <-getOrderStatusSODetailResultChan
-
-		if getOrderStatusSODetailResult.Error != nil {
-			return &models.DeliveryOrderStoreResponse{}, getOrderStatusSODetailResult.ErrorLog
-		}
-		getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID = getOrderStatusSODetailResult.OrderStatus.ID
-		getSalesOrderDetailResult.SalesOrderDetail.OrderStatusName = getOrderStatusSODetailResult.OrderStatus.Name
-		getSalesOrderDetailResult.SalesOrderDetail.OrderStatus = getOrderStatusSODetailResult.OrderStatus
-
-		getProductDetailResultChan := make(chan *models.ProductChan)
-		go u.productRepository.GetByID(getSalesOrderDetailResult.SalesOrderDetail.ProductID, false, ctx, getProductDetailResultChan)
-		getProductDetailResult := <-getProductDetailResultChan
-
-		if getProductDetailResult.Error != nil {
-			return &models.DeliveryOrderStoreResponse{}, getProductDetailResult.ErrorLog
-		}
-
-		getUomDetailResultChan := make(chan *models.UomChan)
-		go u.uomRepository.GetByID(getSalesOrderDetailResult.SalesOrderDetail.UomID, false, ctx, getUomDetailResultChan)
-		getUomDetailResult := <-getUomDetailResultChan
-
-		if getUomDetailResult.Error != nil {
-			return &models.DeliveryOrderStoreResponse{}, getUomDetailResult.ErrorLog
-		}
-
-		doDetailCode, _ := helper.GenerateDODetailCode(createDeliveryOrderResult.DeliveryOrder.ID, getAgentResult.Agent.ID, getProductDetailResult.Product.ID, getUomDetailResult.Uom.ID)
-
-		deliveryOrderDetail := &models.DeliveryOrderDetail{}
-		deliveryOrderDetail.DeliveryOrderDetailStoreRequestMap(doDetail, now)
-		deliveryOrderDetail.DeliveryOrderID = int(createDeliveryOrderResult.ID)
-		deliveryOrderDetail.BrandID = getBrandResult.Brand.ID
-		deliveryOrderDetail.DoDetailCode = doDetailCode
-		deliveryOrderDetail.Note = models.NullString{NullString: sql.NullString{String: doDetail.Note, Valid: true}}
-		deliveryOrderDetail.Uom = getUomDetailResult.Uom
-		deliveryOrderDetail.ProductChanMap(getProductDetailResult)
-		deliveryOrderDetail.SalesOrderDetailChanMap(getSalesOrderDetailResult)
-		deliveryOrderDetail.OrderStatusID = deliveryOrder.OrderStatusID
-		deliveryOrderDetail.OrderStatusName = deliveryOrder.OrderStatusName
-		deliveryOrderDetail.OrderStatus = deliveryOrder.OrderStatus
-
-		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
-		go u.deliveryOrderDetailRepository.Insert(deliveryOrderDetail, sqlTransaction, ctx, createDeliveryOrderDetailResultChan)
-		createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
-
-		if createDeliveryOrderDetailResult.Error != nil {
-			return &models.DeliveryOrderStoreResponse{}, createDeliveryOrderDetailResult.ErrorLog
-		}
-
-		updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
-		go u.salesOrderDetailRepository.UpdateByID(getSalesOrderDetailResult.SalesOrderDetail.ID, getSalesOrderDetailResult.SalesOrderDetail, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
-		updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
-
-		if updateSalesOrderDetailResult.Error != nil {
-			return &models.DeliveryOrderStoreResponse{}, updateSalesOrderDetailResult.ErrorLog
-		}
-
-		deliveryOrderDetail.ID = int(createDeliveryOrderDetailResult.ID)
-		deliveryOrderDetails = append(deliveryOrderDetails, deliveryOrderDetail)
-		getSalesOrderResult.SalesOrder.SalesOrderDetails = append(getSalesOrderResult.SalesOrder.SalesOrderDetails, getSalesOrderDetailResult.SalesOrderDetail)
 	}
 
 	deliveryOrder.DeliveryOrderDetails = deliveryOrderDetails

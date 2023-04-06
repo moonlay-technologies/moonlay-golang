@@ -92,7 +92,7 @@ func (c *salesOrderController) GetByID(ctx *gin.Context) {
 
 	if err != nil {
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_GET, "sales order id harus bernilai integer")},
+			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_GET, constants.ERROR_BAD_REQUEST_INT_SO_ID_PARAMS)},
 			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
@@ -210,7 +210,7 @@ func (c *salesOrderController) UpdateByID(ctx *gin.Context) {
 
 	if err != nil {
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, "sales order id harus bernilai integer")},
+			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, constants.ERROR_BAD_REQUEST_INT_SO_ID_PARAMS)},
 			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
@@ -256,7 +256,7 @@ func (c *salesOrderController) UpdateByID(ctx *gin.Context) {
 		err = dbTransaction.Rollback()
 
 		if err != nil {
-			errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLog = helper.WriteLog(err, http.StatusInternalServerError, constants.ERROR_INTERNAL_SERVER_1)
 			resultErrorLog = errorLog
 			result.StatusCode = http.StatusInternalServerError
 			result.Error = resultErrorLog
@@ -273,7 +273,7 @@ func (c *salesOrderController) UpdateByID(ctx *gin.Context) {
 	err = dbTransaction.Commit()
 
 	if err != nil {
-		errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLog = helper.WriteLog(err, http.StatusInternalServerError, constants.ERROR_INTERNAL_SERVER_1)
 		resultErrorLog = errorLog
 		result.StatusCode = http.StatusInternalServerError
 		result.Error = resultErrorLog
@@ -300,7 +300,7 @@ func (c *salesOrderController) UpdateSODetailByID(ctx *gin.Context) {
 
 	if err != nil {
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, "sales order id harus bernilai integer")},
+			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, constants.ERROR_BAD_REQUEST_INT_SO_ID_PARAMS)},
 			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
@@ -356,7 +356,7 @@ func (c *salesOrderController) UpdateSODetailByID(ctx *gin.Context) {
 		err = dbTransaction.Rollback()
 
 		if err != nil {
-			errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLog = helper.WriteLog(err, http.StatusInternalServerError, constants.ERROR_INTERNAL_SERVER_1)
 			resultErrorLog = errorLog
 			result.StatusCode = http.StatusInternalServerError
 			result.Error = resultErrorLog
@@ -373,7 +373,7 @@ func (c *salesOrderController) UpdateSODetailByID(ctx *gin.Context) {
 	err = dbTransaction.Commit()
 
 	if err != nil {
-		errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLog = helper.WriteLog(err, http.StatusInternalServerError, constants.ERROR_INTERNAL_SERVER_1)
 		resultErrorLog = errorLog
 		result.StatusCode = http.StatusInternalServerError
 		result.Error = resultErrorLog
@@ -401,7 +401,7 @@ func (c *salesOrderController) UpdateSODetailBySOID(ctx *gin.Context) {
 
 	if err != nil {
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, "sales order id harus bernilai integer")},
+			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, constants.ERROR_BAD_REQUEST_INT_SO_ID_PARAMS)},
 			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
@@ -446,7 +446,7 @@ func (c *salesOrderController) UpdateSODetailBySOID(ctx *gin.Context) {
 		err = dbTransaction.Rollback()
 
 		if err != nil {
-			errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+			errorLog = helper.WriteLog(err, http.StatusInternalServerError, constants.ERROR_INTERNAL_SERVER_1)
 			resultErrorLog = errorLog
 			result.StatusCode = http.StatusInternalServerError
 			result.Error = resultErrorLog
@@ -463,7 +463,7 @@ func (c *salesOrderController) UpdateSODetailBySOID(ctx *gin.Context) {
 	err = dbTransaction.Commit()
 
 	if err != nil {
-		errorLog = helper.WriteLog(err, http.StatusInternalServerError, "Ada kesalahan, silahkan coba lagi nanti")
+		errorLog = helper.WriteLog(err, http.StatusInternalServerError, constants.ERROR_INTERNAL_SERVER_1)
 		resultErrorLog = errorLog
 		result.StatusCode = http.StatusInternalServerError
 		result.Error = resultErrorLog
@@ -534,7 +534,7 @@ func (c *salesOrderController) DeleteByID(ctx *gin.Context) {
 			Table:           "delivery_orders d JOIN sales_orders s ON d.sales_order_id = s.id",
 			SelectedCollumn: "d.id",
 			Clause:          fmt.Sprintf("s.id = %d AND d.deleted_at IS NULL", id),
-			MessageFormat:   "Sales Order Has Delivery Order <result>, Please Delete it First",
+			MessageFormat:   constants.ERROR_UPDATE_SO_MESSAGE,
 		},
 	}
 	err = c.requestValidationMiddleware.MustEmptyValidation(ctx, mustEmpties)
@@ -572,7 +572,7 @@ func (c *salesOrderController) DeleteByID(ctx *gin.Context) {
 
 	if err != nil {
 		result.StatusCode = http.StatusInternalServerError
-		result.Error = helper.WriteLog(err, result.StatusCode, "Ada kesalahan, silahkan coba lagi nanti")
+		result.Error = helper.WriteLog(err, result.StatusCode, constants.ERROR_INTERNAL_SERVER_1)
 		ctx.JSON(result.StatusCode, result)
 		return
 	}
@@ -809,7 +809,7 @@ func (c *salesOrderController) DeleteDetailByID(ctx *gin.Context) {
 			Table:           "sales_orders s JOIN sales_order_details sd ON s.id = sd.sales_order_id JOIN delivery_orders d ON d.sales_order_id = s.id",
 			SelectedCollumn: "d.id",
 			Clause:          fmt.Sprintf("sd.id = %d AND d.deleted_at IS NULL", id),
-			MessageFormat:   "Sales Order Has Delivery Order <result>, Please Delete it First",
+			MessageFormat:   constants.ERROR_UPDATE_SO_MESSAGE,
 		},
 	}
 	err = c.requestValidationMiddleware.MustEmptyValidation(ctx, mustEmpties)
@@ -847,7 +847,7 @@ func (c *salesOrderController) DeleteDetailByID(ctx *gin.Context) {
 
 	if err != nil {
 		result.StatusCode = http.StatusInternalServerError
-		result.Error = helper.WriteLog(err, result.StatusCode, "Ada kesalahan, silahkan coba lagi nanti")
+		result.Error = helper.WriteLog(err, result.StatusCode, constants.ERROR_INTERNAL_SERVER_1)
 		ctx.JSON(result.StatusCode, result)
 		return
 	}
@@ -903,7 +903,7 @@ func (c *salesOrderController) DeleteDetailBySOID(ctx *gin.Context) {
 			Table:           "delivery_orders d JOIN sales_orders s ON d.sales_order_id = s.id",
 			SelectedCollumn: "d.id",
 			Clause:          fmt.Sprintf("s.id = %d AND d.deleted_at IS NULL", id),
-			MessageFormat:   "Sales Order Has Delivery Order <result>, Please Delete it First",
+			MessageFormat:   constants.ERROR_UPDATE_SO_MESSAGE,
 		},
 	}
 	err = c.requestValidationMiddleware.MustEmptyValidation(ctx, mustEmpties)
@@ -941,7 +941,7 @@ func (c *salesOrderController) DeleteDetailBySOID(ctx *gin.Context) {
 
 	if err != nil {
 		result.StatusCode = http.StatusInternalServerError
-		result.Error = helper.WriteLog(err, result.StatusCode, "Ada kesalahan, silahkan coba lagi nanti")
+		result.Error = helper.WriteLog(err, result.StatusCode, constants.ERROR_INTERNAL_SERVER_1)
 		ctx.JSON(result.StatusCode, result)
 		return
 	}
@@ -986,7 +986,11 @@ func (c *salesOrderController) Export(ctx *gin.Context) {
 		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 		return
 	}
-	ctx.JSON(http.StatusOK, fmt.Sprintf("%s/%s.%s", constants.SALES_ORDER_EXPORT_PATH, fileName, salesOrderRequest.FileType))
+	response := &models.SalesOrderExportResponse{
+		StatusCode: http.StatusOK,
+		UrlFile:    fmt.Sprintf("%s/%s.%s", constants.SALES_ORDER_EXPORT_PATH, fileName, salesOrderRequest.FileType),
+	}
+	ctx.JSON(http.StatusOK, response)
 	return
 }
 
@@ -1001,6 +1005,10 @@ func (c *salesOrderController) ExportDetail(ctx *gin.Context) {
 		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 		return
 	}
-	ctx.JSON(http.StatusOK, fmt.Sprintf("%s/%s.%s", constants.SALES_ORDER_DETAIL_EXPORT_PATH, fileName, salesOrderRequest.FileType))
+	response := &models.SalesOrderExportResponse{
+		StatusCode: http.StatusOK,
+		UrlFile:    fmt.Sprintf("%s/%s.%s", constants.SALES_ORDER_DETAIL_EXPORT_PATH, fileName, salesOrderRequest.FileType),
+	}
+	ctx.JSON(http.StatusOK, response)
 	return
 }

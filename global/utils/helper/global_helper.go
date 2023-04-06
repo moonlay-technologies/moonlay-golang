@@ -3,6 +3,7 @@ package helper
 import (
 	"fmt"
 	"math/rand"
+	"order-service/app/models/constants"
 	"regexp"
 	"strconv"
 	"strings"
@@ -120,7 +121,7 @@ func parseLength(s string) (int, error) {
 
 func ParseDDYYMMtoYYYYMMDD(request string) (string, error) {
 	date, err := time.Parse("02/01/2006", request)
-	return date.Format("2006-01-02"), err
+	return date.Format(constants.DATE_FORMAT_COMMON), err
 }
 
 // Generate random string

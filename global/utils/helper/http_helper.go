@@ -135,7 +135,12 @@ func GetStatusCode(err error, statusCodeDefault int) int {
 
 	return statusCode
 }
-func GenerateResultByError(err error, statusCode int) model.Response {
+func GenerateResultByError(err error, statusCode int, systemMessage string) model.Response {
+	errLog := WriteLog(err, statusCode, err.Error())
+	if systemMessage == "" {
+		systemMessage = err.Error()
+	}
+	errLog.SystemMessage = systemMessage
 	return model.Response{
 		StatusCode: statusCode,
 		Error:      WriteLog(err, statusCode, err.Error()),

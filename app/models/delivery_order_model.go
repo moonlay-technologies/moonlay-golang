@@ -337,3 +337,8 @@ type DeliveryOrderCsvResponse struct {
 	UserIDCreated  int        `json:"user_id_created,omitempty" bson:"user_id_created"`
 	UserIDModified int        `json:"user_id_modified" bson:"user_id_modified"`
 }
+
+type DeliveryOrderExportResponse struct {
+	StatusCode int    `json:"status_code,omitempty"`
+	UrlFile    string `json:"url_file,omitempty"`
+}

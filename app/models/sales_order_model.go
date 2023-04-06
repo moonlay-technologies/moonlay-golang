@@ -352,3 +352,7 @@ type SalesOrderCsvResponse struct {
 	UserIDCreated     string
 	UserIDModified    string
 }
+type SalesOrderExportResponse struct {
+	StatusCode int    `json:"status_code,omitempty"`
+	UrlFile    string `json:"url_file,omitempty"`
+}

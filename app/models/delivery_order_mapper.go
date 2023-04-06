@@ -120,10 +120,10 @@ func (deliveryOrderDetail *DeliveryOrderDetail) ProductChanMap(request *ProductC
 	return
 }
 
-func (deliveryOrderDetail *DeliveryOrderDetail) SalesOrderDetailChanMap(request *SalesOrderDetailChan) {
-	deliveryOrderDetail.ProductID = request.SalesOrderDetail.ProductID
-	deliveryOrderDetail.UomID = request.SalesOrderDetail.UomID
-	deliveryOrderDetail.SoDetail = request.SalesOrderDetail
+func (deliveryOrderDetail *DeliveryOrderDetail) SalesOrderDetailMap(request *SalesOrderDetail) {
+	deliveryOrderDetail.ProductID = request.ProductID
+	deliveryOrderDetail.UomID = request.UomID
+	deliveryOrderDetail.SoDetail = request
 	return
 }
 

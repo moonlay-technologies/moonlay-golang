@@ -413,7 +413,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 			nowWIB := time.Now().UTC().Add(7 * time.Hour)
 			duration := time.Hour*time.Duration(nowWIB.Hour()) + time.Minute*time.Duration(nowWIB.Minute()) + time.Second*time.Duration(nowWIB.Second()) + time.Nanosecond*time.Duration(nowWIB.Nanosecond())
 
-			parseTangalOrder, _ := time.Parse("2006-01-02", tanggalOrder)
+			parseTangalOrder, _ := time.Parse(constants.DATE_FORMAT_COMMON, tanggalOrder)
 			if parseTangalOrder.Add(duration - 1*time.Minute).After(nowWIB) {
 				if key == "retry" {
 					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
@@ -443,7 +443,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				}
 			}
 
-			parseTanggalTokoOrder, _ := time.Parse("2006-01-02", tanggalTokoOrder)
+			parseTanggalTokoOrder, _ := time.Parse(constants.DATE_FORMAT_COMMON, tanggalTokoOrder)
 			if parseTanggalTokoOrder.Add(duration - 1*time.Minute).After(parseTangalOrder.Add(duration)) {
 				if key == "retry" {
 					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
