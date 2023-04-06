@@ -2,12 +2,14 @@ package repositories
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/model"
 	"order-service/global/utils/opensearch_dbo"
+	"strings"
 )
 
 type DeliveryOrderOpenSearchRepositoryInterface interface {
@@ -491,14 +493,30 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 		}
 
 		if request.GlobalSearchValue != "" {
-			match := map[string]interface{}{
-				"query_string": map[string]interface{}{
-					"query":  "*" + request.GlobalSearchValue + "*",
-					"fields": []string{"do_code", "do_ref_code", "sales_order.so_code", "store.store_code", "store.name"},
-				},
-			}
+			if strings.Contains(request.GlobalSearchValue, "-") {
+				globalSearchValue := strings.ReplaceAll(request.GlobalSearchValue, "-", " ")
+				fmt.Println("globalSearchValue", globalSearchValue)
+				match := map[string]interface{}{
+					"query_string": map[string]interface{}{
+						"query":            "*" + globalSearchValue + "*",
+						"fields":           []string{"do_code", "do_ref_code", "sales_order.so_code", "store.store_code", "store.name"},
+						"default_operator": "AND",
+					},
+				}
+				musts = append(musts, match)
+				fmt.Println("must satu =", musts)
+			} else {
+				match := map[string]interface{}{
+					"query_string": map[string]interface{}{
+						"query":            "*" + request.GlobalSearchValue + "*",
+						"fields":           []string{"do_code", "do_ref_code", "sales_order.so_code", "store.store_code", "store.name"},
+						"default_operator": "AND",
+					},
+				}
 
-			musts = append(musts, match)
+				musts = append(musts, match)
+				fmt.Println("must dua =", musts)
+			}
 		}
 
 		if request.SortField != "" && request.SortValue != "" {
