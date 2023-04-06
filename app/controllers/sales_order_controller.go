@@ -412,7 +412,6 @@ func (c *salesOrderController) UpdateSODetailBySOID(ctx *gin.Context) {
 	}
 
 	err = ctx.BindJSON(&updateRequest)
-
 	if err != nil {
 		var unmarshalTypeError *json.UnmarshalTypeError
 
@@ -423,6 +422,11 @@ func (c *salesOrderController) UpdateSODetailBySOID(ctx *gin.Context) {
 			c.requestValidationMiddleware.MandatoryValidation(ctx, err)
 			return
 		}
+	}
+
+	err = c.salesOrderValidator.UpdateSalesOrderDetailBySoIdValidator(updateRequest, ctx)
+	if err != nil {
+		return
 	}
 
 	dbTransaction, err := c.db.BeginTx(ctx, nil)

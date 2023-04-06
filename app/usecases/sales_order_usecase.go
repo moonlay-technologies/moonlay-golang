@@ -1164,7 +1164,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 		SoCode:    salesOrder.SoCode,
 		SoId:      salesOrder.ID,
 		SoDate:    salesOrder.SoDate,
-		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		Status:    request.Status,
 		Remark:    "",
 		Reason:    request.Reason,
 		CreatedAt: &now,
@@ -1515,17 +1515,6 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 		return &models.SalesOrderResponse{}, getOrderStatusResult.ErrorLog
 	}
 
-	errorValidation := u.updateSOValidation(salesOrder.ID, getOrderStatusResult.OrderStatus.Name, ctx)
-
-	if errorValidation != nil {
-		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, errorValidation.Error())},
-			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
-			StatusCode:    http.StatusUnprocessableEntity,
-		})
-		return &models.SalesOrderResponse{}, errorLogData
-	}
-
 	var status string
 	switch request.Status {
 	case constants.SO_STATUS_APPV:
@@ -1534,17 +1523,6 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 		status = "rejected"
 	case constants.SO_STATUS_CNCL:
 		status = "cancelled"
-	default:
-		status = "undefined"
-	}
-
-	if status == "undefined" {
-		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, "status tidak terdaftar")},
-			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
-			StatusCode:    http.StatusUnprocessableEntity,
-		})
-		return &models.SalesOrderResponse{}, errorLogData
 	}
 
 	// Get Order Status By Name
@@ -1631,8 +1609,9 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 	}
 
 	salesOrderUpdateReq := &models.SalesOrder{
-		OrderStatusID: getOrderStatusResult.OrderStatus.ID,
-		UpdatedAt:     &now,
+		OrderStatusID:   getOrderStatusResult.OrderStatus.ID,
+		LatestUpdatedBy: ctx.Value("user").(*models.UserClaims).UserID,
+		UpdatedAt:       &now,
 	}
 
 	// Update Sales Order
@@ -1662,6 +1641,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 
 		salesOrderDetail := &models.SalesOrderDetail{
 			OrderStatusID: getOrderDetailStatusResult.OrderStatus.ID,
+			UpdatedBy:     ctx.Value("user").(*models.UserClaims).UserID,
 			UpdatedAt:     &now,
 		}
 
@@ -1748,7 +1728,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 		SoCode:    salesOrder.SoCode,
 		SoId:      salesOrder.ID,
 		SoDate:    salesOrder.SoDate,
-		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		Status:    request.Status,
 		Remark:    "",
 		Reason:    request.Reason,
 		CreatedAt: &now,
