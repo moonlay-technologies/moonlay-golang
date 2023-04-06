@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
@@ -495,7 +494,6 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 		if request.GlobalSearchValue != "" {
 			if strings.Contains(request.GlobalSearchValue, "-") {
 				globalSearchValue := strings.ReplaceAll(request.GlobalSearchValue, "-", " ")
-				fmt.Println("globalSearchValue", globalSearchValue)
 				match := map[string]interface{}{
 					"query_string": map[string]interface{}{
 						"query":            "*" + globalSearchValue + "*",
@@ -504,7 +502,6 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 					},
 				}
 				musts = append(musts, match)
-				fmt.Println("must satu =", musts)
 			} else {
 				match := map[string]interface{}{
 					"query_string": map[string]interface{}{
@@ -515,7 +512,6 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 				}
 
 				musts = append(musts, match)
-				fmt.Println("must dua =", musts)
 			}
 		}
 
