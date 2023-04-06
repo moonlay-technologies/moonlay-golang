@@ -465,7 +465,7 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 
 			nowWIB := time.Now().UTC().Add(7 * time.Hour)
 			duration := time.Hour*time.Duration(nowWIB.Hour()) + time.Minute*time.Duration(nowWIB.Minute()) + time.Second*time.Duration(nowWIB.Second()) + time.Nanosecond*time.Duration(nowWIB.Nanosecond())
-			parseTangalSJ, _ := time.Parse("2006-01-02", tanggalSJ)
+			parseTangalSJ, _ := time.Parse(constants.DATE_FORMAT_COMMON, tanggalSJ)
 			tanggalOrder, _ := time.Parse(time.RFC3339, getSalesOrderResult.SalesOrder.SoDate)
 
 			if parseTangalSJ.Add(duration + 1*time.Minute).Before(tanggalOrder.Add(duration)) {

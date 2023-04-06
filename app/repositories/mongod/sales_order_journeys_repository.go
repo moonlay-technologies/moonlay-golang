@@ -110,7 +110,7 @@ func (r *salesOrderJourneysRepository) Get(request *models.SalesOrderJourneyRequ
 
 	if request.GlobalSearchValue != "" {
 		soId, _ := strconv.ParseInt(request.GlobalSearchValue, 10, 32)
-		createdAt, _ := time.Parse("2006-01-02", request.GlobalSearchValue)
+		createdAt, _ := time.Parse(constants.DATE_FORMAT_COMMON, request.GlobalSearchValue)
 		filter = bson.M{
 			"$or": []bson.M{
 				{"status": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
@@ -134,7 +134,7 @@ func (r *salesOrderJourneysRepository) Get(request *models.SalesOrderJourneyRequ
 	}
 
 	if request.StartDate != "" && request.EndDate == "" {
-		startDate, err := time.Parse("2006-01-02", request.StartDate)
+		startDate, err := time.Parse(constants.DATE_FORMAT_COMMON, request.StartDate)
 		if err != nil {
 			errorLogData := helper.NewWriteLog(model.ErrorLog{
 				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
@@ -151,7 +151,7 @@ func (r *salesOrderJourneysRepository) Get(request *models.SalesOrderJourneyRequ
 	}
 
 	if request.EndDate != "" && request.StartDate == "" {
-		endDate, err := time.Parse("2006-01-02", request.EndDate)
+		endDate, err := time.Parse(constants.DATE_FORMAT_COMMON, request.EndDate)
 		if err != nil {
 			errorLogData := helper.NewWriteLog(model.ErrorLog{
 				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
@@ -168,7 +168,7 @@ func (r *salesOrderJourneysRepository) Get(request *models.SalesOrderJourneyRequ
 	}
 
 	if request.StartDate != "" && request.EndDate != "" {
-		startDate, err := time.Parse("2006-01-02", request.StartDate)
+		startDate, err := time.Parse(constants.DATE_FORMAT_COMMON, request.StartDate)
 		if err != nil {
 			errorLogData := helper.NewWriteLog(model.ErrorLog{
 				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",
@@ -182,7 +182,7 @@ func (r *salesOrderJourneysRepository) Get(request *models.SalesOrderJourneyRequ
 			return
 		}
 
-		endDate, err := time.Parse("2006-01-02", request.EndDate)
+		endDate, err := time.Parse(constants.DATE_FORMAT_COMMON, request.EndDate)
 		if err != nil {
 			errorLogData := helper.NewWriteLog(model.ErrorLog{
 				Message:       "Ada kesalahan pada request data, silahkan dicek kembali",

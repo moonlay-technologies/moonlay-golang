@@ -210,7 +210,7 @@ func (u *requestValidationMiddleware) DateInputValidation(ctx *gin.Context, valu
 	var error error
 
 	for _, v := range value {
-		_, err := time.Parse("2006-01-02", v.Value)
+		_, err := time.Parse(constants.DATE_FORMAT_COMMON, v.Value)
 		if err != nil {
 			message := helper.GenerateUnprocessableErrorMessage(actionName, fmt.Sprintf("field %s harus memiliki format yyyy-mm-dd", v.Field))
 			messages = append(messages, message)
