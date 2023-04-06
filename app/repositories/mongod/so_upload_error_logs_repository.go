@@ -61,16 +61,6 @@ func (r *soUploadErrorLogsRepository) Get(request *models.GetSoUploadErrorLogsRe
 	asc := 1
 	desc := -1
 
-	page := request.Page
-	if page == 0 {
-		page = 1
-	}
-
-	perPage := request.PerPage
-	if perPage == 0 {
-		perPage = 10
-	}
-
 	if request.SortField == "updated_at" {
 		if request.SortValue == "asc" {
 			sort = bson.M{
@@ -114,7 +104,7 @@ func (r *soUploadErrorLogsRepository) Get(request *models.GetSoUploadErrorLogsRe
 		filter["so_upload_history_id"] = soUploadHistoryID
 	}
 
-	option := options.Find().SetSkip(int64((page - 1) * perPage)).SetLimit(int64(perPage)).SetSort(sort)
+	option := options.Find().SetSort(sort)
 	total, err := collection.CountDocuments(ctx, filter)
 
 	if err != nil {
