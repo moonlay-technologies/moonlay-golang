@@ -674,11 +674,9 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	if len(mustActiveFields) > 0 {
-		err = d.requestValidationMiddleware.MustActiveValidationCustomCode(404, ctx, mustActiveFields)
-		if err != nil {
-			return nil, err
-		}
+	err = d.requestValidationMiddleware.MustActiveValidationCustomCode(404, ctx, mustActiveFields)
+	if err != nil {
+		return nil, err
 	}
 
 	intProvinceID, err := d.getIntQueryWithDefault("province_id", "0", false, ctx)
@@ -887,9 +885,9 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 
 	endDoDate, dateFields := d.getQueryWithDateValidation("end_do_date", "", dateFields, ctx)
 
-	startCreatedAt, dateFields := d.getQueryWithDateValidation("start_created_at", "", dateFields, ctx)
+	startCreatedAt, dateFields := d.getQueryWithDateValidation("start_created_at", time.Now().AddDate(0, -1, 0).Format(constants.DATE_FORMAT_COMMON), dateFields, ctx)
 
-	endCreatedAt, dateFields := d.getQueryWithDateValidation("end_created_at", "", dateFields, ctx)
+	endCreatedAt, dateFields := d.getQueryWithDateValidation("end_created_at", time.Now().Format(constants.DATE_FORMAT_COMMON), dateFields, ctx)
 
 	err = d.requestValidationMiddleware.DateInputValidation(ctx, dateFields, constants.ERROR_ACTION_NAME_GET)
 	if err != nil {
