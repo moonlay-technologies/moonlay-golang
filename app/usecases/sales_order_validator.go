@@ -30,6 +30,7 @@ type SalesOrderValidatorInterface interface {
 	ExportSalesOrderDetailValidator(ctx *gin.Context) (*models.SalesOrderDetailExportRequest, error)
 	UpdateSalesOrderByIdValidator(updateRequest *models.SalesOrderUpdateRequest, ctx *gin.Context) error
 	UpdateSalesOrderDetailBySoIdValidator(updateRequest *models.SalesOrderUpdateRequest, ctx *gin.Context) error
+	UpdateSalesOrderDetailByIdValidator(updateRequest *models.UpdateSalesOrderDetailByIdRequest, ctx *gin.Context) error
 }
 
 type SalesOrderValidator struct {
@@ -1320,8 +1321,7 @@ func (c *SalesOrderValidator) UpdateSalesOrderDetailBySoIdValidator(updateReques
 		result.Error = errorLog
 		ctx.JSON(result.StatusCode, result)
 
-		err := helper.NewError("")
-		return err
+		return result.Error.Err
 	}
 
 	// Get Sales Order By Id
@@ -1388,6 +1388,140 @@ func (c *SalesOrderValidator) UpdateSalesOrderDetailBySoIdValidator(updateReques
 		ctx.JSON(result.StatusCode, result)
 
 		return fmt.Errorf(strings.Join(err, ";"))
+	}
+
+	return nil
+}
+
+func (c *SalesOrderValidator) UpdateSalesOrderDetailByIdValidator(updateRequest *models.UpdateSalesOrderDetailByIdRequest, ctx *gin.Context) error {
+
+	var result baseModel.Response
+
+	var errors []string
+	if updateRequest.OrderStatusID != 8 && updateRequest.OrderStatusID != 10 {
+		errors = append(errors, helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, fmt.Sprintf("status %d tidak dikenal", updateRequest.OrderStatusID)))
+	}
+
+	if updateRequest.SalesOrderDetails.OrderStatusID != 14 && updateRequest.SalesOrderDetails.OrderStatusID != 16 {
+		errors = append(errors, helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, fmt.Sprintf("status %d tidak dikenal", updateRequest.SalesOrderDetails.OrderStatusID)))
+	}
+
+	if len(errors) > 0 {
+		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       errors,
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
+			StatusCode:    http.StatusUnprocessableEntity,
+		})
+		result.StatusCode = errorLog.StatusCode
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+
+		err := helper.NewError(strings.Join(errors, ""))
+		return err
+	}
+
+	soIds := ctx.Param("so-id")
+	soId, _ := strconv.Atoi(soIds)
+
+	// Get Sales Order By Id
+	getSalesOrderByIDResultChan := make(chan *models.SalesOrderChan)
+	go c.salesOrderRepository.GetByID(soId, false, ctx, getSalesOrderByIDResultChan)
+	getSalesOrderByIDResult := <-getSalesOrderByIDResultChan
+
+	if getSalesOrderByIDResult.Error != nil {
+		result.StatusCode = getSalesOrderByIDResult.ErrorLog.StatusCode
+		result.Error = getSalesOrderByIDResult.ErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return getSalesOrderByIDResult.Error
+	}
+
+	soDetailIds := ctx.Param("so-detail-id")
+	soDetailId, _ := strconv.Atoi(soDetailIds)
+
+	// Get Sales Order By  Id
+	getSalesOrderDetailByIDResultChan := make(chan *models.SalesOrderDetailChan)
+	go c.salesOrderDetailRepository.GetByID(soDetailId, false, ctx, getSalesOrderDetailByIDResultChan)
+	getSalesOrderDetailByIDResult := <-getSalesOrderDetailByIDResultChan
+
+	if getSalesOrderDetailByIDResult.Error != nil {
+		result.StatusCode = getSalesOrderDetailByIDResult.ErrorLog.StatusCode
+		result.Error = getSalesOrderDetailByIDResult.ErrorLog
+		ctx.JSON(result.StatusCode, result)
+		return getSalesOrderDetailByIDResult.Error
+	}
+
+	if getSalesOrderDetailByIDResult.SalesOrderDetail.SalesOrderID != soId {
+		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       []string{helper.GenerateUnprocessableErrorMessage("update", fmt.Sprintf("Sales Order Detail Id = %d tidak terdaftar pada Sales Order Id = %d", soDetailId, soId))},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
+			StatusCode:    http.StatusUnprocessableEntity,
+		})
+		result.StatusCode = errorLog.StatusCode
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+
+		err := helper.NewError(strings.Join(errors, ""))
+		return err
+	}
+
+	errorValidation := c.updateSOValidation(soId, getSalesOrderByIDResult.SalesOrder.OrderStatusName, ctx)
+	if errorValidation != nil {
+		err := errorValidation
+		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       err,
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
+			StatusCode:    http.StatusUnprocessableEntity,
+		})
+		result.StatusCode = errorLog.StatusCode
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+
+		return fmt.Errorf(strings.Join(err, ";"))
+	}
+
+	salesOrder := getSalesOrderByIDResult.SalesOrder
+	totalSoDetail := getSalesOrderDetailByIDResult.Total
+	var soStatus string
+	var soDetailStatus string
+
+	if salesOrder.OrderStatusName == constants.ORDER_STATUS_OPEN {
+		if totalSoDetail == 1 {
+			soStatus = constants.ORDER_STATUS_CANCELLED
+			soDetailStatus = constants.ORDER_STATUS_CANCELLED
+		} else if helper.CheckSalesOrderDetailStatus(soDetailId, true, constants.ORDER_STATUS_CANCELLED, salesOrder.SalesOrderDetails) > 0 {
+			soStatus = constants.ORDER_STATUS_OPEN
+			soDetailStatus = constants.ORDER_STATUS_CANCELLED
+		} else if helper.CheckSalesOrderDetailStatus(soDetailId, false, constants.ORDER_STATUS_CANCELLED, salesOrder.SalesOrderDetails) > 0 {
+			soStatus = constants.ORDER_STATUS_CANCELLED
+			soDetailStatus = constants.ORDER_STATUS_CANCELLED
+		}
+	} else if salesOrder.OrderStatusName == constants.ORDER_STATUS_PARTIAL {
+		if totalSoDetail == 1 {
+			soStatus = constants.ORDER_STATUS_CLOSED
+			soDetailStatus = constants.ORDER_STATUS_CLOSED
+		} else if totalSoDetail > 1 && getSalesOrderDetailByIDResult.SalesOrderDetail.SentQty > 0 {
+			soStatus = constants.ORDER_STATUS_PARTIAL
+			soDetailStatus = constants.ORDER_STATUS_CLOSED
+		} else if totalSoDetail > 1 && getSalesOrderDetailByIDResult.SalesOrderDetail.SentQty == 0 {
+			soStatus = constants.ORDER_STATUS_PARTIAL
+			soDetailStatus = constants.ORDER_STATUS_CANCELLED
+		}
+	}
+
+	if len(soStatus) < 1 || len(soDetailStatus) < 1 {
+		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, fmt.Sprintf("tidak memenuhi syarat"))},
+			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
+			StatusCode:    http.StatusUnprocessableEntity,
+		})
+
+		result.StatusCode = errorLog.StatusCode
+		result.Error = errorLog
+		ctx.JSON(result.StatusCode, result)
+
+		err := helper.NewError(strings.Join(errors, ""))
+		return err
+
 	}
 
 	return nil
