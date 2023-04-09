@@ -321,25 +321,25 @@ func (r *deliveryOrder) Insert(request *models.DeliveryOrder, sqlTransaction *sq
 	if request.StartDateSyncToEs != nil {
 		rawSqlFields = append(rawSqlFields, "start_date_sync_to_es")
 		rawSqlDataTypes = append(rawSqlDataTypes, "?")
-		rawSqlValues = append(rawSqlValues, request.StartDateSyncToEs.Format("2006-01-02 15:04:05"))
+		rawSqlValues = append(rawSqlValues, request.StartDateSyncToEs.Format(constants.DATE_TIME_FORMAT_COMON))
 	}
 
 	if request.EndDateSyncToEs != nil {
 		rawSqlFields = append(rawSqlFields, "end_date_sync_to_es")
 		rawSqlDataTypes = append(rawSqlDataTypes, "?")
-		rawSqlValues = append(rawSqlValues, request.EndDateSyncToEs.Format("2006-01-02 15:04:05"))
+		rawSqlValues = append(rawSqlValues, request.EndDateSyncToEs.Format(constants.DATE_TIME_FORMAT_COMON))
 	}
 
 	if request.StartCreatedDate != nil {
 		rawSqlFields = append(rawSqlFields, "start_created_date")
 		rawSqlDataTypes = append(rawSqlDataTypes, "?")
-		rawSqlValues = append(rawSqlValues, request.StartCreatedDate.Format("2006-01-02 15:04:05"))
+		rawSqlValues = append(rawSqlValues, request.StartCreatedDate.Format(constants.DATE_TIME_FORMAT_COMON))
 	}
 
 	if request.EndCreatedDate != nil {
 		rawSqlFields = append(rawSqlFields, "end_created_date")
 		rawSqlDataTypes = append(rawSqlDataTypes, "?")
-		rawSqlValues = append(rawSqlValues, request.EndCreatedDate.Format("2006-01-02 15:04:05"))
+		rawSqlValues = append(rawSqlValues, request.EndCreatedDate.Format(constants.DATE_TIME_FORMAT_COMON))
 	}
 
 	if request.CreatedBy != 0 {
@@ -354,11 +354,11 @@ func (r *deliveryOrder) Insert(request *models.DeliveryOrder, sqlTransaction *sq
 
 	rawSqlFields = append(rawSqlFields, "created_at")
 	rawSqlDataTypes = append(rawSqlDataTypes, "?")
-	rawSqlValues = append(rawSqlValues, request.CreatedAt.Format("2006-01-02 15:04:05"))
+	rawSqlValues = append(rawSqlValues, request.CreatedAt.Format(constants.DATE_TIME_FORMAT_COMON))
 
 	rawSqlFields = append(rawSqlFields, "updated_at")
 	rawSqlDataTypes = append(rawSqlDataTypes, "?")
-	rawSqlValues = append(rawSqlValues, request.UpdatedAt.Format("2006-01-02 15:04:05"))
+	rawSqlValues = append(rawSqlValues, request.UpdatedAt.Format(constants.DATE_TIME_FORMAT_COMON))
 
 	rawSqlFieldsJoin := strings.Join(rawSqlFields, ",")
 	rawSqlDataTypesJoin := strings.Join(rawSqlDataTypes, ",")
@@ -464,17 +464,17 @@ func (r *deliveryOrder) UpdateByID(id int, request *models.DeliveryOrder, sqlTra
 	}
 
 	if request.StartDateSyncToEs != nil {
-		query := fmt.Sprintf("%s='%v'", "start_date_sync_to_es", request.StartDateSyncToEs.Format("2006-01-02 15:04:05"))
+		query := fmt.Sprintf("%s='%v'", "start_date_sync_to_es", request.StartDateSyncToEs.Format(constants.DATE_TIME_FORMAT_COMON))
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
 	if request.EndDateSyncToEs != nil {
-		query := fmt.Sprintf("%s='%v'", "end_date_sync_to_es", request.EndDateSyncToEs.Format("2006-01-02 15:04:05"))
+		query := fmt.Sprintf("%s='%v'", "end_date_sync_to_es", request.EndDateSyncToEs.Format(constants.DATE_TIME_FORMAT_COMON))
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
 	if request.UpdatedAt != nil {
-		query := fmt.Sprintf("%s='%v'", "updated_at", request.UpdatedAt.Format("2006-01-02 15:04:05"))
+		query := fmt.Sprintf("%s='%v'", "updated_at", request.UpdatedAt.Format(constants.DATE_TIME_FORMAT_COMON))
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
@@ -516,10 +516,10 @@ func (r *deliveryOrder) DeleteByID(request *models.DeliveryOrder, ctx context.Co
 	response := &models.DeliveryOrderChan{}
 	rawSqlQueries := []string{}
 
-	query := fmt.Sprintf("%s='%v'", "deleted_at", request.DeletedAt.Format("2006-01-02 15:04:05"))
+	query := fmt.Sprintf("%s='%v'", "deleted_at", request.DeletedAt.Format(constants.DATE_TIME_FORMAT_COMON))
 	rawSqlQueries = append(rawSqlQueries, query)
 
-	query = fmt.Sprintf("%s='%v'", "updated_at", request.UpdatedAt.Format("2006-01-02 15:04:05"))
+	query = fmt.Sprintf("%s='%v'", "updated_at", request.UpdatedAt.Format(constants.DATE_TIME_FORMAT_COMON))
 	rawSqlQueries = append(rawSqlQueries, query)
 
 	query = fmt.Sprintf("%s=%v", "order_status_id", "19")

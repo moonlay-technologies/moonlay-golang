@@ -2158,7 +2158,7 @@ func (u *salesOrderUseCase) DeleteDetailBySOId(id int, sqlTransaction *sql.Tx) *
 
 func (u *salesOrderUseCase) Export(request *models.SalesOrderExportRequest, ctx context.Context) (string, *model.ErrorLog) {
 	rand, err := helper.Generate(`[A-Za-z]{12}`)
-	fileHour := time.Now().Format("2January2006-15:04:05")
+	fileHour := time.Now().Format(constants.DATE_FORMAT_EXPORT)
 	if ctx == nil {
 		err = fmt.Errorf("nil context")
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -2180,7 +2180,7 @@ func (u *salesOrderUseCase) Export(request *models.SalesOrderExportRequest, ctx 
 
 func (u *salesOrderUseCase) ExportDetail(request *models.SalesOrderDetailExportRequest, ctx context.Context) (string, *model.ErrorLog) {
 	rand, err := helper.Generate(`[A-Za-z]{12}`)
-	fileHour := time.Now().Format("2January2006-15:04:05")
+	fileHour := time.Now().Format(constants.DATE_FORMAT_EXPORT)
 	if ctx == nil {
 		err = fmt.Errorf("nil context")
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)

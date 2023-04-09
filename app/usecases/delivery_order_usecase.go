@@ -1271,7 +1271,7 @@ func (u *deliveryOrderUseCase) Get(request *models.DeliveryOrderRequest) (*model
 
 func (u *deliveryOrderUseCase) Export(request *models.DeliveryOrderExportRequest, ctx context.Context) (string, *model.ErrorLog) {
 	rand, err := helper.Generate(`[A-Za-z]{12}`)
-	fileHour := time.Now().Format("2January2006-15:04:05")
+	fileHour := time.Now().Format(constants.DATE_FORMAT_EXPORT)
 	if ctx == nil {
 		err = fmt.Errorf("nil context")
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -1293,7 +1293,7 @@ func (u *deliveryOrderUseCase) Export(request *models.DeliveryOrderExportRequest
 
 func (u *deliveryOrderUseCase) ExportDetail(request *models.DeliveryOrderDetailExportRequest, ctx context.Context) (string, *model.ErrorLog) {
 	rand, err := helper.Generate(`[A-Za-z]{12}`)
-	fileHour := time.Now().Format("2January2006-15:04:05")
+	fileHour := time.Now().Format(constants.DATE_FORMAT_EXPORT)
 	if ctx == nil {
 		err = fmt.Errorf("nil context")
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
