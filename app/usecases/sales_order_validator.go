@@ -1169,21 +1169,18 @@ func (c *SalesOrderValidator) UpdateSalesOrderByIdValidator(updateRequest *model
 	ids := ctx.Param("so-id")
 	id, _ := strconv.Atoi(ids)
 
-	var status string
-	switch updateRequest.Status {
-	case constants.SO_STATUS_APPV:
-		status = "open"
-	case constants.SO_STATUS_RJC:
-		status = "rejected"
-	case constants.SO_STATUS_CNCL:
-		status = "cancelled"
-	default:
-		status = "undefined"
+	var errors []string
+	if updateRequest.OrderStatusID != 5 && updateRequest.OrderStatusID != 9 && updateRequest.OrderStatusID != 10 {
+		errors = append(errors, helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, fmt.Sprintf("status %d tidak terdaftar", updateRequest.OrderStatusID)))
 	}
-
-	if status == "undefined" {
+	for _, v := range updateRequest.SalesOrderDetails {
+		if v.OrderStatusID != 11 && v.OrderStatusID != 15 && v.OrderStatusID != 16 {
+			errors = append(errors, helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, fmt.Sprintf("status %d tidak terdaftar", v.OrderStatusID)))
+		}
+	}
+	if len(errors) > 0 {
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, "status tidak terdaftar")},
+			Message:       errors,
 			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
@@ -1233,7 +1230,7 @@ func (c *SalesOrderValidator) UpdateSalesOrderByIdValidator(updateRequest *model
 		return err
 	}
 
-	errors := []string{}
+	errors = []string{}
 	for _, v := range updateRequest.SalesOrderDetails {
 		isExist := false
 		for _, y := range getSalesOrderDetailBySoIDResult.SalesOrderDetails {
@@ -1304,21 +1301,18 @@ func (c *SalesOrderValidator) UpdateSalesOrderDetailBySoIdValidator(updateReques
 	ids := ctx.Param("so-id")
 	id, _ := strconv.Atoi(ids)
 
-	var status string
-	switch updateRequest.Status {
-	case constants.SO_STATUS_APPV:
-		status = "open"
-	case constants.SO_STATUS_RJC:
-		status = "rejected"
-	case constants.SO_STATUS_CNCL:
-		status = "cancelled"
-	default:
-		status = "undefined"
+	var errors []string
+	if updateRequest.OrderStatusID != 5 && updateRequest.OrderStatusID != 9 && updateRequest.OrderStatusID != 10 {
+		errors = append(errors, helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, fmt.Sprintf("status %d tidak terdaftar", updateRequest.OrderStatusID)))
 	}
-
-	if status == "undefined" {
+	for _, v := range updateRequest.SalesOrderDetails {
+		if v.OrderStatusID != 11 && v.OrderStatusID != 15 && v.OrderStatusID != 16 {
+			errors = append(errors, helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, fmt.Sprintf("status %d tidak terdaftar", v.OrderStatusID)))
+		}
+	}
+	if len(errors) > 0 {
 		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, "status tidak terdaftar")},
+			Message:       errors,
 			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
@@ -1354,7 +1348,7 @@ func (c *SalesOrderValidator) UpdateSalesOrderDetailBySoIdValidator(updateReques
 		return getSalesOrderDetailBySoIDResult.Error
 	}
 
-	errors := []string{}
+	errors = []string{}
 	for _, v := range updateRequest.SalesOrderDetails {
 		isExist := false
 		for _, y := range getSalesOrderDetailBySoIDResult.SalesOrderDetails {

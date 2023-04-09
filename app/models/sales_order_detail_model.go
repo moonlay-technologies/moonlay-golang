@@ -82,10 +82,10 @@ type SalesOrderDetailStoreResponse struct {
 }
 
 type SalesOrderDetailUpdateRequest struct {
-	ID           int    `json:"id,omitempty" bson:"id,omitempty" binding:"required"`
-	SoDetailCode string `json:"so_detail_code,omitempty" bson:"so_detail_code,omitempty"`
-	Status       string `json:"status,omitempty" bson:"status,omitempty" binding:"required"`
-	Reason       string `json:"reason,omitempty" bson:"reason,omitempty" binding:"required"`
+	ID            int    `json:"id,omitempty" bson:"id,omitempty" binding:"required"`
+	SoDetailCode  string `json:"so_detail_code,omitempty" bson:"so_detail_code,omitempty"`
+	OrderStatusID int    `json:"order_status_id,omitempty" bson:"order_status_id,omitempty" binding:"required"`
+	Reason        string `json:"reason,omitempty" bson:"reason,omitempty" binding:"required"`
 }
 
 type UpdateSalesOrderDetailByIdRequest struct {

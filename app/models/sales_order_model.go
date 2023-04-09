@@ -178,7 +178,7 @@ type SalesOrderResponse struct {
 type SalesOrderUpdateRequest struct {
 	SoDate            string                           `json:"so_date,omitempty" bson:"so_date,omitempty"`
 	SoCode            string                           `json:"so_code,omitempty" bson:"so_code,omitempty"`
-	Status            string                           `json:"status,omitempty" bson:"status,omitempty" binding:"required"`
+	OrderStatusID     int                              `json:"order_status_id,omitempty" bson:"order_status_id,omitempty" binding:"required"`
 	Reason            string                           `json:"reason,omitempty" bson:"reason,omitempty"`
 	SalesOrderDetails []*SalesOrderDetailUpdateRequest `json:"sales_order_details" bson:"sales_order_details" binding:"required,dive,required"`
 }
