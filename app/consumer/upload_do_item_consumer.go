@@ -131,7 +131,7 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 			getAgentResult := <-getAgentResultChan
 
 			if getAgentResult.Error != nil {
-				fmt.Println(getAgentResult.Error)
+				fmt.Println(getAgentResult.Error.Error())
 				errors = append(errors, getAgentResult.Error.Error())
 			}
 

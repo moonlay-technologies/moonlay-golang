@@ -234,6 +234,11 @@ func (c *salesOrderController) UpdateByID(ctx *gin.Context) {
 		}
 	}
 
+	err = c.salesOrderValidator.UpdateSalesOrderByIdValidator(updateRequest, ctx)
+	if err != nil {
+		return
+	}
+
 	dbTransaction, err := c.db.BeginTx(ctx, nil)
 
 	if err != nil {
@@ -321,7 +326,6 @@ func (c *salesOrderController) UpdateSODetailByID(ctx *gin.Context) {
 	}
 
 	err = ctx.BindJSON(updateRequest)
-
 	if err != nil {
 		var unmarshalTypeError *json.UnmarshalTypeError
 
@@ -333,6 +337,12 @@ func (c *salesOrderController) UpdateSODetailByID(ctx *gin.Context) {
 			return
 		}
 	}
+
+	err = c.salesOrderValidator.UpdateSalesOrderDetailByIdValidator(updateRequest, ctx)
+	if err != nil {
+		return
+	}
+	fmt.Println("Ini", err)
 
 	dbTransaction, err := c.db.BeginTx(ctx, nil)
 
@@ -407,7 +417,6 @@ func (c *salesOrderController) UpdateSODetailBySOID(ctx *gin.Context) {
 	}
 
 	err = ctx.BindJSON(&updateRequest)
-
 	if err != nil {
 		var unmarshalTypeError *json.UnmarshalTypeError
 
@@ -418,6 +427,11 @@ func (c *salesOrderController) UpdateSODetailBySOID(ctx *gin.Context) {
 			c.requestValidationMiddleware.MandatoryValidation(ctx, err)
 			return
 		}
+	}
+
+	err = c.salesOrderValidator.UpdateSalesOrderDetailBySoIdValidator(updateRequest, ctx)
+	if err != nil {
+		return
 	}
 
 	dbTransaction, err := c.db.BeginTx(ctx, nil)

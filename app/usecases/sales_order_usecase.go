@@ -944,64 +944,14 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 
 	// Get Order Status By Id
 	getOrderStatusResultChan := make(chan *models.OrderStatusChan)
-	go u.orderStatusRepository.GetByID(salesOrder.OrderStatusID, false, ctx, getOrderStatusResultChan)
+	go u.orderStatusRepository.GetByID(request.OrderStatusID, false, ctx, getOrderStatusResultChan)
 	getOrderStatusResult := <-getOrderStatusResultChan
 
 	if getOrderStatusResult.Error != nil {
 		return &models.SalesOrderResponse{}, getOrderStatusResult.ErrorLog
 	}
 
-	errorValidation := u.updateSOValidation(salesOrder.ID, getOrderStatusResult.OrderStatus.Name, ctx)
-
-	if errorValidation != nil {
-		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, errorValidation.Error())},
-			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
-			StatusCode:    http.StatusUnprocessableEntity,
-		})
-		return &models.SalesOrderResponse{}, errorLogData
-	}
-
-	var status string
-	switch request.Status {
-	case constants.SO_STATUS_APPV:
-		status = "open"
-	case constants.SO_STATUS_RJC:
-		status = "rejected"
-	case constants.SO_STATUS_CNCL:
-		status = "cancelled"
-	default:
-		status = "undefined"
-	}
-
-	if status == "undefined" {
-		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, "status tidak terdaftar")},
-			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
-			StatusCode:    http.StatusUnprocessableEntity,
-		})
-		return &models.SalesOrderResponse{}, errorLogData
-	}
-
-	// Get Order Status By Name
-	getOrderStatusResultChan = make(chan *models.OrderStatusChan)
-	go u.orderStatusRepository.GetByNameAndType(status, "sales_order", false, ctx, getOrderStatusResultChan)
-	getOrderStatusResult = <-getOrderStatusResultChan
-
-	if getOrderStatusResult.Error != nil {
-		return &models.SalesOrderResponse{}, getOrderStatusResult.ErrorLog
-	}
-
 	salesOrder.SalesOrderStatusChanMap(getOrderStatusResult)
-
-	// Get Order Detail Status By Name
-	getOrderDetailStatusResultChan := make(chan *models.OrderStatusChan)
-	go u.orderStatusRepository.GetByNameAndType(status, "sales_order_detail", false, ctx, getOrderDetailStatusResultChan)
-	getOrderDetailStatusResult := <-getOrderDetailStatusResultChan
-
-	if getOrderDetailStatusResult.Error != nil {
-		return &models.SalesOrderResponse{}, getOrderDetailStatusResult.ErrorLog
-	}
 
 	// Get Order Source Status By Id
 	getOrderSourceResultChan := make(chan *models.OrderSourceChan)
@@ -1067,8 +1017,9 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 	}
 
 	salesOrderUpdateReq := &models.SalesOrder{
-		OrderStatusID: getOrderStatusResult.OrderStatus.ID,
-		UpdatedAt:     &now,
+		OrderStatusID:   getOrderStatusResult.OrderStatus.ID,
+		LatestUpdatedBy: ctx.Value("user").(*models.UserClaims).UserID,
+		UpdatedAt:       &now,
 	}
 
 	// Update Sales Order
@@ -1096,8 +1047,18 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 	var salesOrderDetails []*models.SalesOrderDetail
 	for _, v := range request.SalesOrderDetails {
 
+		// Get Order Detail Status By Id
+		getOrderDetailStatusResultChan := make(chan *models.OrderStatusChan)
+		go u.orderStatusRepository.GetByID(v.OrderStatusID, false, ctx, getOrderDetailStatusResultChan)
+		getOrderDetailStatusResult := <-getOrderDetailStatusResultChan
+
+		if getOrderDetailStatusResult.Error != nil {
+			return &models.SalesOrderResponse{}, getOrderDetailStatusResult.ErrorLog
+		}
+
 		salesOrderDetail := &models.SalesOrderDetail{
 			OrderStatusID: getOrderDetailStatusResult.OrderStatus.ID,
+			UpdatedBy:     ctx.Value("user").(*models.UserClaims).UserID,
 			UpdatedAt:     &now,
 		}
 
@@ -1128,10 +1089,16 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 			return &models.SalesOrderResponse{}, getSalesOrderDetailByIDResult.ErrorLog
 		}
 
-		detailStatus := request.Status
-		if request.Status == constants.SO_STATUS_APPV {
-			detailStatus = "OPEN"
+		var detailStatus string
+		switch v.OrderStatusID {
+		case 11:
+			detailStatus = constants.SO_STATUS_OPEN
+		case 15:
+			detailStatus = constants.SO_STATUS_RJC
+		default:
+			detailStatus = constants.SO_STATUS_CNCL
 		}
+
 		salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{
 			SoDetailId:   v.ID,
 			SoDetailCode: getSalesOrderDetailByIDResult.SalesOrderDetail.SoDetailCode,
@@ -1180,11 +1147,21 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 		return &models.SalesOrderResponse{}, createSalesOrderLogResult.ErrorLog
 	}
 
+	var status string
+	switch request.OrderStatusID {
+	case 5:
+		status = constants.SO_STATUS_OPEN
+	case 9:
+		status = constants.SO_STATUS_RJC
+	default:
+		status = constants.SO_STATUS_CNCL
+	}
+
 	salesOrderJourneys := &models.SalesOrderJourneys{
 		SoCode:    salesOrder.SoCode,
 		SoId:      salesOrder.ID,
 		SoDate:    salesOrder.SoDate,
-		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		Status:    status,
 		Remark:    "",
 		Reason:    request.Reason,
 		CreatedAt: &now,
@@ -1223,15 +1200,6 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 
 	if getSalesOrderDetailByIDResult.Error != nil {
 		return &models.SalesOrderDetailStoreResponse{}, getSalesOrderDetailByIDResult.ErrorLog
-	}
-
-	if soId != getSalesOrderDetailByIDResult.SalesOrderDetail.SalesOrderID {
-		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, fmt.Sprintf("SO Detail Id %d tidak terdaftar di SO Id %d", soDetailId, soId))},
-			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
-			StatusCode:    http.StatusUnprocessableEntity,
-		})
-		return &models.SalesOrderDetailStoreResponse{}, errorLogData
 	}
 
 	// Get Sales Order By Id
@@ -1281,15 +1249,6 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 			soStatus = constants.ORDER_STATUS_PARTIAL
 			soDetailStatus = constants.ORDER_STATUS_CANCELLED
 		}
-	}
-
-	if len(soStatus) < 1 || len(soDetailStatus) < 1 {
-		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, fmt.Sprintf("tidak memenuhi syarat"))},
-			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
-			StatusCode:    http.StatusUnprocessableEntity,
-		})
-		return &models.SalesOrderDetailStoreResponse{}, errorLogData
 	}
 
 	// Check Brand
@@ -1379,8 +1338,9 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 	if soStatus != salesOrder.OrderStatusName {
 
 		salesOrderUpdateReq := &models.SalesOrder{
-			OrderStatusID: getOrderStatusResult.OrderStatus.ID,
-			UpdatedAt:     &now,
+			OrderStatusID:   getOrderStatusResult.OrderStatus.ID,
+			LatestUpdatedBy: ctx.Value("user").(*models.UserClaims).UserID,
+			UpdatedAt:       &now,
 		}
 
 		// Update Sales Order
@@ -1401,11 +1361,21 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 			return &models.SalesOrderDetailStoreResponse{}, removeCacheSalesOrderResult.ErrorLog
 		}
 
+		var status string
+		switch getOrderStatusResult.OrderStatus.ID {
+		case 5:
+			status = constants.SO_STATUS_OPEN
+		case 9:
+			status = constants.SO_STATUS_RJC
+		default:
+			status = constants.SO_STATUS_CNCL
+		}
+
 		salesOrderJourneys := &models.SalesOrderJourneys{
 			SoCode:    salesOrder.SoCode,
 			SoId:      salesOrder.ID,
 			SoDate:    salesOrder.SoDate,
-			Status:    request.Status,
+			Status:    status,
 			Remark:    "",
 			Reason:    request.Reason,
 			CreatedAt: &now,
@@ -1430,6 +1400,7 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 
 	salesOrderDetailReq := &models.SalesOrderDetail{
 		OrderStatusID: getOrderDetailStatusResult.OrderStatus.ID,
+		UpdatedBy:     ctx.Value("user").(*models.UserClaims).UserID,
 		UpdatedAt:     &now,
 	}
 
@@ -1445,6 +1416,7 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 	for _, v := range salesOrder.SalesOrderDetails {
 		if v.ID == soDetailId {
 			v.OrderStatusID = getOrderDetailStatusResult.OrderStatus.ID
+			v.UpdatedBy = ctx.Value("user").(*models.UserClaims).UserID
 			v.UpdatedAt = &now
 			break
 		}
@@ -1463,10 +1435,18 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 
 	}
 
+	var detailStatus string
+	switch getOrderDetailStatusResult.OrderStatus.ID {
+	case 15:
+		detailStatus = constants.SO_STATUS_RJC
+	default:
+		detailStatus = constants.SO_STATUS_CNCL
+	}
+
 	salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{
 		SoDetailId:   soDetailId,
 		SoDetailCode: getSalesOrderDetailByIDResult.SalesOrderDetail.SoDetailCode,
-		Status:       request.Status,
+		Status:       detailStatus,
 		Remark:       "",
 		Reason:       request.Reason,
 		CreatedAt:    &now,
@@ -1528,64 +1508,14 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 
 	// Get Order Status By Id
 	getOrderStatusResultChan := make(chan *models.OrderStatusChan)
-	go u.orderStatusRepository.GetByID(salesOrder.OrderStatusID, false, ctx, getOrderStatusResultChan)
+	go u.orderStatusRepository.GetByID(request.OrderStatusID, false, ctx, getOrderStatusResultChan)
 	getOrderStatusResult := <-getOrderStatusResultChan
 
 	if getOrderStatusResult.Error != nil {
 		return &models.SalesOrderResponse{}, getOrderStatusResult.ErrorLog
 	}
 
-	errorValidation := u.updateSOValidation(salesOrder.ID, getOrderStatusResult.OrderStatus.Name, ctx)
-
-	if errorValidation != nil {
-		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, errorValidation.Error())},
-			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
-			StatusCode:    http.StatusUnprocessableEntity,
-		})
-		return &models.SalesOrderResponse{}, errorLogData
-	}
-
-	var status string
-	switch request.Status {
-	case constants.SO_STATUS_APPV:
-		status = "open"
-	case constants.SO_STATUS_RJC:
-		status = "rejected"
-	case constants.SO_STATUS_CNCL:
-		status = "cancelled"
-	default:
-		status = "undefined"
-	}
-
-	if status == "undefined" {
-		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, "status tidak terdaftar")},
-			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
-			StatusCode:    http.StatusUnprocessableEntity,
-		})
-		return &models.SalesOrderResponse{}, errorLogData
-	}
-
-	// Get Order Status By Name
-	getOrderStatusResultChan = make(chan *models.OrderStatusChan)
-	go u.orderStatusRepository.GetByNameAndType(status, "sales_order", false, ctx, getOrderStatusResultChan)
-	getOrderStatusResult = <-getOrderStatusResultChan
-
-	if getOrderStatusResult.Error != nil {
-		return &models.SalesOrderResponse{}, getOrderStatusResult.ErrorLog
-	}
-
 	salesOrder.SalesOrderStatusChanMap(getOrderStatusResult)
-
-	// Get Order Detail Status By Name
-	getOrderDetailStatusResultChan := make(chan *models.OrderStatusChan)
-	go u.orderStatusRepository.GetByNameAndType(status, "sales_order_detail", false, ctx, getOrderDetailStatusResultChan)
-	getOrderDetailStatusResult := <-getOrderDetailStatusResultChan
-
-	if getOrderDetailStatusResult.Error != nil {
-		return &models.SalesOrderResponse{}, getOrderDetailStatusResult.ErrorLog
-	}
 
 	// Get Order Source Status By Id
 	getOrderSourceResultChan := make(chan *models.OrderSourceChan)
@@ -1651,8 +1581,9 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 	}
 
 	salesOrderUpdateReq := &models.SalesOrder{
-		OrderStatusID: getOrderStatusResult.OrderStatus.ID,
-		UpdatedAt:     &now,
+		OrderStatusID:   getOrderStatusResult.OrderStatus.ID,
+		LatestUpdatedBy: ctx.Value("user").(*models.UserClaims).UserID,
+		UpdatedAt:       &now,
 	}
 
 	// Update Sales Order
@@ -1680,8 +1611,18 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 	var salesOrderDetails []*models.SalesOrderDetail
 	for _, v := range request.SalesOrderDetails {
 
+		// Get Order Detail Status By Name
+		getOrderDetailStatusResultChan := make(chan *models.OrderStatusChan)
+		go u.orderStatusRepository.GetByID(v.OrderStatusID, false, ctx, getOrderDetailStatusResultChan)
+		getOrderDetailStatusResult := <-getOrderDetailStatusResultChan
+
+		if getOrderDetailStatusResult.Error != nil {
+			return &models.SalesOrderResponse{}, getOrderDetailStatusResult.ErrorLog
+		}
+
 		salesOrderDetail := &models.SalesOrderDetail{
 			OrderStatusID: getOrderDetailStatusResult.OrderStatus.ID,
+			UpdatedBy:     ctx.Value("user").(*models.UserClaims).UserID,
 			UpdatedAt:     &now,
 		}
 
@@ -1712,10 +1653,16 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 			return &models.SalesOrderResponse{}, getSalesOrderDetailByIDResult.ErrorLog
 		}
 
-		detailStatus := request.Status
-		if request.Status == constants.SO_STATUS_APPV {
-			detailStatus = "OPEN"
+		var detailStatus string
+		switch v.OrderStatusID {
+		case 11:
+			detailStatus = constants.SO_STATUS_OPEN
+		case 15:
+			detailStatus = constants.SO_STATUS_RJC
+		default:
+			detailStatus = constants.SO_STATUS_CNCL
 		}
+
 		salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{
 			SoDetailId:   v.ID,
 			SoDetailCode: getSalesOrderDetailByIDResult.SalesOrderDetail.SoDetailCode,
@@ -1764,11 +1711,21 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 		return &models.SalesOrderResponse{}, createSalesOrderLogResult.ErrorLog
 	}
 
+	var status string
+	switch request.OrderStatusID {
+	case 5:
+		status = constants.SO_STATUS_OPEN
+	case 9:
+		status = constants.SO_STATUS_RJC
+	default:
+		status = constants.SO_STATUS_CNCL
+	}
+
 	salesOrderJourneys := &models.SalesOrderJourneys{
 		SoCode:    salesOrder.SoCode,
 		SoId:      salesOrder.ID,
 		SoDate:    salesOrder.SoDate,
-		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		Status:    status,
 		Remark:    "",
 		Reason:    request.Reason,
 		CreatedAt: &now,
@@ -1794,38 +1751,6 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 	}
 
 	return salesOrdersResponse, nil
-}
-
-func (u *salesOrderUseCase) updateSOValidation(salesOrderId int, orderStatusName string, ctx context.Context) error {
-
-	if orderStatusName != constants.ORDER_STATUS_OPEN && orderStatusName != constants.ORDER_STATUS_PENDING && orderStatusName != constants.ORDER_STATUS_PARTIAL {
-		return fmt.Errorf("status sales order %s", orderStatusName)
-	}
-
-	getDeliveryOrderByIDResultChan := make(chan *models.DeliveryOrdersChan)
-	go u.deliveryOrderRepository.GetBySalesOrderID(salesOrderId, true, ctx, getDeliveryOrderByIDResultChan)
-	getDeliveryOrderByIDResult := <-getDeliveryOrderByIDResultChan
-
-	if getDeliveryOrderByIDResult.Total == 0 {
-
-		return nil
-
-	} else {
-
-		for _, v := range getDeliveryOrderByIDResult.DeliveryOrders {
-
-			getOrderStatusResultChan := make(chan *models.OrderStatusChan)
-			go u.orderStatusRepository.GetByID(v.OrderStatusID, false, ctx, getOrderStatusResultChan)
-			getOrderStatusResult := <-getOrderStatusResultChan
-
-			if getOrderStatusResult.OrderStatus.Name != "cancel" {
-				return fmt.Errorf("ada delivery order dengan status %s", getOrderStatusResult.OrderStatus.Name)
-			}
-		}
-
-	}
-
-	return nil
 }
 
 func (u *salesOrderUseCase) GetDetails(request *models.GetSalesOrderDetailRequest) (*models.SalesOrderDetailsOpenSearchResponse, *baseModel.ErrorLog) {
