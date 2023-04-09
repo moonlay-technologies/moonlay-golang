@@ -166,38 +166,40 @@ func (u *requestValidationMiddleware) MustActiveValidation(ctx *gin.Context, val
 }
 
 func (u *requestValidationMiddleware) BaseMustActiveValidation(responseCode int, ctx *gin.Context, value []*models.MustActiveRequest) error {
-	var result baseModel.Response
-	messages := []string{}
-	systemMessages := []string{}
 	var error error
-	mustActive := make(chan *models.MustActiveRequestChan)
-	go u.requestValidationRepository.MustActiveValidation(value, mustActive)
-	mustActiveResult := <-mustActive
-	for k, v := range mustActiveResult.Total {
-		if v < 1 {
-			if value[k].CustomMessage != "" {
-				messages = append(messages, value[k].CustomMessage)
-				systemMessages = append(systemMessages, value[k].CustomMessage)
-			} else {
-				message := fmt.Sprintf("Data %s tidak ditemukan", value[k].ReqField)
-				messages = append(messages, message)
-				systemMessage := fmt.Sprintf("%s Not Found", value[k].ReqField)
-				systemMessages = append(systemMessages, systemMessage)
+	if len(value) > 0 {
+		var result baseModel.Response
+		messages := []string{}
+		systemMessages := []string{}
+		mustActive := make(chan *models.MustActiveRequestChan)
+		go u.requestValidationRepository.MustActiveValidation(value, mustActive)
+		mustActiveResult := <-mustActive
+		for k, v := range mustActiveResult.Total {
+			if v < 1 {
+				if value[k].CustomMessage != "" {
+					messages = append(messages, value[k].CustomMessage)
+					systemMessages = append(systemMessages, value[k].CustomMessage)
+				} else {
+					message := fmt.Sprintf("Data %s tidak ditemukan", value[k].ReqField)
+					messages = append(messages, message)
+					systemMessage := fmt.Sprintf("%s Not Found", value[k].ReqField)
+					systemMessages = append(systemMessages, systemMessage)
+				}
 			}
 		}
-	}
 
-	if len(messages) > 0 {
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
-			Message:       messages,
-			SystemMessage: systemMessages,
-			StatusCode:    responseCode,
-		})
+		if len(messages) > 0 {
+			errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+				Message:       messages,
+				SystemMessage: systemMessages,
+				StatusCode:    responseCode,
+			})
 
-		result.StatusCode = responseCode
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
-		error = fmt.Errorf("Inactive value!")
+			result.StatusCode = responseCode
+			result.Error = errorLog
+			ctx.JSON(result.StatusCode, result)
+			error = fmt.Errorf("Inactive value!")
+		}
 	}
 
 	return error

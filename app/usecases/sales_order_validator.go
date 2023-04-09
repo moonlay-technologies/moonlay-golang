@@ -922,13 +922,13 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 
 	dateFields := []*models.DateInputRequest{}
 
-	startSoDate, dateFields := d.getQueryWithDateValidation("start_so_date", "", dateFields, ctx)
+	startSoDate, dateFields := d.getQueryWithDateValidation("start_do_date", "", dateFields, ctx)
 
-	endSoDate, dateFields := d.getQueryWithDateValidation("end_so_date", "", dateFields, ctx)
+	endSoDate, dateFields := d.getQueryWithDateValidation("end_do_date", "", dateFields, ctx)
 
-	startCreatedAt, dateFields := d.getQueryWithDateValidation("start_created_at", "", dateFields, ctx)
+	startCreatedAt, dateFields := d.getQueryWithDateValidation("start_created_at", time.Now().AddDate(0, -1, 0).Format(constants.DATE_FORMAT_COMMON), dateFields, ctx)
 
-	endCreatedAt, dateFields := d.getQueryWithDateValidation("end_created_at", "", dateFields, ctx)
+	endCreatedAt, dateFields := d.getQueryWithDateValidation("end_created_at", time.Now().Format(constants.DATE_FORMAT_COMMON), dateFields, ctx)
 
 	err = d.requestValidationMiddleware.DateInputValidation(ctx, dateFields, constants.ERROR_ACTION_NAME_GET)
 	if err != nil {
@@ -1099,13 +1099,13 @@ func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) 
 
 	dateFields := []*models.DateInputRequest{}
 
-	startSoDate, dateFields := d.getQueryWithDateValidation("start_so_date", "", dateFields, ctx)
+	startSoDate, dateFields := d.getQueryWithDateValidation("start_do_date", "", dateFields, ctx)
 
-	endSoDate, dateFields := d.getQueryWithDateValidation("end_so_date", "", dateFields, ctx)
+	endSoDate, dateFields := d.getQueryWithDateValidation("end_do_date", "", dateFields, ctx)
 
-	startCreatedAt, dateFields := d.getQueryWithDateValidation("start_created_at", "", dateFields, ctx)
+	startCreatedAt, dateFields := d.getQueryWithDateValidation("start_created_at", time.Now().AddDate(0, -1, 0).Format(constants.DATE_FORMAT_COMMON), dateFields, ctx)
 
-	endCreatedAt, dateFields := d.getQueryWithDateValidation("end_created_at", "", dateFields, ctx)
+	endCreatedAt, dateFields := d.getQueryWithDateValidation("end_created_at", time.Now().Format(constants.DATE_FORMAT_COMMON), dateFields, ctx)
 
 	err = d.requestValidationMiddleware.DateInputValidation(ctx, dateFields, constants.ERROR_ACTION_NAME_GET)
 	if err != nil {

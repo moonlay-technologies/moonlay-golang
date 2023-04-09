@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"fmt"
 	"strconv"
 	"time"
 )
@@ -488,9 +489,11 @@ func (d *DeliveryOrderCsvResponse) DoDetailMap(r *DeliveryOrder) {
 	d.BrandName = r.SalesOrder.BrandName
 	d.KodeSalesman = r.SalesOrder.SalesmanID
 	d.Salesman = r.SalesOrder.SalesmanName
-	d.KategoryToko = r.Store.StoreCategory
+	if r.SalesOrder.Store != nil {
+		d.KategoryToko = r.SalesOrder.Store.StoreCategory
+		d.KodeToko = r.SalesOrder.Store.AliasCode
+	}
 	d.KodeTokoDbo = r.SalesOrder.StoreCode
-	d.KodeToko = r.Store.AliasCode
 	d.NamaToko = r.SalesOrder.StoreName
 	d.KodeKecamatan = r.SalesOrder.StoreDistrictID
 	d.Kecamatan = r.SalesOrder.StoreDistrictName
@@ -498,7 +501,25 @@ func (d *DeliveryOrderCsvResponse) DoDetailMap(r *DeliveryOrder) {
 	d.City = r.SalesOrder.StoreCityName
 	d.KodeProvince = r.SalesOrder.StoreProvinceID
 	d.Province = r.SalesOrder.StoreProvinceName
-	d.DoAmount = 0
+	amount := 0
+	fmt.Println("dp code = ", r.DoCode)
+	for _, v := range r.DeliveryOrderDetails {
+		if v.SoDetail == nil {
+			for _, x := range r.SalesOrder.SalesOrderDetails {
+				fmt.Println("ID = ", v.SoDetailID, x.ID)
+				if x.ID == v.SoDetailID {
+					v.SoDetail = x
+				}
+			}
+		}
+		fmt.Println("code = ", v.DoDetailCode)
+		fmt.Println("qty = ", v.Qty)
+		if v.SoDetail != nil {
+			fmt.Println("amt = ", v.SoDetail.Price)
+			amount += int(v.SoDetail.Price) * v.Qty
+		}
+	}
+	d.DoAmount = float64(amount)
 	d.NamaSupir = r.DriverName
 	d.PlatNo = r.PlatNumber
 	d.Catatan = r.Note
