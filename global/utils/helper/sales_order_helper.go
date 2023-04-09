@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"order-service/app/models"
+	"order-service/app/models/constants"
 	"strconv"
 	"strings"
 	"time"
@@ -41,7 +42,7 @@ func GenerateSODetailCode(soID int, agentID int, productID int, uomID int) (stri
 		return result, err
 	}
 
-	tinow := time.Now().In(time.UTC).Format("20060102150405")
+	tinow := time.Now().In(time.UTC).Format(constants.DATE_FORMAT_CODE_GENERATOR)
 
 	result = fmt.Sprintf(
 		"%d-%s-%s-%d-%s%d",

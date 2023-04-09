@@ -2,6 +2,7 @@ package helper
 
 import (
 	"fmt"
+	"order-service/app/models/constants"
 	"time"
 )
 
@@ -12,7 +13,7 @@ func ToUTCfromGMT7(strTime string) (time.Time, error) {
 		return time.Now(), err
 	}
 
-	date, err := time.ParseInLocation("2006-01-02 15:04:05", strTime, location)
+	date, err := time.ParseInLocation(constants.DATE_TIME_FORMAT_COMON, strTime, location)
 	if err != nil {
 		fmt.Printf("\nerror when parse strTime [%s] -> err: %v\n", strTime, err)
 		return time.Now(), err

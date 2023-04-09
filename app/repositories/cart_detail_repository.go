@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"order-service/app/models"
+	"order-service/app/models/constants"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/redisdb"
 	"strings"
@@ -173,7 +174,7 @@ func (r *cartDetail) Insert(request *models.CartDetail, sqlTransaction *sql.Tx, 
 
 	rawSqlFields = append(rawSqlFields, "created_at")
 	rawSqlDataTypes = append(rawSqlDataTypes, "?")
-	rawSqlValues = append(rawSqlValues, request.CreatedAt.Format("2006-01-02 15:04:05"))
+	rawSqlValues = append(rawSqlValues, request.CreatedAt.Format(constants.DATE_TIME_FORMAT_COMON))
 
 	rawSqlFieldsJoin := strings.Join(rawSqlFields, ",")
 	rawSqlDataTypesJoin := strings.Join(rawSqlDataTypes, ",")
