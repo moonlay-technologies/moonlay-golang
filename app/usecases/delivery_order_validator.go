@@ -31,8 +31,8 @@ type DeliveryOrderValidatorInterface interface {
 	UpdateDeliveryOrderByIDValidator(int, *models.DeliveryOrderUpdateByIDRequest, *gin.Context) error
 	UpdateDeliveryOrderDetailByDoIDValidator(int, []*models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest, *gin.Context) error
 	UpdateDeliveryOrderDetailByIDValidator(int, *models.DeliveryOrderDetailUpdateByIDRequest, *gin.Context) error
-	DeleteDeliveryOrderByIDValidator(string, *gin.Context) error
-	DeleteDeliveryOrderDetailByIDValidator(string, *gin.Context) error
+	DeleteDeliveryOrderByIDValidator(string, *gin.Context) (int, error)
+	DeleteDeliveryOrderDetailByIDValidator(string, *gin.Context) (int, error)
 }
 
 type DeliveryOrderValidator struct {
@@ -388,13 +388,13 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByIDValidator(detailId
 	return nil
 }
 
-func (d *DeliveryOrderValidator) DeleteDeliveryOrderByIDValidator(sId string, ctx *gin.Context) error {
+func (d *DeliveryOrderValidator) DeleteDeliveryOrderByIDValidator(sId string, ctx *gin.Context) (int, error) {
 	id, err := strconv.Atoi(sId)
 
 	if err != nil {
 		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
 		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
-		return err
+		return 0, err
 	}
 	mustActiveField := []*models.MustActiveRequest{
 		{
@@ -414,24 +414,24 @@ func (d *DeliveryOrderValidator) DeleteDeliveryOrderByIDValidator(sId string, ct
 
 	err = d.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
 	if err != nil {
-		return err
+		return id, err
 	}
 
 	err = d.requestValidationMiddleware.MustActiveValidationCustomCode(422, ctx, mustActiveField422)
 	if err != nil {
-		return err
+		return id, err
 	}
 
-	return nil
+	return id, nil
 }
 
-func (d *DeliveryOrderValidator) DeleteDeliveryOrderDetailByIDValidator(sId string, ctx *gin.Context) error {
+func (d *DeliveryOrderValidator) DeleteDeliveryOrderDetailByIDValidator(sId string, ctx *gin.Context) (int, error) {
 	id, err := strconv.Atoi(sId)
 
 	if err != nil {
 		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
 		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
-		return err
+		return 0, err
 	}
 	mustActiveField := []*models.MustActiveRequest{
 		{
@@ -451,15 +451,15 @@ func (d *DeliveryOrderValidator) DeleteDeliveryOrderDetailByIDValidator(sId stri
 
 	err = d.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
 	if err != nil {
-		return err
+		return id, err
 	}
 
 	err = d.requestValidationMiddleware.MustActiveValidationCustomCode(422, ctx, mustActiveField422)
 	if err != nil {
-		return err
+		return id, err
 	}
 
-	return nil
+	return id, nil
 }
 
 func (c *DeliveryOrderValidator) GetDeliveryOrderValidator(ctx *gin.Context) (*models.DeliveryOrderRequest, error) {

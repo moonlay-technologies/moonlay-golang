@@ -17,12 +17,11 @@ type UniqueRequestChan struct {
 }
 
 type MustActiveRequest struct {
-	Table              string
-	ReqField           string
-	Clause             string
-	CustomMessage      string
-	CustomResponseCode int
-	Id                 interface{}
+	Table         string
+	ReqField      string
+	Clause        string
+	CustomMessage string
+	Id            interface{}
 }
 
 type MustActiveRequestChan struct {
