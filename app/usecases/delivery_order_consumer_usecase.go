@@ -1,10 +1,8 @@
 package usecases
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
-	"encoding/csv"
 	"fmt"
 	"math"
 	"net/http"
@@ -367,14 +365,7 @@ func (u *deliveryOrderConsumerUseCase) Get(request *models.DeliveryOrderExportRe
 
 	doRequest.PerPage = 50
 	instalmentData := math.Ceil(float64(getDeliveryOrdersCountResult.Total) / float64(doRequest.PerPage))
-	b := new(bytes.Buffer)
-	writer := csv.NewWriter(b)
-	defer writer.Flush()
-
-	if err := writer.Write(constants.DELIVERY_ORDER_EXPORT_HEADER()); err != nil {
-		fmt.Println("error writer", err)
-		return helper.WriteLog(err, http.StatusInternalServerError, nil)
-	}
+	var data [][]string = [][]string{constants.DELIVERY_ORDER_EXPORT_HEADER()}
 
 	for i := 0; i < int(instalmentData); i++ {
 		doRequest.Page = i + 1
@@ -386,11 +377,7 @@ func (u *deliveryOrderConsumerUseCase) Get(request *models.DeliveryOrderExportRe
 			return getDeliveryOrdersResult.ErrorLog
 		}
 		for _, v := range getDeliveryOrdersResult.DeliveryOrders {
-			if err := writer.Write(v.MapToCsvRow()); err != nil {
-				fmt.Println("error fill", err)
-				return helper.WriteLog(err, http.StatusInternalServerError, nil)
-			}
-
+			data = append(data, v.MapToCsvRow())
 		}
 		progres := math.Round(float64(i*doRequest.PerPage)/float64(getDeliveryOrdersCountResult.Total)) * 100
 		err := u.pusherRepository.Pubish(map[string]string{"message": fmt.Sprintf("%f", progres) + "%"})
@@ -399,8 +386,11 @@ func (u *deliveryOrderConsumerUseCase) Get(request *models.DeliveryOrderExportRe
 			return helper.WriteLog(err, http.StatusInternalServerError, nil)
 		}
 	}
+
+	b, err := helper.GenerateExportBufferFile(data, request.FileType)
+
 	// Upload Files
-	err := u.uploadRepository.UploadFile(b, constants.S3_EXPORT_DO_PATH, request.FileName, request.FileType)
+	err = u.uploadRepository.UploadFile(b, constants.S3_EXPORT_DO_PATH, request.FileName, request.FileType)
 	if err != nil {
 		fmt.Println("error upload", err)
 		return helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -429,14 +419,8 @@ func (u *deliveryOrderConsumerUseCase) GetDetail(request *models.DeliveryOrderDe
 
 	doDetailRequest.PerPage = 50
 	instalmentData := math.Ceil(float64(getDeliveryOrderDetailsCountResult.Total) / float64(doDetailRequest.PerPage))
-	b := new(bytes.Buffer)
-	writer := csv.NewWriter(b)
-	defer writer.Flush()
 
-	if err := writer.Write(constants.DELIVERY_ORDER_DETAIL_EXPORT_HEADER()); err != nil {
-		fmt.Println("error writer", err)
-		return helper.WriteLog(err, http.StatusInternalServerError, nil)
-	}
+	var data [][]string = [][]string{constants.DELIVERY_ORDER_DETAIL_EXPORT_HEADER()}
 
 	for i := 0; i < int(instalmentData); i++ {
 		doDetailRequest.Page = i + 1
@@ -448,11 +432,7 @@ func (u *deliveryOrderConsumerUseCase) GetDetail(request *models.DeliveryOrderDe
 			return getDeliveryOrderDetailsResult.ErrorLog
 		}
 		for _, v := range getDeliveryOrderDetailsResult.DeliveryOrderDetailOpenSearch {
-			if err := writer.Write(v.MapToCsvRow()); err != nil {
-				fmt.Println("error fill", err)
-				return helper.WriteLog(err, http.StatusInternalServerError, nil)
-			}
-
+			data = append(data, v.MapToCsvRow())
 		}
 		progres := math.Round(float64(i*doDetailRequest.PerPage)/float64(getDeliveryOrderDetailsCountResult.Total)) * 100
 		err := u.pusherRepository.Pubish(map[string]string{"message": fmt.Sprintf("%f", progres) + "%"})
@@ -461,8 +441,11 @@ func (u *deliveryOrderConsumerUseCase) GetDetail(request *models.DeliveryOrderDe
 			return helper.WriteLog(err, http.StatusInternalServerError, nil)
 		}
 	}
+
+	b, err := helper.GenerateExportBufferFile(data, request.FileType)
+
 	// Upload Files
-	err := u.uploadRepository.UploadFile(b, constants.S3_EXPORT_DO_DETAIL_PATH, request.FileName, request.FileType)
+	err = u.uploadRepository.UploadFile(b, constants.S3_EXPORT_DO_DETAIL_PATH, request.FileName, request.FileType)
 	if err != nil {
 		fmt.Println("error upload", err)
 		return helper.WriteLog(err, http.StatusInternalServerError, nil)
