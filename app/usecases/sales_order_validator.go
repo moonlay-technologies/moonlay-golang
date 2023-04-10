@@ -1578,14 +1578,14 @@ func (c *SalesOrderValidator) DeleteSalesOrderDetailBySoIdValidator(sId string, 
 	}
 	mustActiveField := []*models.MustActiveRequest{
 		{
-			Table:    "sales_order_details",
+			Table:    "sales_orders",
 			ReqField: "id",
 			Clause:   fmt.Sprintf("id = %d", id),
 		},
 	}
 	mustActiveField422 := []*models.MustActiveRequest{
 		{
-			Table:    "sales_order_details",
+			Table:    "sales_orders",
 			ReqField: "id",
 			Clause:   fmt.Sprintf(constants.CLAUSE_ID_VALIDATION, id),
 		},
