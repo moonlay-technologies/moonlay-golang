@@ -9,7 +9,7 @@ import (
 	"order-service/app/models/constants"
 	"order-service/app/repositories"
 	"order-service/global/utils/helper"
-	baseModel "order-service/global/utils/model"
+	"order-service/global/utils/model"
 	"strconv"
 	"strings"
 	"time"
@@ -31,6 +31,9 @@ type SalesOrderValidatorInterface interface {
 	UpdateSalesOrderByIdValidator(updateRequest *models.SalesOrderUpdateRequest, ctx *gin.Context) error
 	UpdateSalesOrderDetailBySoIdValidator(updateRequest *models.SalesOrderUpdateRequest, ctx *gin.Context) error
 	UpdateSalesOrderDetailByIdValidator(updateRequest *models.UpdateSalesOrderDetailByIdRequest, ctx *gin.Context) error
+	DeleteSalesOrderByIdValidator(string, *gin.Context) (int, error)
+	DeleteSalesOrderDetailByIdValidator(string, *gin.Context) (int, error)
+	DeleteSalesOrderDetailBySoIdValidator(string, *gin.Context) (int, error)
 }
 
 type SalesOrderValidator struct {
@@ -60,7 +63,6 @@ func InitSalesOrderValidator(requestValidationMiddleware middlewares.RequestVali
 }
 
 func (c *SalesOrderValidator) CreateSalesOrderValidator(insertRequest *models.SalesOrderStoreRequest, ctx *gin.Context) error {
-	var result baseModel.Response
 	dateField := []*models.DateInputRequest{
 		{
 			Field: "so_date",
@@ -133,21 +135,18 @@ func (c *SalesOrderValidator) CreateSalesOrderValidator(insertRequest *models.Sa
 	getOrderSourceResult := <-getOrderSourceResultChan
 
 	if getOrderSourceResult.Error != nil {
-		result.StatusCode = getOrderSourceResult.ErrorLog.StatusCode
-		result.Error = getOrderSourceResult.ErrorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(getOrderSourceResult.ErrorLog.StatusCode, helper.GenerateResultByErrorLog(getOrderSourceResult.ErrorLog))
 		return getOrderSourceResult.Error
 	}
 	sourceName := getOrderSourceResult.OrderSource.SourceName
 	if sourceName != "manager" && len(insertRequest.DeviceId) < 1 {
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+		errorLog := helper.NewWriteLog(model.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage("create", "device_id tidak boleh kosong")},
 			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
-		result.StatusCode = errorLog.StatusCode
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
+		helper.GenerateResultByErrorLog(errorLog)
+		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByErrorLog(errorLog))
 
 		err = helper.NewError("device_id tidak boleh kosong")
 		return err
@@ -160,9 +159,7 @@ func (c *SalesOrderValidator) CreateSalesOrderValidator(insertRequest *models.Sa
 		getSalesmanResult := <-getSalesmanResultChan
 
 		if getSalesmanResult.Error != nil {
-			result.StatusCode = getSalesmanResult.ErrorLog.StatusCode
-			result.Error = getSalesmanResult.ErrorLog
-			ctx.JSON(result.StatusCode, result)
+			ctx.JSON(getSalesmanResult.ErrorLog.StatusCode, helper.GenerateResultByErrorLog(getOrderSourceResult.ErrorLog))
 			return getSalesmanResult.Error
 		}
 
@@ -175,14 +172,12 @@ func (c *SalesOrderValidator) CreateSalesOrderValidator(insertRequest *models.Sa
 		}
 
 		if !isExist {
-			errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+			errorLog := helper.NewWriteLog(model.ErrorLog{
 				Message:       []string{helper.GenerateUnprocessableErrorMessage("create", "referral code tidak terdaftar")},
 				SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 				StatusCode:    http.StatusUnprocessableEntity,
 			})
-			result.StatusCode = errorLog.StatusCode
-			result.Error = errorLog
-			ctx.JSON(result.StatusCode, result)
+			ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 
 			err = helper.NewError("referral code tidak terdaftar")
 			return err
@@ -204,28 +199,24 @@ func (c *SalesOrderValidator) CreateSalesOrderValidator(insertRequest *models.Sa
 	if sourceName == "manager" && !(soDate.Add(1*time.Minute).After(soRefDate) && soRefDate.Add(-1*time.Minute).Before(nowUTC) && soDate.Add(-1*time.Minute).Before(nowUTC) && soRefDate.Month() == nowUTC.Month() && soRefDate.UTC().Year() == nowUTC.Year()) {
 
 		err = helper.NewError("so_date dan so_ref_date harus sama dengan kurang dari hari ini dan harus di bulan berjalan")
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+		errorLog := helper.NewWriteLog(model.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage("create", "so_date dan so_ref_date harus sama dengan kurang dari hari ini dan harus di bulan berjalan")},
 			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
-		result.StatusCode = errorLog.StatusCode
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 
 		return err
 
 	} else if (sourceName == "salesman" || sourceName == "store") && !(soDate.Equal(now.Local()) && soRefDate.Equal(now.Local())) {
 
 		err = helper.NewError("so_date dan so_ref_date harus sama dengan hari ini")
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+		errorLog := helper.NewWriteLog(model.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage("create", "so_date dan so_ref_date harus sama dengan hari ini")},
 			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
-		result.StatusCode = errorLog.StatusCode
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 
 		return err
 
@@ -257,8 +248,6 @@ func (c *SalesOrderValidator) CreateSalesOrderValidator(insertRequest *models.Sa
 }
 
 func (c *SalesOrderValidator) GetSalesOrderValidator(ctx *gin.Context) (*models.SalesOrderRequest, error) {
-	var result baseModel.Response
-
 	pageInt, err := c.getIntQueryWithDefault("page", "1", true, ctx)
 	if err != nil {
 		return nil, err
@@ -273,9 +262,7 @@ func (c *SalesOrderValidator) GetSalesOrderValidator(ctx *gin.Context) (*models.
 
 	if sortField != "order_status_id" && sortField != "so_date" && sortField != "so_ref_code" && sortField != "so_code" && sortField != "store_code" && sortField != "store_name" && sortField != "created_at" && sortField != "updated_at" {
 		err = helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'so_date' or 'so_ref_code' or 'so_code' or 'store_code' or 'store_name' or 'created_at' or 'updated_at' ")
-		result.StatusCode = http.StatusBadRequest
-		result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
 
@@ -387,8 +374,6 @@ func (c *SalesOrderValidator) GetSalesOrderValidator(ctx *gin.Context) (*models.
 }
 
 func (c *SalesOrderValidator) GetSalesOrderDetailValidator(ctx *gin.Context) (*models.GetSalesOrderDetailRequest, error) {
-	var result baseModel.Response
-
 	pageInt, err := c.getIntQueryWithDefault("page", "1", true, ctx)
 	if err != nil {
 		return nil, err
@@ -403,9 +388,7 @@ func (c *SalesOrderValidator) GetSalesOrderDetailValidator(ctx *gin.Context) (*m
 
 	if sortField != "order_status_id" && sortField != "so_date" && sortField != "so_ref_code" && sortField != "so_code" && sortField != "store_code" && sortField != "store_name" && sortField != "created_at" && sortField != "updated_at" {
 		err = helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'so_date' or 'so_ref_code' or 'so_code' or 'store_code' or 'store_name' or 'created_at' or 'updated_at' ")
-		result.StatusCode = http.StatusBadRequest
-		result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
 
@@ -517,8 +500,6 @@ func (c *SalesOrderValidator) GetSalesOrderDetailValidator(ctx *gin.Context) (*m
 }
 
 func (c *SalesOrderValidator) GetSalesOrderSyncToKafkaHistoriesValidator(ctx *gin.Context) (*models.SalesOrderEventLogRequest, error) {
-	var result baseModel.Response
-
 	pageInt, err := c.getIntQueryWithDefault("page", "1", true, ctx)
 	if err != nil {
 		return nil, err
@@ -533,9 +514,7 @@ func (c *SalesOrderValidator) GetSalesOrderSyncToKafkaHistoriesValidator(ctx *gi
 
 	if sortField != "so_code" && sortField != "status" && sortField != "agent_name" && sortField != "created_at" {
 		err = helper.NewError("Parameter 'sort_field' harus bernilai 'so_code' or 'status' or 'agent_name' or 'created_at' ")
-		result.StatusCode = http.StatusBadRequest
-		result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
 
@@ -560,7 +539,6 @@ func (c *SalesOrderValidator) GetSalesOrderSyncToKafkaHistoriesValidator(ctx *gi
 }
 
 func (c *SalesOrderValidator) GetSalesOrderJourneysValidator(ctx *gin.Context) (*models.SalesOrderJourneyRequest, error) {
-	var result baseModel.Response
 	pageInt, err := c.getIntQueryWithDefault("page", "1", true, ctx)
 	if err != nil {
 		return nil, err
@@ -580,9 +558,7 @@ func (c *SalesOrderValidator) GetSalesOrderJourneysValidator(ctx *gin.Context) (
 
 	if sortField != "so_code" && sortField != "status" && sortField != "created_at" && sortField != "action" {
 		err = helper.NewError("Parameter 'sort_field' harus bernilai 'so_code' or 'status' or 'created_at' or 'action' ")
-		result.StatusCode = http.StatusBadRequest
-		result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
 
@@ -604,8 +580,6 @@ func (c *SalesOrderValidator) GetSalesOrderJourneysValidator(ctx *gin.Context) (
 }
 
 func (c *SalesOrderValidator) GetSOUploadHistoriesValidator(ctx *gin.Context) (*models.GetSoUploadHistoriesRequest, error) {
-	var result baseModel.Response
-
 	pageInt, err := c.getIntQueryWithDefault("page", "1", true, ctx)
 	if err != nil {
 		return nil, err
@@ -620,9 +594,7 @@ func (c *SalesOrderValidator) GetSOUploadHistoriesValidator(ctx *gin.Context) (*
 
 	if sortField != "agent_name" && sortField != "file_name" && sortField != "status" && sortField != "created_at" {
 		err = helper.NewError("Parameter 'sort_field' harus bernilai 'agent_name' or 'file_name' or 'status' or 'created_at' ")
-		result.StatusCode = http.StatusBadRequest
-		result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
 
@@ -673,8 +645,6 @@ func (c *SalesOrderValidator) GetSOUploadHistoriesValidator(ctx *gin.Context) (*
 }
 
 func (c *SalesOrderValidator) GetSosjUploadHistoriesValidator(ctx *gin.Context) (*models.GetSosjUploadHistoriesRequest, error) {
-	var result baseModel.Response
-
 	pageInt, err := c.getIntQueryWithDefault("page", "1", true, ctx)
 	if err != nil {
 		return nil, err
@@ -689,9 +659,7 @@ func (c *SalesOrderValidator) GetSosjUploadHistoriesValidator(ctx *gin.Context) 
 
 	if sortField != "agent_name" && sortField != "file_name" && sortField != "status" && sortField != "uploaded_by_name" && sortField != "created_at" {
 		err = helper.NewError("Parameter 'sort_field' harus bernilai 'agent_name' or 'file_name' or 'status' or `uploaded_by_name` or 'created_at' ")
-		result.StatusCode = http.StatusBadRequest
-		result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
 
@@ -768,42 +736,32 @@ func (d *SalesOrderValidator) getQueryWithDateValidation(param string, empty str
 }
 
 func (d *SalesOrderValidator) getIntQueryWithDefault(param string, empty string, isNotZero bool, ctx *gin.Context) (int, error) {
-	var response baseModel.Response
 	sResult := d.getQueryWithDefault(param, empty, ctx)
 	result, err := strconv.Atoi(sResult)
 	if err != nil {
 		err = helper.NewError(fmt.Sprintf("Parameter '%s' harus bernilai integer", param))
-		response.StatusCode = http.StatusBadRequest
-		response.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(response.StatusCode, response)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return 0, err
 	}
 	if result == 0 && isNotZero {
 		err = helper.NewError(fmt.Sprintf("Parameter '%s' harus bernilai integer > 0", param))
-		response.StatusCode = http.StatusBadRequest
-		response.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(response.StatusCode, response)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return 0, err
 	}
 	return result, nil
 }
 
 func (d *SalesOrderValidator) getIntQueryWithMustActive(param string, empty string, isNotZero bool, table string, clause string, ctx *gin.Context) (int, *models.MustActiveRequest, error) {
-	var response baseModel.Response
 	sResult := d.getQueryWithDefault(param, empty, ctx)
 	result, err := strconv.Atoi(sResult)
 	if err != nil {
 		err = helper.NewError(fmt.Sprintf("Parameter '%s' harus bernilai integer", param))
-		response.StatusCode = http.StatusBadRequest
-		response.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(response.StatusCode, response)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return 0, nil, err
 	}
 	if result == 0 && isNotZero {
 		err = helper.NewError(fmt.Sprintf("Parameter '%s' harus bernilai integer > 0", param))
-		response.StatusCode = http.StatusBadRequest
-		response.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(response.StatusCode, response)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return 0, nil, err
 	}
 	mustActiveField := &models.MustActiveRequest{Table: table, ReqField: param, Clause: fmt.Sprintf(clause, result)}
@@ -812,15 +770,11 @@ func (d *SalesOrderValidator) getIntQueryWithMustActive(param string, empty stri
 }
 
 func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*models.SalesOrderExportRequest, error) {
-	var result baseModel.Response
-
 	sortField := d.getQueryWithDefault("sort_field", "created_at", ctx)
 
 	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "store_id" && sortField != "created_at" && sortField != "updated_at" {
 		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
-		result.StatusCode = http.StatusBadRequest
-		result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
 
@@ -989,15 +943,11 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 }
 
 func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) (*models.SalesOrderDetailExportRequest, error) {
-	var result baseModel.Response
-
 	sortField := d.getQueryWithDefault("sort_field", "created_at", ctx)
 
 	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "store_id" && sortField != "created_at" && sortField != "updated_at" {
 		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
-		result.StatusCode = http.StatusBadRequest
-		result.Error = helper.WriteLog(err, http.StatusBadRequest, err.Error())
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
 
@@ -1165,8 +1115,6 @@ func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) 
 }
 
 func (c *SalesOrderValidator) UpdateSalesOrderByIdValidator(updateRequest *models.SalesOrderUpdateRequest, ctx *gin.Context) error {
-	var result baseModel.Response
-
 	ids := ctx.Param("so-id")
 	id, _ := strconv.Atoi(ids)
 
@@ -1180,14 +1128,12 @@ func (c *SalesOrderValidator) UpdateSalesOrderByIdValidator(updateRequest *model
 		}
 	}
 	if len(errors) > 0 {
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+		errorLog := helper.NewWriteLog(model.ErrorLog{
 			Message:       errors,
 			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
-		result.StatusCode = errorLog.StatusCode
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 
 		err := helper.NewError("")
 		return err
@@ -1199,9 +1145,7 @@ func (c *SalesOrderValidator) UpdateSalesOrderByIdValidator(updateRequest *model
 	getSalesOrderByIDResult := <-getSalesOrderByIDResultChan
 
 	if getSalesOrderByIDResult.Error != nil {
-		result.StatusCode = getSalesOrderByIDResult.ErrorLog.StatusCode
-		result.Error = getSalesOrderByIDResult.ErrorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(getSalesOrderByIDResult.ErrorLog.StatusCode, helper.GenerateResultByErrorLog(getSalesOrderByIDResult.ErrorLog))
 		return getSalesOrderByIDResult.Error
 	}
 
@@ -1211,21 +1155,17 @@ func (c *SalesOrderValidator) UpdateSalesOrderByIdValidator(updateRequest *model
 	getSalesOrderDetailBySoIDResult := <-getSalesOrderDetailBySoIDResultChan
 
 	if getSalesOrderDetailBySoIDResult.Error != nil {
-		result.StatusCode = getSalesOrderDetailBySoIDResult.ErrorLog.StatusCode
-		result.Error = getSalesOrderDetailBySoIDResult.ErrorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(getSalesOrderByIDResult.ErrorLog.StatusCode, helper.GenerateResultByErrorLog(getSalesOrderByIDResult.ErrorLog))
 		return getSalesOrderDetailBySoIDResult.Error
 	}
 
 	if len(updateRequest.SalesOrderDetails) != int(getSalesOrderDetailBySoIDResult.Total) {
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+		errorLog := helper.NewWriteLog(model.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage("update", fmt.Sprintf("jumlah request so detail tidak sesuai dengan jumlah so detail sales order %d", id))},
 			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
-		result.StatusCode = errorLog.StatusCode
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 
 		err := helper.NewError("")
 		return err
@@ -1245,14 +1185,12 @@ func (c *SalesOrderValidator) UpdateSalesOrderByIdValidator(updateRequest *model
 		}
 	}
 	if len(errors) > 0 {
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+		errorLog := helper.NewWriteLog(model.ErrorLog{
 			Message:       errors,
 			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
-		result.StatusCode = errorLog.StatusCode
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 
 		err := helper.NewError(strings.Join(errors, ""))
 		return err
@@ -1264,14 +1202,12 @@ func (c *SalesOrderValidator) UpdateSalesOrderByIdValidator(updateRequest *model
 	getOrderStatusResult := <-getOrderStatusResultChan
 
 	if getOrderStatusResult.Error != nil {
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+		errorLog := helper.NewWriteLog(model.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage("update", getOrderStatusResult.Error.Error())},
 			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
-		result.StatusCode = errorLog.StatusCode
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 
 		return getOrderStatusResult.Error
 	}
@@ -1280,14 +1216,12 @@ func (c *SalesOrderValidator) UpdateSalesOrderByIdValidator(updateRequest *model
 
 	if len(errorValidation) > 0 {
 		err := errorValidation
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+		errorLog := helper.NewWriteLog(model.ErrorLog{
 			Message:       errorValidation,
 			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
-		result.StatusCode = errorLog.StatusCode
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 
 		return fmt.Errorf(strings.Join(err, ";"))
 	}
@@ -1296,9 +1230,6 @@ func (c *SalesOrderValidator) UpdateSalesOrderByIdValidator(updateRequest *model
 }
 
 func (c *SalesOrderValidator) UpdateSalesOrderDetailBySoIdValidator(updateRequest *models.SalesOrderUpdateRequest, ctx *gin.Context) error {
-
-	var result baseModel.Response
-
 	ids := ctx.Param("so-id")
 	id, _ := strconv.Atoi(ids)
 
@@ -1312,16 +1243,14 @@ func (c *SalesOrderValidator) UpdateSalesOrderDetailBySoIdValidator(updateReques
 		}
 	}
 	if len(errors) > 0 {
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+		errorLog := helper.NewWriteLog(model.ErrorLog{
 			Message:       errors,
 			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
-		result.StatusCode = errorLog.StatusCode
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 
-		return result.Error.Err
+		return errorLog.Err
 	}
 
 	// Get Sales Order By Id
@@ -1330,9 +1259,7 @@ func (c *SalesOrderValidator) UpdateSalesOrderDetailBySoIdValidator(updateReques
 	getSalesOrderByIDResult := <-getSalesOrderByIDResultChan
 
 	if getSalesOrderByIDResult.Error != nil {
-		result.StatusCode = getSalesOrderByIDResult.ErrorLog.StatusCode
-		result.Error = getSalesOrderByIDResult.ErrorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(getSalesOrderByIDResult.ErrorLog.StatusCode, helper.GenerateResultByErrorLog(getSalesOrderByIDResult.ErrorLog))
 		return getSalesOrderByIDResult.Error
 	}
 
@@ -1342,9 +1269,7 @@ func (c *SalesOrderValidator) UpdateSalesOrderDetailBySoIdValidator(updateReques
 	getSalesOrderDetailBySoIDResult := <-getSalesOrderDetailBySoIDResultChan
 
 	if getSalesOrderDetailBySoIDResult.Error != nil {
-		result.StatusCode = getSalesOrderDetailBySoIDResult.ErrorLog.StatusCode
-		result.Error = getSalesOrderDetailBySoIDResult.ErrorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(getSalesOrderDetailBySoIDResult.ErrorLog.StatusCode, helper.GenerateResultByErrorLog(getSalesOrderDetailBySoIDResult.ErrorLog))
 		return getSalesOrderDetailBySoIDResult.Error
 	}
 
@@ -1362,14 +1287,12 @@ func (c *SalesOrderValidator) UpdateSalesOrderDetailBySoIdValidator(updateReques
 		}
 	}
 	if len(errors) > 0 {
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+		errorLog := helper.NewWriteLog(model.ErrorLog{
 			Message:       errors,
 			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
-		result.StatusCode = errorLog.StatusCode
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 
 		err := helper.NewError(strings.Join(errors, ""))
 		return err
@@ -1378,14 +1301,12 @@ func (c *SalesOrderValidator) UpdateSalesOrderDetailBySoIdValidator(updateReques
 	errorValidation := c.updateSOValidation(id, getSalesOrderByIDResult.SalesOrder.OrderStatusName, ctx)
 	if errorValidation != nil {
 		err := errorValidation
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+		errorLog := helper.NewWriteLog(model.ErrorLog{
 			Message:       err,
 			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
-		result.StatusCode = errorLog.StatusCode
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 
 		return fmt.Errorf(strings.Join(err, ";"))
 	}
@@ -1394,9 +1315,6 @@ func (c *SalesOrderValidator) UpdateSalesOrderDetailBySoIdValidator(updateReques
 }
 
 func (c *SalesOrderValidator) UpdateSalesOrderDetailByIdValidator(updateRequest *models.UpdateSalesOrderDetailByIdRequest, ctx *gin.Context) error {
-
-	var result baseModel.Response
-
 	var errors []string
 	if updateRequest.OrderStatusID != 8 && updateRequest.OrderStatusID != 10 {
 		errors = append(errors, helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, fmt.Sprintf("status %d tidak dikenal", updateRequest.OrderStatusID)))
@@ -1407,14 +1325,12 @@ func (c *SalesOrderValidator) UpdateSalesOrderDetailByIdValidator(updateRequest 
 	}
 
 	if len(errors) > 0 {
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+		errorLog := helper.NewWriteLog(model.ErrorLog{
 			Message:       errors,
 			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
-		result.StatusCode = errorLog.StatusCode
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 
 		err := helper.NewError(strings.Join(errors, ""))
 		return err
@@ -1429,9 +1345,7 @@ func (c *SalesOrderValidator) UpdateSalesOrderDetailByIdValidator(updateRequest 
 	getSalesOrderByIDResult := <-getSalesOrderByIDResultChan
 
 	if getSalesOrderByIDResult.Error != nil {
-		result.StatusCode = getSalesOrderByIDResult.ErrorLog.StatusCode
-		result.Error = getSalesOrderByIDResult.ErrorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(getSalesOrderByIDResult.ErrorLog.StatusCode, helper.GenerateResultByErrorLog(getSalesOrderByIDResult.ErrorLog))
 		return getSalesOrderByIDResult.Error
 	}
 
@@ -1444,21 +1358,17 @@ func (c *SalesOrderValidator) UpdateSalesOrderDetailByIdValidator(updateRequest 
 	getSalesOrderDetailByIDResult := <-getSalesOrderDetailByIDResultChan
 
 	if getSalesOrderDetailByIDResult.Error != nil {
-		result.StatusCode = getSalesOrderDetailByIDResult.ErrorLog.StatusCode
-		result.Error = getSalesOrderDetailByIDResult.ErrorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(getSalesOrderDetailByIDResult.ErrorLog.StatusCode, helper.GenerateResultByErrorLog(getSalesOrderDetailByIDResult.ErrorLog))
 		return getSalesOrderDetailByIDResult.Error
 	}
 
 	if getSalesOrderDetailByIDResult.SalesOrderDetail.SalesOrderID != soId {
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+		errorLog := helper.NewWriteLog(model.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage("update", fmt.Sprintf("Sales Order Detail Id = %d tidak terdaftar pada Sales Order Id = %d", soDetailId, soId))},
 			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
-		result.StatusCode = errorLog.StatusCode
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 
 		err := helper.NewError(strings.Join(errors, ""))
 		return err
@@ -1467,14 +1377,12 @@ func (c *SalesOrderValidator) UpdateSalesOrderDetailByIdValidator(updateRequest 
 	errorValidation := c.updateSOValidation(soId, getSalesOrderByIDResult.SalesOrder.OrderStatusName, ctx)
 	if errorValidation != nil {
 		err := errorValidation
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+		errorLog := helper.NewWriteLog(model.ErrorLog{
 			Message:       err,
 			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
-		result.StatusCode = errorLog.StatusCode
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 
 		return fmt.Errorf(strings.Join(err, ";"))
 	}
@@ -1488,11 +1396,8 @@ func (c *SalesOrderValidator) UpdateSalesOrderDetailByIdValidator(updateRequest 
 		if totalSoDetail == 1 {
 			soStatus = constants.ORDER_STATUS_CANCELLED
 			soDetailStatus = constants.ORDER_STATUS_CANCELLED
-		} else if helper.CheckSalesOrderDetailStatus(soDetailId, true, constants.ORDER_STATUS_CANCELLED, salesOrder.SalesOrderDetails) > 0 {
+		} else if helper.CheckSalesOrderDetailStatus(soDetailId, true, constants.ORDER_STATUS_CANCELLED, salesOrder.SalesOrderDetails) > 0 || helper.CheckSalesOrderDetailStatus(soDetailId, false, constants.ORDER_STATUS_CANCELLED, salesOrder.SalesOrderDetails) > 0 {
 			soStatus = constants.ORDER_STATUS_OPEN
-			soDetailStatus = constants.ORDER_STATUS_CANCELLED
-		} else if helper.CheckSalesOrderDetailStatus(soDetailId, false, constants.ORDER_STATUS_CANCELLED, salesOrder.SalesOrderDetails) > 0 {
-			soStatus = constants.ORDER_STATUS_CANCELLED
 			soDetailStatus = constants.ORDER_STATUS_CANCELLED
 		}
 	} else if salesOrder.OrderStatusName == constants.ORDER_STATUS_PARTIAL {
@@ -1509,15 +1414,13 @@ func (c *SalesOrderValidator) UpdateSalesOrderDetailByIdValidator(updateRequest 
 	}
 
 	if len(soStatus) < 1 || len(soDetailStatus) < 1 {
-		errorLog := helper.NewWriteLog(baseModel.ErrorLog{
+		errorLog := helper.NewWriteLog(model.ErrorLog{
 			Message:       []string{helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, fmt.Sprintf("tidak memenuhi syarat"))},
 			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
 			StatusCode:    http.StatusUnprocessableEntity,
 		})
 
-		result.StatusCode = errorLog.StatusCode
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 
 		err := helper.NewError(strings.Join(errors, ""))
 		return err
@@ -1558,4 +1461,167 @@ func (c *SalesOrderValidator) updateSOValidation(salesOrderId int, orderStatusNa
 	}
 
 	return nil
+}
+
+func (c *SalesOrderValidator) DeleteSalesOrderByIdValidator(sId string, ctx *gin.Context) (int, error) {
+	id, err := strconv.Atoi(sId)
+
+	if err != nil {
+		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
+		return 0, err
+	}
+	mustActiveField := []*models.MustActiveRequest{
+		{
+			Table:    "sales_orders",
+			ReqField: "id",
+			Clause:   fmt.Sprintf("id = %d", id),
+		},
+	}
+	mustActiveField422 := []*models.MustActiveRequest{
+		{
+			Table:    "sales_orders",
+			ReqField: "id",
+			Clause:   fmt.Sprintf(constants.CLAUSE_ID_VALIDATION, id),
+		},
+	}
+
+	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
+	if err != nil {
+		return 0, err
+	}
+	err = c.requestValidationMiddleware.MustActiveValidationCustomCode(422, ctx, mustActiveField422)
+	if err != nil {
+		return 0, err
+	}
+	mustEmpties := []*models.MustEmptyValidationRequest{
+		{
+			Table:           "sales_orders s JOIN order_statuses o ON s.order_status_id = o.id",
+			SelectedCollumn: "o.name",
+			Clause:          fmt.Sprintf("o.id = %d AND s.order_status_id NOT IN (5,6,9,10)", id),
+			MessageFormat:   "Status Sales Order <result>",
+		},
+		{
+			Table:           "delivery_orders d JOIN sales_orders s ON d.sales_order_id = s.id",
+			SelectedCollumn: "d.id",
+			Clause:          fmt.Sprintf("s.id = %d AND d.deleted_at IS NULL", id),
+			MessageFormat:   constants.ERROR_UPDATE_SO_MESSAGE,
+		},
+	}
+	err = c.requestValidationMiddleware.MustEmptyValidation(ctx, mustEmpties)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+func (c *SalesOrderValidator) DeleteSalesOrderDetailByIdValidator(sId string, ctx *gin.Context) (int, error) {
+	id, err := strconv.Atoi(sId)
+
+	if err != nil {
+		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
+		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
+		return 0, err
+	}
+	mustActiveField := []*models.MustActiveRequest{
+		{
+			Table:    "sales_order_details",
+			ReqField: "id",
+			Clause:   fmt.Sprintf("id = %d", id),
+		},
+	}
+	mustActiveField422 := []*models.MustActiveRequest{
+		{
+			Table:    "sales_order_details",
+			ReqField: "id",
+			Clause:   fmt.Sprintf(constants.CLAUSE_ID_VALIDATION, id),
+		},
+	}
+
+	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
+	if err != nil {
+		return id, err
+	}
+	err = c.requestValidationMiddleware.MustActiveValidationCustomCode(422, ctx, mustActiveField422)
+	if err != nil {
+		return id, err
+	}
+	mustEmpties := []*models.MustEmptyValidationRequest{
+		{
+			Table:           "sales_order_details s JOIN order_statuses o ON s.order_status_id = o.id",
+			SelectedCollumn: "o.name",
+			Clause:          fmt.Sprintf("s.id = %d AND s.order_status_id NOT IN (16)", id),
+			MessageFormat:   "Hanya status cancelled pada Sales Order Detail yang dapat di delete",
+		},
+		{
+			Table:           "sales_orders s JOIN sales_order_details sd ON s.id = sd.sales_order_id JOIN delivery_orders d ON d.sales_order_id = s.id",
+			SelectedCollumn: "d.id",
+			Clause:          fmt.Sprintf("sd.id = %d AND d.deleted_at IS NULL", id),
+			MessageFormat:   constants.ERROR_UPDATE_SO_MESSAGE,
+		},
+	}
+	err = c.requestValidationMiddleware.MustEmptyValidation(ctx, mustEmpties)
+	if err != nil {
+		return id, err
+	}
+	return id, nil
+}
+
+func (c *SalesOrderValidator) DeleteSalesOrderDetailBySoIdValidator(sId string, ctx *gin.Context) (int, error) {
+	id, err := strconv.Atoi(sId)
+
+	if err != nil {
+		if err != nil {
+			err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
+			ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
+			return 0, err
+		}
+	}
+	mustActiveField := []*models.MustActiveRequest{
+		{
+			Table:    "sales_order_details",
+			ReqField: "id",
+			Clause:   fmt.Sprintf("id = %d", id),
+		},
+	}
+	mustActiveField422 := []*models.MustActiveRequest{
+		{
+			Table:    "sales_order_details",
+			ReqField: "id",
+			Clause:   fmt.Sprintf(constants.CLAUSE_ID_VALIDATION, id),
+		},
+	}
+
+	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
+	if err != nil {
+		return id, err
+	}
+	err = c.requestValidationMiddleware.MustActiveValidationCustomCode(422, ctx, mustActiveField422)
+	if err != nil {
+		return id, err
+	}
+	mustEmpties := []*models.MustEmptyValidationRequest{
+		{
+			Table:           "sales_orders s JOIN order_statuses o ON s.order_status_id = o.id",
+			SelectedCollumn: "o.name",
+			Clause:          fmt.Sprintf("o.id = %d AND s.order_status_id NOT IN (5,6,9,10)", id),
+			MessageFormat:   "Status Sales Order <result>",
+		},
+		{
+			Table:           "sales_orders s JOIN sales_order_details sd ON s.id = sd.sales_order_id JOIN order_statuses o ON sd.order_status_id = o.id",
+			SelectedCollumn: "o.name",
+			Clause:          fmt.Sprintf("s.id = %d AND sd.order_status_id NOT IN (16)", id),
+			MessageFormat:   "Hanya status cancelled pada Sales Order Detail yang dapat di delete",
+		},
+		{
+			Table:           "delivery_orders d JOIN sales_orders s ON d.sales_order_id = s.id",
+			SelectedCollumn: "d.id",
+			Clause:          fmt.Sprintf("s.id = %d AND d.deleted_at IS NULL", id),
+			MessageFormat:   constants.ERROR_UPDATE_SO_MESSAGE,
+		},
+	}
+	err = c.requestValidationMiddleware.MustEmptyValidation(ctx, mustEmpties)
+	if err != nil {
+		return id, err
+	}
+	return id, nil
 }
