@@ -339,6 +339,7 @@ func (r *salesOrderDetailOpenSearch) generateSalesOrderDetailQueryOpenSearchResu
 		if openSearchQueryResult.Hits.Total.Value > 0 {
 			for _, v := range openSearchQueryResult.Hits.Hits {
 				obj := v.Source.(map[string]interface{})
+
 				salesOrderDetail := &models.SalesOrderDetailOpenSearch{}
 				jsonStr, err := json.Marshal(v.Source)
 				if err != nil {
@@ -349,10 +350,14 @@ func (r *salesOrderDetailOpenSearch) generateSalesOrderDetailQueryOpenSearchResu
 				}
 
 				layout := time.RFC3339
-				createdAt, _ := time.Parse(layout, obj["created_at"].(string))
-				salesOrderDetail.CreatedAt = &createdAt
-				updatedAt, _ := time.Parse(layout, obj["updated_at"].(string))
-				salesOrderDetail.UpdatedAt = &updatedAt
+				if obj["created_at"] != nil {
+					createdAt, _ := time.Parse(layout, obj["created_at"].(string))
+					salesOrderDetail.CreatedAt = &createdAt
+				}
+				if obj["updated_at"] != nil {
+					updatedAt, _ := time.Parse(layout, obj["updated_at"].(string))
+					salesOrderDetail.UpdatedAt = &updatedAt
+				}
 
 				salesOrderDetails = append(salesOrderDetails, salesOrderDetail)
 			}
