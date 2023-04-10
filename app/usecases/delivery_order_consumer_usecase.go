@@ -365,7 +365,7 @@ func (u *deliveryOrderConsumerUseCase) Get(request *models.DeliveryOrderExportRe
 
 	doRequest.PerPage = 50
 	instalmentData := math.Ceil(float64(getDeliveryOrdersCountResult.Total) / float64(doRequest.PerPage))
-	var data [][]string = [][]string{constants.DELIVERY_ORDER_EXPORT_HEADER()}
+	data := [][]interface{}{constants.DELIVERY_ORDER_EXPORT_HEADER()}
 
 	for i := 0; i < int(instalmentData); i++ {
 		doRequest.Page = i + 1
@@ -420,19 +420,26 @@ func (u *deliveryOrderConsumerUseCase) GetDetail(request *models.DeliveryOrderDe
 	doDetailRequest.PerPage = 50
 	instalmentData := math.Ceil(float64(getDeliveryOrderDetailsCountResult.Total) / float64(doDetailRequest.PerPage))
 
-	var data [][]string = [][]string{constants.DELIVERY_ORDER_DETAIL_EXPORT_HEADER()}
+	data := [][]interface{}{constants.DELIVERY_ORDER_DETAIL_EXPORT_HEADER()}
 
 	for i := 0; i < int(instalmentData); i++ {
 		doDetailRequest.Page = i + 1
-		getDeliveryOrdersResultChan := make(chan *models.DeliveryOrderDetailsOpenSearchChan)
-		go u.deliveryOrderDetailOpenSearchRepository.Get(doDetailRequest, false, getDeliveryOrdersResultChan)
-		getDeliveryOrderDetailsResult := <-getDeliveryOrdersResultChan
+		getDeliveryOrderDetailsResultChan := make(chan *models.DeliveryOrderDetailsOpenSearchChan)
+		go u.deliveryOrderDetailOpenSearchRepository.Get(doDetailRequest, false, getDeliveryOrderDetailsResultChan)
+		getDeliveryOrderDetailsResult := <-getDeliveryOrderDetailsResultChan
 
 		if getDeliveryOrderDetailsResult.Error != nil {
 			return getDeliveryOrderDetailsResult.ErrorLog
 		}
 		for _, v := range getDeliveryOrderDetailsResult.DeliveryOrderDetailOpenSearch {
-			data = append(data, v.MapToCsvRow())
+			getDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
+			go u.deliveryOrderOpenSearchRepository.GetByID(&models.DeliveryOrderRequest{ID: v.DeliveryOrderID}, getDeliveryOrderResultChan)
+			getDeliveryOrdersResult := <-getDeliveryOrderResultChan
+
+			if getDeliveryOrdersResult.Error != nil {
+				return getDeliveryOrdersResult.ErrorLog
+			}
+			data = append(data, v.MapToCsvRow(getDeliveryOrdersResult.DeliveryOrder))
 		}
 		progres := math.Round(float64(i*doDetailRequest.PerPage)/float64(getDeliveryOrderDetailsCountResult.Total)) * 100
 		err := u.pusherRepository.Pubish(map[string]string{"message": fmt.Sprintf("%f", progres) + "%"})

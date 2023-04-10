@@ -207,7 +207,7 @@ func (d *DeliveryOrderDetailOpenSearchRequest) DeliveryOrderDetailExportMap(r *D
 	d.StartDoDate = r.StartDoDate
 	d.EndDoDate = r.EndDoDate
 }
-func (d *DeliveryOrderDetailOpenSearch) MapToCsvRow() []string {
+func (d *DeliveryOrderDetailOpenSearch) MapToCsvRow(dd *DeliveryOrder) []interface{} {
 	store := Store{}
 	if d.Store != nil {
 		store.StoreCategory = d.Store.StoreCategory
@@ -232,21 +232,21 @@ func (d *DeliveryOrderDetailOpenSearch) MapToCsvRow() []string {
 		store.ProvinceID = NullString{NullString: sql.NullString{String: "", Valid: true}}
 		store.ProvinceName = NullString{NullString: sql.NullString{String: "", Valid: true}}
 	}
-	return []string{
-		strconv.Itoa(d.OrderStatusID),
+	return []interface{}{
+		d.OrderStatusID,
 		d.DoDate,
 		d.DoRefCode,
 		d.DoCode,
 		d.SoDate.String,
 		d.SoCode.String,
-		strconv.Itoa(d.OrderSourceID), //object??
-		strconv.Itoa(d.AgentID),
+		d.OrderSourceID,
+		d.AgentID,
 		d.Agent.Name,
-		strconv.Itoa(d.WarehouseID),
+		d.WarehouseCode,
 		d.WarehouseName,
-		strconv.Itoa(d.BrandID),
+		d.BrandID,
 		d.BrandName,
-		strconv.Itoa(d.SalesmanID),
+		d.SalesmanID,
 		d.SalesmanName,
 		store.StoreCategory.String,
 		store.StoreCode.String,
@@ -258,23 +258,25 @@ func (d *DeliveryOrderDetailOpenSearch) MapToCsvRow() []string {
 		store.CityName.String,
 		store.ProvinceID.String,
 		store.ProvinceName.String,
-		strconv.Itoa(d.BrandID),
+		d.BrandID,
 		d.BrandName,
-		strconv.Itoa(d.SoDetail.FirstCategoryId),
-		"*d.SoDetail.FirstCategoryName",
-		strconv.Itoa(d.SoDetail.LastCategoryId),
-		"*d.SoDetail.LastCategoryName",
+		d.SoDetail.FirstCategoryId,
+		// "*d.SoDetail.FirstCategoryName",
+		nil,
+		d.SoDetail.LastCategoryId,
+		// "*d.SoDetail.LastCategoryName",
+		nil,
 		d.SoDetail.ProductSKU,
-		d.SoDetail.ProductName,
+		d.Product.ProductName.String,
 		d.UomName,
-		strconv.Itoa(int(d.SoDetail.Price)),
-		strconv.Itoa(d.SoDetail.Qty),
-		strconv.Itoa(d.SoDetail.ResidualQty),
-		strconv.Itoa(d.Qty),
-		"DO Amount",
+		d.SoDetail.Price,
+		d.SoDetail.Qty,
+		d.SoDetail.ResidualQty,
+		d.Qty,
+		int(d.SoDetail.Price) * d.Qty,
 		d.CreatedAt.String(),
 		d.UpdatedAt.String(),
-		strconv.Itoa(d.SoDetail.CreatedBy),
-		strconv.Itoa(d.SoDetail.LatestUpdatedBy),
+		dd.CreatedBy,
+		dd.LatestUpdatedBy,
 	}
 }

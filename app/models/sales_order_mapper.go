@@ -686,19 +686,38 @@ func (d *SalesOrderRequest) SalesOrderExportMap(r *SalesOrderExportRequest) {
 	d.StoreVillageID = r.StoreDistrictID
 }
 
-func (data *SalesOrder) MapToCsvRow() []string {
-	return []string{
+func (data *SalesOrder) MapToCsvRow(journey *SalesOrderJourneys, dos []*DeliveryOrder) []interface{} {
+	cancelReason := ""
+	rejectReason := ""
+	if data.OrderStatusID == 9 && journey != nil {
+		rejectReason = journey.Reason
+	} else if data.OrderStatusID == 10 && journey != nil {
+		cancelReason = journey.Reason
+	}
+	doAmount := float64(0)
+	if dos != nil {
+		for _, v := range dos {
+			for _, x := range v.DeliveryOrderDetails {
+				for _, y := range data.SalesOrderDetails {
+					if x.SoDetailID == y.ID {
+						doAmount += float64(x.Qty) * y.Price
+					}
+				}
+			}
+		}
+	}
+	return []interface{}{
 		data.OrderStatusName,
 		data.OrderSourceName,
 		data.ReferralCode.String,
 		data.SoRefCode.String,
 		data.SoCode,
 		data.SoDate,
-		strconv.Itoa(data.AgentID),
+		data.AgentID,
 		data.AgentName.String,
-		strconv.Itoa(int(data.SalesmanID.Int64)),
+		int(data.SalesmanID.Int64),
 		data.SalesmanName.String,
-		strconv.Itoa(data.StoreID),
+		data.StoreID,
 		data.Store.AliasCode.String,
 		data.StoreCode.String,
 		data.StoreName.String,
@@ -706,20 +725,20 @@ func (data *SalesOrder) MapToCsvRow() []string {
 		data.StoreDistrictName.String,
 		data.Store.CityID.String,
 		data.StoreCityName.String,
-		strconv.Itoa(data.StoreProvinceID),
+		data.StoreProvinceID,
 		data.StoreProvinceName.String,
-		strconv.Itoa(data.BrandID),
+		data.BrandID,
 		data.BrandName,
-		"soAmount",
-		"doAmount",
+		data.TotalAmount,
+		doAmount,
 		data.Note.String,
 		data.InternalComment.String,
-		"alasanCancel",
-		"alasanReject",
+		cancelReason,
+		rejectReason,
 		data.SoRefDate.String,
 		data.CreatedAt.String(),
 		data.UpdatedAt.String(),
-		strconv.Itoa(data.CreatedBy),
-		strconv.Itoa(data.LatestUpdatedBy),
+		data.CreatedBy,
+		data.LatestUpdatedBy,
 	}
 }

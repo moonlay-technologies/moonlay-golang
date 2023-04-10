@@ -2,8 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"fmt"
-	"strconv"
 	"time"
 )
 
@@ -433,43 +431,45 @@ func (doDetailEventLogResponse *DODetailEventLogResponse) DoDetailEventLogRespon
 	return
 }
 
-func (data *DeliveryOrder) MapToCsvRow() []string {
+func (data *DeliveryOrder) MapToCsvRow() []interface{} {
 	deliveryOrderCsv := DeliveryOrderCsvResponse{}
 	deliveryOrderCsv.DoDetailMap(data)
-	return []string{strconv.Itoa(deliveryOrderCsv.DoStatus),
+	return []interface{}{
+		deliveryOrderCsv.DoStatus,
 		deliveryOrderCsv.DoDate,
 		deliveryOrderCsv.SjNo.String,
 		deliveryOrderCsv.DoNo,
 		deliveryOrderCsv.OrderNo,
 		deliveryOrderCsv.SoDate,
 		deliveryOrderCsv.SoNo,
-		strconv.Itoa(deliveryOrderCsv.SoSource),
-		strconv.Itoa(deliveryOrderCsv.AgentID),
+		deliveryOrderCsv.SoSource,
+		deliveryOrderCsv.AgentID,
 		deliveryOrderCsv.AgentName,
-		strconv.Itoa(deliveryOrderCsv.GudangID),
+		deliveryOrderCsv.GudangID,
 		deliveryOrderCsv.GudangName,
-		strconv.Itoa(deliveryOrderCsv.BrandID),
+		deliveryOrderCsv.BrandID,
 		deliveryOrderCsv.BrandName,
-		strconv.Itoa(int(deliveryOrderCsv.KodeSalesman.Int64)),
+		int(deliveryOrderCsv.KodeSalesman.Int64),
 		deliveryOrderCsv.Salesman.String,
 		deliveryOrderCsv.KategoryToko.String,
 		deliveryOrderCsv.KodeTokoDbo.String,
 		deliveryOrderCsv.KodeToko.String,
 		deliveryOrderCsv.NamaToko.String,
-		strconv.Itoa(deliveryOrderCsv.KodeKecamatan),
+		deliveryOrderCsv.KodeKecamatan,
 		deliveryOrderCsv.Kecamatan.String,
-		strconv.Itoa(deliveryOrderCsv.KodeCity),
+		deliveryOrderCsv.KodeCity,
 		deliveryOrderCsv.City.String,
-		strconv.Itoa(deliveryOrderCsv.KodeProvince),
+		deliveryOrderCsv.KodeProvince,
 		deliveryOrderCsv.Province.String,
-		strconv.FormatFloat(deliveryOrderCsv.DoAmount, 'f', 6, 64),
+		deliveryOrderCsv.DoAmount,
 		deliveryOrderCsv.NamaSupir.String,
 		deliveryOrderCsv.PlatNo.String,
 		deliveryOrderCsv.Catatan.String,
 		deliveryOrderCsv.CreatedDate.String(),
 		deliveryOrderCsv.UpdatedDate.String(),
-		strconv.Itoa(deliveryOrderCsv.UserIDCreated),
-		strconv.Itoa(deliveryOrderCsv.UserIDModified)}
+		deliveryOrderCsv.UserIDCreated,
+		deliveryOrderCsv.UserIDModified,
+	}
 }
 
 func (d *DeliveryOrderCsvResponse) DoDetailMap(r *DeliveryOrder) {
@@ -502,20 +502,15 @@ func (d *DeliveryOrderCsvResponse) DoDetailMap(r *DeliveryOrder) {
 	d.KodeProvince = r.SalesOrder.StoreProvinceID
 	d.Province = r.SalesOrder.StoreProvinceName
 	amount := 0
-	fmt.Println("dp code = ", r.DoCode)
 	for _, v := range r.DeliveryOrderDetails {
 		if v.SoDetail == nil {
 			for _, x := range r.SalesOrder.SalesOrderDetails {
-				fmt.Println("ID = ", v.SoDetailID, x.ID)
 				if x.ID == v.SoDetailID {
 					v.SoDetail = x
 				}
 			}
 		}
-		fmt.Println("code = ", v.DoDetailCode)
-		fmt.Println("qty = ", v.Qty)
 		if v.SoDetail != nil {
-			fmt.Println("amt = ", v.SoDetail.Price)
 			amount += int(v.SoDetail.Price) * v.Qty
 		}
 	}
