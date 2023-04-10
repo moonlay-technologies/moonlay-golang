@@ -1057,9 +1057,9 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 		}
 
 		salesOrderDetail := &models.SalesOrderDetail{
-			OrderStatusID: getOrderDetailStatusResult.OrderStatus.ID,
-			UpdatedBy:     ctx.Value("user").(*models.UserClaims).UserID,
-			UpdatedAt:     &now,
+			OrderStatusID:   getOrderDetailStatusResult.OrderStatus.ID,
+			LatestUpdatedBy: ctx.Value("user").(*models.UserClaims).UserID,
+			UpdatedAt:       &now,
 		}
 
 		// Update Sales Order Detail
@@ -1363,10 +1363,8 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 
 		var status string
 		switch getOrderStatusResult.OrderStatus.ID {
-		case 5:
-			status = constants.SO_STATUS_OPEN
-		case 9:
-			status = constants.SO_STATUS_RJC
+		case 8:
+			status = constants.SO_STATUS_ORDCLS
 		default:
 			status = constants.SO_STATUS_CNCL
 		}
@@ -1399,9 +1397,9 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 	salesOrder.UserChanMap(getUserResult)
 
 	salesOrderDetailReq := &models.SalesOrderDetail{
-		OrderStatusID: getOrderDetailStatusResult.OrderStatus.ID,
-		UpdatedBy:     ctx.Value("user").(*models.UserClaims).UserID,
-		UpdatedAt:     &now,
+		OrderStatusID:   getOrderDetailStatusResult.OrderStatus.ID,
+		LatestUpdatedBy: ctx.Value("user").(*models.UserClaims).UserID,
+		UpdatedAt:       &now,
 	}
 
 	// Update Sales Order Detail
@@ -1416,7 +1414,7 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 	for _, v := range salesOrder.SalesOrderDetails {
 		if v.ID == soDetailId {
 			v.OrderStatusID = getOrderDetailStatusResult.OrderStatus.ID
-			v.UpdatedBy = ctx.Value("user").(*models.UserClaims).UserID
+			v.LatestUpdatedBy = ctx.Value("user").(*models.UserClaims).UserID
 			v.UpdatedAt = &now
 			break
 		}
@@ -1437,8 +1435,8 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 
 	var detailStatus string
 	switch getOrderDetailStatusResult.OrderStatus.ID {
-	case 15:
-		detailStatus = constants.SO_STATUS_RJC
+	case 14:
+		detailStatus = constants.SO_STATUS_CLS
 	default:
 		detailStatus = constants.SO_STATUS_CNCL
 	}
@@ -1621,9 +1619,9 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 		}
 
 		salesOrderDetail := &models.SalesOrderDetail{
-			OrderStatusID: getOrderDetailStatusResult.OrderStatus.ID,
-			UpdatedBy:     ctx.Value("user").(*models.UserClaims).UserID,
-			UpdatedAt:     &now,
+			OrderStatusID:   getOrderDetailStatusResult.OrderStatus.ID,
+			LatestUpdatedBy: ctx.Value("user").(*models.UserClaims).UserID,
+			UpdatedAt:       &now,
 		}
 
 		// Update Sales Order Detail

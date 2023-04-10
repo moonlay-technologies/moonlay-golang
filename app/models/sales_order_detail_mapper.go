@@ -231,7 +231,7 @@ func (salesOrderDetail *SalesOrderDetailOpenSearch) SalesOrderDetailOpenSearchMa
 	salesOrderDetail.LastCategoryName = requestSalesOrderDetail.LastCategoryName
 
 	salesOrderDetail.CreatedBy = requestSalesOrderDetail.CreatedBy
-	salesOrderDetail.UpdatedBy = requestSalesOrderDetail.UpdatedBy
+	salesOrderDetail.UpdatedBy = requestSalesOrderDetail.LatestUpdatedBy
 	salesOrderDetail.DeletedBy = requestSalesOrderDetail.DeletedBy
 
 	salesOrderDetail.CreatedAt = requestSalesOrderDetail.CreatedAt

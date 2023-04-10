@@ -275,6 +275,6 @@ func (d *DeliveryOrderDetailOpenSearch) MapToCsvRow() []string {
 		d.CreatedAt.String(),
 		d.UpdatedAt.String(),
 		strconv.Itoa(d.SoDetail.CreatedBy),
-		strconv.Itoa(d.SoDetail.UpdatedBy),
+		strconv.Itoa(d.SoDetail.LatestUpdatedBy),
 	}
 }
