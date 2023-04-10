@@ -777,9 +777,7 @@ func (c *salesOrderController) DeleteDetailBySOID(ctx *gin.Context) {
 	ctx.Set("method", ctx.Request.Method)
 
 	sId := ctx.Param("so-id")
-	fmt.Println("id = ", sId)
 	id, err := c.salesOrderValidator.DeleteSalesOrderDetailBySoIdValidator(sId, ctx)
-	fmt.Println("id = ", id)
 	if err != nil {
 		return
 	}
