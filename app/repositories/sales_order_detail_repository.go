@@ -292,6 +292,18 @@ func (r *salesOrderDetail) Insert(request *models.SalesOrderDetail, sqlTransacti
 		rawSqlValues = append(rawSqlValues, request.StartDateSyncToEs.Format(constants.DATE_TIME_FORMAT_COMON))
 	}
 
+	if request.CreatedBy != 0 {
+		rawSqlFields = append(rawSqlFields, "created_by")
+		rawSqlDataTypes = append(rawSqlDataTypes, "?")
+		rawSqlValues = append(rawSqlValues, request.CreatedBy)
+	}
+
+	if request.LatestUpdatedBy != 0 {
+		rawSqlFields = append(rawSqlFields, "latest_updated_by")
+		rawSqlDataTypes = append(rawSqlDataTypes, "?")
+		rawSqlValues = append(rawSqlValues, request.LatestUpdatedBy)
+	}
+
 	rawSqlFields = append(rawSqlFields, "created_at")
 	rawSqlDataTypes = append(rawSqlDataTypes, "?")
 	rawSqlValues = append(rawSqlValues, request.CreatedAt.Format(constants.DATE_TIME_FORMAT_COMON))
@@ -442,6 +454,11 @@ func (r *salesOrderDetail) UpdateByID(id int, request *models.SalesOrderDetail, 
 
 	if request.EndDateSyncToEs != nil {
 		query := fmt.Sprintf("%s='%v'", "end_date_sync_to_es", request.EndDateSyncToEs.Format(constants.DATE_TIME_FORMAT_COMON))
+		rawSqlQueries = append(rawSqlQueries, query)
+	}
+
+	if request.LatestUpdatedBy != 0 {
+		query := fmt.Sprintf("%s=%v", "latest_updated_by", request.LatestUpdatedBy)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
