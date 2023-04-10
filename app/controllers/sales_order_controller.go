@@ -290,7 +290,7 @@ func (c *salesOrderController) UpdateByID(ctx *gin.Context) {
 func (c *salesOrderController) UpdateSODetailByID(ctx *gin.Context) {
 	var result baseModel.Response
 	var resultErrorLog *baseModel.ErrorLog
-	updateRequest := &models.UpdateSalesOrderDetailByIdRequest{}
+	updateRequest := &models.SalesOrderDetailUpdateByIdRequest{}
 
 	ctx.Set("full_path", ctx.FullPath())
 	ctx.Set("method", ctx.Request.Method)
@@ -342,7 +342,6 @@ func (c *salesOrderController) UpdateSODetailByID(ctx *gin.Context) {
 	if err != nil {
 		return
 	}
-	fmt.Println("Ini", err)
 
 	dbTransaction, err := c.db.BeginTx(ctx, nil)
 

@@ -30,7 +30,7 @@ type SalesOrderValidatorInterface interface {
 	ExportSalesOrderDetailValidator(ctx *gin.Context) (*models.SalesOrderDetailExportRequest, error)
 	UpdateSalesOrderByIdValidator(updateRequest *models.SalesOrderUpdateRequest, ctx *gin.Context) error
 	UpdateSalesOrderDetailBySoIdValidator(updateRequest *models.SalesOrderUpdateRequest, ctx *gin.Context) error
-	UpdateSalesOrderDetailByIdValidator(updateRequest *models.UpdateSalesOrderDetailByIdRequest, ctx *gin.Context) error
+	UpdateSalesOrderDetailByIdValidator(updateRequest *models.SalesOrderDetailUpdateByIdRequest, ctx *gin.Context) error
 	DeleteSalesOrderByIdValidator(string, *gin.Context) (int, error)
 	DeleteSalesOrderDetailByIdValidator(string, *gin.Context) (int, error)
 	DeleteSalesOrderDetailBySoIdValidator(string, *gin.Context) (int, error)
@@ -1314,14 +1314,11 @@ func (c *SalesOrderValidator) UpdateSalesOrderDetailBySoIdValidator(updateReques
 	return nil
 }
 
-func (c *SalesOrderValidator) UpdateSalesOrderDetailByIdValidator(updateRequest *models.UpdateSalesOrderDetailByIdRequest, ctx *gin.Context) error {
-	var errors []string
-	if updateRequest.OrderStatusID != 8 && updateRequest.OrderStatusID != 10 {
-		errors = append(errors, helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, fmt.Sprintf("status %d tidak dikenal", updateRequest.OrderStatusID)))
-	}
+func (c *SalesOrderValidator) UpdateSalesOrderDetailByIdValidator(updateRequest *models.SalesOrderDetailUpdateByIdRequest, ctx *gin.Context) error {
 
-	if updateRequest.SalesOrderDetails.OrderStatusID != 14 && updateRequest.SalesOrderDetails.OrderStatusID != 16 {
-		errors = append(errors, helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, fmt.Sprintf("status %d tidak dikenal", updateRequest.SalesOrderDetails.OrderStatusID)))
+	var errors []string
+	if updateRequest.OrderStatusID != 14 && updateRequest.OrderStatusID != 16 {
+		errors = append(errors, helper.GenerateUnprocessableErrorMessage(constants.ERROR_ACTION_NAME_UPDATE, fmt.Sprintf("status %d tidak dikenal", updateRequest.OrderStatusID)))
 	}
 
 	if len(errors) > 0 {
