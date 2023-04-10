@@ -629,14 +629,8 @@ func (c *deliveryOrderController) DeleteByID(ctx *gin.Context) {
 	ctx.Set("method", ctx.Request.Method)
 
 	sId := ctx.Param("id")
-	err := c.deliveryOrderValidator.DeleteDeliveryOrderByIDValidator(sId, ctx)
+	id, err := c.deliveryOrderValidator.DeleteDeliveryOrderByIDValidator(sId, ctx)
 	if err != nil {
-		return
-	}
-
-	id, err = strconv.Atoi(sId)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return
 	}
 
@@ -670,14 +664,8 @@ func (c *deliveryOrderController) DeleteDetailByID(ctx *gin.Context) {
 	ctx.Set("method", ctx.Request.Method)
 
 	sId := ctx.Param("id")
-	err := c.deliveryOrderValidator.DeleteDeliveryOrderDetailByIDValidator(sId, ctx)
+	id, err := c.deliveryOrderValidator.DeleteDeliveryOrderDetailByIDValidator(sId, ctx)
 	if err != nil {
-		return
-	}
-
-	id, err = strconv.Atoi(sId)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return
 	}
 
@@ -712,14 +700,8 @@ func (c *deliveryOrderController) DeleteDetailByDoID(ctx *gin.Context) {
 	ctx.Set("method", ctx.Request.Method)
 
 	sId := ctx.Param("id")
-	err := c.deliveryOrderValidator.DeleteDeliveryOrderByIDValidator(sId, ctx)
+	id, err := c.deliveryOrderValidator.DeleteDeliveryOrderByIDValidator(sId, ctx)
 	if err != nil {
-		return
-	}
-
-	id, err = strconv.Atoi(sId)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return
 	}
 

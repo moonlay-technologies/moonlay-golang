@@ -500,49 +500,13 @@ func (c *salesOrderController) GetDetails(ctx *gin.Context) {
 }
 
 func (c *salesOrderController) DeleteByID(ctx *gin.Context) {
-	var result baseModel.Response
 	var id int
 
 	ctx.Set("full_path", ctx.FullPath())
 	ctx.Set("method", ctx.Request.Method)
 
 	sId := ctx.Param("so-id")
-	id, err := strconv.Atoi(sId)
-
-	if err != nil {
-		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
-		result.StatusCode = http.StatusBadRequest
-		result.Error = helper.WriteLog(err, result.StatusCode, nil)
-		ctx.JSON(result.StatusCode, result)
-		return
-	}
-	mustActiveField := []*models.MustActiveRequest{
-		{
-			Table:    "sales_orders",
-			ReqField: "id",
-			Clause:   fmt.Sprintf(constants.CLAUSE_ID_VALIDATION, id),
-		},
-	}
-
-	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
-	if err != nil {
-		return
-	}
-	mustEmpties := []*models.MustEmptyValidationRequest{
-		{
-			Table:           "sales_orders s JOIN order_statuses o ON s.order_status_id = o.id",
-			SelectedCollumn: "o.name",
-			Clause:          fmt.Sprintf("o.id = %d AND s.order_status_id NOT IN (5,6,9,10)", id),
-			MessageFormat:   "Status Sales Order <result>",
-		},
-		{
-			Table:           "delivery_orders d JOIN sales_orders s ON d.sales_order_id = s.id",
-			SelectedCollumn: "d.id",
-			Clause:          fmt.Sprintf("s.id = %d AND d.deleted_at IS NULL", id),
-			MessageFormat:   constants.ERROR_UPDATE_SO_MESSAGE,
-		},
-	}
-	err = c.requestValidationMiddleware.MustEmptyValidation(ctx, mustEmpties)
+	id, err := c.salesOrderValidator.DeleteSalesOrderByIdValidator(sId, ctx)
 	if err != nil {
 		return
 	}
@@ -550,9 +514,7 @@ func (c *salesOrderController) DeleteByID(ctx *gin.Context) {
 	dbTransaction, err := c.db.BeginTx(ctx, nil)
 
 	if err != nil {
-		result.StatusCode = http.StatusInternalServerError
-		result.Error = helper.WriteLog(err, result.StatusCode, nil)
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 		return
 	}
 	errorLog := c.salesOrderUseCase.DeleteById(id, dbTransaction)
@@ -561,30 +523,22 @@ func (c *salesOrderController) DeleteByID(ctx *gin.Context) {
 		err = dbTransaction.Rollback()
 
 		if err != nil {
-			result.StatusCode = http.StatusInternalServerError
-			result.Error = helper.WriteLog(err, result.StatusCode, nil)
-			ctx.JSON(result.StatusCode, result)
+			ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 			return
 		}
 
-		result.StatusCode = errorLog.StatusCode
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 		return
 	}
 
 	err = dbTransaction.Commit()
 
 	if err != nil {
-		result.StatusCode = http.StatusInternalServerError
-		result.Error = helper.WriteLog(err, result.StatusCode, constants.ERROR_INTERNAL_SERVER_1)
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, constants.ERROR_INTERNAL_SERVER_1))
 		return
 	}
 
-	result.StatusCode = http.StatusOK
-	ctx.JSON(http.StatusOK, result)
-
+	ctx.JSON(http.StatusOK, baseModel.Response{StatusCode: http.StatusOK})
 }
 
 func (c *salesOrderController) GetDetailsBySoId(ctx *gin.Context) {
@@ -775,49 +729,13 @@ func (c *salesOrderController) GetSoUploadErrorLogBySoUploadHistoryId(ctx *gin.C
 }
 
 func (c *salesOrderController) DeleteDetailByID(ctx *gin.Context) {
-	var result baseModel.Response
 	var id int
 
 	ctx.Set("full_path", ctx.FullPath())
 	ctx.Set("method", ctx.Request.Method)
 
 	sId := ctx.Param("so-detail-id")
-	id, err := strconv.Atoi(sId)
-
-	if err != nil {
-		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
-		result.StatusCode = http.StatusBadRequest
-		result.Error = helper.WriteLog(err, result.StatusCode, nil)
-		ctx.JSON(result.StatusCode, result)
-		return
-	}
-	mustActiveField := []*models.MustActiveRequest{
-		{
-			Table:    "sales_order_details",
-			ReqField: "id",
-			Clause:   fmt.Sprintf(constants.CLAUSE_ID_VALIDATION, id),
-		},
-	}
-
-	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
-	if err != nil {
-		return
-	}
-	mustEmpties := []*models.MustEmptyValidationRequest{
-		{
-			Table:           "sales_order_details s JOIN order_statuses o ON s.order_status_id = o.id",
-			SelectedCollumn: "o.name",
-			Clause:          fmt.Sprintf("s.id = %d AND s.order_status_id NOT IN (16)", id),
-			MessageFormat:   "Hanya status cancelled pada Sales Order Detail yang dapat di delete",
-		},
-		{
-			Table:           "sales_orders s JOIN sales_order_details sd ON s.id = sd.sales_order_id JOIN delivery_orders d ON d.sales_order_id = s.id",
-			SelectedCollumn: "d.id",
-			Clause:          fmt.Sprintf("sd.id = %d AND d.deleted_at IS NULL", id),
-			MessageFormat:   constants.ERROR_UPDATE_SO_MESSAGE,
-		},
-	}
-	err = c.requestValidationMiddleware.MustEmptyValidation(ctx, mustEmpties)
+	id, err := c.salesOrderValidator.DeleteSalesOrderDetailByIdValidator(sId, ctx)
 	if err != nil {
 		return
 	}
@@ -825,9 +743,7 @@ func (c *salesOrderController) DeleteDetailByID(ctx *gin.Context) {
 	dbTransaction, err := c.db.BeginTx(ctx, nil)
 
 	if err != nil {
-		result.StatusCode = http.StatusInternalServerError
-		result.Error = helper.WriteLog(err, result.StatusCode, nil)
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 		return
 	}
 	errorLog := c.salesOrderUseCase.DeleteDetailById(id, dbTransaction)
@@ -836,82 +752,32 @@ func (c *salesOrderController) DeleteDetailByID(ctx *gin.Context) {
 		err = dbTransaction.Rollback()
 
 		if err != nil {
-			result.StatusCode = http.StatusInternalServerError
-			result.Error = helper.WriteLog(err, result.StatusCode, nil)
-			ctx.JSON(result.StatusCode, result)
+			ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 			return
 		}
 
-		result.StatusCode = errorLog.StatusCode
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 		return
 	}
 
 	err = dbTransaction.Commit()
 
 	if err != nil {
-		result.StatusCode = http.StatusInternalServerError
-		result.Error = helper.WriteLog(err, result.StatusCode, constants.ERROR_INTERNAL_SERVER_1)
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, constants.ERROR_INTERNAL_SERVER_1))
 		return
 	}
 
-	result.StatusCode = http.StatusOK
-	ctx.JSON(http.StatusOK, result)
-
+	ctx.JSON(http.StatusOK, baseModel.Response{StatusCode: http.StatusOK})
 }
 
 func (c *salesOrderController) DeleteDetailBySOID(ctx *gin.Context) {
-	var result baseModel.Response
 	var id int
 
 	ctx.Set("full_path", ctx.FullPath())
 	ctx.Set("method", ctx.Request.Method)
 
 	sId := ctx.Param("so-id")
-	id, err := strconv.Atoi(sId)
-
-	if err != nil {
-		err = helper.NewError(constants.ERROR_BAD_REQUEST_INT_ID_PARAMS)
-		result.StatusCode = http.StatusBadRequest
-		result.Error = helper.WriteLog(err, result.StatusCode, nil)
-		ctx.JSON(result.StatusCode, result)
-		return
-	}
-	mustActiveField := []*models.MustActiveRequest{
-		{
-			Table:    "sales_order_details",
-			ReqField: "id",
-			Clause:   fmt.Sprintf(constants.CLAUSE_ID_VALIDATION, id),
-		},
-	}
-
-	err = c.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField)
-	if err != nil {
-		return
-	}
-	mustEmpties := []*models.MustEmptyValidationRequest{
-		{
-			Table:           "sales_orders s JOIN order_statuses o ON s.order_status_id = o.id",
-			SelectedCollumn: "o.name",
-			Clause:          fmt.Sprintf("o.id = %d AND s.order_status_id NOT IN (5,6,9,10)", id),
-			MessageFormat:   "Status Sales Order <result>",
-		},
-		{
-			Table:           "sales_orders s JOIN sales_order_details sd ON s.id = sd.sales_order_id JOIN order_statuses o ON sd.order_status_id = o.id",
-			SelectedCollumn: "o.name",
-			Clause:          fmt.Sprintf("s.id = %d AND sd.order_status_id NOT IN (16)", id),
-			MessageFormat:   "Hanya status cancelled pada Sales Order Detail yang dapat di delete",
-		},
-		{
-			Table:           "delivery_orders d JOIN sales_orders s ON d.sales_order_id = s.id",
-			SelectedCollumn: "d.id",
-			Clause:          fmt.Sprintf("s.id = %d AND d.deleted_at IS NULL", id),
-			MessageFormat:   constants.ERROR_UPDATE_SO_MESSAGE,
-		},
-	}
-	err = c.requestValidationMiddleware.MustEmptyValidation(ctx, mustEmpties)
+	id, err := c.salesOrderValidator.DeleteSalesOrderDetailBySoIdValidator(sId, ctx)
 	if err != nil {
 		return
 	}
@@ -919,9 +785,7 @@ func (c *salesOrderController) DeleteDetailBySOID(ctx *gin.Context) {
 	dbTransaction, err := c.db.BeginTx(ctx, nil)
 
 	if err != nil {
-		result.StatusCode = http.StatusInternalServerError
-		result.Error = helper.WriteLog(err, result.StatusCode, nil)
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 		return
 	}
 	errorLog := c.salesOrderUseCase.DeleteDetailBySOId(id, dbTransaction)
@@ -930,29 +794,22 @@ func (c *salesOrderController) DeleteDetailBySOID(ctx *gin.Context) {
 		err = dbTransaction.Rollback()
 
 		if err != nil {
-			result.StatusCode = http.StatusInternalServerError
-			result.Error = helper.WriteLog(err, result.StatusCode, nil)
-			ctx.JSON(result.StatusCode, result)
+			ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 			return
 		}
 
-		result.StatusCode = errorLog.StatusCode
-		result.Error = errorLog
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 		return
 	}
 
 	err = dbTransaction.Commit()
 
 	if err != nil {
-		result.StatusCode = http.StatusInternalServerError
-		result.Error = helper.WriteLog(err, result.StatusCode, constants.ERROR_INTERNAL_SERVER_1)
-		ctx.JSON(result.StatusCode, result)
+		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, constants.ERROR_INTERNAL_SERVER_1))
 		return
 	}
 
-	result.StatusCode = http.StatusOK
-	ctx.JSON(http.StatusOK, result)
+	ctx.JSON(http.StatusOK, baseModel.Response{StatusCode: http.StatusOK})
 
 }
 
