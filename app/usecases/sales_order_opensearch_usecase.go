@@ -1,10 +1,8 @@
 package usecases
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
-	"encoding/csv"
 	"fmt"
 	"math"
 	"net/http"
@@ -439,14 +437,7 @@ func (u *SalesOrderOpenSearchUseCase) Get(request *models.SalesOrderExportReques
 
 	soRequest.PerPage = 50
 	instalmentData := math.Ceil(float64(getSalesOrdersCountResult.Total) / float64(soRequest.PerPage))
-	b := new(bytes.Buffer)
-	writer := csv.NewWriter(b)
-	defer writer.Flush()
-
-	if err := writer.Write(constants.SALES_ORDER_EXPORT_HEADER()); err != nil {
-		fmt.Println("error writer", err)
-		return helper.WriteLog(err, http.StatusInternalServerError, nil)
-	}
+	var data [][]string = [][]string{constants.SALES_ORDER_EXPORT_HEADER()}
 
 	for i := 0; i < int(instalmentData); i++ {
 		soRequest.Page = i + 1
@@ -458,11 +449,7 @@ func (u *SalesOrderOpenSearchUseCase) Get(request *models.SalesOrderExportReques
 			return getSalesOrdersResult.ErrorLog
 		}
 		for _, v := range getSalesOrdersResult.SalesOrders {
-			if err := writer.Write(v.MapToCsvRow()); err != nil {
-				fmt.Println("error fill", err)
-				return helper.WriteLog(err, http.StatusInternalServerError, nil)
-			}
-
+			data = append(data, v.MapToCsvRow())
 		}
 		progres := math.Round(float64(i*soRequest.PerPage)/float64(getSalesOrdersCountResult.Total)) * 100
 		err := u.pusherRepository.Pubish(map[string]string{"message": fmt.Sprintf("%f", progres) + "%"})
@@ -471,8 +458,11 @@ func (u *SalesOrderOpenSearchUseCase) Get(request *models.SalesOrderExportReques
 			return helper.WriteLog(err, http.StatusInternalServerError, nil)
 		}
 	}
+
+	b, err := helper.GenerateExportBufferFile(data, request.FileType)
+
 	// Upload Files
-	err := u.uploadRepository.UploadFile(b, constants.S3_EXPORT_SO_PATH, request.FileName, request.FileType)
+	err = u.uploadRepository.UploadFile(b, constants.S3_EXPORT_SO_PATH, request.FileName, request.FileType)
 	if err != nil {
 		fmt.Println("error upload", err)
 		return helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -501,14 +491,8 @@ func (u *SalesOrderOpenSearchUseCase) GetDetails(request *models.SalesOrderDetai
 
 	soDetailRequest.PerPage = 50
 	instalmentData := math.Ceil(float64(getSalesOrderDetailsCountResult.Total) / float64(soDetailRequest.PerPage))
-	b := new(bytes.Buffer)
-	writer := csv.NewWriter(b)
-	defer writer.Flush()
 
-	if err := writer.Write(constants.SALES_ORDER_DETAIL_EXPORT_HEADER()); err != nil {
-		fmt.Println("error writer", err)
-		return helper.WriteLog(err, http.StatusInternalServerError, nil)
-	}
+	var data [][]string = [][]string{constants.SALES_ORDER_DETAIL_EXPORT_HEADER()}
 
 	for i := 0; i < int(instalmentData); i++ {
 		soDetailRequest.Page = i + 1
@@ -531,12 +515,7 @@ func (u *SalesOrderOpenSearchUseCase) GetDetails(request *models.SalesOrderDetai
 			if getSalesOrdersResult.Error != nil {
 				return getSalesOrdersResult.ErrorLog
 			}
-
-			if err := writer.Write(v.MapToCsvRow(getSalesOrdersResult.SalesOrder)); err != nil {
-				fmt.Println("error fill", err)
-				return helper.WriteLog(err, http.StatusInternalServerError, nil)
-			}
-
+			data = append(data, v.MapToCsvRow(getSalesOrdersResult.SalesOrder))
 		}
 		progres := math.Round(float64(i*soDetailRequest.PerPage)/float64(getSalesOrderDetailsCountResult.Total)) * 100
 		err := u.pusherRepository.Pubish(map[string]string{"message": fmt.Sprintf("%f", progres) + "%"})
@@ -545,8 +524,11 @@ func (u *SalesOrderOpenSearchUseCase) GetDetails(request *models.SalesOrderDetai
 			return helper.WriteLog(err, http.StatusInternalServerError, nil)
 		}
 	}
+
+	b, err := helper.GenerateExportBufferFile(data, request.FileType)
+
 	// Upload Files
-	err := u.uploadRepository.UploadFile(b, constants.S3_EXPORT_SO_PATH, request.FileName, request.FileType)
+	err = u.uploadRepository.UploadFile(b, constants.S3_EXPORT_SO_PATH, request.FileName, request.FileType)
 	if err != nil {
 		fmt.Println("error upload", err)
 		return helper.WriteLog(err, http.StatusInternalServerError, nil)

@@ -43,4 +43,7 @@ const (
 	DATE_TIME_FORMAT_COMON     = "2006-01-02 15:04:05"
 
 	CLAUSE_ID_VALIDATION = "id = %d AND deleted_at IS NULL"
+
+	FILE_EXCEL_TYPE = "xlsx"
+	FILE_CSV_TYPE   = "csv"
 )
