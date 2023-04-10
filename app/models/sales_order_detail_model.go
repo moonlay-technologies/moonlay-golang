@@ -88,13 +88,6 @@ type SalesOrderDetailUpdateRequest struct {
 	Reason        string `json:"reason,omitempty" bson:"reason,omitempty" binding:"required"`
 }
 
-type UpdateSalesOrderDetailByIdRequest struct {
-	SoDate            string                             `json:"so_date,omitempty" bson:"so_date,omitempty"`
-	SoCode            string                             `json:"so_code,omitempty" bson:"so_code,omitempty"`
-	OrderStatusID     int                                `json:"order_status_id,omitempty" bson:"order_status_id,omitempty" binding:"required"`
-	Reason            string                             `json:"reason,omitempty" bson:"reason,omitempty"`
-	SalesOrderDetails *SalesOrderDetailUpdateByIdRequest `json:"sales_order_details" bson:"sales_order_details" binding:"required,dive,required"`
-}
 type SalesOrderDetailUpdateByIdRequest struct {
 	SoDetailCode  string `json:"so_detail_code,omitempty" bson:"so_detail_code,omitempty"`
 	OrderStatusID int    `json:"order_status_id,omitempty" bson:"order_status_id,omitempty" binding:"required"`

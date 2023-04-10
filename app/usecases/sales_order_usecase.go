@@ -39,7 +39,7 @@ type SalesOrderUseCaseInterface interface {
 	GetSOUploadErrorLogsByReqId(request *models.GetSoUploadErrorLogsRequest, ctx context.Context) (*models.GetSoUploadErrorLogsResponse, *model.ErrorLog)
 	GetSOUploadErrorLogsBySoUploadHistoryId(request *models.GetSoUploadErrorLogsRequest, ctx context.Context) (*models.GetSoUploadErrorLogsResponse, *model.ErrorLog)
 	UpdateById(id int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
-	UpdateSODetailById(soId, soDetailId int, request *models.UpdateSalesOrderDetailByIdRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetailStoreResponse, *model.ErrorLog)
+	UpdateSODetailById(soId, soDetailId int, request *models.SalesOrderDetailUpdateByIdRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetailStoreResponse, *model.ErrorLog)
 	UpdateSODetailBySOId(soId int, request *models.SalesOrderUpdateRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderResponse, *model.ErrorLog)
 	GetDetails(request *models.GetSalesOrderDetailRequest) (*models.SalesOrderDetailsOpenSearchResponse, *model.ErrorLog)
 	GetDetailById(id int) (*models.SalesOrderDetailOpenSearchResponse, *model.ErrorLog)
@@ -194,8 +194,7 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 	}
 
 	brandIds := []int{}
-	var salesOrderBrands map[int]*models.SalesOrder
-	salesOrderBrands = map[int]*models.SalesOrder{}
+	salesOrderBrands := map[int]*models.SalesOrder{}
 
 	for _, v := range request.SalesOrderDetails {
 
@@ -1189,7 +1188,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 	return salesOrdersResponse, nil
 }
 
-func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *models.UpdateSalesOrderDetailByIdRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetailStoreResponse, *baseModel.ErrorLog) {
+func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *models.SalesOrderDetailUpdateByIdRequest, sqlTransaction *sql.Tx, ctx context.Context) (*models.SalesOrderDetailStoreResponse, *baseModel.ErrorLog) {
 	now := time.Now()
 	salesOrder := &models.SalesOrder{}
 
