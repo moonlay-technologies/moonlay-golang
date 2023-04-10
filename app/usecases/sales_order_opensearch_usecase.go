@@ -123,7 +123,7 @@ func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(salesOrder
 			salesOrder.SalesOrderDetails[k].LastCategoryName = &getLastCategoryResult.Category.Name
 		}
 		salesOrder.SalesOrderDetails[k].CreatedBy = salesOrder.CreatedBy
-		salesOrder.SalesOrderDetails[k].UpdatedBy = salesOrder.CreatedBy
+		salesOrder.SalesOrderDetails[k].LatestUpdatedBy = salesOrder.CreatedBy
 
 		salesOrderDetailUpdateData := &models.SalesOrderDetail{
 			UpdatedAt:       &now,
@@ -263,7 +263,7 @@ func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(salesOrder
 		}
 
 		salesOrder.SalesOrderDetails[k].CreatedBy = salesOrder.CreatedBy
-		salesOrder.SalesOrderDetails[k].UpdatedBy = salesOrder.LatestUpdatedBy
+		salesOrder.SalesOrderDetails[k].LatestUpdatedBy = salesOrder.LatestUpdatedBy
 
 		salesOrderDetail := &models.SalesOrderDetailOpenSearch{}
 		salesOrderDetail.SalesOrderDetailOpenSearchMap(salesOrder, v)

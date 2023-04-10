@@ -732,6 +732,11 @@ func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, sqlTransacti
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
+	if request.LatestUpdatedBy != 0 {
+		query := fmt.Sprintf("%s=%v", "latest_updated_by", request.LatestUpdatedBy)
+		rawSqlQueries = append(rawSqlQueries, query)
+	}
+
 	query := fmt.Sprintf("%s='%v'", "updated_at", request.UpdatedAt.Format(constants.DATE_TIME_FORMAT_COMON))
 	rawSqlQueries = append(rawSqlQueries, query)
 

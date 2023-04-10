@@ -36,7 +36,7 @@ type SalesOrderDetail struct {
 	LastCategoryId    int          `json:"last_category_id,omitempty" bson:"last_category_id,omitempty"`
 	LastCategoryName  *string      `json:"last_category_name,omitempty" bson:"last_category_name,omitempty"`
 	CreatedBy         int          `json:"created_by,omitempty" bson:"created_by,omitempty"`
-	UpdatedBy         int          `json:"updated_by,omitempty" bson:"updated_by,omitempty"`
+	LatestUpdatedBy   int          `json:"latest_updated_by,omitempty" bson:"latest_updated_by,omitempty"`
 	DeletedBy         int          `json:"deleted_by,omitempty" bson:"deleted_by,omitempty"`
 	CreatedAt         *time.Time   `json:"created_at,omitempty" bson:"created_at,omitempty"`
 	UpdatedAt         *time.Time   `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
