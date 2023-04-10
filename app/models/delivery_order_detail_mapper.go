@@ -207,7 +207,7 @@ func (d *DeliveryOrderDetailOpenSearchRequest) DeliveryOrderDetailExportMap(r *D
 	d.StartDoDate = r.StartDoDate
 	d.EndDoDate = r.EndDoDate
 }
-func (d *DeliveryOrderDetailOpenSearch) MapToCsvRow() []string {
+func (d *DeliveryOrderDetailOpenSearch) MapToCsvRow(dd *DeliveryOrder) []string {
 	store := Store{}
 	if d.Store != nil {
 		store.StoreCategory = d.Store.StoreCategory
@@ -242,7 +242,7 @@ func (d *DeliveryOrderDetailOpenSearch) MapToCsvRow() []string {
 		strconv.Itoa(d.OrderSourceID), //object??
 		strconv.Itoa(d.AgentID),
 		d.Agent.Name,
-		strconv.Itoa(d.WarehouseID),
+		d.WarehouseCode,
 		d.WarehouseName,
 		strconv.Itoa(d.BrandID),
 		d.BrandName,
@@ -261,20 +261,22 @@ func (d *DeliveryOrderDetailOpenSearch) MapToCsvRow() []string {
 		strconv.Itoa(d.BrandID),
 		d.BrandName,
 		strconv.Itoa(d.SoDetail.FirstCategoryId),
-		"*d.SoDetail.FirstCategoryName",
+		// "*d.SoDetail.FirstCategoryName",
+		"",
 		strconv.Itoa(d.SoDetail.LastCategoryId),
-		"*d.SoDetail.LastCategoryName",
+		// "*d.SoDetail.LastCategoryName",
+		"",
 		d.SoDetail.ProductSKU,
-		d.SoDetail.ProductName,
+		d.Product.ProductName.String,
 		d.UomName,
 		strconv.Itoa(int(d.SoDetail.Price)),
 		strconv.Itoa(d.SoDetail.Qty),
 		strconv.Itoa(d.SoDetail.ResidualQty),
 		strconv.Itoa(d.Qty),
-		"DO Amount",
+		strconv.Itoa(int(d.SoDetail.Price) * d.Qty),
 		d.CreatedAt.String(),
 		d.UpdatedAt.String(),
-		strconv.Itoa(d.SoDetail.CreatedBy),
-		strconv.Itoa(d.SoDetail.LatestUpdatedBy),
+		strconv.Itoa(dd.CreatedBy),
+		strconv.Itoa(dd.LatestUpdatedBy),
 	}
 }

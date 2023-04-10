@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"fmt"
 	"strconv"
 	"time"
 )
@@ -502,20 +501,15 @@ func (d *DeliveryOrderCsvResponse) DoDetailMap(r *DeliveryOrder) {
 	d.KodeProvince = r.SalesOrder.StoreProvinceID
 	d.Province = r.SalesOrder.StoreProvinceName
 	amount := 0
-	fmt.Println("dp code = ", r.DoCode)
 	for _, v := range r.DeliveryOrderDetails {
 		if v.SoDetail == nil {
 			for _, x := range r.SalesOrder.SalesOrderDetails {
-				fmt.Println("ID = ", v.SoDetailID, x.ID)
 				if x.ID == v.SoDetailID {
 					v.SoDetail = x
 				}
 			}
 		}
-		fmt.Println("code = ", v.DoDetailCode)
-		fmt.Println("qty = ", v.Qty)
 		if v.SoDetail != nil {
-			fmt.Println("amt = ", v.SoDetail.Price)
 			amount += int(v.SoDetail.Price) * v.Qty
 		}
 	}

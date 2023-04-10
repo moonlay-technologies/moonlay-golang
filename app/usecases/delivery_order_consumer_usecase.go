@@ -424,15 +424,22 @@ func (u *deliveryOrderConsumerUseCase) GetDetail(request *models.DeliveryOrderDe
 
 	for i := 0; i < int(instalmentData); i++ {
 		doDetailRequest.Page = i + 1
-		getDeliveryOrdersResultChan := make(chan *models.DeliveryOrderDetailsOpenSearchChan)
-		go u.deliveryOrderDetailOpenSearchRepository.Get(doDetailRequest, false, getDeliveryOrdersResultChan)
-		getDeliveryOrderDetailsResult := <-getDeliveryOrdersResultChan
+		getDeliveryOrderDetailsResultChan := make(chan *models.DeliveryOrderDetailsOpenSearchChan)
+		go u.deliveryOrderDetailOpenSearchRepository.Get(doDetailRequest, false, getDeliveryOrderDetailsResultChan)
+		getDeliveryOrderDetailsResult := <-getDeliveryOrderDetailsResultChan
 
 		if getDeliveryOrderDetailsResult.Error != nil {
 			return getDeliveryOrderDetailsResult.ErrorLog
 		}
 		for _, v := range getDeliveryOrderDetailsResult.DeliveryOrderDetailOpenSearch {
-			data = append(data, v.MapToCsvRow())
+			getDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
+			go u.deliveryOrderOpenSearchRepository.GetByID(&models.DeliveryOrderRequest{ID: v.DeliveryOrderID}, getDeliveryOrderResultChan)
+			getDeliveryOrdersResult := <-getDeliveryOrderResultChan
+
+			if getDeliveryOrdersResult.Error != nil {
+				return getDeliveryOrdersResult.ErrorLog
+			}
+			data = append(data, v.MapToCsvRow(getDeliveryOrdersResult.DeliveryOrder))
 		}
 		progres := math.Round(float64(i*doDetailRequest.PerPage)/float64(getDeliveryOrderDetailsCountResult.Total)) * 100
 		err := u.pusherRepository.Pubish(map[string]string{"message": fmt.Sprintf("%f", progres) + "%"})
