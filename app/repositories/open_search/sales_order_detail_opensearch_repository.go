@@ -9,6 +9,7 @@ import (
 	"order-service/global/utils/helper"
 	"order-service/global/utils/model"
 	"order-service/global/utils/opensearch_dbo"
+	"strings"
 	"time"
 )
 
@@ -259,11 +260,12 @@ func (r *salesOrderDetailOpenSearch) generateSalesOrderDetailQueryOpenSearchTerm
 		}
 
 		if request.GlobalSearchValue != "" {
+			globalSearchValue := strings.ReplaceAll(request.GlobalSearchValue, "-", " ")
 			match := map[string]interface{}{
-				"multi_match": map[string]interface{}{
-					"query":  request.GlobalSearchValue,
-					"fields": []string{"store_code", "store_name", "so_code", "so_ref_code"},
-					"type":   "phrase_prefix",
+				"query_string": map[string]interface{}{
+					"query":            "*" + globalSearchValue + "*",
+					"fields":           []string{"store_code", "store_name", "so_code", "so_ref_code"},
+					"default_operator": "AND",
 				},
 			}
 
