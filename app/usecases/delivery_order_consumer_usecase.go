@@ -365,7 +365,7 @@ func (u *deliveryOrderConsumerUseCase) Get(request *models.DeliveryOrderExportRe
 
 	doRequest.PerPage = 50
 	instalmentData := math.Ceil(float64(getDeliveryOrdersCountResult.Total) / float64(doRequest.PerPage))
-	var data [][]string = [][]string{constants.DELIVERY_ORDER_EXPORT_HEADER()}
+	data := [][]interface{}{constants.DELIVERY_ORDER_EXPORT_HEADER()}
 
 	for i := 0; i < int(instalmentData); i++ {
 		doRequest.Page = i + 1
@@ -420,7 +420,7 @@ func (u *deliveryOrderConsumerUseCase) GetDetail(request *models.DeliveryOrderDe
 	doDetailRequest.PerPage = 50
 	instalmentData := math.Ceil(float64(getDeliveryOrderDetailsCountResult.Total) / float64(doDetailRequest.PerPage))
 
-	var data [][]string = [][]string{constants.DELIVERY_ORDER_DETAIL_EXPORT_HEADER()}
+	data := [][]interface{}{constants.DELIVERY_ORDER_DETAIL_EXPORT_HEADER()}
 
 	for i := 0; i < int(instalmentData); i++ {
 		doDetailRequest.Page = i + 1

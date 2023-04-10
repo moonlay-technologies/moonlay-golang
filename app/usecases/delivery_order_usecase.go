@@ -1271,17 +1271,14 @@ func (u *deliveryOrderUseCase) Get(request *models.DeliveryOrderRequest) (*model
 
 func (u *deliveryOrderUseCase) Export(request *models.DeliveryOrderExportRequest, ctx context.Context) (string, *model.ErrorLog) {
 	rand, err := helper.Generate(`[A-Za-z]{12}`)
-	fileHour, err := time.ParseInLocation(constants.DATE_FORMAT_EXPORT, time.Now().Format(constants.DATE_FORMAT_EXPORT), helper.GetTimeLocationWIB())
-	if err != nil {
-		return "", helper.WriteLog(err, http.StatusInternalServerError, nil)
-	}
+	x, err := time.LoadLocation("Asia/Jakarta")
+	fileHour := time.Now().In(x).Format(constants.DATE_FORMAT_EXPORT)
 	if ctx == nil {
 		err = fmt.Errorf("nil context")
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		return "", errorLogData
 	}
-	fileName := fmt.Sprintf("SJ-LIST-SUMMARY-%s-%d-%s", fileHour, ctx.Value("user").(*models.UserClaims).UserID, rand)
-	request.FileName = fileName
+	request.FileName = fmt.Sprintf("SJ-LIST-SUMMARY-%s-%d-%s", fileHour, ctx.Value("user").(*models.UserClaims).UserID, rand)
 	keyKafka := []byte(uuid.New().String())
 	messageKafka, _ := json.Marshal(request)
 	err = u.kafkaClient.WriteToTopic(constants.EXPORT_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
@@ -1302,8 +1299,7 @@ func (u *deliveryOrderUseCase) ExportDetail(request *models.DeliveryOrderDetailE
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		return "", errorLogData
 	}
-	fileName := fmt.Sprintf("SJ-LIST-DETAIL-%s-%d-%s", fileHour, ctx.Value("user").(*models.UserClaims).UserID, rand)
-	request.FileName = fileName
+	request.FileName = fmt.Sprintf("SJ-LIST-DETAIL-%s-%d-%s", fileHour, ctx.Value("user").(*models.UserClaims).UserID, rand)
 	keyKafka := []byte(uuid.New().String())
 	messageKafka, _ := json.Marshal(request)
 	err = u.kafkaClient.WriteToTopic(constants.EXPORT_DELIVERY_ORDER_DETAIL_TOPIC, keyKafka, messageKafka)

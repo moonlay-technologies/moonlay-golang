@@ -301,19 +301,38 @@ func (d *GetSalesOrderDetailRequest) SalesOrderDetailExportMap(r *SalesOrderDeta
 
 }
 
-func (data *SalesOrderDetailOpenSearch) MapToCsvRow(s *SalesOrder) []string {
-	return []string{
+func (data *SalesOrderDetailOpenSearch) MapToCsvRow(journey *SalesOrderJourneys, s *SalesOrder, d []*DeliveryOrder) []interface{} {
+	cancelReason := ""
+	if data.OrderStatusID == 10 && journey != nil {
+		cancelReason = journey.Reason
+	}
+	doQty := 0
+	for _, v := range d {
+		for _, x := range v.DeliveryOrderDetails {
+			if x.SoDetailID == data.ID {
+				doQty += x.Qty
+			}
+		}
+	}
+	if data.Store == nil {
+		data.Store = &Store{}
+	}
+	updatedAt := ""
+	if data.UpdatedAt != nil {
+		updatedAt = data.UpdatedAt.String()
+	}
+	return []interface{}{
 		s.OrderStatusName,
 		s.OrderSourceName,
 		data.ReferralCode.String,
 		data.SoRefCode,
 		data.SoCode,
 		data.SoDate,
-		strconv.Itoa(data.AgentId),
+		data.AgentId,
 		data.AgentName,
-		strconv.Itoa(int(data.SalesmanID)),
+		data.SalesmanID,
 		data.SalesmanName,
-		strconv.Itoa(data.StoreID),
+		data.StoreID,
 		data.Store.AliasCode.String,
 		data.StoreCode,
 		data.StoreName,
@@ -321,28 +340,30 @@ func (data *SalesOrderDetailOpenSearch) MapToCsvRow(s *SalesOrder) []string {
 		data.StoreDistrictName,
 		data.Store.CityID.String,
 		data.StoreCityName,
-		strconv.Itoa(data.StoreProvinceID),
+		data.StoreProvinceID,
 		data.StoreProvinceName,
-		strconv.Itoa(data.BrandID),
+		data.BrandID,
 		data.BrandName,
-		strconv.Itoa(data.FirstCategoryId),
-		*data.FirstCategoryName,
-		strconv.Itoa(data.LastCategoryId),
-		*data.LastCategoryName,
+		data.FirstCategoryId,
+		// *data.FirstCategoryName,
+		nil,
+		data.LastCategoryId,
+		// *data.LastCategoryName,
+		nil,
 		data.ProductSKU,
 		data.ProductName,
 		data.UomName,
-		strconv.Itoa(int(data.Price)),
-		strconv.Itoa(data.Qty),
-		strconv.Itoa((data.Qty * int(data.Price))),
-		"doQty",
-		"doAmount",
+		data.Price,
+		data.Qty,
+		float64(data.Qty) * data.Price,
+		doQty,
+		float64(doQty) * data.Price,
 		data.OrderStatusName,
-		"alasanCancel",
+		cancelReason,
 		data.CreatedAt.String(),
-		data.UpdatedAt.String(),
-		strconv.Itoa(data.CreatedBy),
-		strconv.Itoa(s.LatestUpdatedBy),
+		updatedAt,
+		data.CreatedBy,
+		s.LatestUpdatedBy,
 		s.InternalComment.String,
 	}
 }

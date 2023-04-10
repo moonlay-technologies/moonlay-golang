@@ -351,8 +351,10 @@ func (r *salesOrderDetailOpenSearch) generateSalesOrderDetailQueryOpenSearchResu
 				layout := time.RFC3339
 				createdAt, _ := time.Parse(layout, obj["created_at"].(string))
 				salesOrderDetail.CreatedAt = &createdAt
-				updatedAt, _ := time.Parse(layout, obj["updated_at"].(string))
-				salesOrderDetail.UpdatedAt = &updatedAt
+				if obj["updated_at"] != nil {
+					updatedAt, _ := time.Parse(layout, obj["updated_at"].(string))
+					salesOrderDetail.UpdatedAt = &updatedAt
+				}
 
 				salesOrderDetails = append(salesOrderDetails, salesOrderDetail)
 			}
