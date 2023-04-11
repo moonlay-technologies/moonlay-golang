@@ -346,6 +346,18 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	}
 	getSalesOrderResult.SalesOrder.OrderStatus = getOrderStatusSODetailResult.OrderStatus
 	getSalesOrderResult.SalesOrder.OrderStatusName = getOrderStatusSODetailResult.OrderStatus.Name
+
+	salesOrderJourney := &models.SalesOrderJourneys{
+		SoId:      getSalesOrderResult.SalesOrder.ID,
+		SoCode:    getSalesOrderResult.SalesOrder.SoCode,
+		SoDate:    getSalesOrderResult.SalesOrder.SoDate,
+		Status:    statusSoJourney,
+		Remark:    "",
+		Reason:    "",
+		CreatedAt: &now,
+		UpdatedAt: &now,
+	}
+
 	getSalesOrderResult.SalesOrder.SoDate = ""
 	getSalesOrderResult.SalesOrder.SoRefDate = models.NullString{}
 	getSalesOrderResult.SalesOrder.UpdatedAt = &now
@@ -385,7 +397,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		DoId:      deliveryOrder.ID,
 		DoCode:    deliveryOrder.DoCode,
 		DoDate:    deliveryOrder.DoDate,
-		Status:    constants.DO_STATUS_OPEN,
+		Status:    helper.GetDOJourneyStatus(deliveryOrder.OrderStatusID),
 		Remark:    "",
 		Reason:    "",
 		CreatedAt: &now,
@@ -400,22 +412,12 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 		return &models.DeliveryOrderStoreResponse{}, createDeliveryOrderJourneysResult.ErrorLog
 	}
 
-	salesOrderJourney := &models.SalesOrderJourneys{
-		SoId:      getSalesOrderResult.SalesOrder.ID,
-		SoCode:    getSalesOrderResult.SalesOrder.SoCode,
-		Status:    statusSoJourney,
-		Remark:    "",
-		Reason:    "",
-		CreatedAt: &now,
-		UpdatedAt: &now,
-	}
+	updateSalesOrderJourneyChan := make(chan *models.SalesOrderJourneysChan)
+	go u.salesOrderJourneyRepository.Insert(salesOrderJourney, ctx, updateSalesOrderJourneyChan)
+	updateSalesOrderJourneysResult := <-updateSalesOrderJourneyChan
 
-	createSalesOrderJourneyChan := make(chan *models.SalesOrderJourneysChan)
-	go u.salesOrderJourneyRepository.Insert(salesOrderJourney, ctx, createSalesOrderJourneyChan)
-	createSalesOrderJourneysResult := <-createSalesOrderJourneyChan
-
-	if createSalesOrderJourneysResult.Error != nil {
-		return &models.DeliveryOrderStoreResponse{}, createSalesOrderJourneysResult.ErrorLog
+	if updateSalesOrderJourneysResult.Error != nil {
+		return &models.DeliveryOrderStoreResponse{}, updateSalesOrderJourneysResult.ErrorLog
 	}
 
 	keyKafka := []byte(deliveryOrder.DoCode)
@@ -630,11 +632,16 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 		return &models.DeliveryOrderUpdateByIDRequest{}, updateDeliveryOrderResult.ErrorLog
 	}
 
+	var statusSoJourney string
+
 	if totalSentQty == 0 {
+		statusSoJourney = constants.SO_STATUS_OPEN
 		getSalesOrderResult.SalesOrder.OrderStatusID = 5
 	} else if totalSentQty == totalQty {
 		getSalesOrderResult.SalesOrder.OrderStatusID = 8
+		statusSoJourney = constants.SO_STATUS_ORDCLS
 	} else {
+		statusSoJourney = constants.SO_STATUS_ORDPRT
 		getSalesOrderResult.SalesOrder.OrderStatusID = 7
 	}
 
@@ -647,6 +654,18 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 	}
 	getSalesOrderResult.SalesOrder.OrderStatus = getOrderStatusSODetailResult.OrderStatus
 	getSalesOrderResult.SalesOrder.OrderStatusName = getOrderStatusSODetailResult.OrderStatus.Name
+
+	salesOrderJourney := &models.SalesOrderJourneys{
+		SoId:      getSalesOrderResult.SalesOrder.ID,
+		SoCode:    getSalesOrderResult.SalesOrder.SoCode,
+		SoDate:    getSalesOrderResult.SalesOrder.SoDate,
+		Status:    statusSoJourney,
+		Remark:    "",
+		Reason:    "",
+		CreatedAt: &now,
+		UpdatedAt: &now,
+	}
+
 	getSalesOrderResult.SalesOrder.SoDate = ""
 	getSalesOrderResult.SalesOrder.SoRefDate = models.NullString{}
 	getSalesOrderResult.SalesOrder.UpdatedAt = &now
@@ -688,7 +707,7 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 		DoId:      deliveryOrder.ID,
 		DoCode:    deliveryOrder.DoCode,
 		DoDate:    deliveryOrder.DoDate,
-		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		Status:    helper.GetDOJourneyStatus(deliveryOrder.OrderStatusID),
 		Remark:    "",
 		Reason:    "",
 		CreatedAt: &now,
@@ -701,6 +720,14 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 
 	if createDeliveryOrderJourneysResult.Error != nil {
 		return &models.DeliveryOrderUpdateByIDRequest{}, createDeliveryOrderJourneysResult.ErrorLog
+	}
+
+	updateSalesOrderJourneyChan := make(chan *models.SalesOrderJourneysChan)
+	go u.salesOrderJourneyRepository.Insert(salesOrderJourney, ctx, updateSalesOrderJourneyChan)
+	updateSalesOrderJourneysResult := <-updateSalesOrderJourneyChan
+
+	if updateSalesOrderJourneysResult.Error != nil {
+		return &models.DeliveryOrderUpdateByIDRequest{}, updateSalesOrderJourneysResult.ErrorLog
 	}
 
 	keyKafka := []byte(deliveryOrder.DoCode)
@@ -918,11 +945,16 @@ func (u *deliveryOrderUseCase) UpdateDODetailByID(id int, request *models.Delive
 		return &models.DeliveryOrderDetailUpdateByIDRequest{}, updateDeliveryOrderResult.ErrorLog
 	}
 
+	var statusSoJourney string
+
 	if totalSentQty == 0 {
+		statusSoJourney = constants.SO_STATUS_OPEN
 		getSalesOrderResult.SalesOrder.OrderStatusID = 5
 	} else if totalSentQty == totalQty {
 		getSalesOrderResult.SalesOrder.OrderStatusID = 8
+		statusSoJourney = constants.SO_STATUS_ORDCLS
 	} else {
+		statusSoJourney = constants.SO_STATUS_ORDPRT
 		getSalesOrderResult.SalesOrder.OrderStatusID = 7
 	}
 
@@ -935,6 +967,18 @@ func (u *deliveryOrderUseCase) UpdateDODetailByID(id int, request *models.Delive
 	}
 	getSalesOrderResult.SalesOrder.OrderStatus = getOrderStatusSODetailResult.OrderStatus
 	getSalesOrderResult.SalesOrder.OrderStatusName = getOrderStatusSODetailResult.OrderStatus.Name
+
+	salesOrderJourney := &models.SalesOrderJourneys{
+		SoId:      getSalesOrderResult.SalesOrder.ID,
+		SoCode:    getSalesOrderResult.SalesOrder.SoCode,
+		SoDate:    getSalesOrderResult.SalesOrder.SoDate,
+		Status:    statusSoJourney,
+		Remark:    "",
+		Reason:    "",
+		CreatedAt: &now,
+		UpdatedAt: &now,
+	}
+
 	getSalesOrderResult.SalesOrder.SoDate = ""
 	getSalesOrderResult.SalesOrder.SoRefDate = models.NullString{}
 	getSalesOrderResult.SalesOrder.UpdatedAt = &now
@@ -976,7 +1020,7 @@ func (u *deliveryOrderUseCase) UpdateDODetailByID(id int, request *models.Delive
 		DoId:      deliveryOrder.ID,
 		DoCode:    deliveryOrder.DoCode,
 		DoDate:    deliveryOrder.DoDate,
-		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		Status:    helper.GetDOJourneyStatus(deliveryOrder.OrderStatusID),
 		Remark:    "",
 		Reason:    "",
 		CreatedAt: &now,
@@ -989,6 +1033,14 @@ func (u *deliveryOrderUseCase) UpdateDODetailByID(id int, request *models.Delive
 
 	if createDeliveryOrderJourneysResult.Error != nil {
 		return &models.DeliveryOrderDetailUpdateByIDRequest{}, createDeliveryOrderJourneysResult.ErrorLog
+	}
+
+	updateSalesOrderJourneyChan := make(chan *models.SalesOrderJourneysChan)
+	go u.salesOrderJourneyRepository.Insert(salesOrderJourney, ctx, updateSalesOrderJourneyChan)
+	updateSalesOrderJourneysResult := <-updateSalesOrderJourneyChan
+
+	if updateSalesOrderJourneysResult.Error != nil {
+		return &models.DeliveryOrderDetailUpdateByIDRequest{}, updateSalesOrderJourneysResult.ErrorLog
 	}
 
 	keyKafka := []byte(deliveryOrder.DoCode)
@@ -1146,11 +1198,16 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 
 	deliveryOrder.DeliveryOrderDetails = deliveryOrderDetails
 
+	var statusSoJourney string
+
 	if totalSentQty == 0 {
+		statusSoJourney = constants.SO_STATUS_OPEN
 		getSalesOrderResult.SalesOrder.OrderStatusID = 5
 	} else if totalSentQty == totalQty {
 		getSalesOrderResult.SalesOrder.OrderStatusID = 8
+		statusSoJourney = constants.SO_STATUS_ORDCLS
 	} else {
+		statusSoJourney = constants.SO_STATUS_ORDPRT
 		getSalesOrderResult.SalesOrder.OrderStatusID = 7
 	}
 
@@ -1163,6 +1220,18 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 	}
 	getSalesOrderResult.SalesOrder.OrderStatus = getOrderStatusSODetailResult.OrderStatus
 	getSalesOrderResult.SalesOrder.OrderStatusName = getOrderStatusSODetailResult.OrderStatus.Name
+
+	salesOrderJourney := &models.SalesOrderJourneys{
+		SoId:      getSalesOrderResult.SalesOrder.ID,
+		SoCode:    getSalesOrderResult.SalesOrder.SoCode,
+		SoDate:    getSalesOrderResult.SalesOrder.SoDate,
+		Status:    statusSoJourney,
+		Remark:    "",
+		Reason:    "",
+		CreatedAt: &now,
+		UpdatedAt: &now,
+	}
+
 	getSalesOrderResult.SalesOrder.SoDate = ""
 	getSalesOrderResult.SalesOrder.SoRefDate = models.NullString{}
 	getSalesOrderResult.SalesOrder.UpdatedAt = &now
@@ -1203,7 +1272,7 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 		DoId:      deliveryOrder.ID,
 		DoCode:    deliveryOrder.DoCode,
 		DoDate:    deliveryOrder.DoDate,
-		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		Status:    helper.GetDOJourneyStatus(deliveryOrder.OrderStatusID),
 		Remark:    "",
 		Reason:    "",
 		CreatedAt: &now,
@@ -1216,6 +1285,14 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 
 	if createDeliveryOrderJourneysResult.Error != nil {
 		return &models.DeliveryOrderDetails{}, createDeliveryOrderJourneysResult.ErrorLog
+	}
+
+	updateSalesOrderJourneyChan := make(chan *models.SalesOrderJourneysChan)
+	go u.salesOrderJourneyRepository.Insert(salesOrderJourney, ctx, updateSalesOrderJourneyChan)
+	updateSalesOrderJourneysResult := <-updateSalesOrderJourneyChan
+
+	if updateSalesOrderJourneysResult.Error != nil {
+		return &models.DeliveryOrderDetails{}, updateSalesOrderJourneysResult.ErrorLog
 	}
 
 	keyKafka := []byte(deliveryOrder.DoCode)
@@ -1271,14 +1348,14 @@ func (u *deliveryOrderUseCase) Get(request *models.DeliveryOrderRequest) (*model
 
 func (u *deliveryOrderUseCase) Export(request *models.DeliveryOrderExportRequest, ctx context.Context) (string, *model.ErrorLog) {
 	rand, err := helper.Generate(`[A-Za-z]{12}`)
-	fileHour := time.Now().Format(constants.DATE_FORMAT_EXPORT)
+	x, err := time.LoadLocation("Asia/Jakarta")
+	fileHour := time.Now().In(x).Format(constants.DATE_FORMAT_EXPORT)
 	if ctx == nil {
 		err = fmt.Errorf("nil context")
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		return "", errorLogData
 	}
-	fileName := fmt.Sprintf("SJ-LIST-SUMMARY-%s-%d-%s", fileHour, ctx.Value("user").(*models.UserClaims).UserID, rand)
-	request.FileName = fileName
+	request.FileName = fmt.Sprintf("SJ-LIST-SUMMARY-%s-%d-%s", fileHour, ctx.Value("user").(*models.UserClaims).UserID, rand)
 	keyKafka := []byte(uuid.New().String())
 	messageKafka, _ := json.Marshal(request)
 	err = u.kafkaClient.WriteToTopic(constants.EXPORT_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
@@ -1299,8 +1376,7 @@ func (u *deliveryOrderUseCase) ExportDetail(request *models.DeliveryOrderDetailE
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		return "", errorLogData
 	}
-	fileName := fmt.Sprintf("SJ-LIST-DETAIL-%s-%d-%s", fileHour, ctx.Value("user").(*models.UserClaims).UserID, rand)
-	request.FileName = fileName
+	request.FileName = fmt.Sprintf("SJ-LIST-DETAIL-%s-%d-%s", fileHour, ctx.Value("user").(*models.UserClaims).UserID, rand)
 	keyKafka := []byte(uuid.New().String())
 	messageKafka, _ := json.Marshal(request)
 	err = u.kafkaClient.WriteToTopic(constants.EXPORT_DELIVERY_ORDER_DETAIL_TOPIC, keyKafka, messageKafka)
@@ -1919,7 +1995,7 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 		DoId:      getDeliveryOrderByIDResult.DeliveryOrder.ID,
 		DoCode:    getDeliveryOrderByIDResult.DeliveryOrder.DoCode,
 		DoDate:    getDeliveryOrderByIDResult.DeliveryOrder.DoDate,
-		Status:    constants.DO_STATUS_CNCL,
+		Status:    constants.DO_STATUS_CANCEL,
 		Remark:    "",
 		Reason:    "",
 		CreatedAt: &now,

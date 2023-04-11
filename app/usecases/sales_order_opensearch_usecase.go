@@ -9,6 +9,7 @@ import (
 	"order-service/app/models"
 	"order-service/app/models/constants"
 	"order-service/app/repositories"
+	mongoRepositories "order-service/app/repositories/mongod"
 	openSearchRepositories "order-service/app/repositories/open_search"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/model"
@@ -34,12 +35,15 @@ type SalesOrderOpenSearchUseCase struct {
 	uomRepository                        repositories.UomRepositoryInterface
 	categoryRepository                   repositories.CategoryRepositoryInterface
 	salesOrderOpenSearchRepository       openSearchRepositories.SalesOrderOpenSearchRepositoryInterface
+	deliveryOrderOpenSearchRepository    openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface
 	salesOrderDetailOpenSearchRepository openSearchRepositories.SalesOrderDetailOpenSearchRepositoryInterface
+	salesOrderJourneyRepository          mongoRepositories.SalesOrderJourneysRepositoryInterface
 	uploadRepository                     repositories.UploadRepositoryInterface
 	pusherRepository                     repositories.PusherRepositoryInterface
+	ctx                                  context.Context
 }
 
-func InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, productRepository repositories.ProductRepositoryInterface, uomRepository repositories.UomRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderDetailOpenSearchRepository openSearchRepositories.SalesOrderDetailOpenSearchRepositoryInterface, categoryRepository repositories.CategoryRepositoryInterface, uploadRepository repositories.UploadRepositoryInterface) SalesOrderOpenSearchUseCaseInterface {
+func InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, productRepository repositories.ProductRepositoryInterface, uomRepository repositories.UomRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, salesOrderDetailOpenSearchRepository openSearchRepositories.SalesOrderDetailOpenSearchRepositoryInterface, categoryRepository repositories.CategoryRepositoryInterface, salesOrderJourneyRepository mongoRepositories.SalesOrderJourneysRepositoryInterface, uploadRepository repositories.UploadRepositoryInterface, ctx context.Context) SalesOrderOpenSearchUseCaseInterface {
 	return &SalesOrderOpenSearchUseCase{
 		salesOrderRepository:                 salesOrderRepository,
 		salesOrderDetailRepository:           salesOrderDetailRepository,
@@ -47,10 +51,13 @@ func InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository repositories.
 		productRepository:                    productRepository,
 		uomRepository:                        uomRepository,
 		salesOrderOpenSearchRepository:       salesOrderOpenSearchRepository,
+		deliveryOrderOpenSearchRepository:    deliveryOrderOpenSearchRepository,
 		salesOrderDetailOpenSearchRepository: salesOrderDetailOpenSearchRepository,
 		categoryRepository:                   categoryRepository,
+		salesOrderJourneyRepository:          salesOrderJourneyRepository,
 		uploadRepository:                     uploadRepository,
 		pusherRepository:                     repositories.InitPusherRepository(),
+		ctx:                                  ctx,
 	}
 }
 
@@ -437,7 +444,7 @@ func (u *SalesOrderOpenSearchUseCase) Get(request *models.SalesOrderExportReques
 
 	soRequest.PerPage = 50
 	instalmentData := math.Ceil(float64(getSalesOrdersCountResult.Total) / float64(soRequest.PerPage))
-	var data [][]string = [][]string{constants.SALES_ORDER_EXPORT_HEADER()}
+	data := [][]interface{}{constants.SALES_ORDER_EXPORT_HEADER()}
 
 	for i := 0; i < int(instalmentData); i++ {
 		soRequest.Page = i + 1
@@ -449,7 +456,20 @@ func (u *SalesOrderOpenSearchUseCase) Get(request *models.SalesOrderExportReques
 			return getSalesOrdersResult.ErrorLog
 		}
 		for _, v := range getSalesOrdersResult.SalesOrders {
-			data = append(data, v.MapToCsvRow())
+			getDeliveryOrdersResultChan := make(chan *models.DeliveryOrdersChan)
+			go u.deliveryOrderOpenSearchRepository.GetBySalesOrderID(&models.DeliveryOrderRequest{SalesOrderID: v.ID}, getDeliveryOrdersResultChan)
+			getDeliveryOrdersResult := <-getDeliveryOrdersResultChan
+
+			getSalesOrdersJourneyChan := make(chan *models.SalesOrdersJourneysChan)
+			go u.salesOrderJourneyRepository.GetBySoId(v.ID, false, u.ctx, getSalesOrdersJourneyChan)
+			getSalesOrderJourneyResult := <-getSalesOrdersJourneyChan
+
+			var journeys *models.SalesOrderJourneys = nil
+			if getSalesOrderJourneyResult.SalesOrderJourneys != nil {
+				journeys = getSalesOrderJourneyResult.SalesOrderJourneys[0]
+			}
+
+			data = append(data, v.MapToCsvRow(journeys, getDeliveryOrdersResult.DeliveryOrders))
 		}
 		progres := math.Round(float64(i*soRequest.PerPage)/float64(getSalesOrdersCountResult.Total)) * 100
 		err := u.pusherRepository.Pubish(map[string]string{"message": fmt.Sprintf("%f", progres) + "%"})
@@ -480,6 +500,7 @@ func (u *SalesOrderOpenSearchUseCase) Get(request *models.SalesOrderExportReques
 func (u *SalesOrderOpenSearchUseCase) GetDetails(request *models.SalesOrderDetailExportRequest) *model.ErrorLog {
 	soDetailRequest := &models.GetSalesOrderDetailRequest{}
 	soDetailRequest.SalesOrderDetailExportMap(request)
+
 	getSalesOrderDetailsCountResultChan := make(chan *models.SalesOrderDetailsOpenSearchChan)
 	go u.salesOrderDetailOpenSearchRepository.Get(soDetailRequest, false, getSalesOrderDetailsCountResultChan)
 	getSalesOrderDetailsCountResult := <-getSalesOrderDetailsCountResultChan
@@ -492,7 +513,7 @@ func (u *SalesOrderOpenSearchUseCase) GetDetails(request *models.SalesOrderDetai
 	soDetailRequest.PerPage = 50
 	instalmentData := math.Ceil(float64(getSalesOrderDetailsCountResult.Total) / float64(soDetailRequest.PerPage))
 
-	var data [][]string = [][]string{constants.SALES_ORDER_DETAIL_EXPORT_HEADER()}
+	data := [][]interface{}{constants.SALES_ORDER_DETAIL_EXPORT_HEADER()}
 
 	for i := 0; i < int(instalmentData); i++ {
 		soDetailRequest.Page = i + 1
@@ -505,17 +526,24 @@ func (u *SalesOrderOpenSearchUseCase) GetDetails(request *models.SalesOrderDetai
 		}
 
 		for _, v := range getSalesDetailOrdersResult.SalesOrderDetails {
-
-			soRequest := &models.SalesOrderRequest{ID: v.SalesOrderID}
-
+			getDeliveryOrdersResultChan := make(chan *models.DeliveryOrdersChan)
+			go u.deliveryOrderOpenSearchRepository.GetBySalesOrderID(&models.DeliveryOrderRequest{SalesOrderID: v.SoID}, getDeliveryOrdersResultChan)
+			getDeliveryOrdersResult := <-getDeliveryOrdersResultChan
+			getSalesOrdersJourneyChan := make(chan *models.SalesOrdersJourneysChan)
+			go u.salesOrderJourneyRepository.GetBySoId(v.ID, false, u.ctx, getSalesOrdersJourneyChan)
+			getSalesOrderJourneyResult := <-getSalesOrdersJourneyChan
+			var journeys *models.SalesOrderJourneys = nil
+			if getSalesOrderJourneyResult.SalesOrderJourneys != nil {
+				journeys = getSalesOrderJourneyResult.SalesOrderJourneys[0]
+			}
+			soRequest := &models.SalesOrderRequest{ID: v.SoID}
 			getSalesOrderResultChan := make(chan *models.SalesOrderChan)
 			go u.salesOrderOpenSearchRepository.GetByID(soRequest, getSalesOrderResultChan)
 			getSalesOrdersResult := <-getSalesOrderResultChan
-
 			if getSalesOrdersResult.Error != nil {
 				return getSalesOrdersResult.ErrorLog
 			}
-			data = append(data, v.MapToCsvRow(getSalesOrdersResult.SalesOrder))
+			data = append(data, v.MapToCsvRow(journeys, getSalesOrdersResult.SalesOrder, getDeliveryOrdersResult.DeliveryOrders))
 		}
 		progres := math.Round(float64(i*soDetailRequest.PerPage)/float64(getSalesOrderDetailsCountResult.Total)) * 100
 		err := u.pusherRepository.Pubish(map[string]string{"message": fmt.Sprintf("%f", progres) + "%"})
@@ -528,7 +556,7 @@ func (u *SalesOrderOpenSearchUseCase) GetDetails(request *models.SalesOrderDetai
 	b, err := helper.GenerateExportBufferFile(data, request.FileType)
 
 	// Upload Files
-	err = u.uploadRepository.UploadFile(b, constants.S3_EXPORT_SO_PATH, request.FileName, request.FileType)
+	err = u.uploadRepository.UploadFile(b, constants.S3_EXPORT_SO_DETAIL_PATH, request.FileName, request.FileType)
 	if err != nil {
 		fmt.Println("error upload", err)
 		return helper.WriteLog(err, http.StatusInternalServerError, nil)

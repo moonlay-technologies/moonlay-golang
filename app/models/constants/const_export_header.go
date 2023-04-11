@@ -9,8 +9,8 @@ func ExcelCollumnMapper() []string {
 	}
 }
 
-func DELIVERY_ORDER_EXPORT_HEADER() []string {
-	return []string{
+func DELIVERY_ORDER_EXPORT_HEADER() []interface{} {
+	return []interface{}{
 		"DOStatus",
 		"DODate",
 		"SJNo",
@@ -47,8 +47,8 @@ func DELIVERY_ORDER_EXPORT_HEADER() []string {
 		"UserIDModified"}
 }
 
-func DELIVERY_ORDER_DETAIL_EXPORT_HEADER() []string {
-	return []string{
+func DELIVERY_ORDER_DETAIL_EXPORT_HEADER() []interface{} {
+	return []interface{}{
 		"DOStatus",
 		"DODate",
 		"SJNo",
@@ -94,8 +94,8 @@ func DELIVERY_ORDER_DETAIL_EXPORT_HEADER() []string {
 		"UserIDModified"}
 }
 
-func SALES_ORDER_EXPORT_HEADER() []string {
-	return []string{
+func SALES_ORDER_EXPORT_HEADER() []interface{} {
+	return []interface{}{
 		"SOStatus",
 		"SOSource",
 		"KodeReferralOrder",
@@ -131,8 +131,8 @@ func SALES_ORDER_EXPORT_HEADER() []string {
 		"UserIDModified"}
 }
 
-func SALES_ORDER_DETAIL_EXPORT_HEADER() []string {
-	return []string{
+func SALES_ORDER_DETAIL_EXPORT_HEADER() []interface{} {
+	return []interface{}{
 		"SOStatus",
 		"SOSource",
 		"KodeReferralOrder",
