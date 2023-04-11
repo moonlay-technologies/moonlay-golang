@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"order-service/app/models/constants"
 	"strconv"
 )
 
@@ -274,8 +275,8 @@ func (d *DeliveryOrderDetailOpenSearch) MapToCsvRow(dd *DeliveryOrder) []interfa
 		d.SoDetail.ResidualQty,
 		d.Qty,
 		int(d.SoDetail.Price) * d.Qty,
-		d.CreatedAt.String(),
-		d.UpdatedAt.String(),
+		d.CreatedAt.Format(constants.DATE_FORMAT_EXPORT_CREATED_AT),
+		d.UpdatedAt.Format(constants.DATE_FORMAT_EXPORT_CREATED_AT),
 		dd.CreatedBy,
 		dd.LatestUpdatedBy,
 	}

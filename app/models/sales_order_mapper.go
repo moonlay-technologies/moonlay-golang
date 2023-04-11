@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"order-service/app/models/constants"
 	"strconv"
 	"time"
 )
@@ -736,8 +737,8 @@ func (data *SalesOrder) MapToCsvRow(journey *SalesOrderJourneys, dos []*Delivery
 		cancelReason,
 		rejectReason,
 		data.SoRefDate.String,
-		data.CreatedAt.String(),
-		data.UpdatedAt.String(),
+		data.CreatedAt.Format(constants.DATE_FORMAT_EXPORT_CREATED_AT),
+		data.UpdatedAt.Format(constants.DATE_FORMAT_EXPORT_CREATED_AT),
 		data.CreatedBy,
 		data.LatestUpdatedBy,
 	}

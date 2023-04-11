@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"order-service/app/models/constants"
 	"time"
 )
 
@@ -465,8 +466,8 @@ func (data *DeliveryOrder) MapToCsvRow() []interface{} {
 		deliveryOrderCsv.NamaSupir.String,
 		deliveryOrderCsv.PlatNo.String,
 		deliveryOrderCsv.Catatan.String,
-		deliveryOrderCsv.CreatedDate.String(),
-		deliveryOrderCsv.UpdatedDate.String(),
+		deliveryOrderCsv.CreatedDate.Format(constants.DATE_FORMAT_EXPORT_CREATED_AT),
+		deliveryOrderCsv.UpdatedDate.Format(constants.DATE_FORMAT_EXPORT_CREATED_AT),
 		deliveryOrderCsv.UserIDCreated,
 		deliveryOrderCsv.UserIDModified,
 	}
