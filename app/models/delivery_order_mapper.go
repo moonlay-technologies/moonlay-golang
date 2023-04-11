@@ -474,7 +474,7 @@ func (data *DeliveryOrder) MapToCsvRow() []interface{} {
 }
 
 func (d *DeliveryOrderCsvResponse) DoDetailMap(r *DeliveryOrder) {
-	d.DoStatus = r.OrderStatusID
+	d.DoStatus = r.OrderStatusName
 	d.DoDate = r.DoDate
 	d.SjNo = r.DoRefCode
 	d.DoNo = r.DoCode
@@ -484,7 +484,7 @@ func (d *DeliveryOrderCsvResponse) DoDetailMap(r *DeliveryOrder) {
 	d.SoSource = r.SalesOrder.OrderSourceID
 	d.AgentID = r.AgentID
 	d.AgentName = r.AgentName
-	d.GudangID = r.WarehouseID
+	d.GudangID = r.WarehouseCode
 	d.GudangName = r.WarehouseName
 	d.BrandID = r.SalesOrder.BrandID
 	d.BrandName = r.SalesOrder.BrandName

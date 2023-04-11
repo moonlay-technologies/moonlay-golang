@@ -41,3 +41,12 @@ func GenerateDODetailCode(doID int, agentID int, productID int, uomID int) (stri
 
 	return result, nil
 }
+
+func GetDOJourneyStatus(orderStatusId int) string {
+	var journeyMap = map[int]string{
+		17: constants.DO_STATUS_OPEN,
+		18: constants.DO_STATUS_CLOSED,
+		19: constants.DO_STATUS_CANCEL,
+	}
+	return journeyMap[orderStatusId]
+}
