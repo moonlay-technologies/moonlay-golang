@@ -234,7 +234,7 @@ func (d *DeliveryOrderDetailOpenSearch) MapToCsvRow(dd *DeliveryOrder) []interfa
 		store.ProvinceName = NullString{NullString: sql.NullString{String: "", Valid: true}}
 	}
 	return []interface{}{
-		d.OrderStatusID,
+		d.OrderStatusName,
 		d.DoDate,
 		d.DoRefCode,
 		d.DoCode,
@@ -269,7 +269,7 @@ func (d *DeliveryOrderDetailOpenSearch) MapToCsvRow(dd *DeliveryOrder) []interfa
 		nil,
 		d.SoDetail.ProductSKU,
 		d.Product.ProductName.String,
-		d.UomName,
+		d.UomCode,
 		d.SoDetail.Price,
 		d.SoDetail.Qty,
 		d.SoDetail.ResidualQty,

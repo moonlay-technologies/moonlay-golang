@@ -302,7 +302,7 @@ type DeliveryOrdersOpenSearchResponses struct {
 }
 
 type DeliveryOrderCsvResponse struct {
-	DoStatus       int        `json:"do_status,omitempty" bson:"so_status,omitempty"`
+	DoStatus       string     `json:"do_status,omitempty" bson:"so_status,omitempty"`
 	DoDate         string     `json:"do_date,omitempty" bson:"do_date,omitempty"`
 	SjNo           NullString `json:"sj_no,omitempty" bson:"sj_no,omitempty"`
 	DoNo           string     `json:"do_no,omitempty" bson:"do_no,omitempty"`
@@ -312,7 +312,7 @@ type DeliveryOrderCsvResponse struct {
 	SoSource       int        `json:"so_source,omitempty" bson:"so_source,omitempty"`
 	AgentID        int        `json:"agent_id,omitempty" bson:"agent_id,omitempty"`
 	AgentName      string     `json:"agent_name,omitempty" bson:"agent_name,omitempty"`
-	GudangID       int        `json:"gudang_id,omitempty" bson:"gudang_id"`
+	GudangID       string     `json:"gudang_id,omitempty" bson:"gudang_id"`
 	GudangName     string     `json:"gudang_name,omitempty" bson:"gudang_name,omitempty"`
 	BrandID        int        `json:"brand_id,omitempty" bson:"brand_id,omitempty"`
 	BrandName      string     `json:"brand_name,omitempty" bson:"brand_name,omitempty"`
