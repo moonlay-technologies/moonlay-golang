@@ -269,7 +269,7 @@ func (d *DeliveryOrderDetailOpenSearch) MapToCsvRow(dd *DeliveryOrder) []interfa
 		nil,
 		d.SoDetail.ProductSKU,
 		d.Product.ProductName.String,
-		d.UomCode,
+		d.Uom.Code,
 		d.SoDetail.Price,
 		d.SoDetail.Qty,
 		d.SoDetail.ResidualQty,
