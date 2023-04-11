@@ -116,6 +116,7 @@ func (u *uploadUseCase) UploadSOSJ(request *models.UploadSOSJRequest, ctx contex
 	agentId := int64(user.AgentID)
 	userId := int64(user.UserID)
 	url := strings.Split(request.File, "/")
+	zero := int64(0)
 	message := &models.UploadHistory{
 		RequestId:       ctx.Value("RequestId").(string),
 		BulkCode:        "SOSJ-" + strconv.Itoa(user.AgentID) + "-" + fmt.Sprint(now.Unix()),
@@ -127,6 +128,7 @@ func (u *uploadUseCase) UploadSOSJ(request *models.UploadSOSJRequest, ctx contex
 		UploadedByName:  user.FirstName + " " + user.LastName,
 		UploadedByEmail: user.UserEmail,
 		Status:          constants.UPLOAD_STATUS_HISTORY_IN_PROGRESS,
+		TotalRows:       &zero,
 		UpdatedBy:       &userId,
 		UpdatedByName:   user.FirstName + " " + user.LastName,
 		UpdatedByEmail:  user.UserEmail,
@@ -174,6 +176,7 @@ func (u *uploadUseCase) UploadDO(request *models.UploadDORequest, ctx context.Co
 	agentId := int64(user.AgentID)
 	userId := int64(user.UserID)
 	url := strings.Split(request.File, "/")
+	zero := int64(0)
 	message := &models.DoUploadHistory{
 		RequestId:       ctx.Value("RequestId").(string),
 		BulkCode:        "SJ-" + strconv.Itoa(user.AgentID) + "-" + fmt.Sprint(now.Unix()),
@@ -185,6 +188,7 @@ func (u *uploadUseCase) UploadDO(request *models.UploadDORequest, ctx context.Co
 		UploadedByName:  user.FirstName + " " + user.LastName,
 		UploadedByEmail: user.UserEmail,
 		Status:          constants.UPLOAD_STATUS_HISTORY_IN_PROGRESS,
+		TotalRows:       &zero,
 		UpdatedBy:       &userId,
 		UpdatedByName:   user.FirstName + " " + user.LastName,
 		UpdatedByEmail:  user.UserEmail,
@@ -232,6 +236,7 @@ func (u *uploadUseCase) UploadSO(request *models.UploadSORequest, ctx context.Co
 	agentId := int64(user.AgentID)
 	userId := int64(user.UserID)
 	url := strings.Split(request.File, "/")
+	zero := int64(0)
 	message := &models.SoUploadHistory{
 		RequestId:       ctx.Value("RequestId").(string),
 		BulkCode:        "SO-" + strconv.Itoa(user.AgentID) + "-" + fmt.Sprint(now.Unix()),
@@ -243,6 +248,7 @@ func (u *uploadUseCase) UploadSO(request *models.UploadSORequest, ctx context.Co
 		UploadedByName:  user.FirstName + " " + user.LastName,
 		UploadedByEmail: user.UserEmail,
 		Status:          constants.UPLOAD_STATUS_HISTORY_IN_PROGRESS,
+		TotalRows:       &zero,
 		UpdatedBy:       &userId,
 		UpdatedByName:   user.FirstName + " " + user.LastName,
 		UpdatedByEmail:  user.UserEmail,
