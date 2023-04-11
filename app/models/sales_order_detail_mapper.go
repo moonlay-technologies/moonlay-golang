@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"order-service/app/models/constants"
 	"strconv"
 	"time"
 )
@@ -319,7 +320,7 @@ func (data *SalesOrderDetailOpenSearch) MapToCsvRow(journey *SalesOrderJourneys,
 	}
 	updatedAt := ""
 	if data.UpdatedAt != nil {
-		updatedAt = data.UpdatedAt.String()
+		updatedAt = data.UpdatedAt.Format(constants.DATE_FORMAT_EXPORT_CREATED_AT)
 	}
 	return []interface{}{
 		s.OrderStatusName,
@@ -360,7 +361,7 @@ func (data *SalesOrderDetailOpenSearch) MapToCsvRow(journey *SalesOrderJourneys,
 		float64(doQty) * data.Price,
 		data.OrderStatusName,
 		cancelReason,
-		data.CreatedAt.String(),
+		data.CreatedAt.Format(constants.DATE_FORMAT_EXPORT_CREATED_AT),
 		updatedAt,
 		data.CreatedBy,
 		s.LatestUpdatedBy,

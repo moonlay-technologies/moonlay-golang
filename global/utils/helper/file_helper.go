@@ -29,7 +29,7 @@ func GenerateXlsx(data [][]interface{}) (*bytes.Buffer, error) {
 	x := excelize.NewFile()
 	for k, v := range data {
 		for i, m := range v {
-			if m != nil {
+			if m != nil && m != "" {
 				x.SetCellValue(x.GetSheetName(1), fmt.Sprintf("%s%d", constants.ExcelCollumnMapper()[i], k+1), m)
 			} else {
 				x.SetCellValue(x.GetSheetName(1), fmt.Sprintf("%s%d", constants.ExcelCollumnMapper()[i], k+1), "NULL")
