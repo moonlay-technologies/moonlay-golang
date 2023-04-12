@@ -29,12 +29,14 @@ type uploadSOSJFileConsumerHandler struct {
 	requestValidationRepository   repositories.RequestValidationRepositoryInterface
 	sosjUploadHistoriesRepository mongoRepositories.SOSJUploadHistoriesRepositoryInterface
 	sosjUploadErrorLogsRepository mongoRepositories.SosjUploadErrorLogsRepositoryInterface
+	salesOrderRepository          repositories.SalesOrderRepositoryInterface
+	deliveryOrderRepository       repositories.DeliveryOrderRepositoryInterface
 	ctx                           context.Context
 	args                          []interface{}
 	db                            dbresolver.DB
 }
 
-func InitUploadSOSJFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, uploadRepository repositories.UploadRepositoryInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, requestValidationRepository repositories.RequestValidationRepositoryInterface, sosjUploadHistoriesRepository mongoRepositories.SOSJUploadHistoriesRepositoryInterface, sosjUploadErrorLogsRepository mongoRepositories.SosjUploadErrorLogsRepositoryInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UploadSOFileConsumerHandlerInterface {
+func InitUploadSOSJFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, uploadRepository repositories.UploadRepositoryInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, requestValidationRepository repositories.RequestValidationRepositoryInterface, sosjUploadHistoriesRepository mongoRepositories.SOSJUploadHistoriesRepositoryInterface, sosjUploadErrorLogsRepository mongoRepositories.SosjUploadErrorLogsRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UploadSOFileConsumerHandlerInterface {
 	return &uploadSOSJFileConsumerHandler{
 		kafkaClient:                   kafkaClient,
 		uploadRepository:              uploadRepository,
@@ -42,6 +44,8 @@ func InitUploadSOSJFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClient
 		requestValidationRepository:   requestValidationRepository,
 		sosjUploadHistoriesRepository: sosjUploadHistoriesRepository,
 		sosjUploadErrorLogsRepository: sosjUploadErrorLogsRepository,
+		salesOrderRepository:          salesOrderRepository,
+		deliveryOrderRepository:       deliveryOrderRepository,
 		ctx:                           ctx,
 		args:                          args,
 		db:                            db,
@@ -177,7 +181,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 				} else {
 					errors := mandatoryError
 
-					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, message.AgentName, message.BulkCode, errors, &now, *rowData)
+					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
 					continue
 				}
 			}
@@ -222,7 +226,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 				} else {
 					errors := intTypeError
 
-					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, message.AgentName, message.BulkCode, errors, &now, *rowData)
+					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
 
 					continue
 				}
@@ -236,7 +240,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 				} else {
 					errors = []string{"Quantity harus lebih dari 0"}
 
-					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, message.AgentName, message.BulkCode, errors, &now, *rowData)
+					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
 					continue
 				}
 			}
@@ -277,7 +281,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 				} else {
 					errors := mustActiveError
 
-					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, message.AgentName, message.BulkCode, errors, &now, *rowData)
+					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
 
 					continue
 				}
@@ -295,11 +299,11 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 						break
 					} else {
 						errors := []string{}
-						errors = append(errors, fmt.Sprintf("Kode Merek = %d Tidak Terdaftar pada Distributor %s. Silahkan gunakan Kode Merek yang lain.", intTypeResult["IDMerk"], message.AgentName))
-						errors = append(errors, fmt.Sprintf("ID Salesman = %d Tidak Terdaftar pada Distributor %s. Silahkan gunakan ID Salesman yang lain.", intTypeResult["IDSalesman"], message.AgentName))
+						errors = append(errors, fmt.Sprintf("Kode Merek = %d Tidak Terdaftar pada Distributor %s. Silahkan gunakan Kode Merek yang lain.", intTypeResult["IDMerk"], rowData.AgentName.String))
+						errors = append(errors, fmt.Sprintf("ID Salesman = %d Tidak Terdaftar pada Distributor %s. Silahkan gunakan ID Salesman yang lain.", intTypeResult["IDSalesman"], rowData.AgentName.String))
 						errors = append(errors, fmt.Sprintf("Salesman di Kode Toko = %s untuk Merek %s Tidak Terdaftar. Silahkan gunakan ID Salesman yang terdaftar.", rowData.StoreCode, rowData.ProductName.String))
 
-						c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, message.AgentName, message.BulkCode, errors, &now, *rowData)
+						c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
 
 						continue
 					}
@@ -317,7 +321,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 				} else {
 					errors := []string{fmt.Sprintf("Alamat Utama pada Kode Toko = %s Tidak Ditemukan. Silahkan gunakan Alamat Toko yang lain.", rowData.StoreCode)}
 
-					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, message.AgentName, message.BulkCode, errors, &now, *rowData)
+					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
 
 					continue
 				}
@@ -333,7 +337,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 				} else {
 					errors = []string{fmt.Sprintf("Format Tanggal Order = %s Salah, silahkan sesuaikan dengan format DD-MMM-YYYY, contoh 15/12/2021", rowData.SjDate)}
 
-					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, message.AgentName, message.BulkCode, errors, &now, *rowData)
+					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
 
 					continue
 				}
@@ -363,18 +367,70 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 			uploadSOSJField.SosjUploadHistoryId = message.ID.Hex()
 			uploadSOSJField.ErrorLine = i + 3
 			uploadSOSJField.UploadType = key
+			uploadSOSJField.RowData = *rowData
 			uploadSOSJFields = append(uploadSOSJFields, &uploadSOSJField)
 
 		}
 
-		keyKafka := []byte(message.RequestId)
-		messageKafka, _ := json.Marshal(uploadSOSJFields)
+		var finalUploadSOSJFields []*models.UploadSOSJField
+		for _, v := range uploadSOSJFields {
 
-		err = c.kafkaClient.WriteToTopic(constants.UPLOAD_SOSJ_ITEM_TOPIC, keyKafka, messageKafka)
+			salesOrderResultChan := make(chan *models.SalesOrderChan)
+			go c.salesOrderRepository.GetBySoRefCode(v.NoSuratJalan, true, c.ctx, salesOrderResultChan)
+			salesOrderResult := <-salesOrderResultChan
+			deliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
+			go c.deliveryOrderRepository.GetByDoRefCode(v.NoSuratJalan, true, c.ctx, deliveryOrderResultChan)
+			deliveryOrderResult := <-deliveryOrderResultChan
 
-		if err != nil {
-			c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
-			continue
+			if deliveryOrderResult.Error != nil || salesOrderResult.Error != nil {
+				if key == "retry" {
+
+					c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+
+					errors = []string{}
+					if deliveryOrderResult.Error != nil {
+						fmt.Println(deliveryOrderResult.Error.Error())
+						errors = append(errors, deliveryOrderResult.Error.Error())
+					}
+					if salesOrderResult.Error != nil {
+						fmt.Println(salesOrderResult.Error.Error())
+						errors = append(errors, salesOrderResult.Error.Error())
+					}
+
+					c.createSosjUploadErrorLog(v.ErrorLine, v.RowData.AgentId, string(sosjUploadHistoryId), message.RequestId, v.RowData.AgentName.String, message.BulkCode, errors, &now, v.RowData)
+
+					continue
+				}
+			}
+
+			if deliveryOrderResult.Total > 0 || salesOrderResult.Total > 0 {
+				if key == "retry" {
+
+					c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors = []string{fmt.Sprintf("No. Surat Jalan = %s Sudah Terpakai pada Distributor %s, silahkan gunakan No. Surat Jalan lain.", v.NoSuratJalan, v.RowData.AgentName.String)}
+
+					c.createSosjUploadErrorLog(v.ErrorLine, v.RowData.AgentId, string(sosjUploadHistoryId), message.RequestId, v.RowData.AgentName.String, message.BulkCode, errors, &now, v.RowData)
+
+					continue
+				}
+			}
+
+			finalUploadSOSJFields = append(finalUploadSOSJFields, v)
+		}
+
+		if len(finalUploadSOSJFields) > 0 {
+			keyKafka := []byte(message.RequestId)
+			messageKafka, _ := json.Marshal(finalUploadSOSJFields)
+			err = c.kafkaClient.WriteToTopic(constants.UPLOAD_SOSJ_ITEM_TOPIC, keyKafka, messageKafka)
+
+			if err != nil {
+				c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+				continue
+			}
 		}
 
 	}

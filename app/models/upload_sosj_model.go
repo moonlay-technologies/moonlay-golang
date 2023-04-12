@@ -28,6 +28,7 @@ type UploadSOSJField struct {
 	BulkCode            string
 	UploadType          string
 	ErrorLine           int
+	RowData             RowDataSosjUploadErrorLog
 }
 
 type UploadSOSJFieldChan struct {
