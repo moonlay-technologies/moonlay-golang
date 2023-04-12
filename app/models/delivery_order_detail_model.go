@@ -124,17 +124,17 @@ type DeliveryOrderDetailStoreResponse struct {
 }
 
 type DeliveryOrderDetailUpdateByIDRequest struct {
-	RequestID string `json:"request_id,omitempty" bson:"request_id,omitempty"`
-	ID        int    `json:"id,omitempty" bson:"id"`
-	Qty       *int   `json:"qty,omitempty" bson:"qty,omitempty" binding:"required"`
-	Note      string `json:"note,omitempty" bson:"note,omitempty"`
+	RequestID string    `json:"request_id,omitempty" bson:"request_id,omitempty"`
+	ID        int       `json:"id,omitempty" bson:"id"`
+	Qty       NullInt64 `json:"qty,omitempty" bson:"qty,omitempty" binding:"required"`
+	Note      string    `json:"note,omitempty" bson:"note,omitempty"`
 }
 
 type DeliveryOrderDetailUpdateByDeliveryOrderIDRequest struct {
-	RequestID string `json:"request_id,omitempty" bson:"request_id,omitempty"`
-	ID        int    `json:"id,omitempty" bson:"id,omitempty" binding:"required"`
-	Qty       *int   `json:"qty,omitempty" bson:"qty,omitempty" binding:"required"`
-	Note      string `json:"note,omitempty" bson:"note,omitempty"`
+	RequestID string    `json:"request_id,omitempty" bson:"request_id,omitempty"`
+	ID        int       `json:"id,omitempty" bson:"id,omitempty" binding:"required"`
+	Qty       NullInt64 `json:"qty,omitempty" bson:"qty,omitempty" binding:"required"`
+	Note      string    `json:"note,omitempty" bson:"note,omitempty"`
 }
 
 type DeliveryOrderDetailUpdateByDeliveryOrdersIDRequest struct {
