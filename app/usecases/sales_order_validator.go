@@ -772,8 +772,8 @@ func (d *SalesOrderValidator) getIntQueryWithMustActive(param string, empty stri
 func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*models.SalesOrderExportRequest, error) {
 	sortField := d.getQueryWithDefault("sort_field", "created_at", ctx)
 
-	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "store_id" && sortField != "created_at" && sortField != "updated_at" {
-		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
+	if sortField != "order_status_id" && sortField != "so_date" && sortField != "do_ref_code" && sortField != "store_id" && sortField != "created_at" && sortField != "updated_at" {
+		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'so_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
 		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
@@ -785,7 +785,7 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 
 	mustActiveFields := []*models.MustActiveRequest{}
 
-	intAgentID, m, err := d.getIntQueryWithMustActive("agent_id", "0", false, "agents", constants.CLAUSE_ID_VALIDATION, ctx)
+	intAgentID, m, err := d.getIntQueryWithMustActive("agent_id", "0", false, "sales_orders", "agent_"+constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -793,7 +793,7 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intStoreID, m, err := d.getIntQueryWithMustActive("store_id", "0", false, "stores", constants.CLAUSE_ID_VALIDATION, ctx)
+	intStoreID, m, err := d.getIntQueryWithMustActive("store_id", "0", false, "sales_orders", "store_"+constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -801,7 +801,7 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intBrandID, m, err := d.getIntQueryWithMustActive("brand_id", "0", false, "brands", constants.CLAUSE_ID_VALIDATION, ctx)
+	intBrandID, m, err := d.getIntQueryWithMustActive("brand_id", "0", false, "sales_orders d JOIN delivery_order_details dd ON dd.delivery_order_id = d.id", "dd.brand_id = %d AND d.deleted_at IS NULL", ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -809,7 +809,7 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intOrderSourceID, m, err := d.getIntQueryWithMustActive("order_source_id", "0", false, "order_sources", constants.CLAUSE_ID_VALIDATION, ctx)
+	intOrderSourceID, m, err := d.getIntQueryWithMustActive("order_source_id", "0", false, "sales_orders", "order_status"+constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -817,7 +817,7 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intOrderStatusID, m, err := d.getIntQueryWithMustActive("order_status_id", "0", false, "order_statuses", constants.CLAUSE_ID_VALIDATION, ctx)
+	intOrderStatusID, m, err := d.getIntQueryWithMustActive("order_status_id", "0", false, "sales_orders", "order_status_"+constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -825,7 +825,7 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intProductID, m, err := d.getIntQueryWithMustActive("product_id", "0", false, "products", constants.CLAUSE_ID_VALIDATION, ctx)
+	intProductID, m, err := d.getIntQueryWithMustActive("product_id", "0", false, "sales_orders d JOIN sales_orders_details dd ON dd.sales_order_id = d.id", "dd.product_id = %d AND d.deleted_at IS NULL", ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -833,7 +833,7 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intCategoryID, m, err := d.getIntQueryWithMustActive("category_id", "0", false, "categories", constants.CLAUSE_ID_VALIDATION, ctx)
+	intCategoryID, m, err := d.getIntQueryWithMustActive("category_id", "0", false, "sales_orders d JOIN sales_order_details dd ON dd.sales_order_id = d.id JOIN products p ON p.id = dd.product_id", "p.category_id = %d AND d.deleted_at IS NULL", ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -841,7 +841,7 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "salesmans", constants.CLAUSE_ID_VALIDATION, ctx)
+	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "sales_orders", "salesman_"+constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -876,9 +876,9 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 
 	dateFields := []*models.DateInputRequest{}
 
-	startSoDate, dateFields := d.getQueryWithDateValidation("start_do_date", "", dateFields, ctx)
+	startSoDate, dateFields := d.getQueryWithDateValidation("start_so_date", "", dateFields, ctx)
 
-	endSoDate, dateFields := d.getQueryWithDateValidation("end_do_date", "", dateFields, ctx)
+	endSoDate, dateFields := d.getQueryWithDateValidation("end_so_date", "", dateFields, ctx)
 
 	startCreatedAt, dateFields := d.getQueryWithDateValidation("start_created_at", time.Now().AddDate(0, -1, 0).Format(constants.DATE_FORMAT_COMMON), dateFields, ctx)
 
@@ -945,8 +945,8 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) (*models.SalesOrderDetailExportRequest, error) {
 	sortField := d.getQueryWithDefault("sort_field", "created_at", ctx)
 
-	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "store_id" && sortField != "created_at" && sortField != "updated_at" {
-		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
+	if sortField != "order_status_id" && sortField != "so_date" && sortField != "do_ref_code" && sortField != "store_id" && sortField != "created_at" && sortField != "updated_at" {
+		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'so_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
 		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
@@ -958,7 +958,15 @@ func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) 
 
 	mustActiveFields := []*models.MustActiveRequest{}
 
-	intAgentID, m, err := d.getIntQueryWithMustActive("agent_id", "0", false, "agents", constants.CLAUSE_ID_VALIDATION, ctx)
+	intSalesOrderID, m, err := d.getIntQueryWithMustActive("sales_order_id", "0", false, "sales_orders", constants.CLAUSE_ID_VALIDATION, ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intSalesOrderID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intAgentID, m, err := d.getIntQueryWithMustActive("agent_id", "0", false, "sales_orders d JOIN sales_order_details dd ON dd.sales_order_id = d.id", "d.agent_id = %d AND d.deleted_at IS NULL", ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -966,7 +974,7 @@ func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intStoreID, m, err := d.getIntQueryWithMustActive("store_id", "0", false, "stores", constants.CLAUSE_ID_VALIDATION, ctx)
+	intStoreID, m, err := d.getIntQueryWithMustActive("store_id", "0", false, "sales_orders d JOIN sales_order_details dd ON dd.sales_order_id = d.id", "d.store_id = %d AND d.deleted_at IS NULL", ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -974,7 +982,7 @@ func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intBrandID, m, err := d.getIntQueryWithMustActive("brand_id", "0", false, "brands", constants.CLAUSE_ID_VALIDATION, ctx)
+	intBrandID, m, err := d.getIntQueryWithMustActive("brand_id", "0", false, "sales_order_details dd JOIN sales_orders d ON dd.sales_order_id = d.id", "d.brand_id = %d AND d.deleted_at IS NULL", ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -982,7 +990,7 @@ func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intOrderSourceID, m, err := d.getIntQueryWithMustActive("order_source_id", "0", false, "order_sources", constants.CLAUSE_ID_VALIDATION, ctx)
+	intOrderSourceID, m, err := d.getIntQueryWithMustActive("order_source_id", "0", false, "sales_order_details dd JOIN sales_orders d ON dd.sales_order_id = d.id", "d.order_source_id = %d AND d.deleted_at IS NULL", ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -990,7 +998,7 @@ func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intOrderStatusID, m, err := d.getIntQueryWithMustActive("order_status_id", "0", false, "order_statuses", constants.CLAUSE_ID_VALIDATION, ctx)
+	intOrderStatusID, m, err := d.getIntQueryWithMustActive("order_status_id", "0", false, "sales_order_details", "order_status_"+constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -998,7 +1006,7 @@ func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intProductID, m, err := d.getIntQueryWithMustActive("product_id", "0", false, "products", constants.CLAUSE_ID_VALIDATION, ctx)
+	intProductID, m, err := d.getIntQueryWithMustActive("product_id", "0", false, "sales_order_details", "product_"+constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1006,7 +1014,7 @@ func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intCategoryID, m, err := d.getIntQueryWithMustActive("category_id", "0", false, "categories", constants.CLAUSE_ID_VALIDATION, ctx)
+	intCategoryID, m, err := d.getIntQueryWithMustActive("category_id", "0", false, "sales_order_details dd JOIN products p ON p.id = dd.product_id", "p.category_id = %d AND dd.deleted_at IS NULL", ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1014,7 +1022,7 @@ func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "salesmans", constants.CLAUSE_ID_VALIDATION, ctx)
+	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "sales_order_details dd JOIN sales_orders d ON dd.sales_order_id = d.id", "d.salesman_id = %d AND dd.deleted_at IS NULL", ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1049,9 +1057,9 @@ func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) 
 
 	dateFields := []*models.DateInputRequest{}
 
-	startSoDate, dateFields := d.getQueryWithDateValidation("start_do_date", "", dateFields, ctx)
+	startSoDate, dateFields := d.getQueryWithDateValidation("start_so_date", "", dateFields, ctx)
 
-	endSoDate, dateFields := d.getQueryWithDateValidation("end_do_date", "", dateFields, ctx)
+	endSoDate, dateFields := d.getQueryWithDateValidation("end_so_date", "", dateFields, ctx)
 
 	startCreatedAt, dateFields := d.getQueryWithDateValidation("start_created_at", time.Now().AddDate(0, -1, 0).Format(constants.DATE_FORMAT_COMMON), dateFields, ctx)
 
@@ -1511,6 +1519,7 @@ func (c *SalesOrderValidator) DeleteSalesOrderByIdValidator(sId string, ctx *gin
 	}
 	return id, nil
 }
+
 func (c *SalesOrderValidator) DeleteSalesOrderDetailByIdValidator(sId string, ctx *gin.Context) (int, error) {
 	id, err := strconv.Atoi(sId)
 

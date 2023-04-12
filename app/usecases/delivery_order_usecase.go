@@ -1679,6 +1679,22 @@ func (u *deliveryOrderUseCase) Get(request *models.DeliveryOrderRequest) (*model
 }
 
 func (u *deliveryOrderUseCase) Export(request *models.DeliveryOrderExportRequest, ctx context.Context) (string, *model.ErrorLog) {
+	doRequest := &models.DeliveryOrderRequest{}
+	doRequest.DeliveryOrderExportMap(request)
+	getDeliveryOrdersCountResultChan := make(chan *models.DeliveryOrdersChan)
+	go u.deliveryOrderOpenSearchRepository.Get(doRequest, true, getDeliveryOrdersCountResultChan)
+	getDeliveryOrdersCountResult := <-getDeliveryOrdersCountResultChan
+
+	if getDeliveryOrdersCountResult.Error != nil {
+		fmt.Println("error = ", getDeliveryOrdersCountResult.Error)
+		return "", getDeliveryOrdersCountResult.ErrorLog
+	}
+
+	if getDeliveryOrdersCountResult.Total == 0 {
+		err := helper.NewError("Data tidak ditemukan")
+		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
+		return "", errorLogData
+	}
 	rand, err := helper.Generate(`[A-Za-z]{12}`)
 	x, err := time.LoadLocation("Asia/Jakarta")
 	fileHour := time.Now().In(x).Format(constants.DATE_FORMAT_EXPORT)
@@ -1701,6 +1717,22 @@ func (u *deliveryOrderUseCase) Export(request *models.DeliveryOrderExportRequest
 }
 
 func (u *deliveryOrderUseCase) ExportDetail(request *models.DeliveryOrderDetailExportRequest, ctx context.Context) (string, *model.ErrorLog) {
+	doDetailRequest := &models.DeliveryOrderDetailOpenSearchRequest{}
+	doDetailRequest.DeliveryOrderDetailExportMap(request)
+	getDeliveryOrderDetailsCountResultChan := make(chan *models.DeliveryOrderDetailsOpenSearchChan)
+	go u.deliveryOrderDetailOpenSearchRepository.Get(doDetailRequest, true, getDeliveryOrderDetailsCountResultChan)
+	getDeliveryOrderDetailsCountResult := <-getDeliveryOrderDetailsCountResultChan
+
+	if getDeliveryOrderDetailsCountResult.Error != nil {
+		fmt.Println("error = ", getDeliveryOrderDetailsCountResult.Error)
+		return "", getDeliveryOrderDetailsCountResult.ErrorLog
+	}
+
+	if getDeliveryOrderDetailsCountResult.Total == 0 {
+		err := helper.NewError("Data tidak ditemukan")
+		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
+		return "", errorLogData
+	}
 	rand, err := helper.Generate(`[A-Za-z]{12}`)
 	fileHour := time.Now().Format(constants.DATE_FORMAT_EXPORT)
 	if ctx == nil {
