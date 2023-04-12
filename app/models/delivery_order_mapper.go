@@ -481,7 +481,7 @@ func (d *DeliveryOrderCsvResponse) DoDetailMap(r *DeliveryOrder) {
 	d.OrderNo = r.SalesOrder.SoCode
 	d.SoDate = r.SalesOrder.SoDate
 	d.SoNo = r.SalesOrder.SoCode
-	d.SoSource = r.SalesOrder.OrderSourceID
+	d.SoSource = r.SalesOrder.OrderSourceName
 	d.AgentID = r.AgentID
 	d.AgentName = r.AgentName
 	d.GudangID = r.WarehouseCode

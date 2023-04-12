@@ -309,7 +309,7 @@ type DeliveryOrderCsvResponse struct {
 	OrderNo        string     `json:"order_no,omitempty" bson:"order_no,omitempty"`
 	SoDate         string     `json:"so_date,omitempty" bson:"so_date,omitempty"`
 	SoNo           string     `json:"so_no,omitempty" bson:"so_no,omitempty"`
-	SoSource       int        `json:"so_source,omitempty" bson:"so_source,omitempty"`
+	SoSource       string     `json:"so_source,omitempty" bson:"so_source,omitempty"`
 	AgentID        int        `json:"agent_id,omitempty" bson:"agent_id,omitempty"`
 	AgentName      string     `json:"agent_name,omitempty" bson:"agent_name,omitempty"`
 	GudangID       string     `json:"gudang_id,omitempty" bson:"gudang_id"`
