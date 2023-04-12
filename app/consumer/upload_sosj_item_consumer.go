@@ -384,9 +384,6 @@ func (c *uploadSOSJItemConsumerHandler) ProcessMessage() {
 
 				deliveryOrder.DeliveryOrderDetails = deliveryOrderDetails
 
-				// deliveryOrders := []*models.DeliveryOrder{}
-				// deliveryOrders = append(deliveryOrders, deliveryOrder)
-
 				salesOrder.DeliveryOrders = append(salesOrder.DeliveryOrders, deliveryOrder)
 
 				if len(errors) < 1 {
@@ -451,7 +448,7 @@ func (c *uploadSOSJItemConsumerHandler) ProcessMessage() {
 			}
 
 			v.ID = createSalesOrderResult.SalesOrder.ID
-			fmt.Println("Cek id sales order", createSalesOrderResult.SalesOrder.ID)
+
 			for _, x := range v.SalesOrderDetails {
 
 				soDetailCode, _ := helper.GenerateSODetailCode(int(createSalesOrderResult.ID), v.AgentID, x.ProductID, x.UomID)

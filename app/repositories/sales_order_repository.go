@@ -294,11 +294,11 @@ func (r *salesOrder) GetBySoRefCode(soRefCode string, countOnly bool, ctx contex
 				return
 			}
 
-			response.Total = total
-			response.SalesOrder = &salesOrder
-			resultChan <- response
-			return
 		}
+		response.Total = total
+		response.SalesOrder = &salesOrder
+		resultChan <- response
+		return
 
 	} else if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -307,7 +307,6 @@ func (r *salesOrder) GetBySoRefCode(soRefCode string, countOnly bool, ctx contex
 		resultChan <- response
 		return
 	} else {
-		total = 1
 		_ = json.Unmarshal([]byte(salesOrderOnRedis), &salesOrder)
 		response.SalesOrder = &salesOrder
 		response.Total = total
