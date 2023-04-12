@@ -362,11 +362,9 @@ func (r *deliveryOrderDetail) Insert(request *models.DeliveryOrderDetail, sqlTra
 		rawSqlValues = append(rawSqlValues, request.DoDetailCode)
 	}
 
-	if request.Qty >= 0 {
-		rawSqlFields = append(rawSqlFields, "qty")
-		rawSqlDataTypes = append(rawSqlDataTypes, "?")
-		rawSqlValues = append(rawSqlValues, request.Qty)
-	}
+	rawSqlFields = append(rawSqlFields, "qty")
+	rawSqlDataTypes = append(rawSqlDataTypes, "?")
+	rawSqlValues = append(rawSqlValues, request.Qty)
 
 	if request.Note.String != "" {
 		rawSqlFields = append(rawSqlFields, "note")

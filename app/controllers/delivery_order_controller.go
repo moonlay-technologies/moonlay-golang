@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -315,7 +316,7 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByDeliveryOrderID(ctx
 	for _, v := range deliveryOrderDetail.DeliveryOrderDetails {
 		deliveryOrderResult := models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest{
 			ID:   v.ID,
-			Qty:  &v.Qty,
+			Qty:  models.NullInt64{NullInt64: sql.NullInt64{Int64: int64(v.Qty), Valid: true}},
 			Note: v.Note.String,
 		}
 		deliveryOrderResults = append(deliveryOrderResults, deliveryOrderResult)
