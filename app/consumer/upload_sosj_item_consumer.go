@@ -384,9 +384,6 @@ func (c *uploadSOSJItemConsumerHandler) ProcessMessage() {
 
 				deliveryOrder.DeliveryOrderDetails = deliveryOrderDetails
 
-				// deliveryOrders := []*models.DeliveryOrder{}
-				// deliveryOrders = append(deliveryOrders, deliveryOrder)
-
 				salesOrder.DeliveryOrders = append(salesOrder.DeliveryOrders, deliveryOrder)
 
 				if len(errors) < 1 {

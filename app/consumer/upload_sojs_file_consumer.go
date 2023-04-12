@@ -84,6 +84,12 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 
 		parseFile := string(file)
 		data := strings.Split(parseFile, "\n")
+		idDistributor := strings.Split(data[0], ",")
+		if len(data) < 1 || idDistributor[0] != "IDDistributor" || strings.ReplaceAll(data[1], "\r", "") != "Status,NoSuratJalan,TglSuratJalan,KodeTokoDBO,IDMerk,KodeProdukDBO,Qty,Unit,NamaSupir,PlatNo,KodeGudang,IDSalesman,IDAlamat,Catatan,CatatanInternal" {
+			c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+			continue
+		}
+
 		totalRows := int64(len(data) - 1)
 
 		message.TotalRows = &totalRows
