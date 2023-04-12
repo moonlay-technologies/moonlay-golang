@@ -50,8 +50,8 @@ func GenerateCsv(data [][]interface{}) (*bytes.Buffer, error) {
 	writer := csv.NewWriter(b)
 	defer writer.Flush()
 	for _, v := range data {
+		var row = []string{}
 		for _, value := range v {
-			var row = []string{}
 			switch t := value.(type) {
 			case float32:
 				row = append(row, strconv.FormatFloat(float64(value.(float32)), 'f', -1, 32))
@@ -82,10 +82,10 @@ func GenerateCsv(data [][]interface{}) (*bytes.Buffer, error) {
 					row = append(row, "NULL")
 				}
 			}
-			if err := writer.Write(row); err != nil {
-				fmt.Println("error fill", err)
-				return nil, err
-			}
+		}
+		if err := writer.Write(row); err != nil {
+			fmt.Println("error fill", err)
+			return nil, err
 		}
 	}
 	return b, nil

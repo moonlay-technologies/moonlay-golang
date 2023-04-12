@@ -145,6 +145,7 @@ func (r *deliveryOrder) GetBySalesOrderID(salesOrderID int, countOnly bool, ctx 
 		if total == 0 {
 			err = helper.NewError("delivery_order data not found")
 			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			response.Total = 0
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
