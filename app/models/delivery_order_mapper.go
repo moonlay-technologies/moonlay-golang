@@ -431,14 +431,14 @@ func (doDetailEventLogResponse *DODetailEventLogResponse) DoDetailEventLogRespon
 	doDetailEventLogResponse.ID = request.ID
 	doDetailEventLogResponse.ProductCode = &request.ProductSKU
 	doDetailEventLogResponse.ProductName = &request.ProductName
-	doDetailEventLogResponse.DeliveryQty = NullInt64{sql.NullInt64{Int64: int64(request.Qty), Valid: true}}
+	doDetailEventLogResponse.DeliveryQty = NullInt64{NullInt64: sql.NullInt64{Int64: int64(request.Qty), Valid: true}}
 	doDetailEventLogResponse.ProductUnit = NullString{sql.NullString{String: request.Product.UnitMeasurementSmall.String, Valid: true}}
 	return
 }
 
 func (data *DeliveryOrder) MapToCsvRow() []interface{} {
 	deliveryOrderCsv := DeliveryOrderCsvResponse{}
-	deliveryOrderCsv.DoDetailMap(data)
+	deliveryOrderCsv.DeliveryOrderMap(data)
 	return []interface{}{
 		deliveryOrderCsv.DoStatus,
 		deliveryOrderCsv.DoDate,
@@ -477,7 +477,7 @@ func (data *DeliveryOrder) MapToCsvRow() []interface{} {
 	}
 }
 
-func (d *DeliveryOrderCsvResponse) DoDetailMap(r *DeliveryOrder) {
+func (d *DeliveryOrderCsvResponse) DeliveryOrderMap(r *DeliveryOrder) {
 	d.DoStatus = r.OrderStatusName
 	d.DoDate = r.DoDate
 	d.SjNo = r.DoRefCode

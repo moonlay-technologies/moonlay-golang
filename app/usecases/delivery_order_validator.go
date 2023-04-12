@@ -224,7 +224,7 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderByIDValidator(id int, insert
 	}
 
 	for _, v := range insertRequest.DeliveryOrderDetails {
-		if *v.Qty < 0 {
+		if v.Qty.Int64 < 0 {
 			err := helper.NewError(constants.ERROR_QTY_CANT_NEGATIVE)
 			ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity, ""))
 			return err
@@ -243,7 +243,7 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderByIDValidator(id int, insert
 		mustEmpties = append(mustEmpties, &models.MustEmptyValidationRequest{
 			Table:           "sales_order_details s JOIN delivery_order_details d ON s.id = d.so_detail_id",
 			SelectedCollumn: "s.residual_qty+d.qty",
-			Clause:          fmt.Sprintf("d.id = %[1]d AND s.residual_qty+d.qty < %[2]d", v.ID, v.Qty),
+			Clause:          fmt.Sprintf("d.id = %[1]d AND s.residual_qty+d.qty < %[2]d", v.ID, v.Qty.Int64),
 			MessageFormat:   fmt.Sprintf("DO Detail %d must be lower than or equal residual qty (<result>)", v.ID),
 		})
 	}
@@ -290,7 +290,7 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByDoIDValidator(id int
 	}
 
 	for _, v := range insertRequest {
-		if *v.Qty < 0 {
+		if v.Qty.Int64 < 0 {
 			err := helper.NewError(constants.ERROR_QTY_CANT_NEGATIVE)
 			ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity, ""))
 			return err
@@ -308,7 +308,7 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByDoIDValidator(id int
 		mustEmpties = append(mustEmpties, &models.MustEmptyValidationRequest{
 			Table:           "sales_order_details s JOIN delivery_order_details d ON s.id = d.so_detail_id",
 			SelectedCollumn: "s.id",
-			Clause:          fmt.Sprintf("d.id = %d AND s.qty < %d", v.ID, v.Qty),
+			Clause:          fmt.Sprintf("d.id = %d AND s.qty < %d", v.ID, v.Qty.Int64),
 			MessageFormat:   fmt.Sprintf("Qty SO Detail <result> FROM DO Detail %d must be higher than or equal delivery order qty", v.ID),
 		})
 	}
@@ -327,7 +327,7 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByDoIDValidator(id int
 }
 
 func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByIDValidator(detailId int, insertRequest *models.DeliveryOrderDetailUpdateByIDRequest, ctx *gin.Context) error {
-	if *insertRequest.Qty < 0 {
+	if insertRequest.Qty.Int64 < 0 {
 		err := helper.NewError(constants.ERROR_QTY_CANT_NEGATIVE)
 		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity, ""))
 		return err
@@ -371,7 +371,7 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByIDValidator(detailId
 		{
 			Table:           "sales_order_details s JOIN delivery_order_details d ON s.id = d.so_detail_id",
 			SelectedCollumn: "s.id",
-			Clause:          fmt.Sprintf("d.id = %d AND s.qty < %d", insertRequest.ID, insertRequest.Qty),
+			Clause:          fmt.Sprintf("d.id = %d AND s.qty < %d", insertRequest.ID, insertRequest.Qty.Int64),
 			MessageFormat:   fmt.Sprintf("Qty SO Detail <result> FROM DO Detail %d must be higher than or equal delivery order qty", insertRequest.ID),
 		},
 	}

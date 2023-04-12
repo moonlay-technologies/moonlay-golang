@@ -641,8 +641,8 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 	for _, x := range request.DeliveryOrderDetails {
 		for _, v := range getDeliveryOrderDetailResult.DeliveryOrderDetails {
 			if x.ID == v.ID {
-				balanceQty := *x.Qty - v.Qty
-				v.Qty = *x.Qty
+				balanceQty := int(x.Qty.Int64) - v.Qty
+				v.Qty = int(x.Qty.Int64)
 
 				getSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
 				go u.salesOrderDetailRepository.GetByID(v.SoDetailID, false, ctx, getSalesOrderDetailResultChan)
@@ -751,7 +751,7 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 				}
 				deliveryOrderDetails = append(deliveryOrderDetails, v)
 				deliveryOrderDetailResults = append(deliveryOrderDetailResults, &models.DeliveryOrderDetailUpdateByIDRequest{
-					Qty:  &v.Qty,
+					Qty:  models.NullInt64{NullInt64: sql.NullInt64{Int64: int64(v.Qty), Valid: true}},
 					Note: v.Note.String,
 				})
 				salesOrderDetails = append(salesOrderDetails, getSalesOrderDetailResult.SalesOrderDetail)
@@ -890,7 +890,7 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 	go u.deliveryOrderRepository.GetBySalesOrderID(getDeliveryOrderResult.DeliveryOrder.SalesOrderID, false, ctx, getOtherDeliveryOrderResultChan)
 	getOtherDeliveryOrderResult := <-getOtherDeliveryOrderResultChan
 
-	if getOtherDeliveryOrderResult.DeliveryOrders != nil {
+	if getOtherDeliveryOrderResult.DeliveryOrders != nil && getSalesOrderResult.SalesOrder.OrderStatusID != 8 {
 		for _, otherDO := range getOtherDeliveryOrderResult.DeliveryOrders {
 			if otherDO.ID != ID {
 				otherDO.OrderStatusID = deliveryOrder.OrderStatusID
@@ -915,12 +915,23 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 					return &models.DeliveryOrderUpdateByIDRequest{}, updateOtherDeliveryOrderResult.ErrorLog
 				}
 
-				updateDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
-				go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, ctx, updateDeliveryOrderJourneyChan)
-				updateDeliveryOrderJourneysResult := <-updateDeliveryOrderJourneyChan
+				otherDeliveryOrderJourney := &models.DeliveryOrderJourney{
+					DoId:      otherDO.ID,
+					DoCode:    otherDO.DoCode,
+					DoDate:    otherDO.DoDate,
+					Status:    helper.GetDOJourneyStatus(otherDO.OrderStatusID),
+					Remark:    "",
+					Reason:    "",
+					CreatedAt: &now,
+					UpdatedAt: &now,
+				}
 
-				if updateDeliveryOrderJourneysResult.Error != nil {
-					return &models.DeliveryOrderUpdateByIDRequest{}, updateDeliveryOrderJourneysResult.ErrorLog
+				updateOtherDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
+				go u.deliveryOrderLogRepository.InsertJourney(otherDeliveryOrderJourney, ctx, updateOtherDeliveryOrderJourneyChan)
+				updateOtherDeliveryOrderJourneysResult := <-updateOtherDeliveryOrderJourneyChan
+
+				if updateOtherDeliveryOrderJourneysResult.Error != nil {
+					return &models.DeliveryOrderUpdateByIDRequest{}, updateOtherDeliveryOrderJourneysResult.ErrorLog
 				}
 
 				keyKafka := []byte(otherDO.DoCode)
@@ -999,8 +1010,8 @@ func (u *deliveryOrderUseCase) UpdateDODetailByID(id int, request *models.Delive
 	for _, v := range getDeliveryOrderDetailsResult.DeliveryOrderDetails {
 
 		if id == v.ID {
-			balanceQty := *request.Qty - v.Qty
-			v.Qty = *request.Qty
+			balanceQty := int(request.Qty.Int64) - v.Qty
+			v.Qty = int(request.Qty.Int64)
 
 			getSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
 			go u.salesOrderDetailRepository.GetByID(v.SoDetailID, false, ctx, getSalesOrderDetailResultChan)
@@ -1109,7 +1120,7 @@ func (u *deliveryOrderUseCase) UpdateDODetailByID(id int, request *models.Delive
 			}
 			deliveryOrderDetails = append(deliveryOrderDetails, v)
 			deliveryOrderDetailResults = append(deliveryOrderDetailResults, &models.DeliveryOrderDetailUpdateByIDRequest{
-				Qty:  &v.Qty,
+				Qty:  models.NullInt64{NullInt64: sql.NullInt64{Int64: int64(v.Qty), Valid: true}},
 				Note: v.Note.String,
 			})
 			salesOrderDetails = append(salesOrderDetails, getSalesOrderDetailResult.SalesOrderDetail)
@@ -1249,7 +1260,7 @@ func (u *deliveryOrderUseCase) UpdateDODetailByID(id int, request *models.Delive
 
 	if getOtherDeliveryOrderResult.DeliveryOrders != nil {
 		for _, otherDO := range getOtherDeliveryOrderResult.DeliveryOrders {
-			if otherDO.ID != id {
+			if otherDO.ID != id && getSalesOrderResult.SalesOrder.OrderStatusID == 8 {
 				otherDO.OrderStatusID = deliveryOrder.OrderStatusID
 				otherDO.OrderStatusName = deliveryOrder.OrderStatusName
 				otherDO.OrderStatus = deliveryOrder.OrderStatus
@@ -1272,9 +1283,20 @@ func (u *deliveryOrderUseCase) UpdateDODetailByID(id int, request *models.Delive
 					return &models.DeliveryOrderDetailUpdateByIDRequest{}, updateOtherDeliveryOrderResult.ErrorLog
 				}
 
-				updateDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
-				go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, ctx, updateDeliveryOrderJourneyChan)
-				updateDeliveryOrderJourneysResult := <-updateDeliveryOrderJourneyChan
+				otherDeliveryOrderJourney := &models.DeliveryOrderJourney{
+					DoId:      otherDO.ID,
+					DoCode:    otherDO.DoCode,
+					DoDate:    otherDO.DoDate,
+					Status:    helper.GetDOJourneyStatus(otherDO.OrderStatusID),
+					Remark:    "",
+					Reason:    "",
+					CreatedAt: &now,
+					UpdatedAt: &now,
+				}
+
+				updateOtherDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
+				go u.deliveryOrderLogRepository.InsertJourney(otherDeliveryOrderJourney, ctx, updateOtherDeliveryOrderJourneyChan)
+				updateDeliveryOrderJourneysResult := <-updateOtherDeliveryOrderJourneyChan
 
 				if updateDeliveryOrderJourneysResult.Error != nil {
 					return &models.DeliveryOrderDetailUpdateByIDRequest{}, updateDeliveryOrderJourneysResult.ErrorLog
@@ -1342,8 +1364,8 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 	for _, x := range request {
 		for _, v := range getDeliveryOrderDetailResult.DeliveryOrderDetails {
 			if x.ID == v.ID {
-				balanceQty := *x.Qty - v.Qty
-				v.Qty = *x.Qty
+				balanceQty := int(x.Qty.Int64) - v.Qty
+				v.Qty = int(x.Qty.Int64)
 
 				getSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
 				go u.salesOrderDetailRepository.GetByID(v.SoDetailID, false, ctx, getSalesOrderDetailResultChan)
@@ -1452,7 +1474,7 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 				}
 				deliveryOrderDetails = append(deliveryOrderDetails, v)
 				deliveryOrderDetailResults = append(deliveryOrderDetailResults, &models.DeliveryOrderDetailUpdateByIDRequest{
-					Qty:  &v.Qty,
+					Qty:  models.NullInt64{NullInt64: sql.NullInt64{Int64: int64(v.Qty), Valid: true}},
 					Note: v.Note.String,
 				})
 				salesOrderDetails = append(salesOrderDetails, getSalesOrderDetailResult.SalesOrderDetail)
@@ -1593,7 +1615,7 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 
 	if getOtherDeliveryOrderResult.DeliveryOrders != nil {
 		for _, otherDO := range getOtherDeliveryOrderResult.DeliveryOrders {
-			if otherDO.ID != deliveryOrderID {
+			if otherDO.ID != deliveryOrderID && getSalesOrderResult.SalesOrder.OrderStatusID == 8 {
 				otherDO.OrderStatusID = deliveryOrder.OrderStatusID
 				otherDO.OrderStatusName = deliveryOrder.OrderStatusName
 				otherDO.OrderStatus = deliveryOrder.OrderStatus
@@ -1616,12 +1638,23 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 					return &models.DeliveryOrderDetails{}, updateOtherDeliveryOrderResult.ErrorLog
 				}
 
-				updateDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
-				go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, ctx, updateDeliveryOrderJourneyChan)
-				updateDeliveryOrderJourneysResult := <-updateDeliveryOrderJourneyChan
+				otherDeliveryOrderJourney := &models.DeliveryOrderJourney{
+					DoId:      otherDO.ID,
+					DoCode:    otherDO.DoCode,
+					DoDate:    otherDO.DoDate,
+					Status:    helper.GetDOJourneyStatus(otherDO.OrderStatusID),
+					Remark:    "",
+					Reason:    "",
+					CreatedAt: &now,
+					UpdatedAt: &now,
+				}
 
-				if updateDeliveryOrderJourneysResult.Error != nil {
-					return &models.DeliveryOrderDetails{}, updateDeliveryOrderJourneysResult.ErrorLog
+				updateOtherDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
+				go u.deliveryOrderLogRepository.InsertJourney(otherDeliveryOrderJourney, ctx, updateOtherDeliveryOrderJourneyChan)
+				updateOtherDeliveryOrderJourneysResult := <-updateOtherDeliveryOrderJourneyChan
+
+				if updateOtherDeliveryOrderJourneysResult.Error != nil {
+					return &models.DeliveryOrderDetails{}, updateOtherDeliveryOrderJourneysResult.ErrorLog
 				}
 
 				keyKafka := []byte(otherDO.DoCode)
