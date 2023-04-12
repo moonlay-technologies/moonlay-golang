@@ -21,7 +21,6 @@ type DeliveryOrderRepositoryInterface interface {
 	GetBySalesOrderID(deliveryOrderID int, countOnly bool, ctx context.Context, result chan *models.DeliveryOrdersChan)
 	Insert(request *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.DeliveryOrderChan)
 	GetByID(id int, countOnly bool, ctx context.Context, result chan *models.DeliveryOrderChan)
-	//GetByAgentID(id int, countOnly bool, ctx context.Context, result chan *models.DeliveryOrderChan)
 	UpdateByID(id int, deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.DeliveryOrderChan)
 	DeleteByID(request *models.DeliveryOrder, ctx context.Context, resultChan chan *models.DeliveryOrderChan)
 	GetByDoRefCode(doRefCode string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderChan)
@@ -631,11 +630,11 @@ func (r *deliveryOrder) GetByDoRefCode(doRefCode string, countOnly bool, ctx con
 				return
 			}
 
-			response.Total = total
-			response.DeliveryOrder = &deliveryOrder
-			resultChan <- response
-			return
 		}
+		response.Total = total
+		response.DeliveryOrder = &deliveryOrder
+		resultChan <- response
+		return
 
 	} else if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -644,7 +643,6 @@ func (r *deliveryOrder) GetByDoRefCode(doRefCode string, countOnly bool, ctx con
 		resultChan <- response
 		return
 	} else {
-		total = 1
 		_ = json.Unmarshal([]byte(deliveryOrderOnRedis), &deliveryOrder)
 		response.DeliveryOrder = &deliveryOrder
 		response.Total = total

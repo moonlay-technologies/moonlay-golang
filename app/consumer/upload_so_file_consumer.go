@@ -68,8 +68,6 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 		soUploadHistoryId := m.Value
 		var key = string(m.Key[:])
 
-		// var errors []string
-
 		soUploadHistoryJourneysResultChan := make(chan *models.SoUploadHistoryChan)
 		go c.soUploadHistoriesRepository.GetByID(string(soUploadHistoryId), false, c.ctx, soUploadHistoryJourneysResultChan)
 		soUploadHistoryJourneysResult := <-soUploadHistoryJourneysResultChan
@@ -86,7 +84,13 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 		}
 
 		parseFile := string(file)
+
 		data := strings.Split(parseFile, "\n")
+		if len(data) < 1 || strings.ReplaceAll(data[0], "\r", "") != "IDDistributor,KodeToko,NamaToko,IDSalesman,NamaSalesman,TanggalOrder,NoOrder,TanggalTokoOrder,CatatanOrder,CatatanInternal,KodeMerk,NamaMerk,KodeProduk,NamaProduk,QTYOrder,UnitProduk,IDAlamat,NamaAlamat" {
+			c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+			continue
+		}
+
 		totalRows := int64(len(data) - 1)
 
 		message.TotalRows = &totalRows
