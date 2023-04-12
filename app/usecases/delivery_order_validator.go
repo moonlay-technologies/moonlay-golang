@@ -224,7 +224,7 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderByIDValidator(id int, insert
 	}
 
 	for _, v := range insertRequest.DeliveryOrderDetails {
-		if v.Qty < 0 {
+		if *v.Qty < 0 {
 			err := helper.NewError(constants.ERROR_QTY_CANT_NEGATIVE)
 			ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity, ""))
 			return err
@@ -290,7 +290,7 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByDoIDValidator(id int
 	}
 
 	for _, v := range insertRequest {
-		if v.Qty < 0 {
+		if *v.Qty < 0 {
 			err := helper.NewError(constants.ERROR_QTY_CANT_NEGATIVE)
 			ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity, ""))
 			return err
@@ -327,6 +327,12 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByDoIDValidator(id int
 }
 
 func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByIDValidator(detailId int, insertRequest *models.DeliveryOrderDetailUpdateByIDRequest, ctx *gin.Context) error {
+	if *insertRequest.Qty < 0 {
+		err := helper.NewError(constants.ERROR_QTY_CANT_NEGATIVE)
+		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity, ""))
+		return err
+	}
+
 	mustActiveField417 := []*models.MustActiveRequest{
 		{
 			Table:    "delivery_orders d JOIN delivery_order_details dd ON d.id = dd.delivery_order_id",
@@ -368,11 +374,6 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByIDValidator(detailId
 			Clause:          fmt.Sprintf("d.id = %d AND s.qty < %d", insertRequest.ID, insertRequest.Qty),
 			MessageFormat:   fmt.Sprintf("Qty SO Detail <result> FROM DO Detail %d must be higher than or equal delivery order qty", insertRequest.ID),
 		},
-	}
-	if insertRequest.Qty < 0 {
-		err := helper.NewError(constants.ERROR_QTY_CANT_NEGATIVE)
-		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity, ""))
-		return err
 	}
 
 	err := d.requestValidationMiddleware.MustActiveValidation(ctx, mustActiveField417)

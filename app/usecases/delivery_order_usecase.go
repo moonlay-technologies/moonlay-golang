@@ -641,8 +641,8 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 	for _, x := range request.DeliveryOrderDetails {
 		for _, v := range getDeliveryOrderDetailResult.DeliveryOrderDetails {
 			if x.ID == v.ID {
-				balanceQty := x.Qty - v.Qty
-				v.Qty = x.Qty
+				balanceQty := *x.Qty - v.Qty
+				v.Qty = *x.Qty
 
 				getSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
 				go u.salesOrderDetailRepository.GetByID(v.SoDetailID, false, ctx, getSalesOrderDetailResultChan)
@@ -751,7 +751,7 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 				}
 				deliveryOrderDetails = append(deliveryOrderDetails, v)
 				deliveryOrderDetailResults = append(deliveryOrderDetailResults, &models.DeliveryOrderDetailUpdateByIDRequest{
-					Qty:  v.Qty,
+					Qty:  &v.Qty,
 					Note: v.Note.String,
 				})
 				salesOrderDetails = append(salesOrderDetails, getSalesOrderDetailResult.SalesOrderDetail)
@@ -999,8 +999,8 @@ func (u *deliveryOrderUseCase) UpdateDODetailByID(id int, request *models.Delive
 	for _, v := range getDeliveryOrderDetailsResult.DeliveryOrderDetails {
 
 		if id == v.ID {
-			balanceQty := request.Qty - v.Qty
-			v.Qty = request.Qty
+			balanceQty := *request.Qty - v.Qty
+			v.Qty = *request.Qty
 
 			getSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
 			go u.salesOrderDetailRepository.GetByID(v.SoDetailID, false, ctx, getSalesOrderDetailResultChan)
@@ -1109,7 +1109,7 @@ func (u *deliveryOrderUseCase) UpdateDODetailByID(id int, request *models.Delive
 			}
 			deliveryOrderDetails = append(deliveryOrderDetails, v)
 			deliveryOrderDetailResults = append(deliveryOrderDetailResults, &models.DeliveryOrderDetailUpdateByIDRequest{
-				Qty:  v.Qty,
+				Qty:  &v.Qty,
 				Note: v.Note.String,
 			})
 			salesOrderDetails = append(salesOrderDetails, getSalesOrderDetailResult.SalesOrderDetail)
@@ -1342,8 +1342,8 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 	for _, x := range request {
 		for _, v := range getDeliveryOrderDetailResult.DeliveryOrderDetails {
 			if x.ID == v.ID {
-				balanceQty := x.Qty - v.Qty
-				v.Qty = x.Qty
+				balanceQty := *x.Qty - v.Qty
+				v.Qty = *x.Qty
 
 				getSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
 				go u.salesOrderDetailRepository.GetByID(v.SoDetailID, false, ctx, getSalesOrderDetailResultChan)
@@ -1452,7 +1452,7 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 				}
 				deliveryOrderDetails = append(deliveryOrderDetails, v)
 				deliveryOrderDetailResults = append(deliveryOrderDetailResults, &models.DeliveryOrderDetailUpdateByIDRequest{
-					Qty:  v.Qty,
+					Qty:  &v.Qty,
 					Note: v.Note.String,
 				})
 				salesOrderDetails = append(salesOrderDetails, getSalesOrderDetailResult.SalesOrderDetail)

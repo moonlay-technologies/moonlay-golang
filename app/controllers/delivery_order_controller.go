@@ -315,7 +315,7 @@ func (c *deliveryOrderController) UpdateDeliveryOrderDetailByDeliveryOrderID(ctx
 	for _, v := range deliveryOrderDetail.DeliveryOrderDetails {
 		deliveryOrderResult := models.DeliveryOrderDetailUpdateByDeliveryOrderIDRequest{
 			ID:   v.ID,
-			Qty:  v.Qty,
+			Qty:  &v.Qty,
 			Note: v.Note.String,
 		}
 		deliveryOrderResults = append(deliveryOrderResults, deliveryOrderResult)
