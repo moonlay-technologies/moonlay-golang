@@ -57,10 +57,16 @@ func (r *salesOrderOpenSearch) Create(request *models.SalesOrder, resultChan cha
 	return
 }
 
-func (r *salesOrderOpenSearch) Get(request *models.SalesOrderRequest, IsCountOnly bool, resultChan chan *models.SalesOrdersChan) {
+func (r *salesOrderOpenSearch) Get(request *models.SalesOrderRequest, isCountOnly bool, resultChan chan *models.SalesOrdersChan) {
 	response := &models.SalesOrdersChan{}
+	if isCountOnly {
+		request.Page = 0
+		request.PerPage = 0
+		request.SortField = ""
+		request.SortValue = ""
+	}
 	requestQuery := r.generateSalesOrderQueryOpenSearchTermRequest("", "", request)
-	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true, IsCountOnly)
+	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true, isCountOnly)
 
 	if err.Err != nil {
 		response.Error = err.Err

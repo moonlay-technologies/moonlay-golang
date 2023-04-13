@@ -48,6 +48,12 @@ func (r *deliveryOrderDetailOpenSearch) Create(request *models.DeliveryOrderDeta
 
 func (r *deliveryOrderDetailOpenSearch) Get(request *models.DeliveryOrderDetailOpenSearchRequest, isCountOnly bool, resultChan chan *models.DeliveryOrderDetailsOpenSearchChan) {
 	response := &models.DeliveryOrderDetailsOpenSearchChan{}
+	if isCountOnly {
+		request.Page = 0
+		request.PerPage = 0
+		request.SortField = ""
+		request.SortValue = ""
+	}
 	requestQuery := r.generateDeliveryOrderQueryOpenSearchTermRequest("", "", request)
 	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery, isCountOnly)
 
@@ -342,7 +348,7 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchResu
 	var total int64 = 0
 
 	if isCountOnly {
-		openSearchQueryResult, err := r.openSearch.Count(constants.DELIVERY_ORDERS_INDEX, openSearchQueryJson)
+		openSearchQueryResult, err := r.openSearch.Count(constants.DELIVERY_ORDER_DETAILS_INDEX, openSearchQueryJson)
 		if err != nil {
 			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			return &models.DeliveryOrderDetailsOpenSearch{}, errorLogData

@@ -51,6 +51,12 @@ func (r *salesOrderDetailOpenSearch) Create(request *models.SalesOrderDetailOpen
 
 func (r *salesOrderDetailOpenSearch) Get(request *models.GetSalesOrderDetailRequest, isCountOnly bool, resultChan chan *models.SalesOrderDetailsOpenSearchChan) {
 	response := &models.SalesOrderDetailsOpenSearchChan{}
+	if isCountOnly {
+		request.Page = 0
+		request.PerPage = 0
+		request.SortField = ""
+		request.SortValue = ""
+	}
 	requestQuery := r.generateSalesOrderDetailQueryOpenSearchTermRequest("", "", request)
 	result, err := r.generateSalesOrderDetailQueryOpenSearchResult(requestQuery, isCountOnly)
 
