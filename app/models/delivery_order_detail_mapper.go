@@ -270,11 +270,11 @@ func (d *DeliveryOrderDetailOpenSearchRequest) DeliveryOrderDetailExportMap(r *D
 	d.TotalAmount = 0
 	d.TotalTonase = 0
 	d.CategoryID = r.CategoryID
-	d.SalesmanID = 0
-	d.ProvinceID = 0
-	d.CityID = 0
-	d.DistrictID = 0
-	d.VillageID = 0
+	d.SalesmanID = r.SalesmanID
+	d.ProvinceID = r.ProvinceID
+	d.CityID = r.CityID
+	d.DistrictID = r.DistrictID
+	d.VillageID = r.VillageID
 	d.StoreProvinceID = r.ProvinceID
 	d.StoreCityID = r.CityID
 	d.StoreDistrictID = r.DistrictID

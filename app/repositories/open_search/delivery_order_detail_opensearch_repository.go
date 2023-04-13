@@ -164,6 +164,16 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 			filters = append(filters, filter)
 		}
 
+		if len(request.UpdatedAt) > 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"updated_at": request.UpdatedAt,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
 		if request.ID != 0 {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
@@ -184,6 +194,16 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 			filters = append(filters, filter)
 		}
 
+		if request.DoDetailID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"id": request.DoDetailID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
 		if request.DoCode != "" {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
@@ -194,10 +214,30 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 			filters = append(filters, filter)
 		}
 
+		if request.DoRefCode != "" {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"do_ref_code.keyword": request.DoRefCode,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.DoRefDate != "" {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"do_ref_date": request.DoRefDate,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
 		if request.SalesOrderID != 0 {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
-					"so_detail.sales_order_id": request.SalesOrderID,
+					"sales_order_id": request.SalesOrderID,
 				},
 			}
 
@@ -264,6 +304,46 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 			filters = append(filters, filter)
 		}
 
+		if request.SalesmanID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"salesman_id": request.SalesmanID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.ProvinceID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"store.province_id": request.ProvinceID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.CityID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"store.city_id": request.CityID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.VillageID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"store.village_id": request.VillageID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
 		if request.Qty != 0 {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
@@ -304,7 +384,7 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 			match := map[string]interface{}{
 				"query_string": map[string]interface{}{
 					"query":            "*" + request.GlobalSearchValue + "*",
-					"fields":           []string{"do_code", "so_code", "order_status.name^0.5", "qty^3"},
+					"fields":           []string{"do_code", "do_ref_code", "so_code", "store.name", "store.code", "order_status.name^0.5", "qty^3"},
 					"type":             "best_fields",
 					"default_operator": "AND",
 					"lenient":          true,

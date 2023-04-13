@@ -798,7 +798,15 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intSalesOrderID, m, err := d.getIntQueryWithMustActive("so_id", "0", false, "sales_orders", constants.CLAUSE_ID_VALIDATION, ctx)
+	intDeliveryOrderDetailID, m, err := d.getIntQueryWithMustActive("delivery_order_details_id", "0", false, "delivery_order_details", constants.CLAUSE_ID_VALIDATION, ctx)
+	if err != nil {
+		return nil, err
+	}
+	if intDeliveryOrderID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
+	}
+
+	intSalesOrderID, m, err := d.getIntQueryWithMustActive("sales_order_id", "0", false, "sales_orders", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -878,6 +886,10 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 	if err != nil {
 		return nil, err
 	}
+	intVillageID, err := d.getIntQueryWithDefault("village_id", "0", false, ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	dateFields := []*models.DateInputRequest{}
 
@@ -927,6 +939,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		FileType:          d.getQueryWithDefault("file_type", "xlsx", ctx),
 		ID:                intID,
 		DeliveryOrderID:   intDeliveryOrderID,
+		DoDetailID:        intDeliveryOrderDetailID,
 		SalesOrderID:      intSalesOrderID,
 		AgentID:           intAgentID,
 		StoreID:           intStoreID,
@@ -943,6 +956,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		ProvinceID:        intProvinceID,
 		CityID:            intCityID,
 		DistrictID:        intDistrictID,
+		VillageID:         intVillageID,
 		StartCreatedAt:    startCreatedAt,
 		EndCreatedAt:      endCreatedAt,
 		UpdatedAt:         d.getQueryWithDefault("updated_at", "", ctx),

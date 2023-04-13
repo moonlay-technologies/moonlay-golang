@@ -354,6 +354,7 @@ type DeliveryOrderDetailExportRequest struct {
 	ProvinceID        int    `json:"province_id,omitempty"`
 	CityID            int    `json:"city_id,omitempty"`
 	DistrictID        int    `json:"district_id,omitempty"`
+	VillageID         int    `json:"village_id,omitempty"`
 	StartCreatedAt    string `json:"start_created_at,omitempty"`
 	EndCreatedAt      string `json:"end_created_at,omitempty"`
 	UpdatedAt         string `json:"updated_at,omitempty"`
