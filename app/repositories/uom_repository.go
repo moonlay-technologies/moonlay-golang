@@ -52,7 +52,7 @@ func (r *uom) GetByID(ID int, countOnly bool, ctx context.Context, resultChan ch
 
 		if total == 0 {
 			err = helper.NewError("uom data not found")
-			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -128,7 +128,7 @@ func (r *uom) GetByCode(code string, countOnly bool, ctx context.Context, result
 
 		if total == 0 {
 			err = helper.NewError("uom data not found")
-			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response

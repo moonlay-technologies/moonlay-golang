@@ -47,8 +47,8 @@ type Store struct {
 	AliasCode             NullString `json:"alias_code,omitempty"`
 	Uid                   NullString `json:"uid,omitempty"`
 	Creator               NullString `json:"creator,omitempty"`
-	DBOApprovalStatus     int        `json:"dbo_approval_status,omitempty"`
-	AgentID               int        `json:"agent_id,omitempty"`
+	DBOApprovalStatus     NullInt64  `json:"dbo_approval_status,omitempty"`
+	AgentID               NullInt64  `json:"agent_id,omitempty"`
 	ParentID              int        `json:"parent_id,omitempty"`
 	HeadID                int        `json:"head_id,omitempty"`
 	UseApps               int        `json:"use_apps,omitempty"`
