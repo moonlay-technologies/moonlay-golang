@@ -520,15 +520,11 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 				"order": request.SortValue,
 			}
 
-			if request.SortField == "created_at" {
+			if helper.Contains(constants.UNMAPPED_TYPE_SORT_LIST(), request.SortField) {
 				sortValue["unmapped_type"] = "date"
 			}
 
-			if request.SortField == "updated_at" {
-				sortValue["unmapped_type"] = "date"
-			}
-
-			if request.SortField == "do_date" || request.SortField == "order_status_id" || request.SortField == "created_at" || request.SortField == "updated_at" {
+			if helper.Contains(constants.DELIVERY_ORDER_SORT_INT_LIST(), request.SortField) {
 				openSearchQuery["sort"] = []map[string]interface{}{
 					{
 						request.SortField: sortValue,
@@ -536,7 +532,7 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 				}
 			}
 
-			if request.SortField == "do_ref_code" {
+			if helper.Contains(constants.DELIVERY_ORDER_SORT_STRING_LIST(), request.SortField) {
 				openSearchQuery["sort"] = []map[string]interface{}{
 					{
 						request.SortField + ".keyword": sortValue,

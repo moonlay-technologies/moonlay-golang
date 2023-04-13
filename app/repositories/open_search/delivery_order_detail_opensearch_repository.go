@@ -48,11 +48,16 @@ func (r *deliveryOrderDetailOpenSearch) Create(request *models.DeliveryOrderDeta
 
 func (r *deliveryOrderDetailOpenSearch) Get(request *models.DeliveryOrderDetailOpenSearchRequest, isCountOnly bool, resultChan chan *models.DeliveryOrderDetailsOpenSearchChan) {
 	response := &models.DeliveryOrderDetailsOpenSearchChan{}
+	page := request.Page
+	perPage := request.PerPage
+	sortField := request.SortField
+	sortValue := request.SortValue
 	if isCountOnly {
 		request.Page = 0
 		request.PerPage = 0
 		request.SortField = ""
 		request.SortValue = ""
+
 	}
 	requestQuery := r.generateDeliveryOrderQueryOpenSearchTermRequest("", "", request)
 	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery, isCountOnly)
@@ -67,6 +72,12 @@ func (r *deliveryOrderDetailOpenSearch) Get(request *models.DeliveryOrderDetailO
 	response.DeliveryOrderDetailOpenSearch = result.DeliveryOrderDetails
 	response.Total = result.Total
 	resultChan <- response
+	if isCountOnly {
+		request.Page = page
+		request.PerPage = perPage
+		request.SortField = sortField
+		request.SortValue = sortValue
+	}
 	return
 }
 
@@ -304,19 +315,16 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 		}
 
 		if request.SortField != "" && request.SortValue != "" {
+
 			sortValue := map[string]interface{}{
 				"order": request.SortValue,
 			}
 
-			if request.SortField == "created_at" {
+			if helper.Contains(constants.UNMAPPED_TYPE_SORT_LIST(), request.SortField) {
 				sortValue["unmapped_type"] = "date"
 			}
 
-			if request.SortField == "updated_at" {
-				sortValue["unmapped_type"] = "date"
-			}
-
-			if request.SortField == "order_status_id" || request.SortField == "agent_id" || request.SortField == "store_id" || request.SortField == "product_id" || request.SortField == "qty" {
+			if helper.Contains(constants.DELIVERY_ORDER_DETAIL_SORT_INT_LIST(), request.SortField) {
 				openSearchQuery["sort"] = []map[string]interface{}{
 					{
 						request.SortField: sortValue,
@@ -324,7 +332,7 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 				}
 			}
 
-			if request.SortField == "do_code" || request.SortField == "so_code" {
+			if helper.Contains(constants.DELIVERY_ORDER_DETAIL_SORT_STRING_LIST(), request.SortField) {
 				openSearchQuery["sort"] = []map[string]interface{}{
 					{
 						request.SortField + ".keyword": sortValue,

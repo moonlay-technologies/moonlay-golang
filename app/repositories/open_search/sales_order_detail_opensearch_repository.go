@@ -283,18 +283,24 @@ func (r *salesOrderDetailOpenSearch) generateSalesOrderDetailQueryOpenSearchTerm
 				"order": request.SortValue,
 			}
 
-			if request.SortField == "created_at" || request.SortField == "updated_at" {
+			if helper.Contains(constants.UNMAPPED_TYPE_SORT_LIST(), request.SortField) {
 				sortValue["unmapped_type"] = "date"
 			}
 
-			field := request.SortField
-			if request.SortField == "so_ref_code" || request.SortField == "so_code" || request.SortField == "store_code" || request.SortField == "store_name" {
-				field = field + ".keyword"
+			if helper.Contains(constants.SALES_ORDER_DETAIL_SORT_INT_LIST(), request.SortField) {
+				openSearchQuery["sort"] = []map[string]interface{}{
+					{
+						request.SortField: sortValue,
+					},
+				}
 			}
-			openSearchQuery["sort"] = []map[string]interface{}{
-				{
-					field: sortValue,
-				},
+
+			if helper.Contains(constants.SALES_ORDER_DETAIL_SORT_STRING_LIST(), request.SortField) {
+				openSearchQuery["sort"] = []map[string]interface{}{
+					{
+						request.SortField + ".keyword": sortValue,
+					},
+				}
 			}
 		}
 	}
