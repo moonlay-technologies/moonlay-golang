@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"order-service/app/middlewares"
 	"order-service/app/models"
 	"order-service/app/models/constants"
@@ -31,12 +32,15 @@ type uploadSOSJFileConsumerHandler struct {
 	sosjUploadErrorLogsRepository mongoRepositories.SosjUploadErrorLogsRepositoryInterface
 	salesOrderRepository          repositories.SalesOrderRepositoryInterface
 	deliveryOrderRepository       repositories.DeliveryOrderRepositoryInterface
+	warehouseRepository           repositories.WarehouseRepositoryInterface
+	productRepository             repositories.ProductRepositoryInterface
+	uomRepository                 repositories.UomRepositoryInterface
 	ctx                           context.Context
 	args                          []interface{}
 	db                            dbresolver.DB
 }
 
-func InitUploadSOSJFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, uploadRepository repositories.UploadRepositoryInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, requestValidationRepository repositories.RequestValidationRepositoryInterface, sosjUploadHistoriesRepository mongoRepositories.SOSJUploadHistoriesRepositoryInterface, sosjUploadErrorLogsRepository mongoRepositories.SosjUploadErrorLogsRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UploadSOFileConsumerHandlerInterface {
+func InitUploadSOSJFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, uploadRepository repositories.UploadRepositoryInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, requestValidationRepository repositories.RequestValidationRepositoryInterface, sosjUploadHistoriesRepository mongoRepositories.SOSJUploadHistoriesRepositoryInterface, sosjUploadErrorLogsRepository mongoRepositories.SosjUploadErrorLogsRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, productRepository repositories.ProductRepositoryInterface, uomRepository repositories.UomRepositoryInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UploadSOFileConsumerHandlerInterface {
 	return &uploadSOSJFileConsumerHandler{
 		kafkaClient:                   kafkaClient,
 		uploadRepository:              uploadRepository,
@@ -46,6 +50,9 @@ func InitUploadSOSJFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClient
 		sosjUploadErrorLogsRepository: sosjUploadErrorLogsRepository,
 		salesOrderRepository:          salesOrderRepository,
 		deliveryOrderRepository:       deliveryOrderRepository,
+		warehouseRepository:           warehouseRepository,
+		productRepository:             productRepository,
+		uomRepository:                 uomRepository,
 		ctx:                           ctx,
 		args:                          args,
 		db:                            db,
@@ -249,28 +256,32 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 				helper.GenerateMustActive("agents", "IDDistributor", intTypeResult["IDDistributor"], "active"),
 				helper.GenerateMustActive("users", "user_id", int(*message.UploadedBy), "ACTIVE"),
 				{
-					Table:    "brands",
-					ReqField: "IDMerk",
-					Clause:   fmt.Sprintf("id = %d AND status_active = %d", intTypeResult["IDMerk"], 1),
-					Id:       intTypeResult["IDMerk"],
+					Table:         "brands",
+					ReqField:      "IDMerk",
+					Clause:        fmt.Sprintf("id = %d AND status_active = %d", intTypeResult["IDMerk"], 1),
+					Id:            intTypeResult["IDMerk"],
+					CustomMessage: fmt.Sprintf("Kode Merek = %s Tidak Terdaftar pada Distributor %s. Silahkan gunakan Kode Merek yang lain", rowData.BrandId, rowData.AgentName.String),
 				},
 				{
-					Table:    "stores",
-					ReqField: "KodeTokoDBO",
-					Clause:   fmt.Sprintf("IF((SELECT COUNT(store_code) FROM stores WHERE store_code = '%s'), stores.store_code = '%s', stores.alias_code = '%s') AND status = 'active'", rowData.StoreCode, rowData.StoreCode, rowData.StoreCode),
-					Id:       rowData.StoreCode,
+					Table:         "stores",
+					ReqField:      "KodeTokoDBO",
+					Clause:        fmt.Sprintf("IF((SELECT COUNT(store_code) FROM stores WHERE store_code = '%s'), stores.store_code = '%s', stores.alias_code = '%s') AND status = 'active'", rowData.StoreCode, rowData.StoreCode, rowData.StoreCode),
+					Id:            rowData.StoreCode,
+					CustomMessage: fmt.Sprintf("Kode Toko = %s sudah Tidak Aktif. Silahkan gunakan Kode Toko yang lain", rowData.StoreCode),
 				},
 				{
-					Table:    "products",
-					ReqField: "KodeProdukDBO",
-					Clause:   fmt.Sprintf("IF((SELECT COUNT(SKU) FROM products WHERE SKU = '%s'), products.SKU = '%s', products.aliasSku = '%s') AND isActive = %d", rowData.ProductCode, rowData.ProductCode, rowData.ProductCode, 1),
-					Id:       rowData.ProductCode,
+					Table:         "products",
+					ReqField:      "KodeProdukDBO",
+					Clause:        fmt.Sprintf("IF((SELECT COUNT(SKU) FROM products WHERE SKU = '%s'), products.SKU = '%s', products.aliasSku = '%s') AND isActive = %d", rowData.ProductCode, rowData.ProductCode, rowData.ProductCode, 1),
+					Id:            rowData.ProductCode,
+					CustomMessage: fmt.Sprintf("Kode SKU = %s dengan Merek %s sudah Tidak Aktif. Silahkan gunakan Kode SKU yang lain.", rowData.ProductCode, rowData.BrandName.String),
 				},
 				{
-					Table:    "uoms",
-					ReqField: "Unit",
-					Clause:   fmt.Sprintf(constants.CLAUSE_ID_VALIDATION, intTypeResult["Unit"]),
-					Id:       intTypeResult["Unit"],
+					Table:         "uoms",
+					ReqField:      "Unit",
+					Clause:        fmt.Sprintf(constants.CLAUSE_ID_VALIDATION, intTypeResult["Unit"]),
+					Id:            intTypeResult["Unit"],
+					CustomMessage: fmt.Sprintf("Unit Satuan = %s pada Kode SKU %s Tidak Sesuai. Silahkan gunakan unit satuan yang lain.", rowData.ProductUnit, rowData.ProductCode),
 				},
 			}
 			mustActiveError := c.requestValidationMiddleware.UploadMustActiveValidation(mustActiveField)
@@ -283,6 +294,95 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 
 					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
 
+					continue
+				}
+			}
+
+			if rowData.WhCode != "" {
+				getWarehouseResultChan := make(chan *models.WarehouseChan)
+				go c.warehouseRepository.GetByID(intTypeResult["KodeGudang"], false, c.ctx, getWarehouseResultChan)
+
+				getWarehouseResult := <-getWarehouseResultChan
+				if getWarehouseResult.Error != nil {
+					if key == "retry" {
+						c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+						break
+					} else {
+						errors := []string{getWarehouseResult.Error.Error()}
+						if getWarehouseResult.ErrorLog.StatusCode == http.StatusNotFound {
+							errors = []string{fmt.Sprintf("Gudang dengan Kode %d Tidak Ditemukan pada Distributor %s. Silahkan gunakan Kode Gudang yang lain.", intTypeResult["KodeGudang"], rowData.AgentName.String)}
+						}
+
+						c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
+						continue
+					}
+				}
+
+				if strconv.Itoa(getWarehouseResult.Warehouse.OwnerID) != agentId {
+					if key == "retry" {
+						c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+						break
+					} else {
+
+						errors := []string{fmt.Sprintf("Gudang Utama pada Distributor %s Tidak Ditemukan. Silahkan Periksa Kode Gudang Utama Anda atau gunakan Kode Gudang yang lain.", rowData.AgentName.String)}
+
+						c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
+						continue
+					}
+				}
+
+				if getWarehouseResult.Warehouse.Status != 1 {
+					if key == "retry" {
+						c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+						break
+					} else {
+						errors := []string{fmt.Sprintf("Gudang dengan Kode %s sudah Tidak Aktif pada Distributor %s. Silahkan gunakan Kode Gudang yang lain.", v["KodeGudang"], message.AgentName)}
+						c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
+						continue
+					}
+				}
+			}
+
+			getProductResultChan := make(chan *models.ProductChan)
+			go c.productRepository.GetBySKU(rowData.ProductCode, false, c.ctx, getProductResultChan)
+			getProductResult := <-getProductResultChan
+
+			getUomResultChan := make(chan *models.UomChan)
+			go c.uomRepository.GetByID(intTypeResult["Unit"], false, c.ctx, getUomResultChan)
+			getUomResult := <-getUomResultChan
+
+			if getUomResult.Error != nil || getProductResult.Error != nil {
+				if key == "retry" {
+					c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{}
+					if getUomResult.Error != nil {
+						errors = append(errors, getUomResult.Error.Error())
+					}
+					if getProductResult.Error != nil {
+						errors = append(errors, getProductResult.Error.Error())
+					}
+					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
+					continue
+				}
+			}
+
+			var price float64
+			if getUomResult.Uom.Code.String == getProductResult.Product.UnitMeasurementSmall.String {
+				price = getProductResult.Product.PriceSmall
+			} else if getUomResult.Uom.Code.String == getProductResult.Product.UnitMeasurementMedium.String {
+				price = getProductResult.Product.PriceMedium
+			} else {
+				price = getProductResult.Product.PriceBig
+			}
+			if price < 1 {
+				if key == "retry" {
+					c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{fmt.Sprintf("Produk dengan Kode SKU %s Belum Ada Harga atau Harga = 0. Silahkan gunakan Kode SKU Produk yang lain.", rowData.ProductCode)}
+					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
 					continue
 				}
 			}

@@ -212,7 +212,7 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 				go c.warehouseRepository.GetByAgentID(agentId, false, c.ctx, getWarehouseResultChan)
 			}
 			getWarehouseResult := <-getWarehouseResultChan
-			if getWarehouseResult.Error != nil && getWarehouseResult.ErrorLog.StatusCode == http.StatusNotFound {
+			if getWarehouseResult.Error != nil {
 				if key == "retry" {
 					c.updateSjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 					break

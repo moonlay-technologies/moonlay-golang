@@ -41,7 +41,7 @@ func (result *RowDataSosjUploadErrorLog) RowDataSosjUploadErrorLogMap(rowData Ro
 	result.AddresId = item["_13"]
 	result.Address = rowData.Address
 	result.Note = item["_14"]
-	result.InternalNote = item["_15"]
+	result.InternalNote = strings.ReplaceAll(item["_15"], "\r", "")
 }
 
 func (result *RowDataSosjUploadErrorLog) RowDataSosjUploadErrorLogMap2(rowData RowDataSosjUploadErrorLog, item *UploadSOSJField) {
