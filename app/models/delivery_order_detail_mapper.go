@@ -287,6 +287,18 @@ func (d *DeliveryOrderDetailOpenSearchRequest) DeliveryOrderDetailExportMap(r *D
 }
 func (d *DeliveryOrderDetailOpenSearch) MapToCsvRow(dd *DeliveryOrder) []interface{} {
 	store := Store{}
+	if d.SoDetail == nil {
+		d.SoDetail = &SalesOrderDetail{}
+	}
+	if d.Agent == nil {
+		d.Agent = &Agent{}
+	}
+	if d.Product == nil {
+		d.Product = &Product{}
+	}
+	if d.Uom == nil {
+		d.Uom = &Uom{}
+	}
 	if d.Store != nil {
 		store.StoreCategory = d.Store.StoreCategory
 		store.StoreCode = d.Store.StoreCode
