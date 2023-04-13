@@ -2141,16 +2141,16 @@ func (u *deliveryOrderUseCase) GetSyncToKafkaHistories(request *models.DeliveryO
 			v.Data.SalesOrder = &models.SalesOrder{}
 			v.Data.Brand = &models.Brand{}
 			dataDOEventLog.DataDOEventLogResponseMap(v)
-			fmt.Println("hit 1")
+
 			deliveryOrderEventLog.Data = &dataDOEventLog
 		} else if v.Data.Brand == nil {
 			v.Data.Brand = &models.Brand{}
 			dataDOEventLog.DataDOEventLogResponseMap(v)
-			fmt.Println("hit 2")
+
 			deliveryOrderEventLog.Data = &dataDOEventLog
 		} else {
 			dataDOEventLog.DataDOEventLogResponseMap(v)
-			fmt.Println("hit 3")
+
 			deliveryOrderEventLog.Data = &dataDOEventLog
 		}
 
