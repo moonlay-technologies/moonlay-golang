@@ -53,7 +53,7 @@ func (r *product) GetByID(ID int, countOnly bool, ctx context.Context, resultCha
 		if total == 0 {
 			errStr := fmt.Sprintf("product id %d data not found", ID)
 			err = helper.NewError(errStr)
-			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
@@ -130,7 +130,7 @@ func (r *product) GetBySKU(SKU string, countOnly bool, ctx context.Context, resu
 		if total == 0 {
 			errStr := fmt.Sprintf("product id %s data not found", SKU)
 			err = helper.NewError(errStr)
-			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response

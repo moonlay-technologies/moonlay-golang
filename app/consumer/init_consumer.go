@@ -238,11 +238,12 @@ func InitUploadSOSJFileConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongo
 	warehouseRepository := repositories.InitWarehouseRepository(database, redisdb)
 	productRepository := repositories.InitProductRepository(database, redisdb)
 	uomRepository := repositories.InitUomRepository(database, redisdb)
+	storeRepository := repositories.InitStoreRepository(database, redisdb)
 	uploadRepository := repositories.InitUploadRepository(database)
 	requestValidationMiddleware := middlewares.InitRequestValidationMiddlewareInterface(requestValidationRepository, orderSourceRepository)
 	sosjUploadHistoriesRepository := mongoRepo.InitSOSJUploadHistoriesRepositoryInterface(mongodbClient)
 	sosjUploadErrorLogsRepository := mongoRepo.InitSOSJUploadErrorLogsRepositoryInterface(mongodbClient)
-	handler := InitUploadSOSJFileConsumerHandlerInterface(kafkaClient, uploadRepository, requestValidationMiddleware, requestValidationRepository, sosjUploadHistoriesRepository, sosjUploadErrorLogsRepository, salesOrderRepository, deliveryOrderRepository, warehouseRepository, productRepository, uomRepository, database, ctx, args)
+	handler := InitUploadSOSJFileConsumerHandlerInterface(kafkaClient, uploadRepository, requestValidationMiddleware, requestValidationRepository, sosjUploadHistoriesRepository, sosjUploadErrorLogsRepository, salesOrderRepository, deliveryOrderRepository, warehouseRepository, productRepository, uomRepository, storeRepository, database, ctx, args)
 	return handler
 }
 
