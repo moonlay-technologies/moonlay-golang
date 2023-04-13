@@ -224,7 +224,7 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderByIDValidator(id int, insert
 	}
 
 	for _, v := range insertRequest.DeliveryOrderDetails {
-		if *v.Qty < 0 {
+		if v.Qty.Int64 < 0 {
 			err := helper.NewError(constants.ERROR_QTY_CANT_NEGATIVE)
 			ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity, ""))
 			return err
@@ -243,7 +243,7 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderByIDValidator(id int, insert
 		mustEmpties = append(mustEmpties, &models.MustEmptyValidationRequest{
 			Table:           "sales_order_details s JOIN delivery_order_details d ON s.id = d.so_detail_id",
 			SelectedCollumn: "s.residual_qty+d.qty",
-			Clause:          fmt.Sprintf("d.id = %[1]d AND s.residual_qty+d.qty < %[2]d", v.ID, v.Qty),
+			Clause:          fmt.Sprintf("d.id = %[1]d AND s.residual_qty+d.qty < %[2]d", v.ID, v.Qty.Int64),
 			MessageFormat:   fmt.Sprintf("DO Detail %d must be lower than or equal residual qty (<result>)", v.ID),
 		})
 	}
@@ -290,7 +290,7 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByDoIDValidator(id int
 	}
 
 	for _, v := range insertRequest {
-		if *v.Qty < 0 {
+		if v.Qty.Int64 < 0 {
 			err := helper.NewError(constants.ERROR_QTY_CANT_NEGATIVE)
 			ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity, ""))
 			return err
@@ -308,7 +308,7 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByDoIDValidator(id int
 		mustEmpties = append(mustEmpties, &models.MustEmptyValidationRequest{
 			Table:           "sales_order_details s JOIN delivery_order_details d ON s.id = d.so_detail_id",
 			SelectedCollumn: "s.id",
-			Clause:          fmt.Sprintf("d.id = %d AND s.qty < %d", v.ID, v.Qty),
+			Clause:          fmt.Sprintf("d.id = %d AND s.qty < %d", v.ID, v.Qty.Int64),
 			MessageFormat:   fmt.Sprintf("Qty SO Detail <result> FROM DO Detail %d must be higher than or equal delivery order qty", v.ID),
 		})
 	}
@@ -327,7 +327,7 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByDoIDValidator(id int
 }
 
 func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByIDValidator(detailId int, insertRequest *models.DeliveryOrderDetailUpdateByIDRequest, ctx *gin.Context) error {
-	if *insertRequest.Qty < 0 {
+	if insertRequest.Qty.Int64 < 0 {
 		err := helper.NewError(constants.ERROR_QTY_CANT_NEGATIVE)
 		ctx.JSON(http.StatusUnprocessableEntity, helper.GenerateResultByError(err, http.StatusUnprocessableEntity, ""))
 		return err
@@ -371,7 +371,7 @@ func (d *DeliveryOrderValidator) UpdateDeliveryOrderDetailByIDValidator(detailId
 		{
 			Table:           "sales_order_details s JOIN delivery_order_details d ON s.id = d.so_detail_id",
 			SelectedCollumn: "s.id",
-			Clause:          fmt.Sprintf("d.id = %d AND s.qty < %d", insertRequest.ID, insertRequest.Qty),
+			Clause:          fmt.Sprintf("d.id = %d AND s.qty < %d", insertRequest.ID, insertRequest.Qty.Int64),
 			MessageFormat:   fmt.Sprintf("Qty SO Detail <result> FROM DO Detail %d must be higher than or equal delivery order qty", insertRequest.ID),
 		},
 	}
@@ -611,7 +611,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 	}
 
 	mustActiveFields := []*models.MustActiveRequest{}
-	intSalesOrderID, m, err := d.getIntQueryWithMustActive("sales_order_id", "0", false, "sales_orders", constants.CLAUSE_ID_VALIDATION, ctx)
+	intSalesOrderID, m, err := d.getIntQueryWithMustActive("sales_order_id", "0", false, "delivery_orders", "sales_order_"+constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -619,7 +619,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intAgentID, m, err := d.getIntQueryWithMustActive("agent_id", "0", false, "agents", constants.CLAUSE_ID_VALIDATION, ctx)
+	intAgentID, m, err := d.getIntQueryWithMustActive("agent_id", "0", false, "delivery_orders", "agent_"+constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -627,7 +627,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intStoreID, m, err := d.getIntQueryWithMustActive("store_id", "0", false, "stores", constants.CLAUSE_ID_VALIDATION, ctx)
+	intStoreID, m, err := d.getIntQueryWithMustActive("store_id", "0", false, "delivery_orders", "store_"+constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -635,7 +635,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intBrandID, m, err := d.getIntQueryWithMustActive("brand_id", "0", false, "brands", constants.CLAUSE_ID_VALIDATION, ctx)
+	intBrandID, m, err := d.getIntQueryWithMustActive("brand_id", "0", false, "delivery_orders d JOIN delivery_order_details dd ON dd.delivery_order_id = d.id", "dd.brand_id = %d AND d.deleted_at IS NULL", ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -643,7 +643,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intOrderStatusID, m, err := d.getIntQueryWithMustActive("order_status_id", "0", false, "order_statuses", constants.CLAUSE_ID_VALIDATION, ctx)
+	intOrderStatusID, m, err := d.getIntQueryWithMustActive("order_status_id", "0", false, "delivery_orders", "order_status_"+constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -651,7 +651,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intProductID, m, err := d.getIntQueryWithMustActive("product_id", "0", false, "products", constants.CLAUSE_ID_VALIDATION, ctx)
+	intProductID, m, err := d.getIntQueryWithMustActive("product_id", "0", false, "delivery_orders d JOIN delivery_order_details dd ON dd.delivery_order_id = d.id", "dd.product_id = %d AND d.deleted_at IS NULL", ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -659,7 +659,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intCategoryID, m, err := d.getIntQueryWithMustActive("category_id", "0", false, "categories", constants.CLAUSE_ID_VALIDATION, ctx)
+	intCategoryID, m, err := d.getIntQueryWithMustActive("category_id", "0", false, "delivery_orders d JOIN delivery_order_details dd ON dd.delivery_order_id = d.id JOIN products p ON p.id = dd.product_id", "p.category_id = %d AND d.deleted_at IS NULL", ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -667,7 +667,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "salesmans", constants.CLAUSE_ID_VALIDATION, ctx)
+	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "delivery_orders d JOIN sales_order s ON d.sales_order_id = s.id", "s.salesman_id = %d AND d.deleted_at IS NULL", ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -804,7 +804,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intAgentID, m, err := d.getIntQueryWithMustActive("agent_id", "0", false, "agents", constants.CLAUSE_ID_VALIDATION, ctx)
+	intAgentID, m, err := d.getIntQueryWithMustActive("agent_id", "0", false, "delivery_orders d JOIN delivery_order_details dd ON dd.delivery_order_id = d.id", "d.agent_id = %d AND d.deleted_at IS NULL", ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -812,7 +812,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intStoreID, m, err := d.getIntQueryWithMustActive("store_id", "0", false, "stores", constants.CLAUSE_ID_VALIDATION, ctx)
+	intStoreID, m, err := d.getIntQueryWithMustActive("store_id", "0", false, "delivery_orders d JOIN delivery_order_details dd ON dd.delivery_order_id = d.id", "d.store_id = %d AND d.deleted_at IS NULL", ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -820,7 +820,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intBrandID, m, err := d.getIntQueryWithMustActive("brand_id", "0", false, "brands", constants.CLAUSE_ID_VALIDATION, ctx)
+	intBrandID, m, err := d.getIntQueryWithMustActive("brand_id", "0", false, "delivery_order_details", "brand_"+constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -828,7 +828,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intOrderStatusID, m, err := d.getIntQueryWithMustActive("order_status_id", "0", false, "order_statuses", constants.CLAUSE_ID_VALIDATION, ctx)
+	intOrderStatusID, m, err := d.getIntQueryWithMustActive("order_status_id", "0", false, "delivery_order_details", "order_status_"+constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -836,7 +836,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intProductID, m, err := d.getIntQueryWithMustActive("product_id", "0", false, "products", constants.CLAUSE_ID_VALIDATION, ctx)
+	intProductID, m, err := d.getIntQueryWithMustActive("product_id", "0", false, "delivery_order_details", "product_"+constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -844,7 +844,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intCategoryID, m, err := d.getIntQueryWithMustActive("category_id", "0", false, "categories", constants.CLAUSE_ID_VALIDATION, ctx)
+	intCategoryID, m, err := d.getIntQueryWithMustActive("category_id", "0", false, "delivery_order_details dd JOIN products p ON p.id = dd.product_id", "p.category_id = %d AND dd.deleted_at IS NULL", ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -852,12 +852,9 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "salesmans", constants.CLAUSE_ID_VALIDATION, ctx)
+	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "delivery_order_details dd JOIN delivery_orders d ON dd.delivery_order_id = d.id JOIN sales_order s ON d.sales_order_id = s.id", "s.salesman_id = %d AND dd.deleted_at IS NULL", ctx)
 	if err != nil {
 		return nil, err
-	}
-	if intSalesmanID > 0 {
-		mustActiveFields = append(mustActiveFields, m)
 	}
 
 	err = d.requestValidationMiddleware.MustActiveValidationCustomCode(404, ctx, mustActiveFields)

@@ -8,7 +8,7 @@ import (
 
 func (deliveryOrderDetail *DeliveryOrderDetailOpenSearchDetailResponse) DeliveryOrderDetailOpenSearchResponseMap(request *DeliveryOrderDetail) {
 	deliveryOrderDetail.SoDetailID = request.SoDetailID
-	deliveryOrderDetail.Qty = NullInt64{sql.NullInt64{Int64: int64(request.Qty), Valid: true}}
+	deliveryOrderDetail.Qty = NullInt64{NullInt64: sql.NullInt64{Int64: int64(request.Qty), Valid: true}}
 	return
 }
 
@@ -16,7 +16,7 @@ func (deliveryOrderDetail *DeliveryOrderDetailsOpenSearchResponse) DeliveryOrder
 	deliveryOrderDetail.ID = request.ID
 	deliveryOrderDetail.DeliveryOrderID = request.DeliveryOrderID
 	deliveryOrderDetail.SoDetailID = request.SoDetailID
-	deliveryOrderDetail.Qty = NullInt64{sql.NullInt64{Int64: int64(request.Qty), Valid: true}}
+	deliveryOrderDetail.Qty = NullInt64{NullInt64: sql.NullInt64{Int64: int64(request.Qty), Valid: true}}
 	return
 }
 
@@ -111,58 +111,135 @@ func (d *DeliveryOrderDetailLogData) DoDetailMap(r *DeliveryOrder, rd *DeliveryO
 	d.WarehouseName = r.WarehouseName
 }
 func (d *DeliveryOrderDetailOpenSearch) DoDetailMap(r *DeliveryOrder, rd *DeliveryOrderDetail) {
-	d.ID = rd.ID
-	d.DeliveryOrderID = r.ID
-	d.DoCode = r.DoCode
-	d.DoDate = r.DoDate
-	d.DoRefCode = r.DoRefCode.String
-	d.DoRefDate = r.DoRefDate.String
-	d.DriverName = r.DriverName
-	d.PlatNumber = r.PlatNumber
-	d.SalesOrderID = r.SalesOrderID
-	d.SoCode = NullString{sql.NullString{String: r.SalesOrder.SoCode, Valid: true}}
-	d.SoDate = NullString{sql.NullString{String: r.SalesOrder.SoDate, Valid: true}}
-	d.SoRefDate = r.SalesOrder.SoRefDate
-	d.SoDetailID = rd.SoDetailID
+	defaultDoDetail := &DeliveryOrderDetail{}
+	defaultDo := &DeliveryOrder{}
+	if defaultDoDetail.ID != rd.ID {
+		d.ID = rd.ID
+	}
+	if defaultDoDetail.DeliveryOrderID != r.ID {
+		d.DeliveryOrderID = r.ID
+	}
+	if defaultDo.DoCode != r.DoCode {
+		d.DoCode = r.DoCode
+	}
+	if defaultDo.DoDate != r.DoDate {
+		d.DoDate = r.DoDate
+	}
+	if defaultDo.DoRefCode != r.DoRefCode {
+		d.DoRefCode = r.DoRefCode.String
+	}
+	if defaultDo.DoRefDate != r.DoRefDate {
+		d.DoRefDate = r.DoRefDate.String
+	}
+	if defaultDo.DriverName != r.DriverName {
+		d.DriverName = r.DriverName
+	}
+	if defaultDo.PlatNumber != r.PlatNumber {
+		d.PlatNumber = r.PlatNumber
+	}
+	if defaultDo.SalesOrderID != r.SalesOrderID {
+		d.SalesOrderID = r.SalesOrderID
+	}
+	if r.SalesOrder != nil {
+		if "" != r.SalesOrder.SoCode {
+			d.SoCode = NullString{sql.NullString{String: r.SalesOrder.SoCode, Valid: true}}
+		}
+		if "" != r.SalesOrder.SoDate {
+			d.SoDate = NullString{sql.NullString{String: r.SalesOrder.SoDate, Valid: true}}
+		}
+		if "" != r.SalesOrder.SoRefDate.String {
+			d.SoRefDate = r.SalesOrder.SoRefDate
+		}
+		if 0 != r.SalesOrder.StoreID {
+			d.StoreID = r.StoreID
+		}
+		if nil != r.SalesOrder.Store {
+			d.Store = r.Store
+		}
+	}
+
+	if defaultDoDetail.SoDetailID != rd.SoDetailID {
+		d.SoDetailID = rd.SoDetailID
+	}
 	if rd.SoDetail != nil {
 		d.SoDetailCode = rd.SoDetail.SoDetailCode
 		d.SoDetail = rd.SoDetail
 	}
-	d.AgentID = r.AgentID
-	d.Agent = r.Agent
-	d.StoreID = r.StoreID
-	d.Store = r.Store
-	d.WarehouseID = r.WarehouseID
-	d.WarehouseCode = r.WarehouseCode
-	d.WarehouseName = r.WarehouseName
+	if defaultDo.AgentID != r.AgentID {
+		d.AgentID = r.AgentID
+	}
+	if defaultDo.Agent != r.Agent {
+		d.Agent = r.Agent
+	}
+	if defaultDo.WarehouseID != r.WarehouseID {
+		d.WarehouseID = r.WarehouseID
+	}
+	if defaultDo.WarehouseCode != r.WarehouseCode {
+		d.WarehouseCode = r.WarehouseCode
+	}
+	if defaultDo.WarehouseName != r.WarehouseName {
+		d.WarehouseName = r.WarehouseName
+	}
 	if r.Salesman != nil {
 		d.SalesmanID = r.Salesman.ID
 		d.SalesmanName = r.Salesman.Name
 		d.Salesman = r.Salesman
 	}
-	d.BrandID = rd.BrandID
+	if defaultDoDetail.BrandID != rd.BrandID {
+		d.BrandID = rd.BrandID
+	}
 	if r.Brand != nil {
 		d.BrandName = rd.Brand.Name
 		d.Brand = rd.Brand
 	}
-	d.ProductID = rd.ProductID
+	if defaultDoDetail.ProductID != rd.ProductID {
+		d.ProductID = rd.ProductID
+	}
 	if rd.Product != nil {
 		d.Product = rd.Product
 	}
-	d.UomID = rd.UomID
-	d.Uom = rd.Uom
-	d.DoDetailCode = rd.DoDetailCode
-	d.OrderSourceID = r.OrderSourceID
-	d.OrderSourceName = r.OrderSourceName
-	d.OrderSource = r.OrderSource
-	d.OrderStatusID = r.OrderStatusID
-	d.OrderStatusName = r.OrderStatusName
-	d.OrderStatus = r.OrderStatus
-	d.Qty = rd.Qty
-	d.Note = rd.Note
-	d.CreatedAt = rd.CreatedAt
-	d.UpdatedAt = rd.UpdatedAt
-	d.DeletedAt = rd.DeletedAt
+	if defaultDoDetail.UomID != rd.UomID {
+		d.UomID = rd.UomID
+	}
+	if defaultDoDetail.Uom != rd.Uom {
+		d.Uom = rd.Uom
+	}
+	if defaultDoDetail.DoDetailCode != rd.DoDetailCode {
+		d.DoDetailCode = rd.DoDetailCode
+	}
+	if defaultDo.OrderSourceID != r.OrderSourceID {
+		d.OrderSourceID = r.OrderSourceID
+	}
+	if defaultDo.OrderSourceName != r.OrderSourceName {
+		d.OrderSourceName = r.OrderSourceName
+	}
+	if defaultDo.OrderSource != r.OrderSource {
+		d.OrderSource = r.OrderSource
+	}
+	if defaultDo.OrderStatusID != r.OrderStatusID {
+		d.OrderStatusID = r.OrderStatusID
+	}
+	if defaultDoDetail.OrderStatusName != r.OrderStatusName {
+		d.OrderStatusName = r.OrderStatusName
+	}
+	if defaultDoDetail.OrderStatus != r.OrderStatus {
+		d.OrderStatus = r.OrderStatus
+	}
+	if defaultDoDetail.Qty != rd.Qty {
+		d.Qty = rd.Qty
+	}
+	if defaultDoDetail.Note != rd.Note {
+		d.Note = rd.Note
+	}
+	if defaultDoDetail.CreatedAt != rd.CreatedAt {
+		d.CreatedAt = rd.CreatedAt
+	}
+	if defaultDoDetail.UpdatedAt != rd.UpdatedAt {
+		d.UpdatedAt = rd.UpdatedAt
+	}
+	if defaultDoDetail.DeletedAt != rd.DeletedAt {
+		d.DeletedAt = rd.DeletedAt
+	}
 }
 
 func (d *DeliveryOrderDetailOpenSearchRequest) DeliveryOrderDetailExportMap(r *DeliveryOrderDetailExportRequest) {

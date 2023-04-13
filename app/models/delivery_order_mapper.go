@@ -397,27 +397,31 @@ func (d *DeliveryOrderRequest) DeliveryOrderExportMap(r *DeliveryOrderExportRequ
 func (deliveryOrderEventLog *DeliveryOrderEventLogResponse) DeliveryOrderEventLogResponseMap(request *GetDeliveryOrderLog, status string) {
 	deliveryOrderEventLog.ID = request.ID
 	deliveryOrderEventLog.RequestID = request.RequestID
-	deliveryOrderEventLog.DoID = request.Data.ID
+	deliveryOrderEventLog.DoID = &request.Data.ID
 	deliveryOrderEventLog.DoCode = request.DoCode
 	deliveryOrderEventLog.Status = status
 	deliveryOrderEventLog.Action = request.Action
 	deliveryOrderEventLog.CreatedAt = request.CreatedAt
-	deliveryOrderEventLog.UpdatedAt = request.UpdatedAt
+	if request.UpdatedAt == nil {
+		deliveryOrderEventLog.UpdatedAt = request.CreatedAt
+	} else {
+		deliveryOrderEventLog.UpdatedAt = request.UpdatedAt
+	}
 	return
 }
 
 func (dataDOEventLog *DataDOEventLogResponse) DataDOEventLogResponseMap(request *GetDeliveryOrderLog) {
-	dataDOEventLog.AgentID = request.Data.AgentID
-	dataDOEventLog.AgentName = request.Data.AgentName
-	dataDOEventLog.SoCode = request.Data.SalesOrder.SoCode
+	dataDOEventLog.AgentID = &request.Data.AgentID
+	dataDOEventLog.AgentName = &request.Data.AgentName
+	dataDOEventLog.SoCode = &request.Data.SalesOrder.SoCode
 	dataDOEventLog.DoDate = request.Data.DoDate
 	dataDOEventLog.DoRefCode = request.Data.DoRefCode.String
 	dataDOEventLog.Note = request.Data.Note
-	dataDOEventLog.InternalComment = request.Data.SalesOrder.InternalComment
+	dataDOEventLog.InternalComment = NullString{sql.NullString{String: request.Data.SalesOrder.InternalComment.String, Valid: true}}
 	dataDOEventLog.DriverName = request.Data.DriverName
 	dataDOEventLog.PlatNumber = request.Data.PlatNumber
-	dataDOEventLog.BrandID = request.Data.Brand.ID
-	dataDOEventLog.BrandName = request.Data.Brand.Name
+	dataDOEventLog.BrandID = &request.Data.Brand.ID
+	dataDOEventLog.BrandName = &request.Data.Brand.Name
 	dataDOEventLog.WarehouseCode = request.Data.WarehouseCode
 	dataDOEventLog.WarehouseName = request.Data.WarehouseName
 	return
@@ -425,16 +429,16 @@ func (dataDOEventLog *DataDOEventLogResponse) DataDOEventLogResponseMap(request 
 
 func (doDetailEventLogResponse *DODetailEventLogResponse) DoDetailEventLogResponse(request *DeliveryOrderDetail) {
 	doDetailEventLogResponse.ID = request.ID
-	doDetailEventLogResponse.ProductCode = request.ProductSKU
-	doDetailEventLogResponse.ProductName = request.ProductName
-	doDetailEventLogResponse.DeliveryQty = NullInt64{sql.NullInt64{Int64: int64(request.Qty), Valid: true}}
-	doDetailEventLogResponse.ProductUnit = request.Product.UnitMeasurementSmall
+	doDetailEventLogResponse.ProductCode = &request.ProductSKU
+	doDetailEventLogResponse.ProductName = &request.ProductName
+	doDetailEventLogResponse.DeliveryQty = NullInt64{NullInt64: sql.NullInt64{Int64: int64(request.Qty), Valid: true}}
+	doDetailEventLogResponse.ProductUnit = NullString{sql.NullString{String: request.Product.UnitMeasurementSmall.String, Valid: true}}
 	return
 }
 
 func (data *DeliveryOrder) MapToCsvRow() []interface{} {
 	deliveryOrderCsv := DeliveryOrderCsvResponse{}
-	deliveryOrderCsv.DoDetailMap(data)
+	deliveryOrderCsv.DeliveryOrderMap(data)
 	return []interface{}{
 		deliveryOrderCsv.DoStatus,
 		deliveryOrderCsv.DoDate,
@@ -473,7 +477,7 @@ func (data *DeliveryOrder) MapToCsvRow() []interface{} {
 	}
 }
 
-func (d *DeliveryOrderCsvResponse) DoDetailMap(r *DeliveryOrder) {
+func (d *DeliveryOrderCsvResponse) DeliveryOrderMap(r *DeliveryOrder) {
 	d.DoStatus = r.OrderStatusName
 	d.DoDate = r.DoDate
 	d.SjNo = r.DoRefCode
