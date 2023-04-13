@@ -598,9 +598,10 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderValidator(ctx *gin.Context) (*m
 
 func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) (*models.DeliveryOrderExportRequest, error) {
 	sortField := d.getQueryWithDefault("sort_field", "created_at", ctx)
-
-	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "store_code" && sortField != "created_at" && sortField != "updated_at" {
-		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'store_code' or 'do_ref_code' or 'created_at' or 'updated_at'")
+	var sortList = []string{}
+	sortList = append(append(append(sortList, constants.DELIVERY_ORDER_EXPORT_SORT_INT_LIST()...), constants.DELIVERY_ORDER_EXPORT_SORT_STRING_LIST()...), constants.UNMAPPED_TYPE_SORT_LIST()...)
+	if !helper.Contains(sortList, sortField) {
+		err := helper.NewError("Parameter 'sort_field' harus bernilai '" + strings.Join(sortList, "' or '") + "'")
 		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
@@ -774,9 +775,10 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Context) (*models.DeliveryOrderDetailExportRequest, error) {
 
 	sortField := d.getQueryWithDefault("sort_field", "created_at", ctx)
-
-	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "store_code" && sortField != "created_at" && sortField != "updated_at" {
-		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'store_code' or 'do_ref_code' or 'created_at' or 'updated_at'")
+	var sortList = []string{}
+	sortList = append(append(append(sortList, constants.DELIVERY_ORDER_DETAIL_EXPORT_SORT_INT_LIST()...), constants.DELIVERY_ORDER_DETAIL_EXPORT_SORT_STRING_LIST()...), constants.UNMAPPED_TYPE_SORT_LIST()...)
+	if !helper.Contains(sortList, sortField) {
+		err := helper.NewError("Parameter 'sort_field' harus bernilai '" + strings.Join(sortList, "' or '") + "'")
 		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
@@ -788,7 +790,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 
 	mustActiveFields := []*models.MustActiveRequest{}
 
-	intDeliveryOrderID, m, err := d.getIntQueryWithMustActive("do_id", "0", false, "delivery_orders", constants.CLAUSE_ID_VALIDATION, ctx)
+	intDeliveryOrderID, m, err := d.getIntQueryWithMustActive("delivery_orders_id", "0", false, "delivery_order_details", "delivery_order_"+constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -796,7 +798,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intSalesOrderID, m, err := d.getIntQueryWithMustActive("sales_order_id", "0", false, "sales_orders", constants.CLAUSE_ID_VALIDATION, ctx)
+	intSalesOrderID, m, err := d.getIntQueryWithMustActive("so_id", "0", false, "sales_orders", constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -48,3 +48,147 @@ const (
 	FILE_EXCEL_TYPE = "xlsx"
 	FILE_CSV_TYPE   = "csv"
 )
+
+func UNMAPPED_TYPE_SORT_LIST() []string {
+	return []string{
+		"created_at",
+		"updated_at",
+	}
+}
+
+func DELIVERY_ORDER_SORT_INT_LIST() []string {
+	return []string{
+		"order_status_id",
+		"agent_id",
+		"store_id",
+		"product_id",
+		"qty",
+		"do_date",
+		"created_at",
+		"updated_at",
+	}
+}
+
+func DELIVERY_ORDER_SORT_STRING_LIST() []string {
+	return []string{
+		"do_ref_code",
+		"do_code",
+		"do_ref_code",
+		"store_code",
+	}
+}
+
+func DELIVERY_ORDER_DETAIL_SORT_INT_LIST() []string {
+	return []string{
+		"order_status_id",
+		"agent_id",
+		"store_id",
+		"product_id",
+		"qty",
+		"do_date",
+	}
+}
+
+func DELIVERY_ORDER_DETAIL_SORT_STRING_LIST() []string {
+	return []string{
+		"do_code",
+		"store_code",
+	}
+}
+
+func SALES_ORDER_DETAIL_SORT_INT_LIST() []string {
+	return []string{
+		"order_status_id",
+		"so_date",
+		"store_id",
+		"agent_id",
+		"product_id",
+	}
+}
+
+func SALES_ORDER_DETAIL_SORT_STRING_LIST() []string {
+	return []string{
+		"so_ref_code",
+		"so_code",
+		"store_code",
+		"store_name",
+		"product_code",
+	}
+}
+
+func SALES_ORDER_SORT_INT_LIST() []string {
+	return []string{
+		"order_status_id",
+		"so_date",
+		"store_id",
+		"agent_id",
+	}
+}
+
+func SALES_ORDER_SORT_STRING_LIST() []string {
+	return []string{
+		"so_ref_code",
+		"so_code",
+		"store_code",
+		"store_name",
+	}
+}
+
+func DELIVERY_ORDER_EXPORT_SORT_INT_LIST() []string {
+	return []string{
+		"order_status_id",
+		"do_date",
+	}
+}
+
+func DELIVERY_ORDER_EXPORT_SORT_STRING_LIST() []string {
+	return []string{
+		"do_ref_code",
+		"do_code",
+		"do_ref_code",
+		"store_code",
+	}
+}
+
+func DELIVERY_ORDER_DETAIL_EXPORT_SORT_INT_LIST() []string {
+	return []string{
+		"order_status_id",
+	}
+}
+
+func DELIVERY_ORDER_DETAIL_EXPORT_SORT_STRING_LIST() []string {
+	return []string{
+		"do_code",
+		"so_code",
+		"do_ref_code",
+		"store_code",
+	}
+}
+
+func SALES_ORDER_DETAIL_EXPORT_SORT_INT_LIST() []string {
+	return []string{
+		"order_status_id",
+		"product_id",
+	}
+}
+
+func SALES_ORDER_DETAIL_EXPORT_SORT_STRING_LIST() []string {
+	return []string{
+		"so_code",
+		"store_name",
+	}
+}
+
+func SALES_ORDER_EXPORT_SORT_INT_LIST() []string {
+	return []string{
+		"order_status_id",
+		"so_date",
+	}
+}
+
+func SALES_ORDER_EXPORT_SORT_STRING_LIST() []string {
+	return []string{
+		"so_ref_code",
+		"store_code",
+	}
+}
