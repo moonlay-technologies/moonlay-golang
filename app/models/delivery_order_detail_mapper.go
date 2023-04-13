@@ -317,7 +317,7 @@ func (d *DeliveryOrderDetailOpenSearch) MapToCsvRow(dd *DeliveryOrder) []interfa
 		d.DoCode,
 		d.SoDate.String,
 		d.SoCode.String,
-		d.OrderSourceName,
+		dd.SalesOrder.OrderSourceName,
 		d.AgentID,
 		d.Agent.Name,
 		d.WarehouseCode,

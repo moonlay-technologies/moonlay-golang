@@ -307,7 +307,7 @@ func (r *salesOrderDetailOpenSearch) generateSalesOrderDetailQueryOpenSearchResu
 	var total int64 = 0
 
 	if isCountOnly {
-		openSearchQueryResult, err := r.openSearch.Count(constants.DELIVERY_ORDERS_INDEX, openSearchQueryJson)
+		openSearchQueryResult, err := r.openSearch.Count(constants.SALES_ORDER_DETAILS_INDEX, openSearchQueryJson)
 		if err != nil {
 			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			return &models.SalesOrderDetailsOpenSearch{}, errorLogData
