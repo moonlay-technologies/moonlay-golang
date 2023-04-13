@@ -31,24 +31,19 @@ func WriteLog(err error, errorCode int, message interface{}) *model.ErrorLog {
 			Err:        err,
 		}
 
-		if errorCode == 422 {
-			output.Message = "Field Validation"
-			output.Fields = message
+		output.SystemMessage = err.Error()
+		if message == nil {
+			output.Message = DefaultStatusText[errorCode]
+			if output.Message == "" {
+				output.Message = http.StatusText(errorCode)
+			}
 		} else {
-			output.SystemMessage = err.Error()
-			if message == nil {
-				output.Message = DefaultStatusText[errorCode]
-				if output.Message == "" {
-					output.Message = http.StatusText(errorCode)
-				}
-			} else {
-				output.Message = message
-			}
-			if errorCode == http.StatusInternalServerError {
-				output.Line = fmt.Sprintf("%d", line)
-				output.Filename = fmt.Sprintf("%s", file)
-				output.Function = fmt.Sprintf("%s", funcName)
-			}
+			output.Message = message
+		}
+		if errorCode == http.StatusInternalServerError {
+			output.Line = fmt.Sprintf("%d", line)
+			output.Filename = fmt.Sprintf("%s", file)
+			output.Function = fmt.Sprintf("%s", funcName)
 		}
 
 		log := map[string]interface{}{}
