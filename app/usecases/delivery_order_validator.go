@@ -599,8 +599,8 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderValidator(ctx *gin.Context) (*m
 func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) (*models.DeliveryOrderExportRequest, error) {
 	sortField := d.getQueryWithDefault("sort_field", "created_at", ctx)
 
-	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "store_id" && sortField != "created_at" && sortField != "updated_at" {
-		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
+	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "store_code" && sortField != "created_at" && sortField != "updated_at" {
+		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'store_code' or 'do_ref_code' or 'created_at' or 'updated_at'")
 		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
@@ -667,7 +667,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) 
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "delivery_orders d JOIN sales_order s ON d.sales_order_id = s.id", "s.salesman_id = %d AND d.deleted_at IS NULL", ctx)
+	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "delivery_orders d JOIN sales_orders s ON d.sales_order_id = s.id", "s.salesman_id = %d AND d.deleted_at IS NULL", ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -775,8 +775,8 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 
 	sortField := d.getQueryWithDefault("sort_field", "created_at", ctx)
 
-	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "store_id" && sortField != "created_at" && sortField != "updated_at" {
-		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
+	if sortField != "order_status_id" && sortField != "do_date" && sortField != "do_ref_code" && sortField != "store_code" && sortField != "created_at" && sortField != "updated_at" {
+		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'do_date' or 'store_code' or 'do_ref_code' or 'created_at' or 'updated_at'")
 		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
@@ -852,7 +852,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "delivery_order_details dd JOIN delivery_orders d ON dd.delivery_order_id = d.id JOIN sales_order s ON d.sales_order_id = s.id", "s.salesman_id = %d AND dd.deleted_at IS NULL", ctx)
+	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "delivery_order_details dd JOIN delivery_orders d ON dd.delivery_order_id = d.id JOIN sales_orders s ON d.sales_order_id = s.id", "s.salesman_id = %d AND dd.deleted_at IS NULL", ctx)
 	if err != nil {
 		return nil, err
 	}

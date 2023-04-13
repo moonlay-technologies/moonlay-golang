@@ -1720,14 +1720,25 @@ func (u *deliveryOrderUseCase) Export(request *models.DeliveryOrderExportRequest
 
 	if getDeliveryOrdersCountResult.Error != nil {
 		fmt.Println("error = ", getDeliveryOrdersCountResult.Error)
-		return "", getDeliveryOrdersCountResult.ErrorLog
+		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       []string{"Data tidak ditemukan"},
+			SystemMessage: []string{"Delivery Orders data not found"},
+			StatusCode:    http.StatusNotFound,
+		})
+		return "", errorLogData
 	}
 
 	if getDeliveryOrdersCountResult.Total == 0 {
 		err := helper.NewError("Data tidak ditemukan")
 		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
+		errorLogData = helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       []string{"Data tidak ditemukan"},
+			SystemMessage: []string{"Delivery Orders data not found"},
+			StatusCode:    http.StatusNotFound,
+		})
 		return "", errorLogData
 	}
+
 	rand, err := helper.Generate(`[A-Za-z]{12}`)
 	x, err := time.LoadLocation("Asia/Jakarta")
 	fileHour := time.Now().In(x).Format(constants.DATE_FORMAT_EXPORT)
@@ -1758,12 +1769,22 @@ func (u *deliveryOrderUseCase) ExportDetail(request *models.DeliveryOrderDetailE
 
 	if getDeliveryOrderDetailsCountResult.Error != nil {
 		fmt.Println("error = ", getDeliveryOrderDetailsCountResult.Error)
-		return "", getDeliveryOrderDetailsCountResult.ErrorLog
+		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       []string{"Data tidak ditemukan"},
+			SystemMessage: []string{"Delivery Orders Detail data not found"},
+			StatusCode:    http.StatusNotFound,
+		})
+		return "", errorLogData
 	}
 
 	if getDeliveryOrderDetailsCountResult.Total == 0 {
 		err := helper.NewError("Data tidak ditemukan")
 		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
+		errorLogData = helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       []string{"Data tidak ditemukan"},
+			SystemMessage: []string{"Delivery Orders Detail data not found"},
+			StatusCode:    http.StatusNotFound,
+		})
 		return "", errorLogData
 	}
 	rand, err := helper.Generate(`[A-Za-z]{12}`)
