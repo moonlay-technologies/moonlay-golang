@@ -33,6 +33,7 @@ type uploadSOSJFileConsumerHandler struct {
 	salesOrderRepository          repositories.SalesOrderRepositoryInterface
 	deliveryOrderRepository       repositories.DeliveryOrderRepositoryInterface
 	warehouseRepository           repositories.WarehouseRepositoryInterface
+	storeRepository               repositories.StoreRepositoryInterface
 	productRepository             repositories.ProductRepositoryInterface
 	uomRepository                 repositories.UomRepositoryInterface
 	ctx                           context.Context
@@ -40,7 +41,7 @@ type uploadSOSJFileConsumerHandler struct {
 	db                            dbresolver.DB
 }
 
-func InitUploadSOSJFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, uploadRepository repositories.UploadRepositoryInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, requestValidationRepository repositories.RequestValidationRepositoryInterface, sosjUploadHistoriesRepository mongoRepositories.SOSJUploadHistoriesRepositoryInterface, sosjUploadErrorLogsRepository mongoRepositories.SosjUploadErrorLogsRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, productRepository repositories.ProductRepositoryInterface, uomRepository repositories.UomRepositoryInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UploadSOFileConsumerHandlerInterface {
+func InitUploadSOSJFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, uploadRepository repositories.UploadRepositoryInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, requestValidationRepository repositories.RequestValidationRepositoryInterface, sosjUploadHistoriesRepository mongoRepositories.SOSJUploadHistoriesRepositoryInterface, sosjUploadErrorLogsRepository mongoRepositories.SosjUploadErrorLogsRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, productRepository repositories.ProductRepositoryInterface, uomRepository repositories.UomRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UploadSOFileConsumerHandlerInterface {
 	return &uploadSOSJFileConsumerHandler{
 		kafkaClient:                   kafkaClient,
 		uploadRepository:              uploadRepository,
@@ -53,6 +54,7 @@ func InitUploadSOSJFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClient
 		warehouseRepository:           warehouseRepository,
 		productRepository:             productRepository,
 		uomRepository:                 uomRepository,
+		storeRepository:               storeRepository,
 		ctx:                           ctx,
 		args:                          args,
 		db:                            db,
@@ -95,8 +97,8 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 
 		parseFile := string(file)
 		data := strings.Split(parseFile, "\n")
-		idDistributor := strings.Split(data[0], ",")
-		if len(data) < 1 || idDistributor[0] != "IDDistributor" || strings.ReplaceAll(data[1], "\r", "") != "Status,NoSuratJalan,TglSuratJalan,KodeTokoDBO,IDMerk,KodeProdukDBO,Qty,Unit,NamaSupir,PlatNo,KodeGudang,IDSalesman,IDAlamat,Catatan,CatatanInternal" {
+
+		if len(data) < 1 || strings.ReplaceAll(data[1], "\r", "") != "Status,NoSuratJalan,TglSuratJalan,KodeTokoDBO,IDMerk,KodeProdukDBO,Qty,Unit,NamaSupir,PlatNo,KodeGudang,IDSalesman,IDAlamat,Catatan,CatatanInternal" {
 			c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 			continue
 		}
@@ -252,6 +254,35 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 				}
 			}
 
+			getProductResultChan := make(chan *models.ProductChan)
+			go c.productRepository.GetBySKU(rowData.ProductCode, false, c.ctx, getProductResultChan)
+			getProductResult := <-getProductResultChan
+
+			getUomResultChan := make(chan *models.UomChan)
+			go c.uomRepository.GetByID(intTypeResult["Unit"], false, c.ctx, getUomResultChan)
+			getUomResult := <-getUomResultChan
+
+			if getUomResult.Error != nil || getProductResult.Error != nil {
+				if key == "retry" {
+					c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{}
+					if getUomResult.Error != nil {
+						errors = append(errors, getUomResult.Error.Error())
+					}
+					if getProductResult.Error != nil {
+						if getProductResult.ErrorLog.StatusCode == http.StatusNotFound {
+							errors = append(errors, fmt.Sprintf("Kode SKU = %s dengan Merek %s Tidak Ditemukan. Silahkan gunakan Kode SKU yang lain", rowData.ProductCode, rowData.BrandName.String))
+						} else {
+							errors = append(errors, getProductResult.Error.Error())
+						}
+					}
+					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
+					continue
+				}
+			}
+
 			mustActiveField := []*models.MustActiveRequest{
 				helper.GenerateMustActive("agents", "IDDistributor", intTypeResult["IDDistributor"], "active"),
 				helper.GenerateMustActive("users", "user_id", int(*message.UploadedBy), "ACTIVE"),
@@ -298,11 +329,81 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 				}
 			}
 
+			var price float64
+			if getUomResult.Uom.Code.String == getProductResult.Product.UnitMeasurementSmall.String {
+				price = getProductResult.Product.PriceSmall
+			} else if getUomResult.Uom.Code.String == getProductResult.Product.UnitMeasurementMedium.String {
+				price = getProductResult.Product.PriceMedium
+			} else if getUomResult.Uom.Code.String == getProductResult.Product.UnitMeasurementBig.String {
+				price = getProductResult.Product.PriceBig
+			} else {
+				if key == "retry" {
+					c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{fmt.Sprintf("Unit Satuan = %s pada Kode SKU %s Tidak Sesuai. Silahkan gunakan unit satuan yang lain.", getUomResult.Uom.Code.String, rowData.ProductCode)}
+					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
+					continue
+				}
+			}
+
+			if price < 1 {
+				if key == "retry" {
+					c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{fmt.Sprintf("Produk dengan Kode SKU %s Belum Ada Harga atau Harga = 0. Silahkan gunakan Kode SKU Produk yang lain.", rowData.ProductCode)}
+					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
+					continue
+				}
+			}
+
+			getStoreResultChan := make(chan *models.StoreChan)
+			go c.storeRepository.GetIdByStoreCode(rowData.StoreCode, false, c.ctx, getStoreResultChan)
+			getStoreResult := <-getStoreResultChan
+			if getStoreResult.Error != nil {
+				if key == "retry" {
+					c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{getStoreResult.Error.Error()}
+
+					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
+					continue
+				}
+			}
+
+			go c.storeRepository.GetByID(getStoreResult.Store.ID, false, c.ctx, getStoreResultChan)
+			getStoreResult = <-getStoreResultChan
+			if getStoreResult.Error != nil {
+				if key == "retry" {
+					c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{getStoreResult.Error.Error()}
+
+					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
+					continue
+				}
+			}
+
+			if fmt.Sprint(getStoreResult.Store.AgentID.Int64) != rowData.AgentId {
+				if key == "retry" {
+					c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{fmt.Sprintf("KodeToko = %s Tidak Terdaftar pada Distributor %s. Silahkan gunakan Kode Toko yang lain.", rowData.StoreCode, rowData.AgentName.String)}
+
+					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
+					continue
+				}
+			}
+
 			if rowData.WhCode != "" {
 				getWarehouseResultChan := make(chan *models.WarehouseChan)
 				go c.warehouseRepository.GetByID(intTypeResult["KodeGudang"], false, c.ctx, getWarehouseResultChan)
-
 				getWarehouseResult := <-getWarehouseResultChan
+
 				if getWarehouseResult.Error != nil {
 					if key == "retry" {
 						c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
@@ -310,7 +411,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 					} else {
 						errors := []string{getWarehouseResult.Error.Error()}
 						if getWarehouseResult.ErrorLog.StatusCode == http.StatusNotFound {
-							errors = []string{fmt.Sprintf("Gudang dengan Kode %d Tidak Ditemukan pada Distributor %s. Silahkan gunakan Kode Gudang yang lain.", intTypeResult["KodeGudang"], rowData.AgentName.String)}
+							errors = []string{fmt.Sprintf("Gudang dengan Kode %s Tidak Ditemukan pada Distributor %s. Silahkan gunakan Kode Gudang yang lain.", rowData.WhCode, rowData.AgentName.String)}
 						}
 
 						c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
@@ -340,50 +441,6 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 						c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
 						continue
 					}
-				}
-			}
-
-			getProductResultChan := make(chan *models.ProductChan)
-			go c.productRepository.GetBySKU(rowData.ProductCode, false, c.ctx, getProductResultChan)
-			getProductResult := <-getProductResultChan
-
-			getUomResultChan := make(chan *models.UomChan)
-			go c.uomRepository.GetByID(intTypeResult["Unit"], false, c.ctx, getUomResultChan)
-			getUomResult := <-getUomResultChan
-
-			if getUomResult.Error != nil || getProductResult.Error != nil {
-				if key == "retry" {
-					c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
-					break
-				} else {
-					errors := []string{}
-					if getUomResult.Error != nil {
-						errors = append(errors, getUomResult.Error.Error())
-					}
-					if getProductResult.Error != nil {
-						errors = append(errors, getProductResult.Error.Error())
-					}
-					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
-					continue
-				}
-			}
-
-			var price float64
-			if getUomResult.Uom.Code.String == getProductResult.Product.UnitMeasurementSmall.String {
-				price = getProductResult.Product.PriceSmall
-			} else if getUomResult.Uom.Code.String == getProductResult.Product.UnitMeasurementMedium.String {
-				price = getProductResult.Product.PriceMedium
-			} else {
-				price = getProductResult.Product.PriceBig
-			}
-			if price < 1 {
-				if key == "retry" {
-					c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
-					break
-				} else {
-					errors := []string{fmt.Sprintf("Produk dengan Kode SKU %s Belum Ada Harga atau Harga = 0. Silahkan gunakan Kode SKU Produk yang lain.", rowData.ProductCode)}
-					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
-					continue
 				}
 			}
 
@@ -482,7 +539,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 			go c.deliveryOrderRepository.GetByDoRefCode(v.NoSuratJalan, true, c.ctx, deliveryOrderResultChan)
 			deliveryOrderResult := <-deliveryOrderResultChan
 
-			if deliveryOrderResult.Error != nil || salesOrderResult.Error != nil {
+			if (deliveryOrderResult.Error != nil || salesOrderResult.Error != nil) && (deliveryOrderResult.ErrorLog.StatusCode != http.StatusNotFound || salesOrderResult.ErrorLog.StatusCode != http.StatusNotFound) {
 				if key == "retry" {
 
 					c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
@@ -511,7 +568,13 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 					c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 					break
 				} else {
-					errors = []string{fmt.Sprintf("No. Surat Jalan = %s Sudah Terpakai pada Distributor %s, silahkan gunakan No. Surat Jalan lain.", v.NoSuratJalan, v.RowData.AgentName.String)}
+					errors = []string{}
+					if deliveryOrderResult.Total > 0 {
+						errors = append(errors, fmt.Sprintf("No. Surat Jalan = %s Sudah Terpakai pada Distributor %s, silahkan gunakan No. Surat Jalan lain.", v.NoSuratJalan, v.RowData.AgentName.String))
+					}
+					if salesOrderResult.Total > 0 {
+						errors = append(errors, fmt.Sprintf("No. Order = %s Sudah Terpakai di Distributor %s. Silahkan gunakan No. Order yang lain", v.NoSuratJalan, v.RowData.AgentName.String))
+					}
 
 					c.createSosjUploadErrorLog(v.ErrorLine, v.RowData.AgentId, string(sosjUploadHistoryId), message.RequestId, v.RowData.AgentName.String, message.BulkCode, errors, &now, v.RowData)
 
