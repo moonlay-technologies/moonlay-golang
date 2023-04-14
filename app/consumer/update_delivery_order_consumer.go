@@ -63,7 +63,7 @@ func (c *UpdateDeliveryOrderConsumerHandler) ProcessMessage() {
 		deliveryOrderLog := &models.DeliveryOrderLog{
 			RequestID: "",
 			DoCode:    "",
-			Data:      m.Value,
+			Data:      string(m.Value),
 			Status:    constants.LOG_STATUS_MONGO_ERROR,
 			Action:    constants.LOG_ACTION_MONGO_UPDATE,
 			CreatedAt: &now,

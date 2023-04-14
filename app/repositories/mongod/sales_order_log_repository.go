@@ -204,7 +204,9 @@ func (r *salesOrderLogRepository) Get(request *models.SalesOrderEventLogRequest,
 		cursor, errs := collection.Find(ctx, filter, option)
 
 		if errs != nil {
-			response.Error = err
+			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+			response.Error = errs
+			response.ErrorLog = errorLogData
 			resultChan <- response
 			return
 		}
@@ -213,7 +215,9 @@ func (r *salesOrderLogRepository) Get(request *models.SalesOrderEventLogRequest,
 		for cursor.Next(ctx) {
 			var salesOrderLog *models.GetSalesOrderLog
 			if err := cursor.Decode(&salesOrderLog); err != nil {
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 				response.Error = err
+				response.ErrorLog = errorLogData
 				resultChan <- response
 				return
 			}

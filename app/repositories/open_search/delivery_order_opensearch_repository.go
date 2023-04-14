@@ -1203,7 +1203,7 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchResult(ope
 		}
 
 		if openSearchQueryResult <= 0 {
-			err = helper.NewError("delivery_orders_opensearch data not found")
+			err = helper.NewError(constants.ERROR_DATA_NOT_FOUND)
 			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 			return &models.DeliveryOrders{}, errorLogData
 		}
@@ -1220,7 +1220,7 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchResult(ope
 		total = int64(openSearchQueryResult.Hits.Total.Value)
 
 		if int64(openSearchQueryResult.Hits.Total.Value) <= 0 {
-			err = helper.NewError("delivery_orders_opensearch data not found")
+			err = helper.NewError(constants.ERROR_DATA_NOT_FOUND)
 			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 			return &models.DeliveryOrders{}, errorLogData
 		}

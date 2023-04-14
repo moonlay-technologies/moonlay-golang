@@ -65,7 +65,7 @@ func (c *DeleteDeliveryOrderConsumerHandler) ProcessMessage() {
 			RequestID: "",
 			DoCode:    "",
 			Action:    constants.LOG_ACTION_MONGO_DELETE,
-			Data:      m.Value,
+			Data:      string(m.Value),
 			Status:    constants.LOG_STATUS_MONGO_ERROR,
 			CreatedAt: &now,
 		}
