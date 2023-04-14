@@ -108,7 +108,6 @@ func InitSalesOrderUseCaseInterface(salesOrderRepository repositories.SalesOrder
 func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTransaction *sql.Tx, ctx context.Context) ([]*models.SalesOrderResponse, *baseModel.ErrorLog) {
 	now := time.Now()
 	var soCode string
-	var journeyStatus string
 
 	// Get Order Source Status By Id
 	getOrderSourceResultChan := make(chan *models.OrderSourceChan)
@@ -122,10 +121,8 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 	var status string
 	if getOrderSourceResult.OrderSource.SourceName == "manager" {
 		status = "open"
-		journeyStatus = constants.SO_STATUS_APPV
 	} else {
 		status = "pending"
-		journeyStatus = constants.SO_STATUS_PEND
 	}
 
 	// Get Order Status By Name
@@ -395,25 +392,6 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 
 		if createSalesOrderLogResult.Error != nil {
 			return []*models.SalesOrderResponse{}, createSalesOrderLogResult.ErrorLog
-		}
-
-		salesOrderJourneys := &models.SalesOrderJourneys{
-			SoCode:    salesOrderResponse.SoCode,
-			SoId:      createSalesOrderResult.SalesOrder.ID,
-			SoDate:    createSalesOrderResult.SalesOrder.SoDate,
-			Status:    journeyStatus,
-			Remark:    "",
-			Reason:    "",
-			CreatedAt: &now,
-			UpdatedAt: &now,
-		}
-
-		createSalesOrderJourneysResultChan := make(chan *models.SalesOrderJourneysChan)
-		go u.salesOrderJourneysRepository.Insert(salesOrderJourneys, ctx, createSalesOrderJourneysResultChan)
-		createSalesOrderJourneysResult := <-createSalesOrderJourneysResultChan
-
-		if createSalesOrderJourneysResult.Error != nil {
-			return []*models.SalesOrderResponse{}, createSalesOrderJourneysResult.ErrorLog
 		}
 
 		keyKafka := []byte(v.SoCode)
