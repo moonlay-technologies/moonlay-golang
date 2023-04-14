@@ -411,17 +411,17 @@ func (deliveryOrderEventLog *DeliveryOrderEventLogResponse) DeliveryOrderEventLo
 }
 
 func (dataDOEventLog *DataDOEventLogResponse) DataDOEventLogResponseMap(request *GetDeliveryOrderLog) {
-	dataDOEventLog.AgentID = &request.Data.AgentID
-	dataDOEventLog.AgentName = &request.Data.AgentName
+	dataDOEventLog.AgentID = &request.Data.SalesOrder.AgentID
+	dataDOEventLog.AgentName = &request.Data.SalesOrder.AgentName.String
 	dataDOEventLog.SoCode = &request.Data.SalesOrder.SoCode
-	dataDOEventLog.DoDate = request.Data.DoDate
-	dataDOEventLog.DoRefCode = request.Data.DoRefCode.String
-	dataDOEventLog.Note = request.Data.Note
+	dataDOEventLog.DoDate = &request.Data.DoDate
+	dataDOEventLog.DoRefCode = &request.Data.DoRefCode.String
+	dataDOEventLog.Note = NullString{sql.NullString{String: request.Data.Note.String, Valid: true}}
 	dataDOEventLog.InternalComment = NullString{sql.NullString{String: request.Data.SalesOrder.InternalComment.String, Valid: true}}
-	dataDOEventLog.DriverName = request.Data.DriverName
-	dataDOEventLog.PlatNumber = request.Data.PlatNumber
-	dataDOEventLog.BrandID = &request.Data.Brand.ID
-	dataDOEventLog.BrandName = &request.Data.Brand.Name
+	dataDOEventLog.DriverName = NullString{sql.NullString{String: request.Data.DriverName.String, Valid: true}}
+	dataDOEventLog.PlatNumber = NullString{sql.NullString{String: request.Data.PlatNumber.String, Valid: true}}
+	dataDOEventLog.BrandID = &request.Data.SalesOrder.BrandID
+	dataDOEventLog.BrandName = &request.Data.SalesOrder.BrandName
 	dataDOEventLog.WarehouseCode = request.Data.WarehouseCode
 	dataDOEventLog.WarehouseName = request.Data.WarehouseName
 	return
