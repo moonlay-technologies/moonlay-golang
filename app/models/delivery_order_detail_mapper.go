@@ -322,12 +322,19 @@ func (d *DeliveryOrderDetailOpenSearch) MapToCsvRow(dd *DeliveryOrder) []interfa
 		store.ProvinceID = NullString{NullString: sql.NullString{String: "", Valid: true}}
 		store.ProvinceName = NullString{NullString: sql.NullString{String: "", Valid: true}}
 	}
+	if len(d.DoDate) > 9 {
+		d.DoDate = d.DoDate[0:10]
+	}
+	soDate := d.SoDate.String
+	if len(soDate) > 9 {
+		soDate = soDate[0:10]
+	}
 	return []interface{}{
 		d.OrderStatusName,
 		d.DoDate,
 		d.DoRefCode,
 		d.DoCode,
-		d.SoDate.String,
+		soDate,
 		d.SoCode.String,
 		dd.SalesOrder.OrderSourceName,
 		d.AgentID,
