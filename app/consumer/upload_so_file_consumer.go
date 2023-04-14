@@ -439,7 +439,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 
 					break
 				} else {
-					errors := []string{fmt.Sprintf("Format Tanggal Toko Order = %s Salah, silahkan sesuaikan dengan format DD-MMM-YYYY, contoh 15/12/2021", v["TanggalTokoOrder"])}
+					errors := []string{fmt.Sprintf("Format Tanggal Toko Order = %s Salah, silahkan sesuaikan dengan format DD/MM/YYYY, contoh 15/12/2021", v["TanggalTokoOrder"])}
 
 					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
 
