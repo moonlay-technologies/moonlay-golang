@@ -143,7 +143,7 @@ func GenerateResultByError(err error, statusCode int, systemMessage string) mode
 	errLog.SystemMessage = systemMessage
 	return model.Response{
 		StatusCode: statusCode,
-		Error:      WriteLog(err, statusCode, err.Error()),
+		Error:      errLog,
 	}
 }
 

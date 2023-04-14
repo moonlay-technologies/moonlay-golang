@@ -57,10 +57,16 @@ func (r *salesOrderOpenSearch) Create(request *models.SalesOrder, resultChan cha
 	return
 }
 
-func (r *salesOrderOpenSearch) Get(request *models.SalesOrderRequest, IsCountOnly bool, resultChan chan *models.SalesOrdersChan) {
+func (r *salesOrderOpenSearch) Get(request *models.SalesOrderRequest, isCountOnly bool, resultChan chan *models.SalesOrdersChan) {
 	response := &models.SalesOrdersChan{}
+	if isCountOnly {
+		request.Page = 0
+		request.PerPage = 0
+		request.SortField = ""
+		request.SortValue = ""
+	}
 	requestQuery := r.generateSalesOrderQueryOpenSearchTermRequest("", "", request)
-	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true, IsCountOnly)
+	result, err := r.generateSalesOrderQueryOpenSearchResult(requestQuery, true, isCountOnly)
 
 	if err.Err != nil {
 		response.Error = err.Err
@@ -394,18 +400,24 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 				"order": request.SortValue,
 			}
 
-			if request.SortField == "created_at" || request.SortField == "updated_at" {
+			if helper.Contains(constants.UNMAPPED_TYPE_SORT_LIST(), request.SortField) {
 				sortValue["unmapped_type"] = "date"
 			}
 
-			field := request.SortField
-			if request.SortField == "so_ref_code" || request.SortField == "so_code" || request.SortField == "store_code" || request.SortField == "store_name" {
-				field = field + ".keyword"
+			if helper.Contains(constants.SALES_ORDER_SORT_INT_LIST(), request.SortField) {
+				openSearchQuery["sort"] = []map[string]interface{}{
+					{
+						request.SortField: sortValue,
+					},
+				}
 			}
-			openSearchQuery["sort"] = []map[string]interface{}{
-				{
-					field: sortValue,
-				},
+
+			if helper.Contains(constants.SALES_ORDER_SORT_STRING_LIST(), request.SortField) {
+				openSearchQuery["sort"] = []map[string]interface{}{
+					{
+						request.SortField + ".keyword": sortValue,
+					},
+				}
 			}
 		}
 	}
@@ -424,7 +436,7 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchResult(openSearc
 	var total int64 = 0
 
 	if isCountOnly {
-		openSearchQueryResult, err := r.openSearch.Count(constants.DELIVERY_ORDERS_INDEX, openSearchQueryJson)
+		openSearchQueryResult, err := r.openSearch.Count(constants.SALES_ORDERS_INDEX, openSearchQueryJson)
 		if err != nil {
 			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			return &models.SalesOrders{}, errorLogData

@@ -771,9 +771,10 @@ func (d *SalesOrderValidator) getIntQueryWithMustActive(param string, empty stri
 
 func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*models.SalesOrderExportRequest, error) {
 	sortField := d.getQueryWithDefault("sort_field", "created_at", ctx)
-
-	if sortField != "order_status_id" && sortField != "so_date" && sortField != "do_ref_code" && sortField != "store_code" && sortField != "created_at" && sortField != "updated_at" {
-		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'so_date' or store_code or 'do_ref_code' or 'created_at' or 'updated_at'")
+	var sortList = []string{}
+	sortList = append(append(append(sortList, constants.SALES_ORDER_EXPORT_SORT_INT_LIST()...), constants.SALES_ORDER_EXPORT_SORT_STRING_LIST()...), constants.UNMAPPED_TYPE_SORT_LIST()...)
+	if !helper.Contains(sortList, sortField) {
+		err := helper.NewError("Parameter 'sort_field' harus bernilai '" + strings.Join(sortList, "' or '") + "'")
 		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
@@ -944,9 +945,10 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 
 func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) (*models.SalesOrderDetailExportRequest, error) {
 	sortField := d.getQueryWithDefault("sort_field", "created_at", ctx)
-
-	if sortField != "order_status_id" && sortField != "so_date" && sortField != "do_ref_code" && sortField != "store_code" && sortField != "created_at" && sortField != "updated_at" {
-		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'so_date' or store_code or 'do_ref_code' or 'created_at' or 'updated_at'")
+	var sortList = []string{}
+	sortList = append(append(append(sortList, constants.SALES_ORDER_DETAIL_EXPORT_SORT_INT_LIST()...), constants.SALES_ORDER_DETAIL_EXPORT_SORT_STRING_LIST()...), constants.UNMAPPED_TYPE_SORT_LIST()...)
+	if !helper.Contains(sortList, sortField) {
+		err := helper.NewError("Parameter 'sort_field' harus bernilai '" + strings.Join(sortList, "' or '") + "'")
 		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
