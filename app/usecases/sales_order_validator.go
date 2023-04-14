@@ -1379,18 +1379,18 @@ func (c *SalesOrderValidator) UpdateSalesOrderDetailByIdValidator(updateRequest 
 		return err
 	}
 
-	errorValidation := c.updateSOValidation(soId, getSalesOrderByIDResult.SalesOrder.OrderStatusName, ctx)
-	if errorValidation != nil {
-		err := errorValidation
-		errorLog := helper.NewWriteLog(model.ErrorLog{
-			Message:       err,
-			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
-			StatusCode:    http.StatusUnprocessableEntity,
-		})
-		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+	// errorValidation := c.updateSOValidation(soId, getSalesOrderByIDResult.SalesOrder.OrderStatusName, ctx)
+	// if errorValidation != nil {
+	// 	err := errorValidation
+	// 	errorLog := helper.NewWriteLog(model.ErrorLog{
+	// 		Message:       err,
+	// 		SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
+	// 		StatusCode:    http.StatusUnprocessableEntity,
+	// 	})
+	// 	ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 
-		return fmt.Errorf(strings.Join(err, ";"))
-	}
+	// 	return fmt.Errorf(strings.Join(err, ";"))
+	// }
 
 	salesOrder := getSalesOrderByIDResult.SalesOrder
 	totalSoDetail := getSalesOrderDetailByIDResult.Total
