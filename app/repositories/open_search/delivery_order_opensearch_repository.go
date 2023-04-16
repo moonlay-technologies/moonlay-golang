@@ -9,6 +9,7 @@ import (
 	"order-service/global/utils/model"
 	"order-service/global/utils/opensearch_dbo"
 	"strings"
+	"time"
 )
 
 type DeliveryOrderOpenSearchRepositoryInterface interface {
@@ -1230,11 +1231,23 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchResult(ope
 			return &models.DeliveryOrders{}, errorLogData
 		}
 
+		loc, _ := time.LoadLocation("Asia/Jakarta")
 		for _, v := range openSearchQueryResult.Hits.Hits {
 			obj := v.Source.(map[string]interface{})
 			deliveryOrder := models.DeliveryOrder{}
 			objJson, _ := json.Marshal(obj)
 			json.Unmarshal(objJson, &deliveryOrder)
+			layout := time.RFC3339
+			if obj["created_at"] != nil {
+				createdAt, _ := time.ParseInLocation(layout, obj["created_at"].(string), loc)
+				createdAt = createdAt.In(loc)
+				deliveryOrder.CreatedAt = &createdAt
+			}
+			if obj["updated_at"] != nil {
+				updatedAt, _ := time.ParseInLocation(layout, obj["created_at"].(string), loc)
+				updatedAt = updatedAt.In(loc)
+				deliveryOrder.UpdatedAt = &updatedAt
+			}
 			deliveryOrders = append(deliveryOrders, &deliveryOrder)
 		}
 	}

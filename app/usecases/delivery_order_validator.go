@@ -802,7 +802,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 	if err != nil {
 		return nil, err
 	}
-	if intDeliveryOrderID > 0 {
+	if intDeliveryOrderDetailID > 0 {
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
@@ -865,6 +865,9 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 	intSalesmanID, m, err := d.getIntQueryWithMustActive("salesman_id", "0", false, "delivery_order_details dd JOIN delivery_orders d ON dd.delivery_order_id = d.id JOIN sales_orders s ON d.sales_order_id = s.id", "s.salesman_id = %d AND dd.deleted_at IS NULL", ctx)
 	if err != nil {
 		return nil, err
+	}
+	if intSalesmanID > 0 {
+		mustActiveFields = append(mustActiveFields, m)
 	}
 
 	err = d.requestValidationMiddleware.MustActiveValidationCustomCode(404, ctx, mustActiveFields)

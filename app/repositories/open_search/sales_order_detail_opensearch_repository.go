@@ -349,6 +349,7 @@ func (r *salesOrderDetailOpenSearch) generateSalesOrderDetailQueryOpenSearchResu
 		total = int64(openSearchQueryResult.Hits.Total.Value)
 
 		if openSearchQueryResult.Hits.Total.Value > 0 {
+			loc, _ := time.LoadLocation("Asia/Jakarta")
 			for _, v := range openSearchQueryResult.Hits.Hits {
 				obj := v.Source.(map[string]interface{})
 
@@ -364,10 +365,12 @@ func (r *salesOrderDetailOpenSearch) generateSalesOrderDetailQueryOpenSearchResu
 				layout := time.RFC3339
 				if obj["created_at"] != nil {
 					createdAt, _ := time.Parse(layout, obj["created_at"].(string))
+					createdAt = createdAt.In(loc)
 					salesOrderDetail.CreatedAt = &createdAt
 				}
 				if obj["updated_at"] != nil {
 					updatedAt, _ := time.Parse(layout, obj["updated_at"].(string))
+					updatedAt = updatedAt.In(loc)
 					salesOrderDetail.UpdatedAt = &updatedAt
 				}
 
