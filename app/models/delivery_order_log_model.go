@@ -91,8 +91,8 @@ type DataDOEventLogResponse struct {
 	AgentID              *int                        `json:"agent_id,omitempty" bson:"agent_id,omitempty"`
 	AgentName            *string                     `json:"agent_name,omitempty" bson:"agent_name,omitempty"`
 	SoCode               *string                     `json:"so_code,omitempty" bson:"so_code,omitempty"`
-	DoDate               string                      `json:"do_date,omitempty" bson:"do_date,omitempty"`
-	DoRefCode            string                      `json:"do_ref_code,omitempty" bson:"do_ref_code,omitempty"`
+	DoDate               *string                     `json:"do_date,omitempty" bson:"do_date,omitempty"`
+	DoRefCode            *string                     `json:"do_ref_code,omitempty" bson:"do_ref_code,omitempty"`
 	Note                 NullString                  `json:"note,omitempty" bson:"note,omitempty"`
 	InternalComment      NullString                  `json:"internal_comment,omitempty" bson:"internal_comment,omitempty"`
 	DriverName           NullString                  `json:"driver_name,omitempty" bson:"driver_name,omitempty"`

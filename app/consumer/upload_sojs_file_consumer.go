@@ -492,7 +492,7 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 					c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 					break
 				} else {
-					errors = []string{fmt.Sprintf("Format Tanggal Order = %s Salah, silahkan sesuaikan dengan format DD-MMM-YYYY, contoh 15/12/2021", rowData.SjDate)}
+					errors = []string{fmt.Sprintf("Format Tanggal Order = %s Salah, silahkan sesuaikan dengan format DD/MM/YYYY, contoh 15/12/2021", rowData.SjDate)}
 
 					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
 
