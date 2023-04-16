@@ -579,12 +579,16 @@ func (salesOrder *SalesOrder) SalesOrderForDOMap(request *SalesOrder) {
 
 func (salesOrderEventLog *SalesOrderEventLogResponse) SalesOrderEventLogResponseMap(request *GetSalesOrderLog, status string) {
 	salesOrderEventLog.ID = request.ID
-	salesOrderEventLog.RequestID = request.RequestID
-	salesOrderEventLog.SoCode = request.SoCode
+	salesOrderEventLog.RequestID = &request.RequestID
+	salesOrderEventLog.SoCode = request.Data.SoCode
 	salesOrderEventLog.Status = status
 	salesOrderEventLog.Action = request.Action
 	salesOrderEventLog.CreatedAt = request.CreatedAt
-	salesOrderEventLog.UpdatedAt = request.UpdatedAt
+	if request.UpdatedAt == nil {
+		salesOrderEventLog.UpdatedAt = request.CreatedAt
+	} else {
+		salesOrderEventLog.UpdatedAt = request.UpdatedAt
+	}
 	return
 }
 
@@ -593,8 +597,8 @@ func (dataSOEventLog *DataSOEventLogResponse) DataSOEventLogResponseMap(request 
 	dataSOEventLog.AgentName = request.Data.AgentName.String
 	dataSOEventLog.StoreCode = request.Data.StoreCode.String
 	dataSOEventLog.StoreName = request.Data.StoreName.String
-	dataSOEventLog.SalesID = int(request.Data.SalesmanID.Int64)
-	dataSOEventLog.SalesName = request.Data.SalesmanName.String
+	dataSOEventLog.SalesID = NullInt64{sql.NullInt64{Int64: int64(int(request.Data.SalesmanID.Int64)), Valid: true}}
+	dataSOEventLog.SalesName = &request.Data.SalesmanName.String
 	dataSOEventLog.OrderDate = request.Data.CreatedAt
 	dataSOEventLog.StartOrderAt = request.Data.StartCreatedDate
 	dataSOEventLog.OrderNote = NullString{sql.NullString{String: request.Data.Note.String, Valid: true}}
@@ -610,6 +614,14 @@ func (soDetailEventLogResponse *SODetailEventLogResponse) SoDetailEventLogRespon
 	soDetailEventLogResponse.ProductID = request.ProductID
 	soDetailEventLogResponse.OrderQty = request.Qty
 	soDetailEventLogResponse.UomID = request.UomID
+	return
+}
+
+func (salesOrderLog *GetSalesOrderLog) SalesOrderLogBinaryMap(request *SalesOrderLog, data SalesOrder) {
+	salesOrderLog.Data = &data
+	salesOrderLog.Action = request.Action
+	salesOrderLog.Status = request.Status
+	salesOrderLog.CreatedAt = request.CreatedAt
 	return
 }
 
