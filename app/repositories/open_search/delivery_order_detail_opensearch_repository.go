@@ -8,6 +8,7 @@ import (
 	"order-service/global/utils/helper"
 	"order-service/global/utils/model"
 	"order-service/global/utils/opensearch_dbo"
+	"time"
 )
 
 type DeliveryOrderDetailOpenSearchRepositoryInterface interface {
@@ -334,6 +335,16 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 			filters = append(filters, filter)
 		}
 
+		if request.DistrictID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"store.district_id": request.DistrictID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
 		if request.VillageID != 0 {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
@@ -384,7 +395,7 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 			match := map[string]interface{}{
 				"query_string": map[string]interface{}{
 					"query":            "*" + request.GlobalSearchValue + "*",
-					"fields":           []string{"do_code", "do_ref_code", "so_code", "store.name", "store.code", "order_status.name^0.5", "qty^3"},
+					"fields":           []string{"do_code", "do_ref_code", "so_code", "store.name", "store.store_code", "order_status.name^0.5", "qty^3"},
 					"type":             "best_fields",
 					"default_operator": "AND",
 					"lenient":          true,
@@ -477,11 +488,23 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchResu
 		total = int64(openSearchQueryResult.Hits.Total.Value)
 
 		if openSearchQueryResult.Hits.Total.Value > 0 {
+			loc, _ := time.LoadLocation("Asia/Jakarta")
 			for _, v := range openSearchQueryResult.Hits.Hits {
 				obj := v.Source.(map[string]interface{})
 				deliveryOrderDetail := models.DeliveryOrderDetailOpenSearch{}
 				objJson, _ := json.Marshal(obj)
 				json.Unmarshal(objJson, &deliveryOrderDetail)
+				layout := time.RFC3339
+				if obj["created_at"] != nil {
+					createdAt, _ := time.ParseInLocation(layout, obj["created_at"].(string), loc)
+					createdAt = createdAt.In(loc)
+					deliveryOrderDetail.CreatedAt = &createdAt
+				}
+				if obj["updated_at"] != nil {
+					updatedAt, _ := time.ParseInLocation(layout, obj["created_at"].(string), loc)
+					updatedAt = updatedAt.In(loc)
+					deliveryOrderDetail.UpdatedAt = &updatedAt
+				}
 				deliveryOrderDetails = append(deliveryOrderDetails, &deliveryOrderDetail)
 			}
 		}

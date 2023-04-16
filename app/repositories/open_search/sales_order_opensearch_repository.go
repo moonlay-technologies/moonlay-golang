@@ -402,6 +402,11 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 
 			if helper.Contains(constants.UNMAPPED_TYPE_SORT_LIST(), request.SortField) {
 				sortValue["unmapped_type"] = "date"
+				openSearchQuery["sort"] = []map[string]interface{}{
+					{
+						request.SortField: sortValue,
+					},
+				}
 			}
 
 			if helper.Contains(constants.SALES_ORDER_SORT_INT_LIST(), request.SortField) {
@@ -466,6 +471,7 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchResult(openSearc
 		total = int64(openSearchQueryResult.Hits.Total.Value)
 
 		if openSearchQueryResult.Hits.Total.Value > 0 {
+			loc, _ := time.LoadLocation("Asia/Jakarta")
 			for _, v := range openSearchQueryResult.Hits.Hits {
 				obj := v.Source.(map[string]interface{})
 				salesOrder := &models.SalesOrder{}
@@ -479,8 +485,10 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchResult(openSearc
 
 				layout := time.RFC3339
 				createdAt, _ := time.Parse(layout, obj["created_at"].(string))
+				createdAt = createdAt.In(loc)
 				salesOrder.CreatedAt = &createdAt
 				updatedAt, _ := time.Parse(layout, obj["updated_at"].(string))
+				updatedAt = updatedAt.In(loc)
 				salesOrder.UpdatedAt = &updatedAt
 
 				salesOrders = append(salesOrders, salesOrder)
