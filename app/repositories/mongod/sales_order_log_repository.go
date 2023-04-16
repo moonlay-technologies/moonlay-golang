@@ -230,7 +230,15 @@ func (r *salesOrderLogRepository) Get(request *models.SalesOrderEventLogRequest,
 
 					dataBinary := salesOrderLogBinary.Data.(primitive.Binary)
 					dataBytes := dataBinary.Data
+
 					err = json.Unmarshal(dataBytes, &data)
+					if err != nil {
+						errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+						response.Error = err
+						response.ErrorLog = errorLogData
+						resultChan <- response
+						return
+					}
 
 					salesOrderLog.SalesOrderLogBinaryMap(salesOrderLogBinary, data)
 				} else {
