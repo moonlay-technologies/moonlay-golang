@@ -398,7 +398,7 @@ func (deliveryOrderEventLog *DeliveryOrderEventLogResponse) DeliveryOrderEventLo
 	deliveryOrderEventLog.ID = request.ID
 	deliveryOrderEventLog.RequestID = request.RequestID
 	deliveryOrderEventLog.DoID = &request.Data.ID
-	deliveryOrderEventLog.DoCode = request.DoCode
+	deliveryOrderEventLog.DoCode = request.Data.DoCode
 	deliveryOrderEventLog.Status = status
 	deliveryOrderEventLog.Action = request.Action
 	deliveryOrderEventLog.CreatedAt = request.CreatedAt
@@ -433,6 +433,14 @@ func (doDetailEventLogResponse *DODetailEventLogResponse) DoDetailEventLogRespon
 	doDetailEventLogResponse.ProductName = &request.ProductName
 	doDetailEventLogResponse.DeliveryQty = NullInt64{NullInt64: sql.NullInt64{Int64: int64(request.Qty), Valid: true}}
 	doDetailEventLogResponse.ProductUnit = NullString{sql.NullString{String: request.Product.UnitMeasurementSmall.String, Valid: true}}
+	return
+}
+
+func (deliveryOrderLog *GetDeliveryOrderLog) DeliveryOrderLogBinaryMap(request *DeliveryOrderLog, data DeliveryOrder) {
+	deliveryOrderLog.Data = &data
+	deliveryOrderLog.Action = request.Action
+	deliveryOrderLog.Status = request.Status
+	deliveryOrderLog.CreatedAt = request.CreatedAt
 	return
 }
 

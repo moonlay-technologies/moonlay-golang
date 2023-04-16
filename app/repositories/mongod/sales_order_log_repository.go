@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"order-service/app/models"
@@ -214,12 +215,39 @@ func (r *salesOrderLogRepository) Get(request *models.SalesOrderEventLogRequest,
 
 		for cursor.Next(ctx) {
 			var salesOrderLog *models.GetSalesOrderLog
+			var salesOrderLogBinary *models.SalesOrderLog
+			var data models.SalesOrder
 			if err := cursor.Decode(&salesOrderLog); err != nil {
-				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-				response.Error = err
-				response.ErrorLog = errorLogData
-				resultChan <- response
-				return
+				if err.Error() == "error decoding key data: cannot decode binary into a models.SalesOrder" {
+					err = cursor.Decode(&salesOrderLogBinary)
+					if err != nil {
+						errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+						response.Error = err
+						response.ErrorLog = errorLogData
+						resultChan <- response
+						return
+					}
+
+					dataBinary := salesOrderLogBinary.Data.(primitive.Binary)
+					dataBytes := dataBinary.Data
+
+					err = json.Unmarshal(dataBytes, &data)
+					if err != nil {
+						errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+						response.Error = err
+						response.ErrorLog = errorLogData
+						resultChan <- response
+						return
+					}
+
+					salesOrderLog.SalesOrderLogBinaryMap(salesOrderLogBinary, data)
+				} else {
+					errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+					response.Error = err
+					response.ErrorLog = errorLogData
+					resultChan <- response
+					return
+				}
 			}
 
 			salesOrderLogs = append(salesOrderLogs, salesOrderLog)

@@ -78,7 +78,7 @@ type SalesOrderEventLogRequest struct {
 
 type SalesOrderEventLogResponse struct {
 	ID        primitive.ObjectID      `json:"_id,omitempty" bson:"_id,omitempty"`
-	RequestID string                  `json:"request_id,omitempty" bson:"request_id,omitempty"`
+	RequestID *string                 `json:"request_id,omitempty" bson:"request_id,omitempty"`
 	SoCode    string                  `json:"so_code,omitempty" bson:"so_code,omitempty"`
 	Data      *DataSOEventLogResponse `json:"data,omitempty" bson:"data,omitempty"`
 	Status    string                  `json:"status,omitempty" bson:"status,omitempty"`
@@ -100,8 +100,8 @@ type DataSOEventLogResponse struct {
 	AgentName         string                      `json:"agent_name,omitempty" bson:"agent_name,omitempty"`
 	StoreCode         string                      `json:"store_code,omitempty" bson:"store_code,omitempty"`
 	StoreName         string                      `json:"store_name,omitempty" bson:"store_name,omitempty"`
-	SalesID           int                         `json:"sales_id,omitempty" bson:"sales_id,omitempty"`
-	SalesName         string                      `json:"sales_name,omitempty" bson:"sales_name,omitempty"`
+	SalesID           NullInt64                   `json:"sales_id,omitempty" bson:"sales_id,omitempty"`
+	SalesName         *string                     `json:"sales_name,omitempty" bson:"sales_name,omitempty"`
 	OrderDate         *time.Time                  `json:"order_date,omitempty" bson:"order_date,omitempty"`
 	StartOrderAt      *time.Time                  `json:"start_order_at,omitempty" bson:"start_order_at,omitempty"`
 	OrderNote         NullString                  `json:"order_note,omitempty" bson:"order_note,omitempty"`
