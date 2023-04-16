@@ -192,7 +192,7 @@ func (r *salesOrderDetailOpenSearch) generateSalesOrderDetailQueryOpenSearchTerm
 		if request.OrderStatusID > 0 {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
-					"order_status_id": request.OrderStatusID,
+					"order_status.id": request.OrderStatusID,
 				},
 			}
 
