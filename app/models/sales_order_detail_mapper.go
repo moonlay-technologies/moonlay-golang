@@ -330,8 +330,8 @@ func (data *SalesOrderDetailOpenSearch) MapToCsvRow(journey *SalesOrderJourneys,
 		soRefDate = soRefDate[0:10]
 	}
 	return []interface{}{
-		s.OrderStatusName,
-		s.OrderSourceName,
+		data.OrderStatusName,
+		data.OrderSourceName,
 		data.ReferralCode.String,
 		data.SoRefCode,
 		data.SoCode,
