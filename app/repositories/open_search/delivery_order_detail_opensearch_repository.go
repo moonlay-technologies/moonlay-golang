@@ -402,6 +402,11 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 
 			if helper.Contains(constants.UNMAPPED_TYPE_SORT_LIST(), request.SortField) {
 				sortValue["unmapped_type"] = "date"
+				openSearchQuery["sort"] = []map[string]interface{}{
+					{
+						request.SortField: sortValue,
+					},
+				}
 			}
 
 			if helper.Contains(constants.DELIVERY_ORDER_DETAIL_SORT_INT_LIST(), request.SortField) {
@@ -413,9 +418,15 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 			}
 
 			if helper.Contains(constants.DELIVERY_ORDER_DETAIL_SORT_STRING_LIST(), request.SortField) {
+				var field string
+				if request.SortField == "store_code" {
+					field = "store.store_code"
+				} else {
+					field = request.SortField
+				}
 				openSearchQuery["sort"] = []map[string]interface{}{
 					{
-						request.SortField + ".keyword": sortValue,
+						field + ".keyword": sortValue,
 					},
 				}
 			}

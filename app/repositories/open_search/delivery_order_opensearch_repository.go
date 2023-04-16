@@ -522,6 +522,11 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 
 			if helper.Contains(constants.UNMAPPED_TYPE_SORT_LIST(), request.SortField) {
 				sortValue["unmapped_type"] = "date"
+				openSearchQuery["sort"] = []map[string]interface{}{
+					{
+						request.SortField: sortValue,
+					},
+				}
 			}
 
 			if helper.Contains(constants.DELIVERY_ORDER_SORT_INT_LIST(), request.SortField) {

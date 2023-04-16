@@ -707,6 +707,13 @@ func (data *SalesOrder) MapToCsvRow(journey *SalesOrderJourneys, dos []*Delivery
 			}
 		}
 	}
+	if len(data.SoDate) > 9 {
+		data.SoDate = data.SoDate[0:10]
+	}
+	soRefDate := data.SoRefDate.String
+	if len(soRefDate) > 9 {
+		soRefDate = soRefDate[0:10]
+	}
 	return []interface{}{
 		data.OrderStatusName,
 		data.OrderSourceName,
@@ -736,7 +743,7 @@ func (data *SalesOrder) MapToCsvRow(journey *SalesOrderJourneys, dos []*Delivery
 		data.InternalComment.String,
 		cancelReason,
 		rejectReason,
-		data.SoRefDate.String,
+		soRefDate,
 		data.CreatedAt.Format(constants.DATE_FORMAT_EXPORT_CREATED_AT),
 		data.UpdatedAt.Format(constants.DATE_FORMAT_EXPORT_CREATED_AT),
 		data.CreatedBy,
