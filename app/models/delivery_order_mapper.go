@@ -447,6 +447,9 @@ func (deliveryOrderLog *GetDeliveryOrderLog) DeliveryOrderLogBinaryMap(request *
 func (data *DeliveryOrder) MapToCsvRow() []interface{} {
 	deliveryOrderCsv := DeliveryOrderCsvResponse{}
 	deliveryOrderCsv.DeliveryOrderMap(data)
+	if len(data.DoDate) > 9 {
+		data.DoDate = data.DoDate[0:10]
+	}
 	return []interface{}{
 		deliveryOrderCsv.DoStatus,
 		deliveryOrderCsv.DoDate,
@@ -491,7 +494,6 @@ func (d *DeliveryOrderCsvResponse) DeliveryOrderMap(r *DeliveryOrder) {
 	d.SjNo = r.DoRefCode
 	d.DoNo = r.DoCode
 	d.OrderNo = r.SalesOrder.SoCode
-	d.SoDate = r.SalesOrder.SoDate
 	d.SoNo = r.SalesOrder.SoCode
 	d.SoSource = r.SalesOrder.OrderSourceName
 	d.AgentID = r.AgentID
