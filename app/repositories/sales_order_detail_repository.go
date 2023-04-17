@@ -23,7 +23,7 @@ type SalesOrderDetailRepositoryInterface interface {
 	GetBySOIDSkuAndUomCode(salesOrderID int, sku string, uomCode string, countOnly bool, ctx context.Context, result chan *models.SalesOrderDetailChan)
 	Insert(request *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderDetailChan)
 	GetByID(salesOrderDetailID int, countOnly bool, ctx context.Context, result chan *models.SalesOrderDetailChan)
-	UpdateByID(id int, request *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderDetailChan)
+	UpdateByID(id int, request *models.SalesOrderDetail, isInsertToJourney bool, reason string, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderDetailChan)
 	RemoveCacheByID(id int, ctx context.Context, resultChan chan *models.SalesOrderDetailChan)
 	DeleteByID(request *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderDetailChan)
 	GetBySOIDAndSku(salesOrderID int, sku string, countOnly bool, ctx context.Context, resultChan chan *models.SalesOrderDetailsChan)
@@ -440,7 +440,7 @@ func (r *salesOrderDetail) GetByID(id int, countOnly bool, ctx context.Context, 
 	}
 }
 
-func (r *salesOrderDetail) UpdateByID(id int, request *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.SalesOrderDetailChan) {
+func (r *salesOrderDetail) UpdateByID(id int, request *models.SalesOrderDetail, isInsertToJourney bool, reason string, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.SalesOrderDetailChan) {
 	response := &models.SalesOrderDetailChan{}
 	rawSqlQueries := []string{}
 
@@ -521,6 +521,30 @@ func (r *salesOrderDetail) UpdateByID(id int, request *models.SalesOrderDetail, 
 		response.ErrorLog = errorLogData
 		resultChan <- response
 		return
+	}
+
+	if isInsertToJourney {
+		now := time.Now()
+		salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{
+			SoDetailId:   id,
+			SoDetailCode: request.SoDetailCode,
+			Status:       helper.GetSOJourneyStatus(request.OrderStatusID),
+			Remark:       "",
+			Reason:       reason,
+			CreatedAt:    &now,
+			UpdatedAt:    &now,
+		}
+
+		createSalesOrderDetailJourneysResultChan := make(chan *models.SalesOrderDetailJourneysChan)
+		go r.salesOrderDetailJourneysRepository.Insert(salesOrderDetailJourneys, ctx, createSalesOrderDetailJourneysResultChan)
+		createSalesOrderDetailJourneysResult := <-createSalesOrderDetailJourneysResultChan
+
+		if createSalesOrderDetailJourneysResult.Error != nil {
+			response.Error = createSalesOrderDetailJourneysResult.ErrorLog.Err
+			response.ErrorLog = createSalesOrderDetailJourneysResult.ErrorLog
+			resultChan <- response
+			return
+		}
 	}
 
 	response.ID = salesOrderDetailID

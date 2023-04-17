@@ -439,7 +439,7 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 
 				// Update to DB, Sales Order Detail
 				updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
-				go c.salesOrderDetailRepository.UpdateByID(x.SoDetailID, x.SoDetail, sqlTransaction, c.ctx, updateSalesOrderDetailResultChan)
+				go c.salesOrderDetailRepository.UpdateByID(x.SoDetailID, x.SoDetail, false, "", sqlTransaction, c.ctx, updateSalesOrderDetailResultChan)
 				updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
 
 				if updateSalesOrderDetailResult.Error != nil {

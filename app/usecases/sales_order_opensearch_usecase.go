@@ -137,7 +137,7 @@ func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(salesOrder
 		}
 
 		updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
-		go u.salesOrderDetailRepository.UpdateByID(v.ID, salesOrderDetailUpdateData, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
+		go u.salesOrderDetailRepository.UpdateByID(v.ID, salesOrderDetailUpdateData, false, "", sqlTransaction, ctx, updateSalesOrderDetailResultChan)
 		updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
 
 		if updateSalesOrderDetailResult.Error != nil {
@@ -388,7 +388,7 @@ func (u *SalesOrderOpenSearchUseCase) SyncDetailToOpenSearchFromUpdateEvent(sale
 	}
 
 	updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
-	go u.salesOrderDetailRepository.UpdateByID(salesOrderDetail.ID, salesOrderDetailUpdateData, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
+	go u.salesOrderDetailRepository.UpdateByID(salesOrderDetail.ID, salesOrderDetailUpdateData, false, "", sqlTransaction, ctx, updateSalesOrderDetailResultChan)
 	updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
 
 	if updateSalesOrderDetailResult.Error != nil {

@@ -1024,7 +1024,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 
 		// Update Sales Order Detail
 		updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
-		go u.salesOrderDetailRepository.UpdateByID(v.ID, salesOrderDetail, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
+		go u.salesOrderDetailRepository.UpdateByID(v.ID, salesOrderDetail, true, v.Reason, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
 		updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
 
 		if updateSalesOrderDetailResult.Error != nil {
@@ -1047,34 +1047,6 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 
 		if getSalesOrderDetailByIDResult.Error != nil {
 			return &models.SalesOrderResponse{}, getSalesOrderDetailByIDResult.ErrorLog
-		}
-
-		var detailStatus string
-		switch v.OrderStatusID {
-		case 11:
-			detailStatus = constants.SO_STATUS_OPEN
-		case 15:
-			detailStatus = constants.SO_STATUS_RJC
-		default:
-			detailStatus = constants.SO_STATUS_CNCL
-		}
-
-		salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{
-			SoDetailId:   v.ID,
-			SoDetailCode: getSalesOrderDetailByIDResult.SalesOrderDetail.SoDetailCode,
-			Status:       detailStatus,
-			Remark:       "",
-			Reason:       request.Reason,
-			CreatedAt:    &now,
-			UpdatedAt:    &now,
-		}
-
-		createSalesOrderDetailJourneysResultChan := make(chan *models.SalesOrderDetailJourneysChan)
-		go u.salesOrderDetailJourneysRepository.Insert(salesOrderDetailJourneys, ctx, createSalesOrderDetailJourneysResultChan)
-		createSalesOrderDetailJourneysResult := <-createSalesOrderDetailJourneysResultChan
-
-		if createSalesOrderDetailJourneysResult.Error != nil {
-			return &models.SalesOrderResponse{}, createSalesOrderDetailJourneysResult.ErrorLog
 		}
 
 		getSalesOrderDetailByIDResult.SalesOrderDetail.OrderStatusID = getOrderDetailStatusResult.OrderStatus.ID
@@ -1308,7 +1280,7 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 
 	// Update Sales Order Detail
 	updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
-	go u.salesOrderDetailRepository.UpdateByID(soDetailId, salesOrderDetailReq, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
+	go u.salesOrderDetailRepository.UpdateByID(soDetailId, salesOrderDetailReq, true, request.Reason, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
 	updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
 
 	if updateSalesOrderDetailResult.Error != nil {
@@ -1335,32 +1307,6 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 	if clearCacheSalesOrderDetailResult.Error != nil {
 		return &models.SalesOrderDetailStoreResponse{}, clearCacheSalesOrderDetailResult.ErrorLog
 
-	}
-
-	var detailStatus string
-	switch getOrderDetailStatusResult.OrderStatus.ID {
-	case 14:
-		detailStatus = constants.SO_STATUS_CLS
-	default:
-		detailStatus = constants.SO_STATUS_CNCL
-	}
-
-	salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{
-		SoDetailId:   soDetailId,
-		SoDetailCode: getSalesOrderDetailByIDResult.SalesOrderDetail.SoDetailCode,
-		Status:       detailStatus,
-		Remark:       "",
-		Reason:       request.Reason,
-		CreatedAt:    &now,
-		UpdatedAt:    &now,
-	}
-
-	createSalesOrderDetailJourneysResultChan := make(chan *models.SalesOrderDetailJourneysChan)
-	go u.salesOrderDetailJourneysRepository.Insert(salesOrderDetailJourneys, ctx, createSalesOrderDetailJourneysResultChan)
-	createSalesOrderDetailJourneysResult := <-createSalesOrderDetailJourneysResultChan
-
-	if createSalesOrderDetailJourneysResult.Error != nil {
-		return &models.SalesOrderDetailStoreResponse{}, createSalesOrderDetailJourneysResult.ErrorLog
 	}
 
 	salesOrderLog := &models.SalesOrderLog{
@@ -1530,7 +1476,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 
 		// Update Sales Order Detail
 		updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
-		go u.salesOrderDetailRepository.UpdateByID(v.ID, salesOrderDetail, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
+		go u.salesOrderDetailRepository.UpdateByID(v.ID, salesOrderDetail, true, v.Reason, sqlTransaction, ctx, updateSalesOrderDetailResultChan)
 		updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
 
 		if updateSalesOrderDetailResult.Error != nil {
@@ -1553,34 +1499,6 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 
 		if getSalesOrderDetailByIDResult.Error != nil {
 			return &models.SalesOrderResponse{}, getSalesOrderDetailByIDResult.ErrorLog
-		}
-
-		var detailStatus string
-		switch v.OrderStatusID {
-		case 11:
-			detailStatus = constants.SO_STATUS_OPEN
-		case 15:
-			detailStatus = constants.SO_STATUS_RJC
-		default:
-			detailStatus = constants.SO_STATUS_CNCL
-		}
-
-		salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{
-			SoDetailId:   v.ID,
-			SoDetailCode: getSalesOrderDetailByIDResult.SalesOrderDetail.SoDetailCode,
-			Status:       detailStatus,
-			Remark:       "",
-			Reason:       request.Reason,
-			CreatedAt:    &now,
-			UpdatedAt:    &now,
-		}
-
-		createSalesOrderDetailJourneysResultChan := make(chan *models.SalesOrderDetailJourneysChan)
-		go u.salesOrderDetailJourneysRepository.Insert(salesOrderDetailJourneys, ctx, createSalesOrderDetailJourneysResultChan)
-		createSalesOrderDetailJourneysResult := <-createSalesOrderDetailJourneysResultChan
-
-		if createSalesOrderDetailJourneysResult.Error != nil {
-			return &models.SalesOrderResponse{}, createSalesOrderDetailJourneysResult.ErrorLog
 		}
 
 		getSalesOrderDetailByIDResult.SalesOrderDetail.OrderStatusID = getOrderDetailStatusResult.OrderStatus.ID
