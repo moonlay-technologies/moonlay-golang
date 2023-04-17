@@ -500,7 +500,6 @@ func (r *deliveryOrderDetail) UpdateByID(id int, request *models.DeliveryOrderDe
 func (r *deliveryOrderDetail) DeleteByID(request *models.DeliveryOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.DeliveryOrderDetailChan) {
 	now := time.Now()
 	request.DeletedAt = &now
-	request.UpdatedAt = &now
 	response := &models.DeliveryOrderDetailChan{}
 	rawSqlQueries := []string{}
 
@@ -513,9 +512,6 @@ func (r *deliveryOrderDetail) DeleteByID(request *models.DeliveryOrderDetail, sq
 	query = fmt.Sprintf("%s='%v'", "deleted_at", request.DeletedAt.Format(constants.DATE_TIME_FORMAT_COMON))
 	rawSqlQueries = append(rawSqlQueries, query)
 
-	query = fmt.Sprintf("%s='%v'", "updated_at", request.UpdatedAt.Format(constants.DATE_TIME_FORMAT_COMON))
-	rawSqlQueries = append(rawSqlQueries, query)
-
 	query = fmt.Sprintf("%s='%v'", "is_done_sync_to_es", 0)
 	rawSqlQueries = append(rawSqlQueries, query)
 
@@ -524,7 +520,6 @@ func (r *deliveryOrderDetail) DeleteByID(request *models.DeliveryOrderDetail, sq
 	result, err := sqlTransaction.ExecContext(ctx, updateQuery, request.ID)
 
 	if err != nil {
-		sqlTransaction.Rollback()
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
@@ -535,7 +530,6 @@ func (r *deliveryOrderDetail) DeleteByID(request *models.DeliveryOrderDetail, sq
 	deliveryOrderID, err := result.LastInsertId()
 
 	if err != nil {
-		sqlTransaction.Rollback()
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
