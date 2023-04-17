@@ -72,11 +72,11 @@ func (r *deliveryOrderLogRepository) Get(request *models.DeliveryOrderEventLogRe
 	if request.SortField == "do_code" {
 		if request.SortValue == "asc" {
 			sort = bson.M{
-				"do_code": asc,
+				"data.do_code": asc,
 			}
 		} else if request.SortValue == "desc" {
 			sort = bson.M{
-				"do_code": desc,
+				"data.do_code": desc,
 			}
 		}
 	} else if request.SortField == "status" {
@@ -118,7 +118,7 @@ func (r *deliveryOrderLogRepository) Get(request *models.DeliveryOrderEventLogRe
 			status = "0"
 			filter = bson.M{
 				"$or": []bson.M{
-					{"do_code": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
+					{"data.do_code": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
 					{"status": bson.M{"$regex": status, "$options": "i"}},
 					{"data.agent_name": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
 				},
@@ -127,7 +127,7 @@ func (r *deliveryOrderLogRepository) Get(request *models.DeliveryOrderEventLogRe
 			status = "1"
 			filter = bson.M{
 				"$or": []bson.M{
-					{"do_code": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
+					{"data.do_code": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
 					{"status": bson.M{"$regex": status, "$options": "i"}},
 					{"data.agent_name": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
 				},
@@ -136,7 +136,7 @@ func (r *deliveryOrderLogRepository) Get(request *models.DeliveryOrderEventLogRe
 			status = "2"
 			filter = bson.M{
 				"$or": []bson.M{
-					{"do_code": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
+					{"data.do_code": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
 					{"status": bson.M{"$regex": status, "$options": "i"}},
 					{"data.agent_name": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
 				},
@@ -144,7 +144,7 @@ func (r *deliveryOrderLogRepository) Get(request *models.DeliveryOrderEventLogRe
 		default:
 			filter = bson.M{
 				"$or": []bson.M{
-					{"do_code": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
+					{"data.do_code": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
 					{"status": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
 					{"data.agent_name": bson.M{"$regex": request.GlobalSearchValue, "$options": "i"}},
 				},

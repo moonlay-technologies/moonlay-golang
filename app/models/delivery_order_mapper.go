@@ -423,8 +423,8 @@ func (dataDOEventLog *DataDOEventLogResponse) DataDOEventLogResponseMap(request 
 	dataDOEventLog.PlatNumber = NullString{sql.NullString{String: request.Data.PlatNumber.String, Valid: true}}
 	dataDOEventLog.BrandID = &request.Data.SalesOrder.BrandID
 	dataDOEventLog.BrandName = &request.Data.SalesOrder.BrandName
-	dataDOEventLog.WarehouseCode = request.Data.WarehouseCode
-	dataDOEventLog.WarehouseName = request.Data.WarehouseName
+	dataDOEventLog.WarehouseCode = &request.Data.WarehouseCode
+	dataDOEventLog.WarehouseName = &request.Data.WarehouseName
 	return
 }
 

@@ -99,8 +99,8 @@ type DataDOEventLogResponse struct {
 	PlatNumber           NullString                  `json:"plat_number,omitempty" bson:"plat_number,omitempty"`
 	BrandID              *int                        `json:"brand_id,omitempty" bson:"brand_id,omitempty"`
 	BrandName            *string                     `json:"brand_name,omitempty" bson:"brand_name,omitempty"`
-	WarehouseCode        string                      `json:"warehouse_code,omitempty" bson:"warehouse_code,omitempty"`
-	WarehouseName        string                      `json:"warehouse_name,omitempty" bson:"warehouse_name,omitempty"`
+	WarehouseCode        *string                     `json:"warehouse_code,omitempty" bson:"warehouse_code,omitempty"`
+	WarehouseName        *string                     `json:"warehouse_name,omitempty" bson:"warehouse_name,omitempty"`
 	DeliveryOrderDetails []*DODetailEventLogResponse `json:"delivery_order_details,omitempty" bson:"delivery_order_details,omitempty"`
 }
 

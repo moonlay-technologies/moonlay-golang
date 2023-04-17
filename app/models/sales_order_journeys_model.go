@@ -51,11 +51,11 @@ type SalesOrderJourneyRequest struct {
 
 type SalesOrderJourneyResponse struct {
 	ID              primitive.ObjectID `json:"id,omitempty" bson:"id,omitempty"`
-	SoId            int                `json:"so_id,omitempty" bson:"so_id,omitempty"`
-	SoCode          string             `json:"so_code,omitempty" bson:"so_code,omitempty"`
-	SoDate          string             `json:"so_date,omitempty" bson:"so_date,omitempty"`
-	OrderStatusID   int                `json:"order_status_id,omitempty" bson:"order_status_id,omitempty"`
-	OrderStatusName string             `json:"order_status_name,omitempty" bson:"order_status_name,omitempty"`
+	SoId            *int               `json:"so_id,omitempty" bson:"so_id,omitempty"`
+	SoCode          *string            `json:"so_code,omitempty" bson:"so_code,omitempty"`
+	SoDate          *string            `json:"so_date,omitempty" bson:"so_date,omitempty"`
+	OrderStatusID   *int               `json:"order_status_id,omitempty" bson:"order_status_id,omitempty"`
+	OrderStatusName *string            `json:"order_status_name,omitempty" bson:"order_status_name,omitempty"`
 	Remark          NullString         `json:"remark,omitempty" bson:"remark,omitempty"`
 	Reason          NullString         `json:"reason,omitempty" bson:"reason,omitempty"`
 	CreatedAt       *time.Time         `json:"created_at,omitempty" bson:"created_at,omitempty"`

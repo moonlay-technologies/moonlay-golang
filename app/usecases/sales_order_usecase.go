@@ -806,7 +806,7 @@ func (u *salesOrderUseCase) GetSOJourneyBySOId(soId int, ctx context.Context) (*
 
 		salesOrderJourney := models.SalesOrderJourneyResponse{}
 		salesOrderJourney.SalesOrderJourneyResponseMap(v)
-		salesOrderJourney.OrderStatusID = orderStatusID
+		salesOrderJourney.OrderStatusID = &orderStatusID
 
 		salesOrderJourneys = append(salesOrderJourneys, &salesOrderJourney)
 	}

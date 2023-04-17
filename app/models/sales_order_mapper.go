@@ -627,10 +627,10 @@ func (salesOrderLog *GetSalesOrderLog) SalesOrderLogBinaryMap(request *SalesOrde
 
 func (salesOrderJourney *SalesOrderJourneyResponse) SalesOrderJourneyResponseMap(request *SalesOrderJourneys) {
 	salesOrderJourney.ID = request.ID
-	salesOrderJourney.SoId = request.SoId
-	salesOrderJourney.SoCode = request.SoCode
-	salesOrderJourney.SoDate = request.SoDate
-	salesOrderJourney.OrderStatusName = request.Status
+	salesOrderJourney.SoId = &request.SoId
+	salesOrderJourney.SoCode = &request.SoCode
+	salesOrderJourney.SoDate = &request.SoDate
+	salesOrderJourney.OrderStatusName = &request.Status
 	salesOrderJourney.Remark = NullString{sql.NullString{String: request.Remark, Valid: true}}
 	salesOrderJourney.Reason = NullString{sql.NullString{String: request.Reason, Valid: true}}
 	salesOrderJourney.CreatedAt = request.CreatedAt
