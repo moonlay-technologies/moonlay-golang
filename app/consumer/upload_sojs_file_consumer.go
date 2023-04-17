@@ -373,21 +373,11 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 				}
 			}
 
-			go c.storeRepository.GetByID(getStoreResult.Store.ID, false, c.ctx, getStoreResultChan)
-			getStoreResult = <-getStoreResultChan
-			if getStoreResult.Error != nil {
-				if key == "retry" {
-					c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
-					break
-				} else {
-					errors := []string{getStoreResult.Error.Error()}
+			storeIdValidationResultChan := make(chan *models.RequestIdValidationChan)
+			go c.requestValidationRepository.StoreIdValidation(getStoreResult.Store.ID, intTypeResult["IDDistributor"], storeIdValidationResultChan)
+			storeIdValidationResult := <-storeIdValidationResultChan
 
-					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)
-					continue
-				}
-			}
-
-			if fmt.Sprint(getStoreResult.Store.AgentID.Int64) != rowData.AgentId {
+			if storeIdValidationResult.Total < 1 {
 				if key == "retry" {
 					c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 					break
