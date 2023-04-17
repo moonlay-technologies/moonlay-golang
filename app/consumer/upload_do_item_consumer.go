@@ -439,7 +439,7 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 
 				// Update to DB, Sales Order Detail
 				updateSalesOrderDetailResultChan := make(chan *models.SalesOrderDetailChan)
-				go c.salesOrderDetailRepository.UpdateByID(x.SoDetailID, x.SoDetail, sqlTransaction, c.ctx, updateSalesOrderDetailResultChan)
+				go c.salesOrderDetailRepository.UpdateByID(x.SoDetailID, x.SoDetail, false, "", sqlTransaction, c.ctx, updateSalesOrderDetailResultChan)
 				updateSalesOrderDetailResult := <-updateSalesOrderDetailResultChan
 
 				if updateSalesOrderDetailResult.Error != nil {
@@ -467,18 +467,15 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 			v.SalesOrder.SoRefDate = models.NullString{}
 			v.SalesOrder.UpdatedAt = &now
 
-			var statusSoJourney string
 			if totalResidualQty == 0 {
-				statusSoJourney = constants.SO_STATUS_ORDCLS
 				v.SalesOrder.OrderStatusID = 8
 			} else {
-				statusSoJourney = constants.SO_STATUS_ORDPRT
 				v.SalesOrder.OrderStatusID = 7
 			}
 
 			// Update to DB, Sales Order
 			updateSalesOrderChan := make(chan *models.SalesOrderChan)
-			go c.salesOrderRepository.UpdateByID(v.SalesOrder.ID, v.SalesOrder, sqlTransaction, c.ctx, updateSalesOrderChan)
+			go c.salesOrderRepository.UpdateByID(v.SalesOrder.ID, v.SalesOrder, true, "", sqlTransaction, c.ctx, updateSalesOrderChan)
 			updateSalesOrderResult := <-updateSalesOrderChan
 
 			if updateSalesOrderResult.Error != nil {
@@ -538,24 +535,6 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 
 			if createSalesOrderLogResult.Error != nil {
 				fmt.Println(createSalesOrderLogResult.Error.Error())
-			}
-
-			salesOrderJourney := &models.SalesOrderJourneys{
-				SoId:      v.SalesOrder.ID,
-				SoCode:    v.SalesOrder.SoCode,
-				Status:    statusSoJourney,
-				Remark:    "",
-				Reason:    "",
-				CreatedAt: &now,
-				UpdatedAt: &now,
-			}
-
-			createSalesOrderJourneyChan := make(chan *models.SalesOrderJourneysChan)
-			go c.salesOrderJourneyRepository.Insert(salesOrderJourney, c.ctx, createSalesOrderJourneyChan)
-			createSalesOrderJourneysResult := <-createSalesOrderJourneyChan
-
-			if createSalesOrderJourneysResult.Error != nil {
-				fmt.Println(createSalesOrderJourneysResult.Error.Error())
 			}
 
 			keyKafka := []byte(v.DoCode)

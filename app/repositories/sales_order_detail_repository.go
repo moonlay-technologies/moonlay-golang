@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
+	repositories "order-service/app/repositories/mongod"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/redisdb"
 	"strings"
@@ -22,21 +23,23 @@ type SalesOrderDetailRepositoryInterface interface {
 	GetBySOIDSkuAndUomCode(salesOrderID int, sku string, uomCode string, countOnly bool, ctx context.Context, result chan *models.SalesOrderDetailChan)
 	Insert(request *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderDetailChan)
 	GetByID(salesOrderDetailID int, countOnly bool, ctx context.Context, result chan *models.SalesOrderDetailChan)
-	UpdateByID(id int, request *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderDetailChan)
+	UpdateByID(id int, request *models.SalesOrderDetail, isInsertToJourney bool, reason string, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderDetailChan)
 	RemoveCacheByID(id int, ctx context.Context, resultChan chan *models.SalesOrderDetailChan)
 	DeleteByID(request *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderDetailChan)
 	GetBySOIDAndSku(salesOrderID int, sku string, countOnly bool, ctx context.Context, resultChan chan *models.SalesOrderDetailsChan)
 }
 
 type salesOrderDetail struct {
-	db      dbresolver.DB
-	redisdb redisdb.RedisInterface
+	salesOrderDetailJourneysRepository repositories.SalesOrderDetailJourneysRepositoryInterface
+	db                                 dbresolver.DB
+	redisdb                            redisdb.RedisInterface
 }
 
-func InitSalesOrderDetailRepository(db dbresolver.DB, redisdb redisdb.RedisInterface) SalesOrderDetailRepositoryInterface {
+func InitSalesOrderDetailRepository(salesOrderDetailJourneysRepository repositories.SalesOrderDetailJourneysRepositoryInterface, db dbresolver.DB, redisdb redisdb.RedisInterface) SalesOrderDetailRepositoryInterface {
 	return &salesOrderDetail{
-		db:      db,
-		redisdb: redisdb,
+		salesOrderDetailJourneysRepository: salesOrderDetailJourneysRepository,
+		db:                                 db,
+		redisdb:                            redisdb,
 	}
 }
 
@@ -323,11 +326,32 @@ func (r *salesOrderDetail) Insert(request *models.SalesOrderDetail, sqlTransacti
 	}
 
 	salesOrderDetailID, err := result.LastInsertId()
-
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	now := time.Now()
+	salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{
+		SoDetailId:   int(salesOrderDetailID),
+		SoDetailCode: request.SoDetailCode,
+		Status:       helper.GetSOJourneyStatus(request.OrderStatusID),
+		Remark:       "",
+		Reason:       "",
+		CreatedAt:    &now,
+		UpdatedAt:    &now,
+	}
+
+	createSalesOrderDetailJourneysResultChan := make(chan *models.SalesOrderDetailJourneysChan)
+	go r.salesOrderDetailJourneysRepository.Insert(salesOrderDetailJourneys, ctx, createSalesOrderDetailJourneysResultChan)
+	createSalesOrderDetailJourneysResult := <-createSalesOrderDetailJourneysResultChan
+
+	if createSalesOrderDetailJourneysResult.Error != nil {
+		response.Error = createSalesOrderDetailJourneysResult.ErrorLog.Err
+		response.ErrorLog = createSalesOrderDetailJourneysResult.ErrorLog
 		resultChan <- response
 		return
 	}
@@ -416,7 +440,7 @@ func (r *salesOrderDetail) GetByID(id int, countOnly bool, ctx context.Context, 
 	}
 }
 
-func (r *salesOrderDetail) UpdateByID(id int, request *models.SalesOrderDetail, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.SalesOrderDetailChan) {
+func (r *salesOrderDetail) UpdateByID(id int, request *models.SalesOrderDetail, isInsertToJourney bool, reason string, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.SalesOrderDetailChan) {
 	response := &models.SalesOrderDetailChan{}
 	rawSqlQueries := []string{}
 
@@ -499,6 +523,30 @@ func (r *salesOrderDetail) UpdateByID(id int, request *models.SalesOrderDetail, 
 		return
 	}
 
+	if isInsertToJourney {
+		now := time.Now()
+		salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{
+			SoDetailId:   id,
+			SoDetailCode: request.SoDetailCode,
+			Status:       helper.GetSOJourneyStatus(request.OrderStatusID),
+			Remark:       "",
+			Reason:       reason,
+			CreatedAt:    &now,
+			UpdatedAt:    &now,
+		}
+
+		createSalesOrderDetailJourneysResultChan := make(chan *models.SalesOrderDetailJourneysChan)
+		go r.salesOrderDetailJourneysRepository.Insert(salesOrderDetailJourneys, ctx, createSalesOrderDetailJourneysResultChan)
+		createSalesOrderDetailJourneysResult := <-createSalesOrderDetailJourneysResultChan
+
+		if createSalesOrderDetailJourneysResult.Error != nil {
+			response.Error = createSalesOrderDetailJourneysResult.ErrorLog.Err
+			response.ErrorLog = createSalesOrderDetailJourneysResult.ErrorLog
+			resultChan <- response
+			return
+		}
+	}
+
 	response.ID = salesOrderDetailID
 	response.SalesOrderDetail = request
 	resultChan <- response
@@ -559,10 +607,23 @@ func (r *salesOrderDetail) DeleteByID(request *models.SalesOrderDetail, sqlTrans
 		return
 	}
 
-	if err != nil {
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-		response.Error = err
-		response.ErrorLog = errorLogData
+	salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{
+		SoDetailId:   request.ID,
+		SoDetailCode: request.SoDetailCode,
+		Status:       helper.GetSOJourneyStatus(request.OrderStatusID),
+		Remark:       "",
+		Reason:       "",
+		CreatedAt:    &now,
+		UpdatedAt:    &now,
+	}
+
+	createSalesOrderDetailJourneysResultChan := make(chan *models.SalesOrderDetailJourneysChan)
+	go r.salesOrderDetailJourneysRepository.Insert(salesOrderDetailJourneys, ctx, createSalesOrderDetailJourneysResultChan)
+	createSalesOrderDetailJourneysResult := <-createSalesOrderDetailJourneysResultChan
+
+	if createSalesOrderDetailJourneysResult.Error != nil {
+		response.Error = createSalesOrderDetailJourneysResult.ErrorLog.Err
+		response.ErrorLog = createSalesOrderDetailJourneysResult.ErrorLog
 		resultChan <- response
 		return
 	}

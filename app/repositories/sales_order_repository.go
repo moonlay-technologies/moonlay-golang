@@ -24,7 +24,7 @@ type SalesOrderRepositoryInterface interface {
 	GetBySoRefCode(soRefCode string, countOnly bool, ctx context.Context, result chan *models.SalesOrderChan)
 	GetByAgentRefCode(soRefCode string, agentID int, countOnly bool, ctx context.Context, result chan *models.SalesOrderChan)
 	Insert(request *models.SalesOrder, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderChan)
-	UpdateByID(id int, salesOrder *models.SalesOrder, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderChan)
+	UpdateByID(id int, request *models.SalesOrder, isInsertToJourney bool, reason string, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.SalesOrderChan)
 	RemoveCacheByID(id int, ctx context.Context, result chan *models.SalesOrderChan)
 	DeleteByID(salesOrder *models.SalesOrder, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderChan)
 }
@@ -633,7 +633,7 @@ func (r *salesOrder) Insert(request *models.SalesOrder, sqlTransaction *sql.Tx, 
 	return
 }
 
-func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.SalesOrderChan) {
+func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, isInsertToJourney bool, reason string, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.SalesOrderChan) {
 	response := &models.SalesOrderChan{}
 	rawSqlQueries := []string{}
 
@@ -787,6 +787,30 @@ func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, sqlTransacti
 		return
 	}
 
+	if isInsertToJourney {
+		now := time.Now()
+		salesOrderJourneys := &models.SalesOrderJourneys{
+			SoCode:    request.SoCode,
+			SoId:      int(salesOrderID),
+			SoDate:    request.SoDate,
+			Status:    helper.GetSOJourneyStatus(request.OrderStatusID),
+			Remark:    "",
+			Reason:    reason,
+			CreatedAt: &now,
+			UpdatedAt: &now,
+		}
+
+		createSalesOrderJourneysResultChan := make(chan *models.SalesOrderJourneysChan)
+		go r.salesOrderJourneysRepository.Insert(salesOrderJourneys, ctx, createSalesOrderJourneysResultChan)
+		createSalesOrderJourneysResult := <-createSalesOrderJourneysResultChan
+
+		if createSalesOrderJourneysResult.Error != nil {
+			response.Error = createSalesOrderJourneysResult.ErrorLog.Err
+			response.ErrorLog = createSalesOrderJourneysResult.ErrorLog
+			resultChan <- response
+			return
+		}
+	}
 	salesOrderRedisKey := fmt.Sprintf("%s*", constants.SALES_ORDER)
 	_, err = r.redisdb.Client().Del(ctx, salesOrderRedisKey).Result()
 
@@ -860,6 +884,28 @@ func (r *salesOrder) DeleteByID(request *models.SalesOrder, sqlTransaction *sql.
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	salesOrderJourneys := &models.SalesOrderJourneys{
+		SoCode:    request.SoCode,
+		SoId:      int(salesOrderID),
+		SoDate:    request.SoDate,
+		Status:    helper.GetSOJourneyStatus(request.OrderStatusID),
+		Remark:    "",
+		Reason:    "",
+		CreatedAt: &now,
+		UpdatedAt: &now,
+	}
+
+	createSalesOrderJourneysResultChan := make(chan *models.SalesOrderJourneysChan)
+	go r.salesOrderJourneysRepository.Insert(salesOrderJourneys, ctx, createSalesOrderJourneysResultChan)
+	createSalesOrderJourneysResult := <-createSalesOrderJourneysResultChan
+
+	if createSalesOrderJourneysResult.Error != nil {
+		response.Error = createSalesOrderJourneysResult.ErrorLog.Err
+		response.ErrorLog = createSalesOrderJourneysResult.ErrorLog
 		resultChan <- response
 		return
 	}

@@ -17,8 +17,9 @@ import (
 
 func InitHTTPSalesOrderController(database dbresolver.DB, redisdb redisdb.RedisInterface, mongodbClient mongodb.MongoDBInterface, kafkaClient kafkadbo.KafkaClientInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, ctx context.Context) SalesOrderControllerInterface {
 	salesOrderJourneysRepository := mongoRepo.InitSalesOrderJourneysRepository(mongodbClient)
+	salesOrderDetailJourneyRepository := mongoRepo.InitSalesOrderDetailJourneysRepository(mongodbClient)
 	salesOrderRepository := repositories.InitSalesOrderRepository(salesOrderJourneysRepository, database, redisdb)
-	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(database, redisdb)
+	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(salesOrderDetailJourneyRepository, database, redisdb)
 	cartRepository := repositories.InitCartRepository(database, redisdb)
 	cartDetailRepository := repositories.InitCartDetailRepository(database, redisdb)
 	orderStatusRepository := repositories.InitOrderStatusRepository(database, redisdb)
@@ -49,8 +50,9 @@ func InitHTTPSalesOrderController(database dbresolver.DB, redisdb redisdb.RedisI
 
 func InitHTTPDeliveryOrderController(database dbresolver.DB, redisdb redisdb.RedisInterface, mongodbClient mongodb.MongoDBInterface, kafkaClient kafkadbo.KafkaClientInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, ctx context.Context) DeliveryOrderControllerInterface {
 	salesOrderJourneyRepository := mongoRepo.InitSalesOrderJourneysRepository(mongodbClient)
+	salesOrderDetailJourneyRepository := mongoRepo.InitSalesOrderDetailJourneysRepository(mongodbClient)
 	salesOrderRepository := repositories.InitSalesOrderRepository(salesOrderJourneyRepository, database, redisdb)
-	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(database, redisdb)
+	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(salesOrderDetailJourneyRepository, database, redisdb)
 	orderStatusRepository := repositories.InitOrderStatusRepository(database, redisdb)
 	orderSourceRepository := repositories.InitOrderSourceRepository(database, redisdb)
 	deliveryOrderRepository := repositories.InitDeliveryRepository(database, redisdb)
@@ -75,7 +77,6 @@ func InitHTTPDeliveryOrderController(database dbresolver.DB, redisdb redisdb.Red
 	doUploadErrorLogsRepository := mongoRepo.InitDoUploadErrorLogsRepositoryInterface(mongodbClient)
 	uploadRepositories := repositories.InitUploadRepository(database)
 	salesOrderOpenSearchUseCase := usecases.InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, productRepository, uomRepository, salesOrderOpenSearchRepository, deliveryOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, categoryRepository, salesOrderJourneyRepository, uploadRepositories, ctx)
-	salesOrderDetailJourneyRepository := mongoRepo.InitSalesOrderDetailJourneysRepository(mongodbClient)
 	deliveryOrderUseCase := usecases.InitDeliveryOrderUseCaseInterface(deliveryOrderRepository, deliveryOrderDetailRepository, salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, warehouseRepository, brandRepository, uomRepository, agentRepository, storeRepository, productRepository, userRepository, salesmanRepository, salesOrderJourneysRepository, salesOrderDetailJourneyRepository, deliveryOrderLogRepository, deliveryOrderJourneysRepository, doUploadHistoriesRepository, doUploadErrorLogsRepository, deliveryOrderOpenSearchRepository, deliveryOrderDetailOpenSearchRepository, salesOrderOpenSearchUseCase, kafkaClient, database, ctx)
 	requestValidationRepository := repositories.InitRequestValidationRepository(database)
 	requestValidationMiddleware := middlewares.InitRequestValidationMiddlewareInterface(requestValidationRepository, orderSourceRepository)
@@ -86,8 +87,9 @@ func InitHTTPDeliveryOrderController(database dbresolver.DB, redisdb redisdb.Red
 
 func InitHTTPAgentController(database dbresolver.DB, redisdb redisdb.RedisInterface, mongodbClient mongodb.MongoDBInterface, kafkaClient kafkadbo.KafkaClientInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, ctx context.Context) AgentControllerInterface {
 	salesOrderJourneyRepository := mongoRepo.InitSalesOrderJourneysRepository(mongodbClient)
+	salesOrderDetailJourneyRepository := mongoRepo.InitSalesOrderDetailJourneysRepository(mongodbClient)
 	salesOrderRepository := repositories.InitSalesOrderRepository(salesOrderJourneyRepository, database, redisdb)
-	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(database, redisdb)
+	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(salesOrderDetailJourneyRepository, database, redisdb)
 	orderStatusRepository := repositories.InitOrderStatusRepository(database, redisdb)
 	orderSourceRepository := repositories.InitOrderSourceRepository(database, redisdb)
 	agentRepository := repositories.InitAgentRepository(database, redisdb)
@@ -117,7 +119,6 @@ func InitHTTPAgentController(database dbresolver.DB, redisdb redisdb.RedisInterf
 	salesOrderUseCase := usecases.InitSalesOrderUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, agentRepository, brandRepository, storeRepository, productRepository, uomRepository, deliveryOrderRepository, salesOrderLogRepository, salesOrderJourneysRepository, salesOrderDetailJourneysRepository, soUploadHistoriesRepository, soUploadErrorLogsRepository, userRepository, salesmanRepository, categoryRepository, salesOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, kafkaClient, database, ctx)
 	uploadRepositories := repositories.InitUploadRepository(database)
 	salesOrderOpenSearchUseCase := usecases.InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, productRepository, uomRepository, salesOrderOpenSearchRepository, deliveryOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, categoryRepository, salesOrderJourneyRepository, uploadRepositories, ctx)
-	salesOrderDetailJourneyRepository := mongoRepo.InitSalesOrderDetailJourneysRepository(mongodbClient)
 	deliveryOrderUseCase := usecases.InitDeliveryOrderUseCaseInterface(deliveryOrderRepository, deliveryOrderDetailRepository, salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, warehouseRepository, brandRepository, uomRepository, agentRepository, storeRepository, productRepository, userRepository, salesmanRepository, salesOrderJourneysRepository, salesOrderDetailJourneyRepository, deliveryOrderLogRepository, deliveryOrderJourneysRepository, doUploadHistoriesRepository, doUploadErrorLogsRepository, deliveryOrderOpenSearchRepository, deliveryOrderDetailOpenSearchRepository, salesOrderOpenSearchUseCase, kafkaClient, database, ctx)
 	requestValidationRepository := repositories.InitRequestValidationRepository(database)
 	requestValidationMiddleware := middlewares.InitRequestValidationMiddlewareInterface(requestValidationRepository, orderSourceRepository)
@@ -129,8 +130,9 @@ func InitHTTPAgentController(database dbresolver.DB, redisdb redisdb.RedisInterf
 
 func InitHTTPStoreController(database dbresolver.DB, redisdb redisdb.RedisInterface, mongodbClient mongodb.MongoDBInterface, kafkaClient kafkadbo.KafkaClientInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, ctx context.Context) StoreControllerInterface {
 	salesOrderJourneyRepository := mongoRepo.InitSalesOrderJourneysRepository(mongodbClient)
+	salesOrderDetailJourneyRepository := mongoRepo.InitSalesOrderDetailJourneysRepository(mongodbClient)
 	salesOrderRepository := repositories.InitSalesOrderRepository(salesOrderJourneyRepository, database, redisdb)
-	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(database, redisdb)
+	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(salesOrderDetailJourneyRepository, database, redisdb)
 	orderStatusRepository := repositories.InitOrderStatusRepository(database, redisdb)
 	orderSourceRepository := repositories.InitOrderSourceRepository(database, redisdb)
 	agentRepository := repositories.InitAgentRepository(database, redisdb)
@@ -160,7 +162,6 @@ func InitHTTPStoreController(database dbresolver.DB, redisdb redisdb.RedisInterf
 	salesOrderUseCase := usecases.InitSalesOrderUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, agentRepository, brandRepository, storeRepository, productRepository, uomRepository, deliveryOrderRepository, salesOrderLogRepository, salesOrderJourneysRepository, salesOrderDetailJourneysRepository, soUploadHistoriesRepository, soUploadErrorLogsRepository, userRepository, salesmanRepository, categoryRepository, salesOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, kafkaClient, database, ctx)
 	uploadRepositories := repositories.InitUploadRepository(database)
 	salesOrderOpenSearchUseCase := usecases.InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, productRepository, uomRepository, salesOrderOpenSearchRepository, deliveryOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, categoryRepository, salesOrderJourneyRepository, uploadRepositories, ctx)
-	salesOrderDetailJourneyRepository := mongoRepo.InitSalesOrderDetailJourneysRepository(mongodbClient)
 	deliveryOrderUseCase := usecases.InitDeliveryOrderUseCaseInterface(deliveryOrderRepository, deliveryOrderDetailRepository, salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, warehouseRepository, brandRepository, uomRepository, agentRepository, storeRepository, productRepository, userRepository, salesmanRepository, salesOrderJourneysRepository, salesOrderDetailJourneyRepository, deliveryOrderLogRepository, deliveryOrderJourneysRepository, doUploadHistoriesRepository, doUploadErrorLogsRepository, deliveryOrderOpenSearchRepository, deliveryOrderDetailOpenSearchRepository, salesOrderOpenSearchUseCase, kafkaClient, database, ctx)
 	requestValidationRepository := repositories.InitRequestValidationRepository(database)
 	requestValidationMiddleware := middlewares.InitRequestValidationMiddlewareInterface(requestValidationRepository, orderSourceRepository)
@@ -172,8 +173,9 @@ func InitHTTPStoreController(database dbresolver.DB, redisdb redisdb.RedisInterf
 
 func InitHTTPSalesmanController(database dbresolver.DB, redisdb redisdb.RedisInterface, mongodbClient mongodb.MongoDBInterface, kafkaClient kafkadbo.KafkaClientInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, ctx context.Context) SalesmanControllerInterface {
 	salesOrderJourneyRepository := mongoRepo.InitSalesOrderJourneysRepository(mongodbClient)
+	salesOrderDetailJourneyRepository := mongoRepo.InitSalesOrderDetailJourneysRepository(mongodbClient)
 	salesOrderRepository := repositories.InitSalesOrderRepository(salesOrderJourneyRepository, database, redisdb)
-	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(database, redisdb)
+	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(salesOrderDetailJourneyRepository, database, redisdb)
 	orderStatusRepository := repositories.InitOrderStatusRepository(database, redisdb)
 	orderSourceRepository := repositories.InitOrderSourceRepository(database, redisdb)
 	agentRepository := repositories.InitAgentRepository(database, redisdb)
@@ -203,7 +205,6 @@ func InitHTTPSalesmanController(database dbresolver.DB, redisdb redisdb.RedisInt
 	salesOrderUseCase := usecases.InitSalesOrderUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, agentRepository, brandRepository, storeRepository, productRepository, uomRepository, deliveryOrderRepository, salesOrderLogRepository, salesOrderJourneysRepository, salesOrderDetailJourneysRepository, soUploadHistoriesRepository, soUploadErrorLogsRepository, userRepository, salesmanRepository, categoryRepository, salesOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, kafkaClient, database, ctx)
 	uploadRepositories := repositories.InitUploadRepository(database)
 	salesOrderOpenSearchUseCase := usecases.InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, productRepository, uomRepository, salesOrderOpenSearchRepository, deliveryOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, categoryRepository, salesOrderJourneyRepository, uploadRepositories, ctx)
-	salesOrderDetailJourneyRepository := mongoRepo.InitSalesOrderDetailJourneysRepository(mongodbClient)
 	deliveryOrderUseCase := usecases.InitDeliveryOrderUseCaseInterface(deliveryOrderRepository, deliveryOrderDetailRepository, salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, warehouseRepository, brandRepository, uomRepository, agentRepository, storeRepository, productRepository, userRepository, salesmanRepository, salesOrderJourneysRepository, salesOrderDetailJourneyRepository, deliveryOrderLogRepository, deliveryOrderJourneysRepository, doUploadHistoriesRepository, doUploadErrorLogsRepository, deliveryOrderOpenSearchRepository, deliveryOrderDetailOpenSearchRepository, salesOrderOpenSearchUseCase, kafkaClient, database, ctx)
 	requestValidationRepository := repositories.InitRequestValidationRepository(database)
 	requestValidationMiddleware := middlewares.InitRequestValidationMiddlewareInterface(requestValidationRepository, orderSourceRepository)
@@ -215,8 +216,9 @@ func InitHTTPSalesmanController(database dbresolver.DB, redisdb redisdb.RedisInt
 
 func InitHTTPHostToHostController(database dbresolver.DB, redisdb redisdb.RedisInterface, mongodbClient mongodb.MongoDBInterface, kafkaClient kafkadbo.KafkaClientInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, ctx context.Context) HostToHostControllerInterface {
 	salesOrderJourneysRepository := mongoRepo.InitSalesOrderJourneysRepository(mongodbClient)
+	salesOrderDetailJourneyRepository := mongoRepo.InitSalesOrderDetailJourneysRepository(mongodbClient)
 	salesOrderRepository := repositories.InitSalesOrderRepository(salesOrderJourneysRepository, database, redisdb)
-	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(database, redisdb)
+	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(salesOrderDetailJourneyRepository, database, redisdb)
 	cartRepository := repositories.InitCartRepository(database, redisdb)
 	cartDetailRepository := repositories.InitCartDetailRepository(database, redisdb)
 	orderStatusRepository := repositories.InitOrderStatusRepository(database, redisdb)
@@ -251,7 +253,6 @@ func InitHTTPHostToHostController(database dbresolver.DB, redisdb redisdb.RedisI
 	salesOrderOpenSearchUseCase := usecases.InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, productRepository, uomRepository, salesOrderOpenSearchRepository, deliveryOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, categoryRepository, salesOrderJourneyRepository, uploadRepositories, ctx)
 	requestValidationRepository := repositories.InitRequestValidationRepository(database)
 	requestValidationMiddleware := middlewares.InitRequestValidationMiddlewareInterface(requestValidationRepository, orderSourceRepository)
-	salesOrderDetailJourneyRepository := mongoRepo.InitSalesOrderDetailJourneysRepository(mongodbClient)
 	deliveryOrderUseCase := usecases.InitDeliveryOrderUseCaseInterface(deliveryOrderRepository, deliveryOrderDetailRepository, salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, orderSourceRepository, warehouseRepository, brandRepository, uomRepository, agentRepository, storeRepository, productRepository, userRepository, salesmanRepository, salesOrderJourneysRepository, salesOrderDetailJourneyRepository, deliveryOrderLogRepository, deliveryOrderJourneysRepository, doUploadHistoriesRepository, doUploadErrorLogsRepository, deliveryOrderOpenSearchRepository, deliveryOrderDetailOpenSearchRepository, salesOrderOpenSearchUseCase, kafkaClient, database, ctx)
 	handler := InitHostToHostController(cartUseCase, salesOrderUseCase, deliveryOrderUseCase, requestValidationMiddleware, database, ctx)
 	return handler
@@ -259,8 +260,9 @@ func InitHTTPHostToHostController(database dbresolver.DB, redisdb redisdb.RedisI
 
 func InitHTTPUploadController(database dbresolver.DB, redisdb redisdb.RedisInterface, mongodbClient mongodb.MongoDBInterface, kafkaClient kafkadbo.KafkaClientInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, ctx context.Context) UploadControllerInterface {
 	salesOrderJourneysRepository := mongoRepo.InitSalesOrderJourneysRepository(mongodbClient)
+	salesOrderDetailJourneyRepository := mongoRepo.InitSalesOrderDetailJourneysRepository(mongodbClient)
 	salesOrderRepository := repositories.InitSalesOrderRepository(salesOrderJourneysRepository, database, redisdb)
-	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(database, redisdb)
+	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(salesOrderDetailJourneyRepository, database, redisdb)
 	orderStatusRepository := repositories.InitOrderStatusRepository(database, redisdb)
 	orderSourceRepository := repositories.InitOrderSourceRepository(database, redisdb)
 	requestValidationRepository := repositories.InitRequestValidationRepository(database)

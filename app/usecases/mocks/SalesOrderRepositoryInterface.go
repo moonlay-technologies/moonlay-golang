@@ -47,7 +47,7 @@ func (_m *SalesOrderRepositoryInterface) RemoveCacheByID(id int, ctx context.Con
 }
 
 // UpdateByID provides a mock function with given fields: id, salesOrder, sqlTransaction, ctx, result
-func (_m *SalesOrderRepositoryInterface) UpdateByID(id int, salesOrder *models.SalesOrder, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderChan) {
+func (_m *SalesOrderRepositoryInterface) UpdateByID(id int, salesOrder *models.SalesOrder, isInsertToJourney bool, reason string, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderChan) {
 	_m.Called(id, salesOrder, sqlTransaction, ctx, result)
 }
 
