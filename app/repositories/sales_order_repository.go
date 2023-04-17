@@ -888,6 +888,28 @@ func (r *salesOrder) DeleteByID(request *models.SalesOrder, sqlTransaction *sql.
 		return
 	}
 
+	salesOrderJourneys := &models.SalesOrderJourneys{
+		SoCode:    request.SoCode,
+		SoId:      int(salesOrderID),
+		SoDate:    request.SoDate,
+		Status:    helper.GetSOJourneyStatus(request.OrderStatusID),
+		Remark:    "",
+		Reason:    "",
+		CreatedAt: &now,
+		UpdatedAt: &now,
+	}
+
+	createSalesOrderJourneysResultChan := make(chan *models.SalesOrderJourneysChan)
+	go r.salesOrderJourneysRepository.Insert(salesOrderJourneys, ctx, createSalesOrderJourneysResultChan)
+	createSalesOrderJourneysResult := <-createSalesOrderJourneysResultChan
+
+	if createSalesOrderJourneysResult.Error != nil {
+		response.Error = createSalesOrderJourneysResult.ErrorLog.Err
+		response.ErrorLog = createSalesOrderJourneysResult.ErrorLog
+		resultChan <- response
+		return
+	}
+
 	salesOrderRedisKey := fmt.Sprintf("%s", constants.SALES_ORDER+"*")
 	_, err = r.redisdb.Client().Del(ctx, salesOrderRedisKey).Result()
 
