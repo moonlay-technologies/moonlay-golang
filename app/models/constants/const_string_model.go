@@ -53,6 +53,7 @@ func UNMAPPED_TYPE_SORT_LIST() []string {
 	return []string{
 		"created_at",
 		"updated_at",
+		"do_date",
 	}
 }
 
@@ -63,9 +64,6 @@ func DELIVERY_ORDER_SORT_INT_LIST() []string {
 		"store_id",
 		"product_id",
 		"qty",
-		"do_date",
-		"created_at",
-		"updated_at",
 	}
 }
 
@@ -74,7 +72,7 @@ func DELIVERY_ORDER_SORT_STRING_LIST() []string {
 		"order_status.name",
 		"do_ref_code",
 		"do_code",
-		"store_code",
+		"sales_order.store_code",
 	}
 }
 
@@ -85,7 +83,6 @@ func DELIVERY_ORDER_DETAIL_SORT_INT_LIST() []string {
 		"store_id",
 		"product_id",
 		"qty",
-		"do_date",
 	}
 }
 
