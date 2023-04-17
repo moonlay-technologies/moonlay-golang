@@ -8,6 +8,7 @@ import (
 	"order-service/global/utils/helper"
 	"order-service/global/utils/model"
 	"order-service/global/utils/opensearch_dbo"
+	"time"
 )
 
 type DeliveryOrderDetailOpenSearchRepositoryInterface interface {
@@ -48,6 +49,17 @@ func (r *deliveryOrderDetailOpenSearch) Create(request *models.DeliveryOrderDeta
 
 func (r *deliveryOrderDetailOpenSearch) Get(request *models.DeliveryOrderDetailOpenSearchRequest, isCountOnly bool, resultChan chan *models.DeliveryOrderDetailsOpenSearchChan) {
 	response := &models.DeliveryOrderDetailsOpenSearchChan{}
+	page := request.Page
+	perPage := request.PerPage
+	sortField := request.SortField
+	sortValue := request.SortValue
+	if isCountOnly {
+		request.Page = 0
+		request.PerPage = 0
+		request.SortField = ""
+		request.SortValue = ""
+
+	}
 	requestQuery := r.generateDeliveryOrderQueryOpenSearchTermRequest("", "", request)
 	result, err := r.generateDeliveryOrderQueryOpenSearchResult(requestQuery, isCountOnly)
 
@@ -61,6 +73,12 @@ func (r *deliveryOrderDetailOpenSearch) Get(request *models.DeliveryOrderDetailO
 	response.DeliveryOrderDetailOpenSearch = result.DeliveryOrderDetails
 	response.Total = result.Total
 	resultChan <- response
+	if isCountOnly {
+		request.Page = page
+		request.PerPage = perPage
+		request.SortField = sortField
+		request.SortValue = sortValue
+	}
 	return
 }
 
@@ -147,6 +165,16 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 			filters = append(filters, filter)
 		}
 
+		if len(request.UpdatedAt) > 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"updated_at": request.UpdatedAt,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
 		if request.ID != 0 {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
@@ -167,6 +195,16 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 			filters = append(filters, filter)
 		}
 
+		if request.DoDetailID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"id": request.DoDetailID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
 		if request.DoCode != "" {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
@@ -177,10 +215,30 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 			filters = append(filters, filter)
 		}
 
+		if request.DoRefCode != "" {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"do_ref_code.keyword": request.DoRefCode,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.DoRefDate != "" {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"do_ref_date": request.DoRefDate,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
 		if request.SalesOrderID != 0 {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
-					"so_detail.sales_order_id": request.SalesOrderID,
+					"sales_order_id": request.SalesOrderID,
 				},
 			}
 
@@ -247,6 +305,56 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 			filters = append(filters, filter)
 		}
 
+		if request.SalesmanID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"salesman_id": request.SalesmanID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.ProvinceID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"store.province_id": request.ProvinceID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.CityID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"store.city_id": request.CityID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.DistrictID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"store.district_id": request.DistrictID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
+		if request.VillageID != 0 {
+			filter := map[string]interface{}{
+				"term": map[string]interface{}{
+					"store.village_id": request.VillageID,
+				},
+			}
+
+			filters = append(filters, filter)
+		}
+
 		if request.Qty != 0 {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
@@ -287,7 +395,7 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 			match := map[string]interface{}{
 				"query_string": map[string]interface{}{
 					"query":            "*" + request.GlobalSearchValue + "*",
-					"fields":           []string{"do_code", "so_code", "order_status.name^0.5", "qty^3"},
+					"fields":           []string{"do_code", "do_ref_code", "so_code", "store.name", "store.store_code", "order_status.name^0.5", "qty^3"},
 					"type":             "best_fields",
 					"default_operator": "AND",
 					"lenient":          true,
@@ -298,19 +406,13 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 		}
 
 		if request.SortField != "" && request.SortValue != "" {
+
 			sortValue := map[string]interface{}{
 				"order": request.SortValue,
 			}
 
-			if request.SortField == "created_at" {
+			if helper.Contains(constants.UNMAPPED_TYPE_SORT_LIST(), request.SortField) {
 				sortValue["unmapped_type"] = "date"
-			}
-
-			if request.SortField == "updated_at" {
-				sortValue["unmapped_type"] = "date"
-			}
-
-			if request.SortField == "order_status_id" || request.SortField == "agent_id" || request.SortField == "store_id" || request.SortField == "product_id" || request.SortField == "qty" {
 				openSearchQuery["sort"] = []map[string]interface{}{
 					{
 						request.SortField: sortValue,
@@ -318,10 +420,24 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 				}
 			}
 
-			if request.SortField == "do_code" || request.SortField == "so_code" {
+			if helper.Contains(constants.DELIVERY_ORDER_DETAIL_SORT_INT_LIST(), request.SortField) {
 				openSearchQuery["sort"] = []map[string]interface{}{
 					{
-						request.SortField + ".keyword": sortValue,
+						request.SortField: sortValue,
+					},
+				}
+			}
+
+			if helper.Contains(constants.DELIVERY_ORDER_DETAIL_SORT_STRING_LIST(), request.SortField) {
+				var field string
+				if request.SortField == "store_code" {
+					field = "store.store_code"
+				} else {
+					field = request.SortField
+				}
+				openSearchQuery["sort"] = []map[string]interface{}{
+					{
+						field + ".keyword": sortValue,
 					},
 				}
 			}
@@ -342,14 +458,14 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchResu
 	var total int64 = 0
 
 	if isCountOnly {
-		openSearchQueryResult, err := r.openSearch.Count(constants.DELIVERY_ORDERS_INDEX, openSearchQueryJson)
+		openSearchQueryResult, err := r.openSearch.Count(constants.DELIVERY_ORDER_DETAILS_INDEX, openSearchQueryJson)
 		if err != nil {
 			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			return &models.DeliveryOrderDetailsOpenSearch{}, errorLogData
 		}
 
 		if openSearchQueryResult <= 0 {
-			err = helper.NewError("delivery_orders_opensearch data not found")
+			err = helper.NewError(constants.ERROR_DATA_NOT_FOUND)
 			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 			return &models.DeliveryOrderDetailsOpenSearch{}, errorLogData
 		}
@@ -364,7 +480,7 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchResu
 		}
 
 		if openSearchQueryResult.Hits.Total.Value == 0 {
-			err = helper.NewError("delivery_orders_opensearch data not found")
+			err = helper.NewError(constants.ERROR_DATA_NOT_FOUND)
 			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 			return &models.DeliveryOrderDetailsOpenSearch{}, errorLogData
 		}
@@ -372,11 +488,23 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchResu
 		total = int64(openSearchQueryResult.Hits.Total.Value)
 
 		if openSearchQueryResult.Hits.Total.Value > 0 {
+			loc, _ := time.LoadLocation("Asia/Jakarta")
 			for _, v := range openSearchQueryResult.Hits.Hits {
 				obj := v.Source.(map[string]interface{})
 				deliveryOrderDetail := models.DeliveryOrderDetailOpenSearch{}
 				objJson, _ := json.Marshal(obj)
 				json.Unmarshal(objJson, &deliveryOrderDetail)
+				layout := time.RFC3339
+				if obj["created_at"] != nil {
+					createdAt, _ := time.ParseInLocation(layout, obj["created_at"].(string), loc)
+					createdAt = createdAt.In(loc)
+					deliveryOrderDetail.CreatedAt = &createdAt
+				}
+				if obj["updated_at"] != nil {
+					updatedAt, _ := time.ParseInLocation(layout, obj["created_at"].(string), loc)
+					updatedAt = updatedAt.In(loc)
+					deliveryOrderDetail.UpdatedAt = &updatedAt
+				}
 				deliveryOrderDetails = append(deliveryOrderDetails, &deliveryOrderDetail)
 			}
 		}

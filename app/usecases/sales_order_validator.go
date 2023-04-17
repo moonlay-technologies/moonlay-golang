@@ -771,9 +771,10 @@ func (d *SalesOrderValidator) getIntQueryWithMustActive(param string, empty stri
 
 func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*models.SalesOrderExportRequest, error) {
 	sortField := d.getQueryWithDefault("sort_field", "created_at", ctx)
-
-	if sortField != "order_status_id" && sortField != "so_date" && sortField != "do_ref_code" && sortField != "store_id" && sortField != "created_at" && sortField != "updated_at" {
-		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'so_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
+	var sortList = []string{}
+	sortList = append(append(append(sortList, constants.SALES_ORDER_EXPORT_SORT_INT_LIST()...), constants.SALES_ORDER_EXPORT_SORT_STRING_LIST()...), constants.UNMAPPED_TYPE_SORT_LIST()...)
+	if !helper.Contains(sortList, sortField) {
+		err := helper.NewError("Parameter 'sort_field' harus bernilai '" + strings.Join(sortList, "' or '") + "'")
 		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}
@@ -809,7 +810,7 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intOrderSourceID, m, err := d.getIntQueryWithMustActive("order_source_id", "0", false, "sales_orders", "order_status"+constants.CLAUSE_ID_VALIDATION, ctx)
+	intOrderSourceID, m, err := d.getIntQueryWithMustActive("order_source_id", "0", false, "sales_orders", "order_source_"+constants.CLAUSE_ID_VALIDATION, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -825,7 +826,7 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 		mustActiveFields = append(mustActiveFields, m)
 	}
 
-	intProductID, m, err := d.getIntQueryWithMustActive("product_id", "0", false, "sales_orders d JOIN sales_orders_details dd ON dd.sales_order_id = d.id", "dd.product_id = %d AND d.deleted_at IS NULL", ctx)
+	intProductID, m, err := d.getIntQueryWithMustActive("product_id", "0", false, "sales_orders d JOIN sales_order_details dd ON dd.sales_order_id = d.id", "dd.product_id = %d AND d.deleted_at IS NULL", ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -944,9 +945,10 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 
 func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) (*models.SalesOrderDetailExportRequest, error) {
 	sortField := d.getQueryWithDefault("sort_field", "created_at", ctx)
-
-	if sortField != "order_status_id" && sortField != "so_date" && sortField != "do_ref_code" && sortField != "store_id" && sortField != "created_at" && sortField != "updated_at" {
-		err := helper.NewError("Parameter 'sort_field' harus bernilai 'order_status_id' or 'so_date' or 'do_ref_code' or 'created_at' or 'updated_at'")
+	var sortList = []string{}
+	sortList = append(append(append(sortList, constants.SALES_ORDER_DETAIL_EXPORT_SORT_INT_LIST()...), constants.SALES_ORDER_DETAIL_EXPORT_SORT_STRING_LIST()...), constants.UNMAPPED_TYPE_SORT_LIST()...)
+	if !helper.Contains(sortList, sortField) {
+		err := helper.NewError("Parameter 'sort_field' harus bernilai '" + strings.Join(sortList, "' or '") + "'")
 		ctx.JSON(http.StatusBadRequest, helper.GenerateResultByError(err, http.StatusBadRequest, ""))
 		return nil, err
 	}

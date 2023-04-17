@@ -2057,6 +2057,33 @@ func (u *salesOrderUseCase) DeleteDetailBySOId(id int, sqlTransaction *sql.Tx) *
 }
 
 func (u *salesOrderUseCase) Export(request *models.SalesOrderExportRequest, ctx context.Context) (string, *model.ErrorLog) {
+	soRequest := &models.SalesOrderRequest{}
+	soRequest.SalesOrderExportMap(request)
+	getSalesOrdersCountResultChan := make(chan *models.SalesOrdersChan)
+	go u.salesOrderOpenSearchRepository.Get(soRequest, true, getSalesOrdersCountResultChan)
+	getSalesOrdersCountResult := <-getSalesOrdersCountResultChan
+
+	if getSalesOrdersCountResult.Error != nil {
+		fmt.Println("error = ", getSalesOrdersCountResult.Error)
+		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       []string{"Data tidak ditemukan"},
+			SystemMessage: []string{"sales Orders data not found"},
+			StatusCode:    http.StatusNotFound,
+		})
+		return "", errorLogData
+	}
+
+	if getSalesOrdersCountResult.Total == 0 {
+		err := helper.NewError("Data tidak ditemukan")
+		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
+		errorLogData = helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       []string{"Data tidak ditemukan"},
+			SystemMessage: []string{"sales Orders data not found"},
+			StatusCode:    http.StatusNotFound,
+		})
+		return "", errorLogData
+	}
+
 	rand, err := helper.Generate(`[A-Za-z]{12}`)
 	fileHour := time.Now().Format(constants.DATE_FORMAT_EXPORT)
 	if ctx == nil {
@@ -2079,6 +2106,32 @@ func (u *salesOrderUseCase) Export(request *models.SalesOrderExportRequest, ctx 
 }
 
 func (u *salesOrderUseCase) ExportDetail(request *models.SalesOrderDetailExportRequest, ctx context.Context) (string, *model.ErrorLog) {
+	soDetailRequest := &models.GetSalesOrderDetailRequest{}
+	soDetailRequest.SalesOrderDetailExportMap(request)
+	getSalesOrderDetailsCountResultChan := make(chan *models.SalesOrderDetailsOpenSearchChan)
+	go u.salesOrderDetailOpenSearchRepository.Get(soDetailRequest, true, getSalesOrderDetailsCountResultChan)
+	getSalesOrderDetailsCountResult := <-getSalesOrderDetailsCountResultChan
+
+	if getSalesOrderDetailsCountResult.Error != nil {
+		fmt.Println("error = ", getSalesOrderDetailsCountResult.Error)
+		errorLogData := helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       []string{"Data tidak ditemukan"},
+			SystemMessage: []string{"Sales Order Details data not found"},
+			StatusCode:    http.StatusNotFound,
+		})
+		return "", errorLogData
+	}
+
+	if getSalesOrderDetailsCountResult.Total == 0 {
+		err := helper.NewError("Data tidak ditemukan")
+		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
+		errorLogData = helper.NewWriteLog(baseModel.ErrorLog{
+			Message:       []string{"Data tidak ditemukan"},
+			SystemMessage: []string{"Sales Order Details data not found"},
+			StatusCode:    http.StatusNotFound,
+		})
+		return "", errorLogData
+	}
 	rand, err := helper.Generate(`[A-Za-z]{12}`)
 	fileHour := time.Now().Format(constants.DATE_FORMAT_EXPORT)
 	if ctx == nil {

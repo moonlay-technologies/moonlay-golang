@@ -9,6 +9,7 @@ import (
 	"order-service/global/utils/model"
 	"order-service/global/utils/opensearch_dbo"
 	"strings"
+	"time"
 )
 
 type DeliveryOrderOpenSearchRepositoryInterface interface {
@@ -520,15 +521,8 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 				"order": request.SortValue,
 			}
 
-			if request.SortField == "created_at" {
+			if helper.Contains(constants.UNMAPPED_TYPE_SORT_LIST(), request.SortField) {
 				sortValue["unmapped_type"] = "date"
-			}
-
-			if request.SortField == "updated_at" {
-				sortValue["unmapped_type"] = "date"
-			}
-
-			if request.SortField == "do_date" || request.SortField == "order_status_id" || request.SortField == "created_at" || request.SortField == "updated_at" {
 				openSearchQuery["sort"] = []map[string]interface{}{
 					{
 						request.SortField: sortValue,
@@ -536,7 +530,15 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchTermReques
 				}
 			}
 
-			if request.SortField == "do_ref_code" {
+			if helper.Contains(constants.DELIVERY_ORDER_SORT_INT_LIST(), request.SortField) {
+				openSearchQuery["sort"] = []map[string]interface{}{
+					{
+						request.SortField: sortValue,
+					},
+				}
+			}
+
+			if helper.Contains(constants.DELIVERY_ORDER_SORT_STRING_LIST(), request.SortField) {
 				openSearchQuery["sort"] = []map[string]interface{}{
 					{
 						request.SortField + ".keyword": sortValue,
@@ -1207,7 +1209,7 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchResult(ope
 		}
 
 		if openSearchQueryResult <= 0 {
-			err = helper.NewError("delivery_orders_opensearch data not found")
+			err = helper.NewError(constants.ERROR_DATA_NOT_FOUND)
 			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 			return &models.DeliveryOrders{}, errorLogData
 		}
@@ -1224,16 +1226,28 @@ func (r *deliveryOrderOpenSearch) generateDeliveryOrderQueryOpenSearchResult(ope
 		total = int64(openSearchQueryResult.Hits.Total.Value)
 
 		if int64(openSearchQueryResult.Hits.Total.Value) <= 0 {
-			err = helper.NewError("delivery_orders_opensearch data not found")
+			err = helper.NewError(constants.ERROR_DATA_NOT_FOUND)
 			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
 			return &models.DeliveryOrders{}, errorLogData
 		}
 
+		loc, _ := time.LoadLocation("Asia/Jakarta")
 		for _, v := range openSearchQueryResult.Hits.Hits {
 			obj := v.Source.(map[string]interface{})
 			deliveryOrder := models.DeliveryOrder{}
 			objJson, _ := json.Marshal(obj)
 			json.Unmarshal(objJson, &deliveryOrder)
+			layout := time.RFC3339
+			if obj["created_at"] != nil {
+				createdAt, _ := time.ParseInLocation(layout, obj["created_at"].(string), loc)
+				createdAt = createdAt.In(loc)
+				deliveryOrder.CreatedAt = &createdAt
+			}
+			if obj["updated_at"] != nil {
+				updatedAt, _ := time.ParseInLocation(layout, obj["created_at"].(string), loc)
+				updatedAt = updatedAt.In(loc)
+				deliveryOrder.UpdatedAt = &updatedAt
+			}
 			deliveryOrders = append(deliveryOrders, &deliveryOrder)
 		}
 	}

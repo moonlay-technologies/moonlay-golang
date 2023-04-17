@@ -398,7 +398,7 @@ func (deliveryOrderEventLog *DeliveryOrderEventLogResponse) DeliveryOrderEventLo
 	deliveryOrderEventLog.ID = request.ID
 	deliveryOrderEventLog.RequestID = request.RequestID
 	deliveryOrderEventLog.DoID = &request.Data.ID
-	deliveryOrderEventLog.DoCode = request.DoCode
+	deliveryOrderEventLog.DoCode = request.Data.DoCode
 	deliveryOrderEventLog.Status = status
 	deliveryOrderEventLog.Action = request.Action
 	deliveryOrderEventLog.CreatedAt = request.CreatedAt
@@ -411,17 +411,17 @@ func (deliveryOrderEventLog *DeliveryOrderEventLogResponse) DeliveryOrderEventLo
 }
 
 func (dataDOEventLog *DataDOEventLogResponse) DataDOEventLogResponseMap(request *GetDeliveryOrderLog) {
-	dataDOEventLog.AgentID = &request.Data.AgentID
-	dataDOEventLog.AgentName = &request.Data.AgentName
+	dataDOEventLog.AgentID = &request.Data.SalesOrder.AgentID
+	dataDOEventLog.AgentName = &request.Data.SalesOrder.AgentName.String
 	dataDOEventLog.SoCode = &request.Data.SalesOrder.SoCode
-	dataDOEventLog.DoDate = request.Data.DoDate
-	dataDOEventLog.DoRefCode = request.Data.DoRefCode.String
-	dataDOEventLog.Note = request.Data.Note
+	dataDOEventLog.DoDate = &request.Data.DoDate
+	dataDOEventLog.DoRefCode = &request.Data.DoRefCode.String
+	dataDOEventLog.Note = NullString{sql.NullString{String: request.Data.Note.String, Valid: true}}
 	dataDOEventLog.InternalComment = NullString{sql.NullString{String: request.Data.SalesOrder.InternalComment.String, Valid: true}}
-	dataDOEventLog.DriverName = request.Data.DriverName
-	dataDOEventLog.PlatNumber = request.Data.PlatNumber
-	dataDOEventLog.BrandID = &request.Data.Brand.ID
-	dataDOEventLog.BrandName = &request.Data.Brand.Name
+	dataDOEventLog.DriverName = NullString{sql.NullString{String: request.Data.DriverName.String, Valid: true}}
+	dataDOEventLog.PlatNumber = NullString{sql.NullString{String: request.Data.PlatNumber.String, Valid: true}}
+	dataDOEventLog.BrandID = &request.Data.SalesOrder.BrandID
+	dataDOEventLog.BrandName = &request.Data.SalesOrder.BrandName
 	dataDOEventLog.WarehouseCode = request.Data.WarehouseCode
 	dataDOEventLog.WarehouseName = request.Data.WarehouseName
 	return
@@ -436,9 +436,20 @@ func (doDetailEventLogResponse *DODetailEventLogResponse) DoDetailEventLogRespon
 	return
 }
 
+func (deliveryOrderLog *GetDeliveryOrderLog) DeliveryOrderLogBinaryMap(request *DeliveryOrderLog, data DeliveryOrder) {
+	deliveryOrderLog.Data = &data
+	deliveryOrderLog.Action = request.Action
+	deliveryOrderLog.Status = request.Status
+	deliveryOrderLog.CreatedAt = request.CreatedAt
+	return
+}
+
 func (data *DeliveryOrder) MapToCsvRow() []interface{} {
 	deliveryOrderCsv := DeliveryOrderCsvResponse{}
 	deliveryOrderCsv.DeliveryOrderMap(data)
+	if len(data.DoDate) > 9 {
+		data.DoDate = data.DoDate[0:10]
+	}
 	return []interface{}{
 		deliveryOrderCsv.DoStatus,
 		deliveryOrderCsv.DoDate,
@@ -483,7 +494,6 @@ func (d *DeliveryOrderCsvResponse) DeliveryOrderMap(r *DeliveryOrder) {
 	d.SjNo = r.DoRefCode
 	d.DoNo = r.DoCode
 	d.OrderNo = r.SalesOrder.SoCode
-	d.SoDate = r.SalesOrder.SoDate
 	d.SoNo = r.SalesOrder.SoCode
 	d.SoSource = r.SalesOrder.OrderSourceName
 	d.AgentID = r.AgentID

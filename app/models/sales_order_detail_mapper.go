@@ -322,8 +322,15 @@ func (data *SalesOrderDetailOpenSearch) MapToCsvRow(journey *SalesOrderJourneys,
 	if data.UpdatedAt != nil {
 		updatedAt = data.UpdatedAt.Format(constants.DATE_FORMAT_EXPORT_CREATED_AT)
 	}
+	if len(data.SoDate) > 9 {
+		data.SoDate = data.SoDate[0:10]
+	}
+	soRefDate := data.SoRefDate.String
+	if len(soRefDate) > 9 {
+		soRefDate = soRefDate[0:10]
+	}
 	return []interface{}{
-		s.OrderStatusName,
+		data.OrderStatus.Name,
 		s.OrderSourceName,
 		data.ReferralCode.String,
 		data.SoRefCode,

@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"order-service/app/models"
@@ -222,12 +223,39 @@ func (r *deliveryOrderLogRepository) Get(request *models.DeliveryOrderEventLogRe
 
 		for cursor.Next(ctx) {
 			var deliveryOrderLog *models.GetDeliveryOrderLog
+			var deliveryOrderLogBinary *models.DeliveryOrderLog
+			var data models.DeliveryOrder
 			if err := cursor.Decode(&deliveryOrderLog); err != nil {
-				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, "Terjadi Kesalahan, Silahkan Coba lagi Nanti")
-				response.Error = err
-				response.ErrorLog = errorLogData
-				resultChan <- response
-				return
+				if err.Error() == "error decoding key data: cannot decode binary into a models.DeliveryOrder" {
+					err = cursor.Decode(&deliveryOrderLogBinary)
+					if err != nil {
+						errorLogData := helper.WriteLog(err, http.StatusInternalServerError, "Terjadi Kesalahan, Silahkan Coba lagi Nanti")
+						response.Error = err
+						response.ErrorLog = errorLogData
+						resultChan <- response
+						return
+					}
+
+					dataBinary := deliveryOrderLogBinary.Data.(primitive.Binary)
+					dataBytes := dataBinary.Data
+
+					err = json.Unmarshal(dataBytes, &data)
+					if err != nil {
+						errorLogData := helper.WriteLog(err, http.StatusInternalServerError, "Terjadi Kesalahan, Silahkan Coba lagi Nanti")
+						response.Error = err
+						response.ErrorLog = errorLogData
+						resultChan <- response
+						return
+					}
+
+					deliveryOrderLog.DeliveryOrderLogBinaryMap(deliveryOrderLogBinary, data)
+				} else {
+					errorLogData := helper.WriteLog(err, http.StatusInternalServerError, "Terjadi Kesalahan, Silahkan Coba lagi Nanti")
+					response.Error = err
+					response.ErrorLog = errorLogData
+					resultChan <- response
+					return
+				}
 			}
 
 			deliveryOrderLogs = append(deliveryOrderLogs, deliveryOrderLog)

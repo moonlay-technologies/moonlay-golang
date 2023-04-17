@@ -51,6 +51,12 @@ func (r *salesOrderDetailOpenSearch) Create(request *models.SalesOrderDetailOpen
 
 func (r *salesOrderDetailOpenSearch) Get(request *models.GetSalesOrderDetailRequest, isCountOnly bool, resultChan chan *models.SalesOrderDetailsOpenSearchChan) {
 	response := &models.SalesOrderDetailsOpenSearchChan{}
+	if isCountOnly {
+		request.Page = 0
+		request.PerPage = 0
+		request.SortField = ""
+		request.SortValue = ""
+	}
 	requestQuery := r.generateSalesOrderDetailQueryOpenSearchTermRequest("", "", request)
 	result, err := r.generateSalesOrderDetailQueryOpenSearchResult(requestQuery, isCountOnly)
 
@@ -186,7 +192,7 @@ func (r *salesOrderDetailOpenSearch) generateSalesOrderDetailQueryOpenSearchTerm
 		if request.OrderStatusID > 0 {
 			filter := map[string]interface{}{
 				"term": map[string]interface{}{
-					"order_status_id": request.OrderStatusID,
+					"order_status.id": request.OrderStatusID,
 				},
 			}
 
@@ -277,18 +283,24 @@ func (r *salesOrderDetailOpenSearch) generateSalesOrderDetailQueryOpenSearchTerm
 				"order": request.SortValue,
 			}
 
-			if request.SortField == "created_at" || request.SortField == "updated_at" {
+			if helper.Contains(constants.UNMAPPED_TYPE_SORT_LIST(), request.SortField) {
 				sortValue["unmapped_type"] = "date"
 			}
 
-			field := request.SortField
-			if request.SortField == "so_ref_code" || request.SortField == "so_code" || request.SortField == "store_code" || request.SortField == "store_name" {
-				field = field + ".keyword"
+			if helper.Contains(constants.SALES_ORDER_DETAIL_SORT_INT_LIST(), request.SortField) {
+				openSearchQuery["sort"] = []map[string]interface{}{
+					{
+						request.SortField: sortValue,
+					},
+				}
 			}
-			openSearchQuery["sort"] = []map[string]interface{}{
-				{
-					field: sortValue,
-				},
+
+			if helper.Contains(constants.SALES_ORDER_DETAIL_SORT_STRING_LIST(), request.SortField) {
+				openSearchQuery["sort"] = []map[string]interface{}{
+					{
+						request.SortField + ".keyword": sortValue,
+					},
+				}
 			}
 		}
 	}
@@ -307,7 +319,7 @@ func (r *salesOrderDetailOpenSearch) generateSalesOrderDetailQueryOpenSearchResu
 	var total int64 = 0
 
 	if isCountOnly {
-		openSearchQueryResult, err := r.openSearch.Count(constants.DELIVERY_ORDERS_INDEX, openSearchQueryJson)
+		openSearchQueryResult, err := r.openSearch.Count(constants.SALES_ORDER_DETAILS_INDEX, openSearchQueryJson)
 		if err != nil {
 			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 			return &models.SalesOrderDetailsOpenSearch{}, errorLogData
@@ -337,6 +349,7 @@ func (r *salesOrderDetailOpenSearch) generateSalesOrderDetailQueryOpenSearchResu
 		total = int64(openSearchQueryResult.Hits.Total.Value)
 
 		if openSearchQueryResult.Hits.Total.Value > 0 {
+			loc, _ := time.LoadLocation("Asia/Jakarta")
 			for _, v := range openSearchQueryResult.Hits.Hits {
 				obj := v.Source.(map[string]interface{})
 
@@ -352,10 +365,12 @@ func (r *salesOrderDetailOpenSearch) generateSalesOrderDetailQueryOpenSearchResu
 				layout := time.RFC3339
 				if obj["created_at"] != nil {
 					createdAt, _ := time.Parse(layout, obj["created_at"].(string))
+					createdAt = createdAt.In(loc)
 					salesOrderDetail.CreatedAt = &createdAt
 				}
 				if obj["updated_at"] != nil {
 					updatedAt, _ := time.Parse(layout, obj["updated_at"].(string))
+					updatedAt = updatedAt.In(loc)
 					salesOrderDetail.UpdatedAt = &updatedAt
 				}
 

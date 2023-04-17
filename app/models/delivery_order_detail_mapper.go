@@ -270,11 +270,11 @@ func (d *DeliveryOrderDetailOpenSearchRequest) DeliveryOrderDetailExportMap(r *D
 	d.TotalAmount = 0
 	d.TotalTonase = 0
 	d.CategoryID = r.CategoryID
-	d.SalesmanID = 0
-	d.ProvinceID = 0
-	d.CityID = 0
-	d.DistrictID = 0
-	d.VillageID = 0
+	d.SalesmanID = r.SalesmanID
+	d.ProvinceID = r.ProvinceID
+	d.CityID = r.CityID
+	d.DistrictID = r.DistrictID
+	d.VillageID = r.VillageID
 	d.StoreProvinceID = r.ProvinceID
 	d.StoreCityID = r.CityID
 	d.StoreDistrictID = r.DistrictID
@@ -287,6 +287,18 @@ func (d *DeliveryOrderDetailOpenSearchRequest) DeliveryOrderDetailExportMap(r *D
 }
 func (d *DeliveryOrderDetailOpenSearch) MapToCsvRow(dd *DeliveryOrder) []interface{} {
 	store := Store{}
+	if d.SoDetail == nil {
+		d.SoDetail = &SalesOrderDetail{}
+	}
+	if d.Agent == nil {
+		d.Agent = &Agent{}
+	}
+	if d.Product == nil {
+		d.Product = &Product{}
+	}
+	if d.Uom == nil {
+		d.Uom = &Uom{}
+	}
 	if d.Store != nil {
 		store.StoreCategory = d.Store.StoreCategory
 		store.StoreCode = d.Store.StoreCode
@@ -310,14 +322,21 @@ func (d *DeliveryOrderDetailOpenSearch) MapToCsvRow(dd *DeliveryOrder) []interfa
 		store.ProvinceID = NullString{NullString: sql.NullString{String: "", Valid: true}}
 		store.ProvinceName = NullString{NullString: sql.NullString{String: "", Valid: true}}
 	}
+	if len(d.DoDate) > 9 {
+		d.DoDate = d.DoDate[0:10]
+	}
+	soDate := d.SoDate.String
+	if len(soDate) > 9 {
+		soDate = soDate[0:10]
+	}
 	return []interface{}{
 		d.OrderStatusName,
 		d.DoDate,
 		d.DoRefCode,
 		d.DoCode,
-		d.SoDate.String,
+		soDate,
 		d.SoCode.String,
-		d.OrderSourceName,
+		dd.SalesOrder.OrderSourceName,
 		d.AgentID,
 		d.Agent.Name,
 		d.WarehouseCode,
