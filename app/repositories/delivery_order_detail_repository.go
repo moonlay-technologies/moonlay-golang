@@ -438,11 +438,6 @@ func (r *deliveryOrderDetail) UpdateByID(id int, request *models.DeliveryOrderDe
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
-	if request.OrderStatusID != 0 {
-		query := fmt.Sprintf("%s=%v", "order_status_id", request.OrderStatusID)
-		rawSqlQueries = append(rawSqlQueries, query)
-	}
-
 	query := fmt.Sprintf("%s=%v", "qty", request.Qty)
 	rawSqlQueries = append(rawSqlQueries, query)
 
