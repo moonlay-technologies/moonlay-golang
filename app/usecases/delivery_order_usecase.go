@@ -45,9 +45,9 @@ type DeliveryOrderUseCaseInterface interface {
 	GetDOUploadHistoriesById(id string, ctx context.Context) (*models.GetDoUploadHistoryResponse, *model.ErrorLog)
 	GetDOUploadErrorLogsByReqId(request *models.GetDoUploadErrorLogsRequest, ctx context.Context) (*models.GetDoUploadErrorLogsResponse, *model.ErrorLog)
 	GetDOUploadErrorLogsByDoUploadHistoryId(request *models.GetDoUploadErrorLogsRequest, ctx context.Context) (*models.GetDoUploadErrorLogsResponse, *model.ErrorLog)
-	DeleteByID(deliveryOrderId int, sqlTransaction *sql.Tx) *model.ErrorLog
-	DeleteDetailByID(deliveryOrderDetailId int, sqlTransaction *sql.Tx) *model.ErrorLog
-	DeleteDetailByDoID(deliveryOrderId int, sqlTransaction *sql.Tx) *model.ErrorLog
+	DeleteByID(deliveryOrderId int, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
+	DeleteDetailByID(deliveryOrderDetailId int, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
+	DeleteDetailByDoID(deliveryOrderId int, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	RetrySyncToKafka(logId string) (*models.DORetryProcessSyncToKafkaResponse, *model.ErrorLog)
 	Export(request *models.DeliveryOrderExportRequest, ctx context.Context) (string, *model.ErrorLog)
 	ExportDetail(request *models.DeliveryOrderDetailExportRequest, ctx context.Context) (string, *model.ErrorLog)
@@ -461,7 +461,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
 
 	updateSalesOrderChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.UpdateByID(getSalesOrderResult.SalesOrder.ID, getSalesOrderResult.SalesOrder, true, "", sqlTransaction, u.ctx, updateSalesOrderChan)
+	go u.salesOrderRepository.UpdateByID(getSalesOrderResult.SalesOrder.ID, getSalesOrderResult.SalesOrder, true, "", sqlTransaction, ctx, updateSalesOrderChan)
 	updateSalesOrderResult := <-updateSalesOrderChan
 
 	if updateSalesOrderResult.ErrorLog != nil {
@@ -620,6 +620,7 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 				}
 
 				if balanceQty != 0 {
+					v.UpdatedAt = &now
 
 					getOrderStatusDetailResultChan := make(chan *models.OrderStatusChan)
 					go u.orderStatusRepository.GetByID(getSalesOrderDetailResult.SalesOrderDetail.OrderStatusID, false, ctx, getOrderStatusDetailResultChan)
@@ -754,7 +755,7 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 	deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
 
 	updateSalesOrderChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.UpdateByID(getSalesOrderResult.SalesOrder.ID, getSalesOrderResult.SalesOrder, true, "", sqlTransaction, u.ctx, updateSalesOrderChan)
+	go u.salesOrderRepository.UpdateByID(getSalesOrderResult.SalesOrder.ID, getSalesOrderResult.SalesOrder, true, "", sqlTransaction, ctx, updateSalesOrderChan)
 	updateSalesOrderResult := <-updateSalesOrderChan
 
 	if updateSalesOrderResult.ErrorLog != nil {
@@ -1085,7 +1086,7 @@ func (u *deliveryOrderUseCase) UpdateDODetailByID(id int, request *models.Delive
 	deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
 
 	updateSalesOrderChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.UpdateByID(getSalesOrderResult.SalesOrder.ID, getSalesOrderResult.SalesOrder, true, "", sqlTransaction, u.ctx, updateSalesOrderChan)
+	go u.salesOrderRepository.UpdateByID(getSalesOrderResult.SalesOrder.ID, getSalesOrderResult.SalesOrder, true, "", sqlTransaction, ctx, updateSalesOrderChan)
 	updateSalesOrderResult := <-updateSalesOrderChan
 
 	if updateSalesOrderResult.ErrorLog != nil {
@@ -1403,7 +1404,7 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 	deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
 
 	updateSalesOrderChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.UpdateByID(getSalesOrderResult.SalesOrder.ID, getSalesOrderResult.SalesOrder, true, "", sqlTransaction, u.ctx, updateSalesOrderChan)
+	go u.salesOrderRepository.UpdateByID(getSalesOrderResult.SalesOrder.ID, getSalesOrderResult.SalesOrder, true, "", sqlTransaction, ctx, updateSalesOrderChan)
 	updateSalesOrderResult := <-updateSalesOrderChan
 
 	if updateSalesOrderResult.ErrorLog != nil {
@@ -2176,10 +2177,10 @@ func (u *deliveryOrderUseCase) GetDOUploadErrorLogsByDoUploadHistoryId(request *
 
 }
 
-func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.ErrorLog {
+func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
 	now := time.Now()
 	getDeliveryOrderByIDResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderRepository.GetByID(id, false, u.ctx, getDeliveryOrderByIDResultChan)
+	go u.deliveryOrderRepository.GetByID(id, false, ctx, getDeliveryOrderByIDResultChan)
 	getDeliveryOrderByIDResult := <-getDeliveryOrderByIDResultChan
 
 	if getDeliveryOrderByIDResult.Error != nil {
@@ -2187,7 +2188,7 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 	}
 
 	getDeliveryOrderDetailByIDResultChan := make(chan *models.DeliveryOrderDetailsChan)
-	go u.deliveryOrderDetailRepository.GetByDeliveryOrderID(id, false, u.ctx, getDeliveryOrderDetailByIDResultChan)
+	go u.deliveryOrderDetailRepository.GetByDeliveryOrderID(id, false, ctx, getDeliveryOrderDetailByIDResultChan)
 	getDeliveryOrderDetailsByIDResult := <-getDeliveryOrderDetailByIDResultChan
 
 	if getDeliveryOrderDetailsByIDResult.Error != nil {
@@ -2197,7 +2198,7 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 	getDeliveryOrderByIDResult.DeliveryOrder.DeliveryOrderDetails = getDeliveryOrderDetailsByIDResult.DeliveryOrderDetails
 
 	getSalesOrderByIDResultChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.GetByID(getDeliveryOrderByIDResult.DeliveryOrder.SalesOrderID, false, u.ctx, getSalesOrderByIDResultChan)
+	go u.salesOrderRepository.GetByID(getDeliveryOrderByIDResult.DeliveryOrder.SalesOrderID, false, ctx, getSalesOrderByIDResultChan)
 	getSalesOrderByIDResult := <-getSalesOrderByIDResultChan
 
 	if getSalesOrderByIDResult.Error != nil {
@@ -2205,12 +2206,13 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 	}
 	totalSentQty := 0
 	isOpen := false
+	doDetails := []*models.DeliveryOrderDetail{}
 	for _, v := range getDeliveryOrderDetailsByIDResult.DeliveryOrderDetails {
 		if v.Qty > 0 {
 			isOpen = true
 		}
 		getSalesOrderDetailByIDResultChan := make(chan *models.SalesOrderDetailChan)
-		go u.salesOrderDetailRepository.GetByID(v.SoDetailID, false, u.ctx, getSalesOrderDetailByIDResultChan)
+		go u.salesOrderDetailRepository.GetByID(v.SoDetailID, false, ctx, getSalesOrderDetailByIDResultChan)
 		getSalesOrderDetailsByIDResult := <-getSalesOrderDetailByIDResultChan
 
 		if getSalesOrderDetailsByIDResult.Error != nil {
@@ -2222,27 +2224,24 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 		getSalesOrderDetailsByIDResult.SalesOrderDetail.UpdatedAt = &now
 
 		totalSentQty += getSalesOrderDetailsByIDResult.SalesOrderDetail.SentQty
-
 		deleteDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
-		go u.deliveryOrderDetailRepository.DeleteByID(v, sqlTransaction, u.ctx, deleteDeliveryOrderDetailResultChan)
+		go u.deliveryOrderDetailRepository.DeleteByID(v, sqlTransaction, ctx, deleteDeliveryOrderDetailResultChan)
 		deleteDeliveryOrderDetailResult := <-deleteDeliveryOrderDetailResultChan
-
 		if deleteDeliveryOrderDetailResult.ErrorLog != nil {
 			return deleteDeliveryOrderDetailResult.ErrorLog
 		}
-
 		updateSalesOrderDetailChan := make(chan *models.SalesOrderDetailChan)
-		go u.salesOrderDetailRepository.UpdateByID(v.SoDetailID, getSalesOrderDetailsByIDResult.SalesOrderDetail, true, "", sqlTransaction, u.ctx, updateSalesOrderDetailChan)
+		go u.salesOrderDetailRepository.UpdateByID(v.SoDetailID, getSalesOrderDetailsByIDResult.SalesOrderDetail, true, "", sqlTransaction, ctx, updateSalesOrderDetailChan)
 		updateSalesOrderDetailResult := <-updateSalesOrderDetailChan
 
 		if updateSalesOrderDetailResult.ErrorLog != nil {
 			return updateSalesOrderDetailResult.ErrorLog
 		}
-
+		doDetails = append(doDetails, v)
 	}
-
+	getDeliveryOrderByIDResult.DeliveryOrder.DeliveryOrderDetails = doDetails
 	deleteDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderRepository.DeleteByID(getDeliveryOrderByIDResult.DeliveryOrder, u.ctx, deleteDeliveryOrderResultChan)
+	go u.deliveryOrderRepository.DeleteByID(getDeliveryOrderByIDResult.DeliveryOrder, ctx, deleteDeliveryOrderResultChan)
 	deleteDeliveryOrderResult := <-deleteDeliveryOrderResultChan
 
 	if deleteDeliveryOrderResult.ErrorLog != nil {
@@ -2254,9 +2253,12 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 		getSalesOrderByIDResult.SalesOrder.OrderStatusID = 5
 	}
 	updateSalesOrderChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.UpdateByID(getSalesOrderByIDResult.SalesOrder.ID, getSalesOrderByIDResult.SalesOrder, false, "", sqlTransaction, u.ctx, updateSalesOrderChan)
+	go u.salesOrderRepository.UpdateByID(getSalesOrderByIDResult.SalesOrder.ID, getSalesOrderByIDResult.SalesOrder, false, "", sqlTransaction, ctx, updateSalesOrderChan)
 	updateSalesOrderResult := <-updateSalesOrderChan
 
+	if updateSalesOrderResult.ErrorLog != nil {
+		return updateSalesOrderResult.ErrorLog
+	}
 	deiveryOrderLog := &models.DeliveryOrderLog{
 		RequestID: "",
 		DoCode:    getDeliveryOrderByIDResult.DeliveryOrder.DoCode,
@@ -2266,13 +2268,12 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 		CreatedAt: &now,
 	}
 	createDeliveryOrderLogResultChan := make(chan *models.DeliveryOrderLogChan)
-	go u.deliveryOrderLogRepository.Insert(deiveryOrderLog, u.ctx, createDeliveryOrderLogResultChan)
+	go u.deliveryOrderLogRepository.Insert(deiveryOrderLog, ctx, createDeliveryOrderLogResultChan)
 	createDeliveryOrderLogResult := <-createDeliveryOrderLogResultChan
 
 	if createDeliveryOrderLogResult.Error != nil {
 		return createDeliveryOrderLogResult.ErrorLog
 	}
-
 	if isOpen {
 		deliveryOrderJourney := &models.DeliveryOrderJourney{
 			DoId:      getDeliveryOrderByIDResult.DeliveryOrder.ID,
@@ -2286,7 +2287,7 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 		}
 
 		createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
-		go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, u.ctx, createDeliveryOrderJourneyChan)
+		go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, ctx, createDeliveryOrderJourneyChan)
 		createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
 
 		if createDeliveryOrderJourneysResult.Error != nil {
@@ -2306,13 +2307,12 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 	}
 
 	createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
-	go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, u.ctx, createDeliveryOrderJourneyChan)
+	go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, ctx, createDeliveryOrderJourneyChan)
 	createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
 
 	if createDeliveryOrderJourneysResult.Error != nil {
 		return createDeliveryOrderJourneysResult.ErrorLog
 	}
-
 	keyKafka := []byte(getDeliveryOrderByIDResult.DeliveryOrder.DoCode)
 	messageKafka, _ := json.Marshal(
 		&models.DeliveryOrder{
@@ -2328,18 +2328,13 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		return errorLogData
 	}
-
-	if updateSalesOrderResult.ErrorLog != nil {
-		return updateSalesOrderResult.ErrorLog
-	}
-
 	return nil
 }
 
-func (u deliveryOrderUseCase) DeleteDetailByID(id int, sqlTransaction *sql.Tx) *model.ErrorLog {
+func (u deliveryOrderUseCase) DeleteDetailByID(id int, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
 	now := time.Now()
 	getDeliveryOrderDetailByIDResultChan := make(chan *models.DeliveryOrderDetailChan)
-	go u.deliveryOrderDetailRepository.GetByID(id, false, u.ctx, getDeliveryOrderDetailByIDResultChan)
+	go u.deliveryOrderDetailRepository.GetByID(id, false, ctx, getDeliveryOrderDetailByIDResultChan)
 	getDeliveryOrderDetailByIDResult := <-getDeliveryOrderDetailByIDResultChan
 
 	if getDeliveryOrderDetailByIDResult.Error != nil {
@@ -2347,7 +2342,7 @@ func (u deliveryOrderUseCase) DeleteDetailByID(id int, sqlTransaction *sql.Tx) *
 	}
 
 	getDeliveryOrderByIDResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderRepository.GetByID(getDeliveryOrderDetailByIDResult.DeliveryOrderDetail.DeliveryOrderID, false, u.ctx, getDeliveryOrderByIDResultChan)
+	go u.deliveryOrderRepository.GetByID(getDeliveryOrderDetailByIDResult.DeliveryOrderDetail.DeliveryOrderID, false, ctx, getDeliveryOrderByIDResultChan)
 	getDeliveryOrderByIDResult := <-getDeliveryOrderByIDResultChan
 
 	if getDeliveryOrderByIDResult.Error != nil {
@@ -2355,7 +2350,7 @@ func (u deliveryOrderUseCase) DeleteDetailByID(id int, sqlTransaction *sql.Tx) *
 	}
 
 	getSalesOrderDetailByIDResultChan := make(chan *models.SalesOrderDetailChan)
-	go u.salesOrderDetailRepository.GetByID(getDeliveryOrderDetailByIDResult.DeliveryOrderDetail.SoDetailID, false, u.ctx, getSalesOrderDetailByIDResultChan)
+	go u.salesOrderDetailRepository.GetByID(getDeliveryOrderDetailByIDResult.DeliveryOrderDetail.SoDetailID, false, ctx, getSalesOrderDetailByIDResultChan)
 	getSalesOrderDetailsByIDResult := <-getSalesOrderDetailByIDResultChan
 
 	if getSalesOrderDetailsByIDResult.Error != nil {
@@ -2375,7 +2370,7 @@ func (u deliveryOrderUseCase) DeleteDetailByID(id int, sqlTransaction *sql.Tx) *
 	}
 
 	deleteDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
-	go u.deliveryOrderDetailRepository.DeleteByID(getDeliveryOrderDetailByIDResult.DeliveryOrderDetail, sqlTransaction, u.ctx, deleteDeliveryOrderDetailResultChan)
+	go u.deliveryOrderDetailRepository.DeleteByID(getDeliveryOrderDetailByIDResult.DeliveryOrderDetail, sqlTransaction, ctx, deleteDeliveryOrderDetailResultChan)
 	deleteDeliveryOrderDetailResult := <-deleteDeliveryOrderDetailResultChan
 
 	if deleteDeliveryOrderDetailResult.ErrorLog != nil {
@@ -2394,7 +2389,7 @@ func (u deliveryOrderUseCase) DeleteDetailByID(id int, sqlTransaction *sql.Tx) *
 		CreatedAt: &now,
 	}
 	createDeliveryOrderLogResultChan := make(chan *models.DeliveryOrderLogChan)
-	go u.deliveryOrderLogRepository.Insert(deiveryOrderLog, u.ctx, createDeliveryOrderLogResultChan)
+	go u.deliveryOrderLogRepository.Insert(deiveryOrderLog, ctx, createDeliveryOrderLogResultChan)
 	createDeliveryOrderLogResult := <-createDeliveryOrderLogResultChan
 
 	if createDeliveryOrderLogResult.Error != nil {
@@ -2413,7 +2408,7 @@ func (u deliveryOrderUseCase) DeleteDetailByID(id int, sqlTransaction *sql.Tx) *
 	}
 
 	createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
-	go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, u.ctx, createDeliveryOrderJourneyChan)
+	go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, ctx, createDeliveryOrderJourneyChan)
 	createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
 
 	if createDeliveryOrderJourneysResult.Error != nil {
@@ -2440,10 +2435,10 @@ func (u deliveryOrderUseCase) DeleteDetailByID(id int, sqlTransaction *sql.Tx) *
 	return nil
 }
 
-func (u deliveryOrderUseCase) DeleteDetailByDoID(id int, sqlTransaction *sql.Tx) *model.ErrorLog {
+func (u deliveryOrderUseCase) DeleteDetailByDoID(id int, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
 	now := time.Now()
 	getDeliveryOrderByIDResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderRepository.GetByID(id, false, u.ctx, getDeliveryOrderByIDResultChan)
+	go u.deliveryOrderRepository.GetByID(id, false, ctx, getDeliveryOrderByIDResultChan)
 	getDeliveryOrderByIDResult := <-getDeliveryOrderByIDResultChan
 
 	if getDeliveryOrderByIDResult.Error != nil {
@@ -2451,7 +2446,7 @@ func (u deliveryOrderUseCase) DeleteDetailByDoID(id int, sqlTransaction *sql.Tx)
 	}
 
 	getDeliveryOrderDetailByIDResultChan := make(chan *models.DeliveryOrderDetailsChan)
-	go u.deliveryOrderDetailRepository.GetByDeliveryOrderID(id, false, u.ctx, getDeliveryOrderDetailByIDResultChan)
+	go u.deliveryOrderDetailRepository.GetByDeliveryOrderID(id, false, ctx, getDeliveryOrderDetailByIDResultChan)
 	getDeliveryOrderDetailsByIDResult := <-getDeliveryOrderDetailByIDResultChan
 
 	if getDeliveryOrderDetailsByIDResult.Error != nil {
@@ -2459,7 +2454,7 @@ func (u deliveryOrderUseCase) DeleteDetailByDoID(id int, sqlTransaction *sql.Tx)
 	}
 
 	getSalesOrderByIDResultChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.GetByID(getDeliveryOrderByIDResult.DeliveryOrder.SalesOrderID, false, u.ctx, getSalesOrderByIDResultChan)
+	go u.salesOrderRepository.GetByID(getDeliveryOrderByIDResult.DeliveryOrder.SalesOrderID, false, ctx, getSalesOrderByIDResultChan)
 	getSalesOrderByIDResult := <-getSalesOrderByIDResultChan
 
 	if getSalesOrderByIDResult.Error != nil {
@@ -2470,7 +2465,7 @@ func (u deliveryOrderUseCase) DeleteDetailByDoID(id int, sqlTransaction *sql.Tx)
 	for _, v := range getDeliveryOrderDetailsByIDResult.DeliveryOrderDetails {
 
 		getSalesOrderDetailByIDResultChan := make(chan *models.SalesOrderDetailChan)
-		go u.salesOrderDetailRepository.GetByID(v.SoDetailID, false, u.ctx, getSalesOrderDetailByIDResultChan)
+		go u.salesOrderDetailRepository.GetByID(v.SoDetailID, false, ctx, getSalesOrderDetailByIDResultChan)
 		getSalesOrderDetailsByIDResult := <-getSalesOrderDetailByIDResultChan
 
 		if getSalesOrderDetailsByIDResult.Error != nil {
@@ -2484,7 +2479,7 @@ func (u deliveryOrderUseCase) DeleteDetailByDoID(id int, sqlTransaction *sql.Tx)
 		totalSentQty += getSalesOrderDetailsByIDResult.SalesOrderDetail.SentQty
 
 		deleteDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
-		go u.deliveryOrderDetailRepository.DeleteByID(v, sqlTransaction, u.ctx, deleteDeliveryOrderDetailResultChan)
+		go u.deliveryOrderDetailRepository.DeleteByID(v, sqlTransaction, ctx, deleteDeliveryOrderDetailResultChan)
 		deleteDeliveryOrderDetailResult := <-deleteDeliveryOrderDetailResultChan
 
 		if deleteDeliveryOrderDetailResult.ErrorLog != nil {
@@ -2492,7 +2487,7 @@ func (u deliveryOrderUseCase) DeleteDetailByDoID(id int, sqlTransaction *sql.Tx)
 		}
 
 		updateSalesOrderDetailChan := make(chan *models.SalesOrderDetailChan)
-		go u.salesOrderDetailRepository.UpdateByID(v.SoDetailID, getSalesOrderDetailsByIDResult.SalesOrderDetail, true, "", sqlTransaction, u.ctx, updateSalesOrderDetailChan)
+		go u.salesOrderDetailRepository.UpdateByID(v.SoDetailID, getSalesOrderDetailsByIDResult.SalesOrderDetail, true, "", sqlTransaction, ctx, updateSalesOrderDetailChan)
 		updateSalesOrderDetailResult := <-updateSalesOrderDetailChan
 
 		if updateSalesOrderDetailResult.ErrorLog != nil {
@@ -2507,7 +2502,7 @@ func (u deliveryOrderUseCase) DeleteDetailByDoID(id int, sqlTransaction *sql.Tx)
 		getSalesOrderByIDResult.SalesOrder.OrderStatusID = 5
 	}
 	updateSalesOrderChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.UpdateByID(getSalesOrderByIDResult.SalesOrder.ID, getSalesOrderByIDResult.SalesOrder, false, "", sqlTransaction, u.ctx, updateSalesOrderChan)
+	go u.salesOrderRepository.UpdateByID(getSalesOrderByIDResult.SalesOrder.ID, getSalesOrderByIDResult.SalesOrder, false, "", sqlTransaction, ctx, updateSalesOrderChan)
 	updateSalesOrderResult := <-updateSalesOrderChan
 
 	deiveryOrderLog := &models.DeliveryOrderLog{
@@ -2519,7 +2514,7 @@ func (u deliveryOrderUseCase) DeleteDetailByDoID(id int, sqlTransaction *sql.Tx)
 		CreatedAt: &now,
 	}
 	createDeliveryOrderLogResultChan := make(chan *models.DeliveryOrderLogChan)
-	go u.deliveryOrderLogRepository.Insert(deiveryOrderLog, u.ctx, createDeliveryOrderLogResultChan)
+	go u.deliveryOrderLogRepository.Insert(deiveryOrderLog, ctx, createDeliveryOrderLogResultChan)
 	createDeliveryOrderLogResult := <-createDeliveryOrderLogResultChan
 
 	if createDeliveryOrderLogResult.Error != nil {
@@ -2538,7 +2533,7 @@ func (u deliveryOrderUseCase) DeleteDetailByDoID(id int, sqlTransaction *sql.Tx)
 	}
 
 	createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
-	go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, u.ctx, createDeliveryOrderJourneyChan)
+	go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, ctx, createDeliveryOrderJourneyChan)
 	createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
 
 	if createDeliveryOrderJourneysResult.Error != nil {

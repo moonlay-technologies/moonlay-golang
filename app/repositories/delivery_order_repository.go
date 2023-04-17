@@ -540,23 +540,6 @@ func (r *deliveryOrder) DeleteByID(request *models.DeliveryOrder, ctx context.Co
 
 	deliveryOrderID, err := result.LastInsertId()
 
-	if err != nil {
-		sqlTransaction.Rollback()
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-		response.Error = err
-		response.ErrorLog = errorLogData
-		resultChan <- response
-		return
-	}
-	err = sqlTransaction.Commit()
-	if err != nil {
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-		response.Error = err
-		response.ErrorLog = errorLogData
-		resultChan <- response
-		return
-	}
-
 	deliveryOrderRedisKey := fmt.Sprintf("%s", constants.DELIVERY_ORDER+"*")
 	_, err = r.redisdb.Client().Del(ctx, deliveryOrderRedisKey).Result()
 

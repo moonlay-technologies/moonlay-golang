@@ -641,7 +641,7 @@ func (c *deliveryOrderController) DeleteByID(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 		return
 	}
-	errorLog := c.deliveryOrderUseCase.DeleteByID(id, dbTransaction)
+	errorLog := c.deliveryOrderUseCase.DeleteByID(id, dbTransaction, ctx)
 
 	if errorLog != nil {
 		err = dbTransaction.Rollback()
@@ -652,6 +652,14 @@ func (c *deliveryOrderController) DeleteByID(ctx *gin.Context) {
 		}
 
 		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+		return
+	}
+
+	err = dbTransaction.Commit()
+
+	if err != nil {
+		errorLog = helper.WriteLog(err, http.StatusInternalServerError, nil)
+		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 		return
 	}
 
@@ -677,7 +685,7 @@ func (c *deliveryOrderController) DeleteDetailByID(ctx *gin.Context) {
 		return
 	}
 
-	errorLog := c.deliveryOrderUseCase.DeleteDetailByID(id, dbTransaction)
+	errorLog := c.deliveryOrderUseCase.DeleteDetailByID(id, dbTransaction, ctx)
 
 	if errorLog != nil {
 		err = dbTransaction.Rollback()
@@ -688,6 +696,13 @@ func (c *deliveryOrderController) DeleteDetailByID(ctx *gin.Context) {
 		}
 
 		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+		return
+	}
+
+	err = dbTransaction.Commit()
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 		return
 	}
 
@@ -713,7 +728,7 @@ func (c *deliveryOrderController) DeleteDetailByDoID(ctx *gin.Context) {
 		return
 	}
 
-	errorLog := c.deliveryOrderUseCase.DeleteDetailByDoID(id, dbTransaction)
+	errorLog := c.deliveryOrderUseCase.DeleteDetailByDoID(id, dbTransaction, ctx)
 
 	if errorLog != nil {
 		err = dbTransaction.Rollback()
@@ -724,6 +739,13 @@ func (c *deliveryOrderController) DeleteDetailByDoID(ctx *gin.Context) {
 		}
 
 		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+		return
+	}
+
+	err = dbTransaction.Commit()
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, helper.GenerateResultByError(err, http.StatusInternalServerError, ""))
 		return
 	}
 
