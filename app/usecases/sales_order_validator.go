@@ -1145,7 +1145,7 @@ func (c *SalesOrderValidator) UpdateSalesOrderByIdValidator(updateRequest *model
 		})
 		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 
-		err := helper.NewError("")
+		err := helper.NewError(strings.Join(errors, ""))
 		return err
 	}
 
@@ -1177,7 +1177,7 @@ func (c *SalesOrderValidator) UpdateSalesOrderByIdValidator(updateRequest *model
 		})
 		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 
-		err := helper.NewError("")
+		err := helper.NewError("Gagal update")
 		return err
 	}
 
@@ -1260,7 +1260,8 @@ func (c *SalesOrderValidator) UpdateSalesOrderDetailBySoIdValidator(updateReques
 		})
 		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 
-		return errorLog.Err
+		err := helper.NewError(strings.Join(errors, ""))
+		return err
 	}
 
 	// Get Sales Order By Id
@@ -1381,18 +1382,18 @@ func (c *SalesOrderValidator) UpdateSalesOrderDetailByIdValidator(updateRequest 
 		return err
 	}
 
-	errorValidation := c.updateSOValidation(soId, getSalesOrderByIDResult.SalesOrder.OrderStatusName, ctx)
-	if errorValidation != nil {
-		err := errorValidation
-		errorLog := helper.NewWriteLog(model.ErrorLog{
-			Message:       err,
-			SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
-			StatusCode:    http.StatusUnprocessableEntity,
-		})
-		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
+	// errorValidation := c.updateSOValidation(soId, getSalesOrderByIDResult.SalesOrder.OrderStatusName, ctx)
+	// if errorValidation != nil {
+	// 	err := errorValidation
+	// 	errorLog := helper.NewWriteLog(model.ErrorLog{
+	// 		Message:       err,
+	// 		SystemMessage: []string{constants.ERROR_INVALID_PROCESS},
+	// 		StatusCode:    http.StatusUnprocessableEntity,
+	// 	})
+	// 	ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
 
-		return fmt.Errorf(strings.Join(err, ";"))
-	}
+	// 	return fmt.Errorf(strings.Join(err, ";"))
+	// }
 
 	salesOrder := getSalesOrderByIDResult.SalesOrder
 	totalSoDetail := getSalesOrderDetailByIDResult.Total
@@ -1439,7 +1440,7 @@ func (c *SalesOrderValidator) UpdateSalesOrderDetailByIdValidator(updateRequest 
 
 func (c *SalesOrderValidator) updateSOValidation(salesOrderId int, orderStatusName string, ctx context.Context) []string {
 
-	if orderStatusName != constants.ORDER_STATUS_OPEN && orderStatusName != constants.ORDER_STATUS_PENDING && orderStatusName != constants.ORDER_STATUS_PARTIAL {
+	if orderStatusName != constants.ORDER_STATUS_OPEN && orderStatusName != constants.ORDER_STATUS_PENDING {
 		return []string{helper.GenerateUnprocessableErrorMessage("update", fmt.Sprintf("status sales order %s", orderStatusName))}
 	}
 
