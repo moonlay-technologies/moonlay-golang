@@ -24,7 +24,7 @@ type SalesOrderRepositoryInterface interface {
 	GetBySoRefCode(soRefCode string, countOnly bool, ctx context.Context, result chan *models.SalesOrderChan)
 	GetByAgentRefCode(soRefCode string, agentID int, countOnly bool, ctx context.Context, result chan *models.SalesOrderChan)
 	Insert(request *models.SalesOrder, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderChan)
-	UpdateByID(id int, request *models.SalesOrder, isInsertToJourney bool, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.SalesOrderChan)
+	UpdateByID(id int, request *models.SalesOrder, isInsertToJourney bool, reason string, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.SalesOrderChan)
 	RemoveCacheByID(id int, ctx context.Context, result chan *models.SalesOrderChan)
 	DeleteByID(salesOrder *models.SalesOrder, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.SalesOrderChan)
 }
@@ -633,7 +633,7 @@ func (r *salesOrder) Insert(request *models.SalesOrder, sqlTransaction *sql.Tx, 
 	return
 }
 
-func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, isInsertToJourney bool, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.SalesOrderChan) {
+func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, isInsertToJourney bool, reason string, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.SalesOrderChan) {
 	response := &models.SalesOrderChan{}
 	rawSqlQueries := []string{}
 
@@ -795,7 +795,7 @@ func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, isInsertToJo
 			SoDate:    request.SoDate,
 			Status:    helper.GetSOJourneyStatus(request.OrderStatusID),
 			Remark:    "",
-			Reason:    "",
+			Reason:    reason,
 			CreatedAt: &now,
 			UpdatedAt: &now,
 		}

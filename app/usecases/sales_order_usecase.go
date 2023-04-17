@@ -1001,7 +1001,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 
 	// Update Sales Order
 	updateSalesOrderResultChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.UpdateByID(id, salesOrderUpdateReq, true, sqlTransaction, ctx, updateSalesOrderResultChan)
+	go u.salesOrderRepository.UpdateByID(id, salesOrderUpdateReq, true, request.Reason, sqlTransaction, ctx, updateSalesOrderResultChan)
 	updateSalesOrderResult := <-updateSalesOrderResultChan
 
 	if updateSalesOrderResult.Error != nil {
@@ -1293,7 +1293,7 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 
 		// Update Sales Order
 		updateSalesOrderResultChan := make(chan *models.SalesOrderChan)
-		go u.salesOrderRepository.UpdateByID(soId, salesOrderUpdateReq, true, sqlTransaction, ctx, updateSalesOrderResultChan)
+		go u.salesOrderRepository.UpdateByID(soId, salesOrderUpdateReq, true, request.Reason, sqlTransaction, ctx, updateSalesOrderResultChan)
 		updateSalesOrderResult := <-updateSalesOrderResultChan
 
 		if updateSalesOrderResult.Error != nil {
@@ -1507,7 +1507,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 
 	// Update Sales Order
 	updateSalesOrderResultChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.UpdateByID(soId, salesOrderUpdateReq, true, sqlTransaction, ctx, updateSalesOrderResultChan)
+	go u.salesOrderRepository.UpdateByID(soId, salesOrderUpdateReq, true, request.Reason, sqlTransaction, ctx, updateSalesOrderResultChan)
 	updateSalesOrderResult := <-updateSalesOrderResultChan
 
 	if updateSalesOrderResult.Error != nil {

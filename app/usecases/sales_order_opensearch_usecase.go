@@ -179,7 +179,7 @@ func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(salesOrder
 	}
 
 	updateSalesOrderResultChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.UpdateByID(salesOrder.ID, salesOrderUpdateData, false, sqlTransaction, ctx, updateSalesOrderResultChan)
+	go u.salesOrderRepository.UpdateByID(salesOrder.ID, salesOrderUpdateData, false, "", sqlTransaction, ctx, updateSalesOrderResultChan)
 	updateSalesOrderResult := <-updateSalesOrderResultChan
 
 	if updateSalesOrderResult.Error != nil {

@@ -479,7 +479,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
 
 	updateSalesOrderChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.UpdateByID(getSalesOrderResult.SalesOrder.ID, getSalesOrderResult.SalesOrder, true, sqlTransaction, u.ctx, updateSalesOrderChan)
+	go u.salesOrderRepository.UpdateByID(getSalesOrderResult.SalesOrder.ID, getSalesOrderResult.SalesOrder, true, "", sqlTransaction, u.ctx, updateSalesOrderChan)
 	updateSalesOrderResult := <-updateSalesOrderChan
 
 	if updateSalesOrderResult.ErrorLog != nil {
@@ -790,7 +790,7 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 	deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
 
 	updateSalesOrderChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.UpdateByID(getSalesOrderResult.SalesOrder.ID, getSalesOrderResult.SalesOrder, true, sqlTransaction, u.ctx, updateSalesOrderChan)
+	go u.salesOrderRepository.UpdateByID(getSalesOrderResult.SalesOrder.ID, getSalesOrderResult.SalesOrder, true, "", sqlTransaction, u.ctx, updateSalesOrderChan)
 	updateSalesOrderResult := <-updateSalesOrderChan
 
 	if updateSalesOrderResult.ErrorLog != nil {
@@ -1139,7 +1139,7 @@ func (u *deliveryOrderUseCase) UpdateDODetailByID(id int, request *models.Delive
 	deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
 
 	updateSalesOrderChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.UpdateByID(getSalesOrderResult.SalesOrder.ID, getSalesOrderResult.SalesOrder, true, sqlTransaction, u.ctx, updateSalesOrderChan)
+	go u.salesOrderRepository.UpdateByID(getSalesOrderResult.SalesOrder.ID, getSalesOrderResult.SalesOrder, true, "", sqlTransaction, u.ctx, updateSalesOrderChan)
 	updateSalesOrderResult := <-updateSalesOrderChan
 
 	if updateSalesOrderResult.ErrorLog != nil {
@@ -1475,7 +1475,7 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 	deliveryOrder.SalesOrder = getSalesOrderResult.SalesOrder
 
 	updateSalesOrderChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.UpdateByID(getSalesOrderResult.SalesOrder.ID, getSalesOrderResult.SalesOrder, true, sqlTransaction, u.ctx, updateSalesOrderChan)
+	go u.salesOrderRepository.UpdateByID(getSalesOrderResult.SalesOrder.ID, getSalesOrderResult.SalesOrder, true, "", sqlTransaction, u.ctx, updateSalesOrderChan)
 	updateSalesOrderResult := <-updateSalesOrderChan
 
 	if updateSalesOrderResult.ErrorLog != nil {
@@ -2331,7 +2331,7 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx) *model.
 		getSalesOrderByIDResult.SalesOrder.OrderStatusID = 5
 	}
 	updateSalesOrderChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.UpdateByID(getSalesOrderByIDResult.SalesOrder.ID, getSalesOrderByIDResult.SalesOrder, false, sqlTransaction, u.ctx, updateSalesOrderChan)
+	go u.salesOrderRepository.UpdateByID(getSalesOrderByIDResult.SalesOrder.ID, getSalesOrderByIDResult.SalesOrder, false, "", sqlTransaction, u.ctx, updateSalesOrderChan)
 	updateSalesOrderResult := <-updateSalesOrderChan
 
 	deiveryOrderLog := &models.DeliveryOrderLog{
@@ -2619,7 +2619,7 @@ func (u deliveryOrderUseCase) DeleteDetailByDoID(id int, sqlTransaction *sql.Tx)
 		getSalesOrderByIDResult.SalesOrder.OrderStatusID = 5
 	}
 	updateSalesOrderChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.UpdateByID(getSalesOrderByIDResult.SalesOrder.ID, getSalesOrderByIDResult.SalesOrder, false, sqlTransaction, u.ctx, updateSalesOrderChan)
+	go u.salesOrderRepository.UpdateByID(getSalesOrderByIDResult.SalesOrder.ID, getSalesOrderByIDResult.SalesOrder, false, "", sqlTransaction, u.ctx, updateSalesOrderChan)
 	updateSalesOrderResult := <-updateSalesOrderChan
 
 	deiveryOrderLog := &models.DeliveryOrderLog{
