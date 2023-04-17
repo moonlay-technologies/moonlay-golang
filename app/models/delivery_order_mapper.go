@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"order-service/app/models/constants"
+	"strings"
 	"time"
 )
 
@@ -452,7 +453,7 @@ func (data *DeliveryOrder) MapToCsvRow() []interface{} {
 	}
 	return []interface{}{
 		deliveryOrderCsv.DoStatus,
-		deliveryOrderCsv.DoDate,
+		strings.ReplaceAll(deliveryOrderCsv.DoDate, "T00:00:00Z", ""),
 		deliveryOrderCsv.SjNo.String,
 		deliveryOrderCsv.DoNo,
 		deliveryOrderCsv.OrderNo,
