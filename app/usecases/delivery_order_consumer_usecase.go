@@ -283,7 +283,7 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromDeleteEvent(deliveryO
 
 	errorLog := u.SalesOrderOpenSearchUseCase.SyncToOpenSearchFromUpdateEvent(salesOrderWithDetail, ctx)
 
-	if errorLog != nil {
+	if errorLog.Err != nil {
 		fmt.Println(errorLog.Err.Error())
 		return errorLog
 	}
