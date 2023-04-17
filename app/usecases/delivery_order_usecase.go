@@ -1566,6 +1566,10 @@ func (u *deliveryOrderUseCase) Get(request *models.DeliveryOrderRequest) (*model
 func (u *deliveryOrderUseCase) Export(request *models.DeliveryOrderExportRequest, ctx context.Context) (string, *model.ErrorLog) {
 	doRequest := &models.DeliveryOrderRequest{}
 	doRequest.DeliveryOrderExportMap(request)
+	if doRequest.SortField == "order_status" {
+		request.SortField = "order_status.name"
+		doRequest.SortField = "order_status.name"
+	}
 	getDeliveryOrdersCountResultChan := make(chan *models.DeliveryOrdersChan)
 	go u.deliveryOrderOpenSearchRepository.Get(doRequest, true, getDeliveryOrdersCountResultChan)
 	getDeliveryOrdersCountResult := <-getDeliveryOrdersCountResultChan
@@ -1615,6 +1619,10 @@ func (u *deliveryOrderUseCase) Export(request *models.DeliveryOrderExportRequest
 func (u *deliveryOrderUseCase) ExportDetail(request *models.DeliveryOrderDetailExportRequest, ctx context.Context) (string, *model.ErrorLog) {
 	doDetailRequest := &models.DeliveryOrderDetailOpenSearchRequest{}
 	doDetailRequest.DeliveryOrderDetailExportMap(request)
+	if doDetailRequest.SortField == "order_status" {
+		request.SortField = "order_status.name"
+		doDetailRequest.SortField = "order_status.name"
+	}
 	getDeliveryOrderDetailsCountResultChan := make(chan *models.DeliveryOrderDetailsOpenSearchChan)
 	go u.deliveryOrderDetailOpenSearchRepository.Get(doDetailRequest, true, getDeliveryOrderDetailsCountResultChan)
 	getDeliveryOrderDetailsCountResult := <-getDeliveryOrderDetailsCountResultChan

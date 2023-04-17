@@ -352,10 +352,11 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromDeleteEvent(deliveryO
 }
 
 func (u *deliveryOrderConsumerUseCase) Get(request *models.DeliveryOrderExportRequest) *model.ErrorLog {
-	doRequest := &models.DeliveryOrderRequest{}
-	doRequest.DeliveryOrderExportMap(request)
+	countDoRequest := &models.DeliveryOrderRequest{}
+	countDoRequest.DeliveryOrderExportMap(request)
+
 	getDeliveryOrdersCountResultChan := make(chan *models.DeliveryOrdersChan)
-	go u.deliveryOrderOpenSearchRepository.Get(doRequest, true, getDeliveryOrdersCountResultChan)
+	go u.deliveryOrderOpenSearchRepository.Get(countDoRequest, true, getDeliveryOrdersCountResultChan)
 	getDeliveryOrdersCountResult := <-getDeliveryOrdersCountResultChan
 
 	if getDeliveryOrdersCountResult.Error != nil {
@@ -363,6 +364,8 @@ func (u *deliveryOrderConsumerUseCase) Get(request *models.DeliveryOrderExportRe
 		return getDeliveryOrdersCountResult.ErrorLog
 	}
 
+	doRequest := &models.DeliveryOrderRequest{}
+	doRequest.DeliveryOrderExportMap(request)
 	doRequest.PerPage = 50
 	instalmentData := math.Ceil(float64(getDeliveryOrdersCountResult.Total) / float64(doRequest.PerPage))
 	data := [][]interface{}{constants.DELIVERY_ORDER_EXPORT_HEADER()}
@@ -406,10 +409,11 @@ func (u *deliveryOrderConsumerUseCase) Get(request *models.DeliveryOrderExportRe
 }
 
 func (u *deliveryOrderConsumerUseCase) GetDetail(request *models.DeliveryOrderDetailExportRequest) *model.ErrorLog {
-	doDetailRequest := &models.DeliveryOrderDetailOpenSearchRequest{}
-	doDetailRequest.DeliveryOrderDetailExportMap(request)
+	countDoDetailRequest := &models.DeliveryOrderDetailOpenSearchRequest{}
+	countDoDetailRequest.DeliveryOrderDetailExportMap(request)
+
 	getDeliveryOrderDetailsCountResultChan := make(chan *models.DeliveryOrderDetailsOpenSearchChan)
-	go u.deliveryOrderDetailOpenSearchRepository.Get(doDetailRequest, true, getDeliveryOrderDetailsCountResultChan)
+	go u.deliveryOrderDetailOpenSearchRepository.Get(countDoDetailRequest, true, getDeliveryOrderDetailsCountResultChan)
 	getDeliveryOrderDetailsCountResult := <-getDeliveryOrderDetailsCountResultChan
 
 	if getDeliveryOrderDetailsCountResult.Error != nil {
@@ -417,6 +421,8 @@ func (u *deliveryOrderConsumerUseCase) GetDetail(request *models.DeliveryOrderDe
 		return getDeliveryOrderDetailsCountResult.ErrorLog
 	}
 
+	doDetailRequest := &models.DeliveryOrderDetailOpenSearchRequest{}
+	doDetailRequest.DeliveryOrderDetailExportMap(request)
 	doDetailRequest.PerPage = 50
 	instalmentData := math.Ceil(float64(getDeliveryOrderDetailsCountResult.Total) / float64(doDetailRequest.PerPage))
 

@@ -672,8 +672,8 @@ func (d *SalesOrderRequest) SalesOrderExportMap(r *SalesOrderExportRequest) {
 	d.ID = r.ID
 	d.PerPage = 0
 	d.Page = 0
-	d.SortField = ""
-	d.SortValue = ""
+	d.SortField = r.SortField
+	d.SortValue = r.SortValue
 	d.GlobalSearchValue = r.GlobalSearchValue
 	d.AgentID = r.AgentID
 	d.StoreID = r.StoreID

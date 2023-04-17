@@ -772,6 +772,7 @@ func (d *SalesOrderValidator) getIntQueryWithMustActive(param string, empty stri
 func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*models.SalesOrderExportRequest, error) {
 	sortField := d.getQueryWithDefault("sort_field", "created_at", ctx)
 	var sortList = []string{}
+	sortList = append(sortList, "order_status")
 	sortList = append(append(append(sortList, constants.SALES_ORDER_EXPORT_SORT_INT_LIST()...), constants.SALES_ORDER_EXPORT_SORT_STRING_LIST()...), constants.UNMAPPED_TYPE_SORT_LIST()...)
 	if !helper.Contains(sortList, sortField) {
 		err := helper.NewError("Parameter 'sort_field' harus bernilai '" + strings.Join(sortList, "' or '") + "'")
@@ -946,6 +947,7 @@ func (d *SalesOrderValidator) ExportSalesOrderValidator(ctx *gin.Context) (*mode
 func (d *SalesOrderValidator) ExportSalesOrderDetailValidator(ctx *gin.Context) (*models.SalesOrderDetailExportRequest, error) {
 	sortField := d.getQueryWithDefault("sort_field", "created_at", ctx)
 	var sortList = []string{}
+	sortList = append(sortList, "order_status")
 	sortList = append(append(append(sortList, constants.SALES_ORDER_DETAIL_EXPORT_SORT_INT_LIST()...), constants.SALES_ORDER_DETAIL_EXPORT_SORT_STRING_LIST()...), constants.UNMAPPED_TYPE_SORT_LIST()...)
 	if !helper.Contains(sortList, sortField) {
 		err := helper.NewError("Parameter 'sort_field' harus bernilai '" + strings.Join(sortList, "' or '") + "'")
