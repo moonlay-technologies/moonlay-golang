@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
+	repositories "order-service/app/repositories/mongod"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/redisdb"
 	"strings"
@@ -29,14 +30,16 @@ type SalesOrderDetailRepositoryInterface interface {
 }
 
 type salesOrderDetail struct {
-	db      dbresolver.DB
-	redisdb redisdb.RedisInterface
+	salesOrderDetailJourneysRepository repositories.SalesOrderDetailJourneysRepositoryInterface
+	db                                 dbresolver.DB
+	redisdb                            redisdb.RedisInterface
 }
 
-func InitSalesOrderDetailRepository(db dbresolver.DB, redisdb redisdb.RedisInterface) SalesOrderDetailRepositoryInterface {
+func InitSalesOrderDetailRepository(salesOrderDetailJourneysRepository repositories.SalesOrderDetailJourneysRepositoryInterface, db dbresolver.DB, redisdb redisdb.RedisInterface) SalesOrderDetailRepositoryInterface {
 	return &salesOrderDetail{
-		db:      db,
-		redisdb: redisdb,
+		salesOrderDetailJourneysRepository: salesOrderDetailJourneysRepository,
+		db:                                 db,
+		redisdb:                            redisdb,
 	}
 }
 
@@ -323,11 +326,32 @@ func (r *salesOrderDetail) Insert(request *models.SalesOrderDetail, sqlTransacti
 	}
 
 	salesOrderDetailID, err := result.LastInsertId()
-
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	now := time.Now()
+	salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{
+		SoDetailId:   int(salesOrderDetailID),
+		SoDetailCode: request.SoDetailCode,
+		Status:       helper.GetSOJourneyStatus(request.OrderStatusID),
+		Remark:       "",
+		Reason:       "",
+		CreatedAt:    &now,
+		UpdatedAt:    &now,
+	}
+
+	createSalesOrderDetailJourneysResultChan := make(chan *models.SalesOrderDetailJourneysChan)
+	go r.salesOrderDetailJourneysRepository.Insert(salesOrderDetailJourneys, ctx, createSalesOrderDetailJourneysResultChan)
+	createSalesOrderDetailJourneysResult := <-createSalesOrderDetailJourneysResultChan
+
+	if createSalesOrderDetailJourneysResult.Error != nil {
+		response.Error = createSalesOrderDetailJourneysResult.ErrorLog.Err
+		response.ErrorLog = createSalesOrderDetailJourneysResult.ErrorLog
 		resultChan <- response
 		return
 	}

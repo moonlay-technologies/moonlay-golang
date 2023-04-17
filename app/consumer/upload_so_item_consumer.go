@@ -381,23 +381,6 @@ func (c *uploadSOItemConsumerHandler) ProcessMessage() {
 
 				x.ID = createSalesOrderDetailResult.SalesOrderDetail.ID
 
-				salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{
-					SoDetailId:   createSalesOrderDetailResult.SalesOrderDetail.ID,
-					SoDetailCode: soDetailCode,
-					Status:       constants.SO_STATUS_OPEN,
-					Remark:       "",
-					Reason:       "",
-					CreatedAt:    &now,
-					UpdatedAt:    &now,
-				}
-
-				createSalesOrderDetailJourneysResultChan := make(chan *models.SalesOrderDetailJourneysChan)
-				go c.salesOrderDetailJourneysRepository.Insert(salesOrderDetailJourneys, c.ctx, createSalesOrderDetailJourneysResultChan)
-				createSalesOrderDetailJourneysResult := <-createSalesOrderDetailJourneysResultChan
-
-				if createSalesOrderDetailJourneysResult.Error != nil {
-					fmt.Println(createSalesOrderDetailJourneysResult.Error.Error())
-				}
 			}
 
 			sqlTransaction.Commit()

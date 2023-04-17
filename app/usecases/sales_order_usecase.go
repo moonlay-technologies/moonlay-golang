@@ -352,23 +352,6 @@ func (u *salesOrderUseCase) Create(request *models.SalesOrderStoreRequest, sqlTr
 			salesOrderDetailsResponse = append(salesOrderDetailsResponse, salesOrderDetailResponse)
 			salesOrderDetails = append(salesOrderDetails, x)
 
-			salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{
-				SoDetailId:   createSalesOrderDetailResult.SalesOrderDetail.ID,
-				SoDetailCode: soDetailCode,
-				Status:       constants.SO_STATUS_OPEN,
-				Remark:       "",
-				Reason:       "",
-				CreatedAt:    &now,
-				UpdatedAt:    &now,
-			}
-
-			createSalesOrderDetailJourneysResultChan := make(chan *models.SalesOrderDetailJourneysChan)
-			go u.salesOrderDetailJourneysRepository.Insert(salesOrderDetailJourneys, ctx, createSalesOrderDetailJourneysResultChan)
-			createSalesOrderDetailJourneysResult := <-createSalesOrderDetailJourneysResultChan
-
-			if createSalesOrderDetailJourneysResult.Error != nil {
-				return []*models.SalesOrderResponse{}, createSalesOrderDetailJourneysResult.ErrorLog
-			}
 		}
 
 		v.SalesOrderDetails = salesOrderDetails
