@@ -1570,6 +1570,10 @@ func (u *deliveryOrderUseCase) Export(request *models.DeliveryOrderExportRequest
 		request.SortField = "order_status.name"
 		doRequest.SortField = "order_status.name"
 	}
+	if doRequest.SortField == "store_code" {
+		request.SortField = "sales_order.store_code"
+		doRequest.SortField = "sales_order.store_code"
+	}
 	getDeliveryOrdersCountResultChan := make(chan *models.DeliveryOrdersChan)
 	go u.deliveryOrderOpenSearchRepository.Get(doRequest, true, getDeliveryOrdersCountResultChan)
 	getDeliveryOrdersCountResult := <-getDeliveryOrdersCountResultChan
