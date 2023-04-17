@@ -71,6 +71,7 @@ func DELIVERY_ORDER_SORT_INT_LIST() []string {
 
 func DELIVERY_ORDER_SORT_STRING_LIST() []string {
 	return []string{
+		"order_status.name",
 		"do_ref_code",
 		"do_code",
 		"store_code",
@@ -90,6 +91,7 @@ func DELIVERY_ORDER_DETAIL_SORT_INT_LIST() []string {
 
 func DELIVERY_ORDER_DETAIL_SORT_STRING_LIST() []string {
 	return []string{
+		"order_status.name",
 		"do_code",
 		"do_ref_code",
 		"store_code",
@@ -108,6 +110,7 @@ func SALES_ORDER_DETAIL_SORT_INT_LIST() []string {
 
 func SALES_ORDER_DETAIL_SORT_STRING_LIST() []string {
 	return []string{
+		"order_status.name",
 		"so_ref_code",
 		"so_code",
 		"store_code",
