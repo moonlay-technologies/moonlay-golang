@@ -1001,7 +1001,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 
 	// Update Sales Order
 	updateSalesOrderResultChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.UpdateByID(id, salesOrderUpdateReq, sqlTransaction, ctx, updateSalesOrderResultChan)
+	go u.salesOrderRepository.UpdateByID(id, salesOrderUpdateReq, true, sqlTransaction, ctx, updateSalesOrderResultChan)
 	updateSalesOrderResult := <-updateSalesOrderResultChan
 
 	if updateSalesOrderResult.Error != nil {
@@ -1122,35 +1122,6 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 
 	if createSalesOrderLogResult.Error != nil {
 		return &models.SalesOrderResponse{}, createSalesOrderLogResult.ErrorLog
-	}
-
-	var status string
-	switch request.OrderStatusID {
-	case 5:
-		status = constants.SO_STATUS_OPEN
-	case 9:
-		status = constants.SO_STATUS_RJC
-	default:
-		status = constants.SO_STATUS_CNCL
-	}
-
-	salesOrderJourneys := &models.SalesOrderJourneys{
-		SoCode:    salesOrder.SoCode,
-		SoId:      salesOrder.ID,
-		SoDate:    salesOrder.SoDate,
-		Status:    status,
-		Remark:    "",
-		Reason:    request.Reason,
-		CreatedAt: &now,
-		UpdatedAt: &now,
-	}
-
-	createSalesOrderJourneysResultChan := make(chan *models.SalesOrderJourneysChan)
-	go u.salesOrderJourneysRepository.Insert(salesOrderJourneys, ctx, createSalesOrderJourneysResultChan)
-	createSalesOrderJourneysResult := <-createSalesOrderJourneysResultChan
-
-	if createSalesOrderJourneysResult.Error != nil {
-		return &models.SalesOrderResponse{}, createSalesOrderJourneysResult.ErrorLog
 	}
 
 	keyKafka := []byte(salesOrder.SoCode)
@@ -1322,7 +1293,7 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 
 		// Update Sales Order
 		updateSalesOrderResultChan := make(chan *models.SalesOrderChan)
-		go u.salesOrderRepository.UpdateByID(soId, salesOrderUpdateReq, sqlTransaction, ctx, updateSalesOrderResultChan)
+		go u.salesOrderRepository.UpdateByID(soId, salesOrderUpdateReq, true, sqlTransaction, ctx, updateSalesOrderResultChan)
 		updateSalesOrderResult := <-updateSalesOrderResultChan
 
 		if updateSalesOrderResult.Error != nil {
@@ -1336,33 +1307,6 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 
 		if removeCacheSalesOrderResult.Error != nil {
 			return &models.SalesOrderDetailStoreResponse{}, removeCacheSalesOrderResult.ErrorLog
-		}
-
-		var status string
-		switch getOrderStatusResult.OrderStatus.ID {
-		case 8:
-			status = constants.SO_STATUS_ORDCLS
-		default:
-			status = constants.SO_STATUS_CNCL
-		}
-
-		salesOrderJourneys := &models.SalesOrderJourneys{
-			SoCode:    salesOrder.SoCode,
-			SoId:      salesOrder.ID,
-			SoDate:    salesOrder.SoDate,
-			Status:    status,
-			Remark:    "",
-			Reason:    request.Reason,
-			CreatedAt: &now,
-			UpdatedAt: &now,
-		}
-
-		createSalesOrderJourneysResultChan := make(chan *models.SalesOrderJourneysChan)
-		go u.salesOrderJourneysRepository.Insert(salesOrderJourneys, ctx, createSalesOrderJourneysResultChan)
-		createSalesOrderJourneysResult := <-createSalesOrderJourneysResultChan
-
-		if createSalesOrderJourneysResult.Error != nil {
-			return &models.SalesOrderDetailStoreResponse{}, createSalesOrderJourneysResult.ErrorLog
 		}
 
 	}
@@ -1563,7 +1507,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 
 	// Update Sales Order
 	updateSalesOrderResultChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.UpdateByID(soId, salesOrderUpdateReq, sqlTransaction, ctx, updateSalesOrderResultChan)
+	go u.salesOrderRepository.UpdateByID(soId, salesOrderUpdateReq, true, sqlTransaction, ctx, updateSalesOrderResultChan)
 	updateSalesOrderResult := <-updateSalesOrderResultChan
 
 	if updateSalesOrderResult.Error != nil {
@@ -1684,35 +1628,6 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 
 	if createSalesOrderLogResult.Error != nil {
 		return &models.SalesOrderResponse{}, createSalesOrderLogResult.ErrorLog
-	}
-
-	var status string
-	switch request.OrderStatusID {
-	case 5:
-		status = constants.SO_STATUS_OPEN
-	case 9:
-		status = constants.SO_STATUS_RJC
-	default:
-		status = constants.SO_STATUS_CNCL
-	}
-
-	salesOrderJourneys := &models.SalesOrderJourneys{
-		SoCode:    salesOrder.SoCode,
-		SoId:      salesOrder.ID,
-		SoDate:    salesOrder.SoDate,
-		Status:    status,
-		Remark:    "",
-		Reason:    request.Reason,
-		CreatedAt: &now,
-		UpdatedAt: &now,
-	}
-
-	createSalesOrderJourneysResultChan := make(chan *models.SalesOrderJourneysChan)
-	go u.salesOrderJourneysRepository.Insert(salesOrderJourneys, ctx, createSalesOrderJourneysResultChan)
-	createSalesOrderJourneysResult := <-createSalesOrderJourneysResultChan
-
-	if createSalesOrderJourneysResult.Error != nil {
-		return &models.SalesOrderResponse{}, createSalesOrderJourneysResult.ErrorLog
 	}
 
 	keyKafka := []byte(salesOrder.SoCode)
