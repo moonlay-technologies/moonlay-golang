@@ -607,10 +607,23 @@ func (r *salesOrderDetail) DeleteByID(request *models.SalesOrderDetail, sqlTrans
 		return
 	}
 
-	if err != nil {
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-		response.Error = err
-		response.ErrorLog = errorLogData
+	salesOrderDetailJourneys := &models.SalesOrderDetailJourneys{
+		SoDetailId:   request.ID,
+		SoDetailCode: request.SoDetailCode,
+		Status:       helper.GetSOJourneyStatus(request.OrderStatusID),
+		Remark:       "",
+		Reason:       "",
+		CreatedAt:    &now,
+		UpdatedAt:    &now,
+	}
+
+	createSalesOrderDetailJourneysResultChan := make(chan *models.SalesOrderDetailJourneysChan)
+	go r.salesOrderDetailJourneysRepository.Insert(salesOrderDetailJourneys, ctx, createSalesOrderDetailJourneysResultChan)
+	createSalesOrderDetailJourneysResult := <-createSalesOrderDetailJourneysResultChan
+
+	if createSalesOrderDetailJourneysResult.Error != nil {
+		response.Error = createSalesOrderDetailJourneysResult.ErrorLog.Err
+		response.ErrorLog = createSalesOrderDetailJourneysResult.ErrorLog
 		resultChan <- response
 		return
 	}
