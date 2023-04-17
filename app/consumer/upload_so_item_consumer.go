@@ -420,25 +420,6 @@ func (c *uploadSOItemConsumerHandler) ProcessMessage() {
 				fmt.Println(createSalesOrderLogResult.Error.Error())
 			}
 
-			salesOrderJourneys := &models.SalesOrderJourneys{
-				SoCode:    v.SoCode,
-				SoId:      v.ID,
-				SoDate:    v.SoDate,
-				Status:    constants.SO_STATUS_APPV,
-				Remark:    "",
-				Reason:    "",
-				CreatedAt: &now,
-				UpdatedAt: &now,
-			}
-
-			createSalesOrderJourneysResultChan := make(chan *models.SalesOrderJourneysChan)
-			go c.salesOrderJourneysRepository.Insert(salesOrderJourneys, c.ctx, createSalesOrderJourneysResultChan)
-			createSalesOrderJourneysResult := <-createSalesOrderJourneysResultChan
-
-			if createSalesOrderJourneysResult.Error != nil {
-				fmt.Println(createSalesOrderJourneysResult.Error.Error())
-			}
-
 			keyKafka := []byte(v.SoCode)
 			messageKafka, _ := json.Marshal(v)
 
