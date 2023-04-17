@@ -431,10 +431,11 @@ func (u *SalesOrderOpenSearchUseCase) SyncDetailToOpenSearchFromDeleteEvent(sale
 }
 
 func (u *SalesOrderOpenSearchUseCase) Get(request *models.SalesOrderExportRequest) *model.ErrorLog {
-	soRequest := &models.SalesOrderRequest{}
-	soRequest.SalesOrderExportMap(request)
+	countSoRequest := &models.SalesOrderRequest{}
+	countSoRequest.SalesOrderExportMap(request)
+
 	getSalesOrdersCountResultChan := make(chan *models.SalesOrdersChan)
-	go u.salesOrderOpenSearchRepository.Get(soRequest, true, getSalesOrdersCountResultChan)
+	go u.salesOrderOpenSearchRepository.Get(countSoRequest, true, getSalesOrdersCountResultChan)
 	getSalesOrdersCountResult := <-getSalesOrdersCountResultChan
 
 	if getSalesOrdersCountResult.Error != nil {
@@ -442,6 +443,8 @@ func (u *SalesOrderOpenSearchUseCase) Get(request *models.SalesOrderExportReques
 		return getSalesOrdersCountResult.ErrorLog
 	}
 
+	soRequest := &models.SalesOrderRequest{}
+	soRequest.SalesOrderExportMap(request)
 	soRequest.PerPage = 50
 	instalmentData := math.Ceil(float64(getSalesOrdersCountResult.Total) / float64(soRequest.PerPage))
 	data := [][]interface{}{constants.SALES_ORDER_EXPORT_HEADER()}
@@ -498,11 +501,11 @@ func (u *SalesOrderOpenSearchUseCase) Get(request *models.SalesOrderExportReques
 }
 
 func (u *SalesOrderOpenSearchUseCase) GetDetails(request *models.SalesOrderDetailExportRequest) *model.ErrorLog {
-	soDetailRequest := &models.GetSalesOrderDetailRequest{}
-	soDetailRequest.SalesOrderDetailExportMap(request)
+	countSoDetailRequest := &models.GetSalesOrderDetailRequest{}
+	countSoDetailRequest.SalesOrderDetailExportMap(request)
 
 	getSalesOrderDetailsCountResultChan := make(chan *models.SalesOrderDetailsOpenSearchChan)
-	go u.salesOrderDetailOpenSearchRepository.Get(soDetailRequest, false, getSalesOrderDetailsCountResultChan)
+	go u.salesOrderDetailOpenSearchRepository.Get(countSoDetailRequest, false, getSalesOrderDetailsCountResultChan)
 	getSalesOrderDetailsCountResult := <-getSalesOrderDetailsCountResultChan
 
 	if getSalesOrderDetailsCountResult.Error != nil {
@@ -510,6 +513,8 @@ func (u *SalesOrderOpenSearchUseCase) GetDetails(request *models.SalesOrderDetai
 		return getSalesOrderDetailsCountResult.ErrorLog
 	}
 
+	soDetailRequest := &models.GetSalesOrderDetailRequest{}
+	soDetailRequest.SalesOrderDetailExportMap(request)
 	soDetailRequest.PerPage = 50
 	instalmentData := math.Ceil(float64(getSalesOrderDetailsCountResult.Total) / float64(soDetailRequest.PerPage))
 

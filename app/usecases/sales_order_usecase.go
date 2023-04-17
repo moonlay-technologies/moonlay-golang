@@ -1875,6 +1875,10 @@ func (u *salesOrderUseCase) DeleteDetailBySOId(id int, sqlTransaction *sql.Tx) *
 func (u *salesOrderUseCase) Export(request *models.SalesOrderExportRequest, ctx context.Context) (string, *model.ErrorLog) {
 	soRequest := &models.SalesOrderRequest{}
 	soRequest.SalesOrderExportMap(request)
+	if soRequest.SortField == "order_status" {
+		request.SortField = "order_status.name"
+		soRequest.SortField = "order_status.name"
+	}
 	getSalesOrdersCountResultChan := make(chan *models.SalesOrdersChan)
 	go u.salesOrderOpenSearchRepository.Get(soRequest, true, getSalesOrdersCountResultChan)
 	getSalesOrdersCountResult := <-getSalesOrdersCountResultChan
@@ -1911,6 +1915,7 @@ func (u *salesOrderUseCase) Export(request *models.SalesOrderExportRequest, ctx 
 	request.FileName = fileName
 	keyKafka := []byte(uuid.New().String())
 	messageKafka, _ := json.Marshal(request)
+
 	err = u.kafkaClient.WriteToTopic(constants.EXPORT_SALES_ORDER_TOPIC, keyKafka, messageKafka)
 
 	if err != nil {
@@ -1924,6 +1929,10 @@ func (u *salesOrderUseCase) Export(request *models.SalesOrderExportRequest, ctx 
 func (u *salesOrderUseCase) ExportDetail(request *models.SalesOrderDetailExportRequest, ctx context.Context) (string, *model.ErrorLog) {
 	soDetailRequest := &models.GetSalesOrderDetailRequest{}
 	soDetailRequest.SalesOrderDetailExportMap(request)
+	if soDetailRequest.SortField == "order_status" {
+		request.SortField = "order_status.name"
+		soDetailRequest.SortField = "order_status.name"
+	}
 	getSalesOrderDetailsCountResultChan := make(chan *models.SalesOrderDetailsOpenSearchChan)
 	go u.salesOrderDetailOpenSearchRepository.Get(soDetailRequest, true, getSalesOrderDetailsCountResultChan)
 	getSalesOrderDetailsCountResult := <-getSalesOrderDetailsCountResultChan
@@ -1959,6 +1968,7 @@ func (u *salesOrderUseCase) ExportDetail(request *models.SalesOrderDetailExportR
 	request.FileName = fileName
 	keyKafka := []byte(uuid.New().String())
 	messageKafka, _ := json.Marshal(request)
+
 	err = u.kafkaClient.WriteToTopic(constants.EXPORT_SALES_ORDER_DETAIL_TOPIC, keyKafka, messageKafka)
 
 	if err != nil {

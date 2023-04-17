@@ -285,6 +285,11 @@ func (r *salesOrderDetailOpenSearch) generateSalesOrderDetailQueryOpenSearchTerm
 
 			if helper.Contains(constants.UNMAPPED_TYPE_SORT_LIST(), request.SortField) {
 				sortValue["unmapped_type"] = "date"
+				openSearchQuery["sort"] = []map[string]interface{}{
+					{
+						request.SortField: sortValue,
+					},
+				}
 			}
 
 			if helper.Contains(constants.SALES_ORDER_DETAIL_SORT_INT_LIST(), request.SortField) {

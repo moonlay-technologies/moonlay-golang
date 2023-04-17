@@ -599,6 +599,7 @@ func (c *DeliveryOrderValidator) GetDeliveryOrderValidator(ctx *gin.Context) (*m
 func (d *DeliveryOrderValidator) ExportDeliveryOrderValidator(ctx *gin.Context) (*models.DeliveryOrderExportRequest, error) {
 	sortField := d.getQueryWithDefault("sort_field", "created_at", ctx)
 	var sortList = []string{}
+	sortList = append(sortList, "order_status")
 	sortList = append(append(append(sortList, constants.DELIVERY_ORDER_EXPORT_SORT_INT_LIST()...), constants.DELIVERY_ORDER_EXPORT_SORT_STRING_LIST()...), constants.UNMAPPED_TYPE_SORT_LIST()...)
 	if !helper.Contains(sortList, sortField) {
 		err := helper.NewError("Parameter 'sort_field' harus bernilai '" + strings.Join(sortList, "' or '") + "'")
@@ -776,6 +777,7 @@ func (d *DeliveryOrderValidator) ExportDeliveryOrderDetailValidator(ctx *gin.Con
 
 	sortField := d.getQueryWithDefault("sort_field", "created_at", ctx)
 	var sortList = []string{}
+	sortList = append(sortList, "order_status")
 	sortList = append(append(append(sortList, constants.DELIVERY_ORDER_DETAIL_EXPORT_SORT_INT_LIST()...), constants.DELIVERY_ORDER_DETAIL_EXPORT_SORT_STRING_LIST()...), constants.UNMAPPED_TYPE_SORT_LIST()...)
 	if !helper.Contains(sortList, sortField) {
 		err := helper.NewError("Parameter 'sort_field' harus bernilai '" + strings.Join(sortList, "' or '") + "'")
