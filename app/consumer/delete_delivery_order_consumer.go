@@ -91,13 +91,13 @@ func (c *DeleteDeliveryOrderConsumerHandler) ProcessMessage() {
 		deliveryOrderLog.UpdatedAt = &now
 		errorLog := &model.ErrorLog{}
 		if deliveryOrder.DeliveryOrderDetails == nil {
-			errorLog = c.DeliveryOrderOpenSearchUseCase.SyncToOpenSearchFromDeleteEvent(&deliveryOrder.ID, nil, c.ctx)
+			errorLog = c.DeliveryOrderOpenSearchUseCase.SyncToOpenSearchFromDeleteEvent(&deliveryOrder.ID, nil, dbTransaction, c.ctx)
 		} else {
 			deliveryOrderDetailIds := []*int{}
 			for _, v := range deliveryOrder.DeliveryOrderDetails {
 				deliveryOrderDetailIds = append(deliveryOrderDetailIds, &v.ID)
 			}
-			errorLog = c.DeliveryOrderOpenSearchUseCase.SyncToOpenSearchFromDeleteEvent(&deliveryOrder.ID, deliveryOrderDetailIds, c.ctx)
+			errorLog = c.DeliveryOrderOpenSearchUseCase.SyncToOpenSearchFromDeleteEvent(&deliveryOrder.ID, deliveryOrderDetailIds, dbTransaction, c.ctx)
 		}
 
 		if errorLog.Err != nil {
