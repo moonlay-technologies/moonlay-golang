@@ -1,10 +1,13 @@
 package repositories
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
+	"order-service/app/repositories"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/model"
 	"order-service/global/utils/opensearch_dbo"
@@ -13,7 +16,7 @@ import (
 )
 
 type DeliveryOrderOpenSearchRepositoryInterface interface {
-	Create(request *models.DeliveryOrder, result chan *models.DeliveryOrderChan)
+	Create(request *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.DeliveryOrderChan)
 	Get(request *models.DeliveryOrderRequest, isCountOnly bool, result chan *models.DeliveryOrdersChan)
 	GetByID(request *models.DeliveryOrderRequest, result chan *models.DeliveryOrderChan)
 	GetDetailsByDoID(request *models.DeliveryOrderDetailRequest, result chan *models.DeliveryOrderChan)
@@ -30,16 +33,18 @@ type DeliveryOrderOpenSearchRepositoryInterface interface {
 }
 
 type deliveryOrderOpenSearch struct {
-	openSearch opensearch_dbo.OpenSearchClientInterface
+	openSearch              opensearch_dbo.OpenSearchClientInterface
+	deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface
 }
 
-func InitDeliveryOrderOpenSearchRepository(openSearch opensearch_dbo.OpenSearchClientInterface) DeliveryOrderOpenSearchRepositoryInterface {
+func InitDeliveryOrderOpenSearchRepository(openSearch opensearch_dbo.OpenSearchClientInterface, deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface) DeliveryOrderOpenSearchRepositoryInterface {
 	return &deliveryOrderOpenSearch{
-		openSearch: openSearch,
+		openSearch:              openSearch,
+		deliveryOrderRepository: deliveryOrderRepository,
 	}
 }
 
-func (r *deliveryOrderOpenSearch) Create(request *models.DeliveryOrder, resultChan chan *models.DeliveryOrderChan) {
+func (r *deliveryOrderOpenSearch) Create(request *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.DeliveryOrderChan) {
 	response := &models.DeliveryOrderChan{}
 	deliveryOrderJson, _ := json.Marshal(request)
 	_, err := r.openSearch.CreateDocument(constants.DELIVERY_ORDERS_INDEX, request.DoCode, deliveryOrderJson)
@@ -47,6 +52,18 @@ func (r *deliveryOrderOpenSearch) Create(request *models.DeliveryOrder, resultCh
 	if err != nil {
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
 		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	updateDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
+	r.deliveryOrderRepository.UpdateByID(request.ID, request, "", false, sqlTransaction, ctx, updateDeliveryOrderResultChan)
+	updateDeliveryOrderResult := <-updateDeliveryOrderResultChan
+
+	if updateDeliveryOrderResult.Error != nil {
+		errorLogData := helper.WriteLog(updateDeliveryOrderResult.Error, http.StatusInternalServerError, nil)
+		response.Error = updateDeliveryOrderResult.Error
 		response.ErrorLog = errorLogData
 		resultChan <- response
 		return

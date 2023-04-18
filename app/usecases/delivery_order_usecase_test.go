@@ -36,8 +36,8 @@ func newDeliveryOrderUsecase(status bool) deliveryOrderUseCase {
 	mockSalesOrderOpenSearchUseCase := &mocks.SalesOrderOpenSearchUseCaseInterface{}
 	openSearchHosts := []string{os.Getenv("OPENSEARCH_HOST_01")}
 	openSearchClient := opensearch_dbo.InitOpenSearchClientInterface(openSearchHosts, os.Getenv("OPENSEARCH_USERNAME"), os.Getenv("OPENSEARCH_PASSWORD"), ctx)
-	deliveryOrderOpenSearch := repositories.InitDeliveryOrderOpenSearchRepository(openSearchClient)
-	deliveryOrderDetailOpenSearch := repositories.InitDeliveryOrderDetailOpenSearchRepository(openSearchClient)
+	deliveryOrderOpenSearch := repositories.InitDeliveryOrderOpenSearchRepository(openSearchClient, mockDeliveryOrderRepository)
+	deliveryOrderDetailOpenSearch := repositories.InitDeliveryOrderDetailOpenSearchRepository(openSearchClient, mockDeliveryOrderDetailRepository)
 	// access to config
 	// if err := envConfig.Load(".env"); err != nil {
 	// 	errStr := fmt.Sprintf(".env not load properly %s", err.Error())

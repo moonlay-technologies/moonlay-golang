@@ -18,14 +18,13 @@ import (
 
 type DeliveryOrderConsumerUseCaseInterface interface {
 	SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
-	SyncToOpenSearchFromUpdateEvent(deliveryOrder *models.DeliveryOrder, ctx context.Context) *model.ErrorLog
-	SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, deliveryOrderDetailId []*int, ctx context.Context) *model.ErrorLog
+	SyncToOpenSearchFromUpdateEvent(deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
+	SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, deliveryOrderDetailId []*int, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	Get(request *models.DeliveryOrderExportRequest) *model.ErrorLog
 	GetDetail(request *models.DeliveryOrderDetailExportRequest) *model.ErrorLog
 }
 
 type deliveryOrderConsumerUseCase struct {
-	salesOrderRepository                    repositories.SalesOrderRepositoryInterface
 	uploadRepository                        repositories.UploadRepositoryInterface
 	orderStatusRepository                   repositories.OrderStatusRepositoryInterface
 	brandRepository                         repositories.BrandRepositoryInterface
@@ -40,9 +39,8 @@ type deliveryOrderConsumerUseCase struct {
 	ctx                                     context.Context
 }
 
-func InitDeliveryOrderConsumerUseCaseInterface(salesOrderRepository repositories.SalesOrderRepositoryInterface, uploadRepository repositories.UploadRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, ctx context.Context) DeliveryOrderConsumerUseCaseInterface {
+func InitDeliveryOrderConsumerUseCaseInterface(uploadRepository repositories.UploadRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, ctx context.Context) DeliveryOrderConsumerUseCaseInterface {
 	return &deliveryOrderConsumerUseCase{
-		salesOrderRepository:                    salesOrderRepository,
 		uploadRepository:                        uploadRepository,
 		orderStatusRepository:                   orderStatusRepository,
 		brandRepository:                         brandRepository,
@@ -61,8 +59,13 @@ func InitDeliveryOrderConsumerUseCaseInterface(salesOrderRepository repositories
 func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
 	now := time.Now()
 
+	salesOrderRequest := &models.SalesOrderRequest{
+		ID:            deliveryOrder.SalesOrderID,
+		OrderSourceID: deliveryOrder.OrderSourceID,
+	}
+
 	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.GetByID(deliveryOrder.SalesOrderID, false, ctx, getSalesOrderResultChan)
+	go u.salesOrderOpenSearchRepository.GetByID(salesOrderRequest, getSalesOrderResultChan)
 	getSalesOrderResult := <-getSalesOrderResultChan
 
 	if getSalesOrderResult.Error != nil {
@@ -139,7 +142,7 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromCreateEvent(deliveryO
 		doDetailOpenSearch := &models.DeliveryOrderDetailOpenSearch{}
 		doDetailOpenSearch.DoDetailMap(deliveryOrder, v)
 		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailOpenSearchChan)
-		go u.deliveryOrderDetailOpenSearchRepository.Create(doDetailOpenSearch, createDeliveryOrderDetailResultChan)
+		go u.deliveryOrderDetailOpenSearchRepository.Create(doDetailOpenSearch, v, sqlTransaction, ctx, createDeliveryOrderDetailResultChan)
 		createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
 
 		if createDeliveryOrderDetailResult.Error != nil {
@@ -153,7 +156,7 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromCreateEvent(deliveryO
 	deliveryOrder.EndCreatedDate = &now
 
 	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderOpenSearchRepository.Create(deliveryOrder, createDeliveryOrderResultChan)
+	go u.deliveryOrderOpenSearchRepository.Create(deliveryOrder, sqlTransaction, ctx, createDeliveryOrderResultChan)
 	createDeliveryOrderResult := <-createDeliveryOrderResultChan
 
 	if createDeliveryOrderResult.Error != nil {
@@ -168,19 +171,10 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromCreateEvent(deliveryO
 		return createDeliveryOrderResult.ErrorLog
 	}
 
-	removeCacheSalesOrderResultChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.RemoveCacheByID(deliveryOrder.SalesOrderID, ctx, removeCacheSalesOrderResultChan)
-	removeCacheSalesOrderResult := <-removeCacheSalesOrderResultChan
-
-	if removeCacheSalesOrderResult.Error != nil {
-		errorLogData := helper.WriteLog(removeCacheSalesOrderResult.Error, http.StatusInternalServerError, nil)
-		return errorLogData
-	}
-
 	return &model.ErrorLog{}
 }
 
-func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromUpdateEvent(request *models.DeliveryOrder, ctx context.Context) *model.ErrorLog {
+func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromUpdateEvent(request *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
 	now := time.Now()
 
 	getDeliveryOrdersResultChan := make(chan *models.DeliveryOrderChan)
@@ -208,7 +202,7 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromUpdateEvent(request *
 		doDetailOpenSearch.DoDetailMap(deliveryOrder, v)
 
 		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailOpenSearchChan)
-		go u.deliveryOrderDetailOpenSearchRepository.Create(doDetailOpenSearch, createDeliveryOrderDetailResultChan)
+		go u.deliveryOrderDetailOpenSearchRepository.Create(doDetailOpenSearch, v, sqlTransaction, ctx, createDeliveryOrderDetailResultChan)
 		createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
 
 		if createDeliveryOrderDetailResult.Error != nil {
@@ -217,7 +211,7 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromUpdateEvent(request *
 	}
 
 	updateDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderOpenSearchRepository.Create(deliveryOrder, updateDeliveryOrderResultChan)
+	go u.deliveryOrderOpenSearchRepository.Create(deliveryOrder, sqlTransaction, ctx, updateDeliveryOrderResultChan)
 	updateDeliveryOrderResult := <-updateDeliveryOrderResultChan
 
 	if updateDeliveryOrderResult.Error != nil {
@@ -235,7 +229,7 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromUpdateEvent(request *
 	return &model.ErrorLog{}
 }
 
-func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, deliveryOrderDetailIds []*int, ctx context.Context) *model.ErrorLog {
+func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, deliveryOrderDetailIds []*int, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
 	now := time.Now()
 	isDeleteParent := deliveryOrderDetailIds == nil
 	getDeliveryOrdersResultChan := make(chan *models.DeliveryOrderChan)
@@ -318,7 +312,7 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromDeleteEvent(deliveryO
 			doDetailOpenSearch.DoDetailMap(deliveryOrder, v)
 
 			createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailOpenSearchChan)
-			go u.deliveryOrderDetailOpenSearchRepository.Create(doDetailOpenSearch, createDeliveryOrderDetailResultChan)
+			go u.deliveryOrderDetailOpenSearchRepository.Create(doDetailOpenSearch, v, sqlTransaction, ctx, createDeliveryOrderDetailResultChan)
 			createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
 
 			if createDeliveryOrderDetailResult.Error != nil {
@@ -340,7 +334,7 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromDeleteEvent(deliveryO
 	}
 
 	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderOpenSearchRepository.Create(deliveryOrder, createDeliveryOrderResultChan)
+	go u.deliveryOrderOpenSearchRepository.Create(deliveryOrder, sqlTransaction, ctx, createDeliveryOrderResultChan)
 	deleteDeliveryOrderResult := <-createDeliveryOrderResultChan
 
 	if deleteDeliveryOrderResult.Error != nil {

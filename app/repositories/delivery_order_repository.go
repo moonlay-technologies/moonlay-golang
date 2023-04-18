@@ -378,7 +378,7 @@ func (r *deliveryOrder) Insert(request *models.DeliveryOrder, sqlTransaction *sq
 
 	if createDeliveryOrderJourneysResult.Error != nil {
 		errorLogData := helper.WriteLog(createDeliveryOrderJourneysResult.Error, http.StatusInternalServerError, nil)
-		response.Error = err
+		response.Error = createDeliveryOrderJourneysResult.Error
 		response.ErrorLog = errorLogData
 		resultChan <- response
 		return
@@ -507,7 +507,7 @@ func (r *deliveryOrder) UpdateByID(id int, request *models.DeliveryOrder, jouney
 
 	if createDeliveryOrderJourneysResult.Error != nil {
 		errorLogData := helper.WriteLog(createDeliveryOrderJourneysResult.Error, http.StatusInternalServerError, nil)
-		response.Error = err
+		response.Error = createDeliveryOrderJourneysResult.Error
 		response.ErrorLog = errorLogData
 		resultChan <- response
 		return
@@ -571,7 +571,7 @@ func (r *deliveryOrder) DeleteByID(request *models.DeliveryOrder, ctx context.Co
 
 	if createDeliveryOrderJourneysResult.Error != nil {
 		errorLogData := helper.WriteLog(createDeliveryOrderJourneysResult.Error, http.StatusInternalServerError, nil)
-		response.Error = err
+		response.Error = createDeliveryOrderJourneysResult.Error
 		response.ErrorLog = errorLogData
 		resultChan <- response
 		return
