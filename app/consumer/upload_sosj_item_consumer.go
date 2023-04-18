@@ -559,30 +559,6 @@ func (c *uploadSOSJItemConsumerHandler) ProcessMessage() {
 					fmt.Println("error log do", createDeliveryOrderLogResult.ErrorLog)
 				}
 
-				var jorneyStatus string
-				if doStatus == constants.ORDER_STATUS_OPEN {
-					jorneyStatus = constants.SO_STATUS_SJCR
-				} else {
-					jorneyStatus = constants.SO_STATUS_SJCLS
-				}
-
-				deliveryOrderJourney := &models.DeliveryOrderJourney{
-					DoId:      x.ID,
-					DoCode:    x.DoCode,
-					Status:    jorneyStatus,
-					Remark:    "",
-					Reason:    "",
-					CreatedAt: &now,
-					UpdatedAt: &now,
-				}
-
-				createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
-				go c.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, c.ctx, createDeliveryOrderJourneyChan)
-				createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
-
-				if createDeliveryOrderJourneysResult.Error != nil {
-					fmt.Println(createDeliveryOrderJourneysResult.Error.Error())
-				}
 				keyKafka := []byte(x.DoCode)
 				messageKafka, _ := json.Marshal(x)
 

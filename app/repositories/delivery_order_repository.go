@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
+	repositories "order-service/app/repositories/mongod"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/redisdb"
 	"strings"
@@ -21,20 +22,22 @@ type DeliveryOrderRepositoryInterface interface {
 	GetBySalesOrderID(deliveryOrderID int, countOnly bool, ctx context.Context, result chan *models.DeliveryOrdersChan)
 	Insert(request *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.DeliveryOrderChan)
 	GetByID(id int, countOnly bool, ctx context.Context, result chan *models.DeliveryOrderChan)
-	UpdateByID(id int, deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.DeliveryOrderChan)
+	UpdateByID(id int, deliveryOrder *models.DeliveryOrder, jouneyRemarks string, isInsertToJourney bool, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.DeliveryOrderChan)
 	DeleteByID(request *models.DeliveryOrder, ctx context.Context, resultChan chan *models.DeliveryOrderChan)
 	GetByDoRefCode(doRefCode string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderChan)
 }
 
 type deliveryOrder struct {
-	db      dbresolver.DB
-	redisdb redisdb.RedisInterface
+	deliveryOrderJourneysRepository repositories.DeliveryOrderJourneyRepositoryInterface
+	db                              dbresolver.DB
+	redisdb                         redisdb.RedisInterface
 }
 
-func InitDeliveryRepository(db dbresolver.DB, redisdb redisdb.RedisInterface) DeliveryOrderRepositoryInterface {
+func InitDeliveryRepository(deliveryOrderJourneysRepository repositories.DeliveryOrderJourneyRepositoryInterface, db dbresolver.DB, redisdb redisdb.RedisInterface) DeliveryOrderRepositoryInterface {
 	return &deliveryOrder{
-		db:      db,
-		redisdb: redisdb,
+		deliveryOrderJourneysRepository: deliveryOrderJourneysRepository,
+		db:                              db,
+		redisdb:                         redisdb,
 	}
 }
 
@@ -369,6 +372,18 @@ func (r *deliveryOrder) Insert(request *models.DeliveryOrder, sqlTransaction *sq
 		return
 	}
 
+	createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
+	r.deliveryOrderJourneysRepository.InsertFromDO(request, "", *request.CreatedAt, ctx, createDeliveryOrderJourneyChan)
+	createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
+
+	if createDeliveryOrderJourneysResult.Error != nil {
+		errorLogData := helper.WriteLog(createDeliveryOrderJourneysResult.Error, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
 	deliveryOrderID, err := result.LastInsertId()
 
 	if err != nil {
@@ -389,7 +404,7 @@ func (r *deliveryOrder) Insert(request *models.DeliveryOrder, sqlTransaction *sq
 	return
 }
 
-func (r *deliveryOrder) UpdateByID(id int, request *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.DeliveryOrderChan) {
+func (r *deliveryOrder) UpdateByID(id int, request *models.DeliveryOrder, jouneyRemarks string, isInsertToJourney bool, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.DeliveryOrderChan) {
 	response := &models.DeliveryOrderChan{}
 	rawSqlQueries := []string{}
 
@@ -486,6 +501,18 @@ func (r *deliveryOrder) UpdateByID(id int, request *models.DeliveryOrder, sqlTra
 		return
 	}
 
+	createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
+	r.deliveryOrderJourneysRepository.InsertFromDO(request, "", *request.CreatedAt, ctx, createDeliveryOrderJourneyChan)
+	createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
+
+	if createDeliveryOrderJourneysResult.Error != nil {
+		errorLogData := helper.WriteLog(createDeliveryOrderJourneysResult.Error, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
 	deliveryOrderID, err := result.LastInsertId()
 
 	if err != nil {
@@ -508,6 +535,7 @@ func (r *deliveryOrder) DeleteByID(request *models.DeliveryOrder, ctx context.Co
 	now := time.Now()
 	request.DeletedAt = &now
 	request.UpdatedAt = &now
+	request.OrderStatusID = 19
 	response := &models.DeliveryOrderChan{}
 	rawSqlQueries := []string{}
 
@@ -517,7 +545,7 @@ func (r *deliveryOrder) DeleteByID(request *models.DeliveryOrder, ctx context.Co
 	query = fmt.Sprintf("%s='%v'", "updated_at", request.UpdatedAt.Format(constants.DATE_TIME_FORMAT_COMON))
 	rawSqlQueries = append(rawSqlQueries, query)
 
-	query = fmt.Sprintf("%s=%v", "order_status_id", "19")
+	query = fmt.Sprintf("%s=%v", "order_status_id", request.OrderStatusID)
 	rawSqlQueries = append(rawSqlQueries, query)
 
 	query = fmt.Sprintf("%s='%v'", "is_done_sync_to_es", 0)
@@ -530,8 +558,19 @@ func (r *deliveryOrder) DeleteByID(request *models.DeliveryOrder, ctx context.Co
 	result, err := sqlTransaction.ExecContext(ctx, updateQuery, request.ID)
 
 	if err != nil {
-		sqlTransaction.Rollback()
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
+	createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
+	r.deliveryOrderJourneysRepository.InsertFromDO(request, "", *request.CreatedAt, ctx, createDeliveryOrderJourneyChan)
+	createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
+
+	if createDeliveryOrderJourneysResult.Error != nil {
+		errorLogData := helper.WriteLog(createDeliveryOrderJourneysResult.Error, http.StatusInternalServerError, nil)
 		response.Error = err
 		response.ErrorLog = errorLogData
 		resultChan <- response

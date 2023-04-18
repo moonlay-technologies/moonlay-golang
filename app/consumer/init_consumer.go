@@ -243,8 +243,9 @@ func InitUploadSOItemConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodb
 
 func InitUploadSOSJFileConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodbClient mongodb.MongoDBInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, database dbresolver.DB, redisdb redisdb.RedisInterface, ctx context.Context, args []interface{}) UploadSOSJFileConsumerHandlerInterface {
 	salesOrderJourneyRepository := mongoRepo.InitSalesOrderJourneysRepository(mongodbClient)
+	deliveryOrderJourneyRepository := mongoRepo.InitDeliveryOrderJourneyRepository(mongodbClient)
 	salesOrderRepository := repositories.InitSalesOrderRepository(salesOrderJourneyRepository, database, redisdb)
-	deliveryOrderRepository := repositories.InitDeliveryRepository(database, redisdb)
+	deliveryOrderRepository := repositories.InitDeliveryRepository(deliveryOrderJourneyRepository, database, redisdb)
 	orderSourceRepository := repositories.InitOrderSourceRepository(database, redisdb)
 	requestValidationRepository := repositories.InitRequestValidationRepository(database)
 	warehouseRepository := repositories.InitWarehouseRepository(database, redisdb)
@@ -275,8 +276,9 @@ func InitUploadSOSJItemConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongo
 	salesmanRepository := repositories.InitSalesmanRepository(database, redisdb)
 	salesOrderLogRepository := mongoRepo.InitSalesOrderLogRepository(mongodbClient)
 	salesOrderDetailJourneysRepository := mongoRepo.InitSalesOrderDetailJourneysRepository(mongodbClient)
+	deliveryOrderJourneyRepository := mongoRepo.InitDeliveryOrderJourneyRepository(mongodbClient)
 	warehouseRepository := repositories.InitWarehouseRepository(database, redisdb)
-	deliveryOrderRepository := repositories.InitDeliveryRepository(database, redisdb)
+	deliveryOrderRepository := repositories.InitDeliveryRepository(deliveryOrderJourneyRepository, database, redisdb)
 	deliveryOrderDetailRepository := repositories.InitDeliveryOrderDetailRepository(database, redisdb)
 	deliveryOrderLogRepository := mongoRepo.InitDeliveryOrderLogRepository(mongodbClient)
 	sosjUploadHistoriesRepository := mongoRepo.InitSOSJUploadHistoriesRepositoryInterface(mongodbClient)
@@ -405,8 +407,9 @@ func InitUploadDOFileConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodb
 	salesOrderJourneyRepository := mongoRepo.InitSalesOrderJourneysRepository(mongodbClient)
 	salesOrderRepository := repositories.InitSalesOrderRepository(salesOrderJourneyRepository, database, redisdb)
 	salesOrderDetailJourneyRepository := mongoRepo.InitSalesOrderDetailJourneysRepository(mongodbClient)
+	deliveryOrderJourneyRepository := mongoRepo.InitDeliveryOrderJourneyRepository(mongodbClient)
 	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(salesOrderDetailJourneyRepository, database, redisdb)
-	deliveryOrderRepository := repositories.InitDeliveryRepository(database, redisdb)
+	deliveryOrderRepository := repositories.InitDeliveryRepository(deliveryOrderJourneyRepository, database, redisdb)
 	handler := InitUploadDOFileConsumerHandlerInterface(kafkaClient, uploadRepository, requestValidationMiddleware, requestValidationRepository, uploadSJHistoriesRepository, uploadSJErrorLogsRepository, warehouseRepository, salesOrderRepository, salesOrderDetailRepository, deliveryOrderRepository, orderStatusRepository, ctx, redisdb, args, database)
 	return handler
 }
@@ -414,9 +417,10 @@ func InitUploadDOFileConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodb
 func InitUploadDOItemConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongodbClient mongodb.MongoDBInterface, opensearchClient opensearch_dbo.OpenSearchClientInterface, database dbresolver.DB, redisdb redisdb.RedisInterface, ctx context.Context, args []interface{}) UploadSOItemConsumerHandlerInterface {
 	salesOrderJourneysRepository := mongoRepo.InitSalesOrderJourneysRepository(mongodbClient)
 	salesOrderDetailJourneyRepository := mongoRepo.InitSalesOrderDetailJourneysRepository(mongodbClient)
+	deliveryOrderJourneyRepository := mongoRepo.InitDeliveryOrderJourneyRepository(mongodbClient)
 	salesOrderRepository := repositories.InitSalesOrderRepository(salesOrderJourneysRepository, database, redisdb)
 	salesOrderDetailRepository := repositories.InitSalesOrderDetailRepository(salesOrderDetailJourneyRepository, database, redisdb)
-	deliveryOrderRepository := repositories.InitDeliveryRepository(database, redisdb)
+	deliveryOrderRepository := repositories.InitDeliveryRepository(deliveryOrderJourneyRepository, database, redisdb)
 	deliveryOrderDetailRepository := repositories.InitDeliveryOrderDetailRepository(database, redisdb)
 	orderStatusRepository := repositories.InitOrderStatusRepository(database, redisdb)
 	orderSourceRepository := repositories.InitOrderSourceRepository(database, redisdb)

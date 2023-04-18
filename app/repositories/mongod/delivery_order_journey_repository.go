@@ -17,26 +17,40 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type DeliveryOrderJourneysRepositoryInterface interface {
-	Insert(request *models.DeliveryOrderJourney, ctx context.Context, result chan *models.DeliveryOrderJourneyChan)
+type DeliveryOrderJourneyRepositoryInterface interface {
+	InsertFromDO(request *models.DeliveryOrder, remarks string, now time.Time, ctx context.Context, result chan *models.DeliveryOrderJourneyChan)
 	Get(request *models.DeliveryOrderJourneysRequest, countOnly bool, ctx context.Context, result chan *models.DeliveryOrderJourneysChan)
 	GetByDoID(doID int, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderJourneysChan)
 }
 
-type deliveryOrderJourneysRepository struct {
+type deliveryOrderJourneyRepository struct {
 	logger            log.Logger
 	mongod            mongodb.MongoDBInterface
 	collectionJourney string
 }
 
-func InitDeliveryOrderJourneysRepository(mongod mongodb.MongoDBInterface) DeliveryOrderJourneysRepositoryInterface {
-	return &deliveryOrderJourneysRepository{
+func InitDeliveryOrderJourneyRepository(mongod mongodb.MongoDBInterface) DeliveryOrderJourneyRepositoryInterface {
+	return &deliveryOrderJourneyRepository{
 		mongod:            mongod,
 		collectionJourney: constants.DELIVERY_ORDER_TABLE_JOURNEYS,
 	}
 }
 
-func (r *deliveryOrderJourneysRepository) Insert(request *models.DeliveryOrderJourney, ctx context.Context, resultChan chan *models.DeliveryOrderJourneyChan) {
+func (r *deliveryOrderJourneyRepository) InsertFromDO(request *models.DeliveryOrder, remarks string, now time.Time, ctx context.Context, resultChan chan *models.DeliveryOrderJourneyChan) {
+	deliveryOrderJourney := &models.DeliveryOrderJourney{
+		DoId:      request.ID,
+		DoCode:    request.DoCode,
+		DoDate:    request.DoDate,
+		Status:    helper.GetDOJourneyStatus(request.OrderStatusID),
+		Remark:    remarks,
+		Reason:    "",
+		CreatedAt: &now,
+		UpdatedAt: &now,
+	}
+	r.Insert(deliveryOrderJourney, ctx, resultChan)
+}
+
+func (r *deliveryOrderJourneyRepository) Insert(request *models.DeliveryOrderJourney, ctx context.Context, resultChan chan *models.DeliveryOrderJourneyChan) {
 	response := &models.DeliveryOrderJourneyChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collectionJourney)
 	result, err := collection.InsertOne(ctx, request)
@@ -56,7 +70,7 @@ func (r *deliveryOrderJourneysRepository) Insert(request *models.DeliveryOrderJo
 	return
 }
 
-func (r *deliveryOrderJourneysRepository) Get(request *models.DeliveryOrderJourneysRequest, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderJourneysChan) {
+func (r *deliveryOrderJourneyRepository) Get(request *models.DeliveryOrderJourneysRequest, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderJourneysChan) {
 	response := &models.DeliveryOrderJourneysChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collectionJourney)
 	filter := bson.M{}
@@ -153,7 +167,7 @@ func (r *deliveryOrderJourneysRepository) Get(request *models.DeliveryOrderJourn
 	}
 }
 
-func (r *deliveryOrderJourneysRepository) GetByDoID(doID int, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderJourneysChan) {
+func (r *deliveryOrderJourneyRepository) GetByDoID(doID int, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderJourneysChan) {
 	response := &models.DeliveryOrderJourneysChan{}
 	collection := r.mongod.Client().Database(os.Getenv("MONGO_DATABASE")).Collection(r.collectionJourney)
 	filter := bson.M{"do_id": doID}
