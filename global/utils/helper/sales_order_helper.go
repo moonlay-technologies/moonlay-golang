@@ -79,13 +79,14 @@ func GetSOJourneyStatus(orderStatusId int) string {
 	var journeyMap = map[int]string{
 		5:  constants.SO_STATUS_APPV,
 		6:  constants.SO_STATUS_PEND,
-		12: constants.SO_STATUS_PEND,
-		9:  constants.SO_STATUS_RJC,
-		10: constants.SO_STATUS_CNCL,
 		7:  constants.SO_STATUS_ORDPRT,
 		8:  constants.SO_STATUS_ORDCLS,
-		14: constants.SO_STATUS_CLS,
+		9:  constants.SO_STATUS_RJC,
+		10: constants.SO_STATUS_CNCL,
 		11: constants.SO_STATUS_OPEN,
+		12: constants.SO_STATUS_PEND,
+		13: constants.SO_STATUS_ORDPRT,
+		14: constants.SO_STATUS_CLS,
 	}
 	return journeyMap[orderStatusId]
 }
