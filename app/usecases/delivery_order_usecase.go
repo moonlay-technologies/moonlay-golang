@@ -1458,8 +1458,8 @@ func (u *deliveryOrderUseCase) Export(request *models.DeliveryOrderExportRequest
 	}
 
 	rand, err := helper.Generate(`[A-Za-z]{12}`)
-	x, err := time.LoadLocation("Asia/Jakarta")
-	fileHour := time.Now().In(x).Format(constants.DATE_FORMAT_EXPORT)
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	fileHour := time.Now().In(loc).Format(constants.DATE_FORMAT_EXPORT)
 	if ctx == nil {
 		err = fmt.Errorf("nil context")
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -1511,7 +1511,8 @@ func (u *deliveryOrderUseCase) ExportDetail(request *models.DeliveryOrderDetailE
 		return "", errorLogData
 	}
 	rand, err := helper.Generate(`[A-Za-z]{12}`)
-	fileHour := time.Now().Format(constants.DATE_FORMAT_EXPORT)
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	fileHour := time.Now().In(loc).Format(constants.DATE_FORMAT_EXPORT)
 	if ctx == nil {
 		err = fmt.Errorf("nil context")
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)

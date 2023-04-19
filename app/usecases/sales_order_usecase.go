@@ -1905,7 +1905,8 @@ func (u *salesOrderUseCase) Export(request *models.SalesOrderExportRequest, ctx 
 	}
 
 	rand, err := helper.Generate(`[A-Za-z]{12}`)
-	fileHour := time.Now().Format(constants.DATE_FORMAT_EXPORT)
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	fileHour := time.Now().In(loc).Format(constants.DATE_FORMAT_EXPORT)
 	if ctx == nil {
 		err = fmt.Errorf("nil context")
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -1959,7 +1960,8 @@ func (u *salesOrderUseCase) ExportDetail(request *models.SalesOrderDetailExportR
 		return "", errorLogData
 	}
 	rand, err := helper.Generate(`[A-Za-z]{12}`)
-	fileHour := time.Now().Format(constants.DATE_FORMAT_EXPORT)
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	fileHour := time.Now().In(loc).Format(constants.DATE_FORMAT_EXPORT)
 	if ctx == nil {
 		err = fmt.Errorf("nil context")
 		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
