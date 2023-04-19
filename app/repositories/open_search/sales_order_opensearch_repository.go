@@ -357,25 +357,27 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchTermRequest(term
 		}
 
 		if len(request.StartCreatedAt) > 0 && len(request.EndCreatedAt) > 0 {
+			var startCreatedAt string
+			var endCreatedAt string
 			startTimeadj, err := time.Parse(constants.DATE_FORMAT_EXPORT_CREATED_AT, request.StartCreatedAt+constants.DATE_TIME_ZERO_HOUR_ADDITIONAL)
 			if err == nil {
 				startTimeadj = startTimeadj.Add(time.Hour * -7)
-				request.StartCreatedAt = startTimeadj.Format(time.RFC3339)
+				startCreatedAt = startTimeadj.Format(time.RFC3339)
 			} else {
 				fmt.Println("error = ", err.Error())
 			}
 			endTimeadj, err := time.Parse(constants.DATE_FORMAT_EXPORT_CREATED_AT, request.EndCreatedAt+constants.DATE_TIME_ZERO_HOUR_ADDITIONAL)
 			if err == nil {
 				endTimeadj = endTimeadj.Add(time.Hour * +16).Add(time.Minute * 59).Add(time.Second * 59)
-				request.EndCreatedAt = endTimeadj.Format(time.RFC3339)
+				endCreatedAt = endTimeadj.Format(time.RFC3339)
 			} else {
 				fmt.Println("error = ", err.Error())
 			}
 			filter := map[string]interface{}{
 				"range": map[string]interface{}{
 					"created_at": map[string]interface{}{
-						"gte": request.StartCreatedAt,
-						"lte": request.EndCreatedAt,
+						"gte": startCreatedAt,
+						"lte": endCreatedAt,
 					},
 				},
 			}
@@ -498,13 +500,16 @@ func (r *salesOrderOpenSearch) generateSalesOrderQueryOpenSearchResult(openSearc
 				}
 
 				layout := time.RFC3339
-				createdAt, _ := time.Parse(layout, obj["created_at"].(string))
-				createdAt = createdAt.In(loc)
-				salesOrder.CreatedAt = &createdAt
-				updatedAt, _ := time.Parse(layout, obj["updated_at"].(string))
-				updatedAt = updatedAt.In(loc)
-				salesOrder.UpdatedAt = &updatedAt
-
+				if obj["created_at"] != nil {
+					createdAt, _ := time.Parse(layout, obj["created_at"].(string))
+					createdAt = createdAt.In(loc)
+					salesOrder.CreatedAt = &createdAt
+				}
+				if obj["updated_at"] != nil {
+					updatedAt, _ := time.Parse(layout, obj["updated_at"].(string))
+					updatedAt = updatedAt.In(loc)
+					salesOrder.UpdatedAt = &updatedAt
+				}
 				salesOrders = append(salesOrders, salesOrder)
 			}
 		}
