@@ -219,6 +219,7 @@ type DeliveryOrderExportRequest struct {
 	UpdatedAt         string `json:"updated_at,omitempty"`
 	StartDoDate       string `json:"start_do_date,omitempty"`
 	EndDoDate         string `json:"end_do_date,omitempty"`
+	UserID            int    `json:"user_id,omitempty"`
 }
 
 type DeliveryOrders struct {

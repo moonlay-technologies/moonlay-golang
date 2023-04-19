@@ -32,7 +32,7 @@ func (_m *DeliveryOrderRepositoryInterface) Insert(request *models.DeliveryOrder
 }
 
 // UpdateByID provides a mock function with given fields: id, deliveryOrder, sqlTransaction, ctx, result
-func (_m *DeliveryOrderRepositoryInterface) UpdateByID(id int, deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.DeliveryOrderChan) {
+func (_m *DeliveryOrderRepositoryInterface) UpdateByID(id int, deliveryOrder *models.DeliveryOrder, jouneyRemarks string, isInsertToJourney bool, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.DeliveryOrderChan) {
 	_m.Called(id, deliveryOrder, sqlTransaction, ctx, result)
 }
 
@@ -54,6 +54,6 @@ func NewDeliveryOrderRepositoryInterface(t mockConstructorTestingTNewDeliveryOrd
 
 	return mock
 }
-func (_m *DeliveryOrderRepositoryInterface) DeleteByID(request *models.DeliveryOrder, ctx context.Context, resultChan chan *models.DeliveryOrderChan) {
+func (_m *DeliveryOrderRepositoryInterface) DeleteByID(request *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.DeliveryOrderChan) {
 	_m.Called(request, ctx, resultChan)
 }

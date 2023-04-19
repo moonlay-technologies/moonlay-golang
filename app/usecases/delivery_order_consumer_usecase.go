@@ -12,20 +12,21 @@ import (
 	openSearchRepositories "order-service/app/repositories/open_search"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/model"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 )
 
 type DeliveryOrderConsumerUseCaseInterface interface {
 	SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
-	SyncToOpenSearchFromUpdateEvent(deliveryOrder *models.DeliveryOrder, ctx context.Context) *model.ErrorLog
-	SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, deliveryOrderDetailId []*int, ctx context.Context) *model.ErrorLog
+	SyncToOpenSearchFromUpdateEvent(deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
+	SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, deliveryOrderDetailId []*int, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	Get(request *models.DeliveryOrderExportRequest) *model.ErrorLog
 	GetDetail(request *models.DeliveryOrderDetailExportRequest) *model.ErrorLog
 }
 
 type deliveryOrderConsumerUseCase struct {
-	salesOrderRepository                    repositories.SalesOrderRepositoryInterface
 	uploadRepository                        repositories.UploadRepositoryInterface
 	orderStatusRepository                   repositories.OrderStatusRepositoryInterface
 	brandRepository                         repositories.BrandRepositoryInterface
@@ -40,9 +41,8 @@ type deliveryOrderConsumerUseCase struct {
 	ctx                                     context.Context
 }
 
-func InitDeliveryOrderConsumerUseCaseInterface(salesOrderRepository repositories.SalesOrderRepositoryInterface, uploadRepository repositories.UploadRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, ctx context.Context) DeliveryOrderConsumerUseCaseInterface {
+func InitDeliveryOrderConsumerUseCaseInterface(uploadRepository repositories.UploadRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, ctx context.Context) DeliveryOrderConsumerUseCaseInterface {
 	return &deliveryOrderConsumerUseCase{
-		salesOrderRepository:                    salesOrderRepository,
 		uploadRepository:                        uploadRepository,
 		orderStatusRepository:                   orderStatusRepository,
 		brandRepository:                         brandRepository,
@@ -61,8 +61,13 @@ func InitDeliveryOrderConsumerUseCaseInterface(salesOrderRepository repositories
 func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
 	now := time.Now()
 
+	salesOrderRequest := &models.SalesOrderRequest{
+		ID:            deliveryOrder.SalesOrderID,
+		OrderSourceID: deliveryOrder.OrderSourceID,
+	}
+
 	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.GetByID(deliveryOrder.SalesOrderID, false, ctx, getSalesOrderResultChan)
+	go u.salesOrderOpenSearchRepository.GetByID(salesOrderRequest, getSalesOrderResultChan)
 	getSalesOrderResult := <-getSalesOrderResultChan
 
 	if getSalesOrderResult.Error != nil {
@@ -139,7 +144,7 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromCreateEvent(deliveryO
 		doDetailOpenSearch := &models.DeliveryOrderDetailOpenSearch{}
 		doDetailOpenSearch.DoDetailMap(deliveryOrder, v)
 		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailOpenSearchChan)
-		go u.deliveryOrderDetailOpenSearchRepository.Create(doDetailOpenSearch, createDeliveryOrderDetailResultChan)
+		go u.deliveryOrderDetailOpenSearchRepository.Create(doDetailOpenSearch, v, sqlTransaction, ctx, createDeliveryOrderDetailResultChan)
 		createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
 
 		if createDeliveryOrderDetailResult.Error != nil {
@@ -153,7 +158,7 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromCreateEvent(deliveryO
 	deliveryOrder.EndCreatedDate = &now
 
 	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderOpenSearchRepository.Create(deliveryOrder, createDeliveryOrderResultChan)
+	go u.deliveryOrderOpenSearchRepository.Create(deliveryOrder, sqlTransaction, ctx, createDeliveryOrderResultChan)
 	createDeliveryOrderResult := <-createDeliveryOrderResultChan
 
 	if createDeliveryOrderResult.Error != nil {
@@ -168,19 +173,10 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromCreateEvent(deliveryO
 		return createDeliveryOrderResult.ErrorLog
 	}
 
-	removeCacheSalesOrderResultChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderRepository.RemoveCacheByID(deliveryOrder.SalesOrderID, ctx, removeCacheSalesOrderResultChan)
-	removeCacheSalesOrderResult := <-removeCacheSalesOrderResultChan
-
-	if removeCacheSalesOrderResult.Error != nil {
-		errorLogData := helper.WriteLog(removeCacheSalesOrderResult.Error, http.StatusInternalServerError, nil)
-		return errorLogData
-	}
-
 	return &model.ErrorLog{}
 }
 
-func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromUpdateEvent(request *models.DeliveryOrder, ctx context.Context) *model.ErrorLog {
+func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromUpdateEvent(request *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
 	now := time.Now()
 
 	getDeliveryOrdersResultChan := make(chan *models.DeliveryOrderChan)
@@ -208,7 +204,7 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromUpdateEvent(request *
 		doDetailOpenSearch.DoDetailMap(deliveryOrder, v)
 
 		createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailOpenSearchChan)
-		go u.deliveryOrderDetailOpenSearchRepository.Create(doDetailOpenSearch, createDeliveryOrderDetailResultChan)
+		go u.deliveryOrderDetailOpenSearchRepository.Create(doDetailOpenSearch, v, sqlTransaction, ctx, createDeliveryOrderDetailResultChan)
 		createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
 
 		if createDeliveryOrderDetailResult.Error != nil {
@@ -217,7 +213,7 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromUpdateEvent(request *
 	}
 
 	updateDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderOpenSearchRepository.Create(deliveryOrder, updateDeliveryOrderResultChan)
+	go u.deliveryOrderOpenSearchRepository.Create(deliveryOrder, sqlTransaction, ctx, updateDeliveryOrderResultChan)
 	updateDeliveryOrderResult := <-updateDeliveryOrderResultChan
 
 	if updateDeliveryOrderResult.Error != nil {
@@ -235,7 +231,7 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromUpdateEvent(request *
 	return &model.ErrorLog{}
 }
 
-func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, deliveryOrderDetailIds []*int, ctx context.Context) *model.ErrorLog {
+func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, deliveryOrderDetailIds []*int, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
 	now := time.Now()
 	isDeleteParent := deliveryOrderDetailIds == nil
 	getDeliveryOrdersResultChan := make(chan *models.DeliveryOrderChan)
@@ -318,7 +314,7 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromDeleteEvent(deliveryO
 			doDetailOpenSearch.DoDetailMap(deliveryOrder, v)
 
 			createDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailOpenSearchChan)
-			go u.deliveryOrderDetailOpenSearchRepository.Create(doDetailOpenSearch, createDeliveryOrderDetailResultChan)
+			go u.deliveryOrderDetailOpenSearchRepository.Create(doDetailOpenSearch, v, sqlTransaction, ctx, createDeliveryOrderDetailResultChan)
 			createDeliveryOrderDetailResult := <-createDeliveryOrderDetailResultChan
 
 			if createDeliveryOrderDetailResult.Error != nil {
@@ -340,7 +336,7 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromDeleteEvent(deliveryO
 	}
 
 	createDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderOpenSearchRepository.Create(deliveryOrder, createDeliveryOrderResultChan)
+	go u.deliveryOrderOpenSearchRepository.Create(deliveryOrder, sqlTransaction, ctx, createDeliveryOrderResultChan)
 	deleteDeliveryOrderResult := <-createDeliveryOrderResultChan
 
 	if deleteDeliveryOrderResult.Error != nil {
@@ -366,7 +362,11 @@ func (u *deliveryOrderConsumerUseCase) Get(request *models.DeliveryOrderExportRe
 
 	doRequest := &models.DeliveryOrderRequest{}
 	doRequest.DeliveryOrderExportMap(request)
-	doRequest.PerPage = 50
+	perPage, err := strconv.Atoi(os.Getenv("EXPORT_PARTIAL"))
+	if err != nil {
+		perPage = constants.EXPORT_PARTIAL_DEFAULT
+	}
+	doRequest.PerPage = perPage
 	instalmentData := math.Ceil(float64(getDeliveryOrdersCountResult.Total) / float64(doRequest.PerPage))
 	data := [][]interface{}{constants.DELIVERY_ORDER_EXPORT_HEADER()}
 
@@ -382,12 +382,8 @@ func (u *deliveryOrderConsumerUseCase) Get(request *models.DeliveryOrderExportRe
 		for _, v := range getDeliveryOrdersResult.DeliveryOrders {
 			data = append(data, v.MapToCsvRow())
 		}
-		progres := math.Round(float64(i*doRequest.PerPage)/float64(getDeliveryOrdersCountResult.Total)) * 100
-		err := u.pusherRepository.Pubish(map[string]string{"message": fmt.Sprintf("%f", progres) + "%"})
-		if err != nil {
-			fmt.Println(err.Error())
-			return helper.WriteLog(err, http.StatusInternalServerError, nil)
-		}
+		progres := math.Round((float64((i*doRequest.PerPage)+len(getDeliveryOrdersResult.DeliveryOrders)) / float64(getDeliveryOrdersCountResult.Total)) * 100)
+		fmt.Println(request.FileName, progres, "%")
 	}
 
 	b, err := helper.GenerateExportBufferFile(data, request.FileType)
@@ -399,7 +395,14 @@ func (u *deliveryOrderConsumerUseCase) Get(request *models.DeliveryOrderExportRe
 		return helper.WriteLog(err, http.StatusInternalServerError, nil)
 	}
 
-	err = u.pusherRepository.Pubish(map[string]string{"message": "100%"})
+	pusherData := &models.Pusher{
+		Subject: "Export DO Summary",
+		Link:    fmt.Sprintf("%s/%s.%s", constants.DELIVERY_ORDER_EXPORT_PATH, request.FileName, request.FileType),
+		Type:    "export",
+		UserId:  strconv.Itoa(request.UserID),
+	}
+
+	err = u.pusherRepository.Publish(pusherData)
 	if err != nil {
 		fmt.Println(err.Error())
 		return helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -423,7 +426,11 @@ func (u *deliveryOrderConsumerUseCase) GetDetail(request *models.DeliveryOrderDe
 
 	doDetailRequest := &models.DeliveryOrderDetailOpenSearchRequest{}
 	doDetailRequest.DeliveryOrderDetailExportMap(request)
-	doDetailRequest.PerPage = 50
+	perPage, err := strconv.Atoi(os.Getenv("EXPORT_PARTIAL"))
+	if err != nil {
+		perPage = constants.EXPORT_PARTIAL_DEFAULT
+	}
+	doDetailRequest.PerPage = perPage
 	instalmentData := math.Ceil(float64(getDeliveryOrderDetailsCountResult.Total) / float64(doDetailRequest.PerPage))
 
 	data := [][]interface{}{constants.DELIVERY_ORDER_DETAIL_EXPORT_HEADER()}
@@ -447,12 +454,8 @@ func (u *deliveryOrderConsumerUseCase) GetDetail(request *models.DeliveryOrderDe
 			}
 			data = append(data, v.MapToCsvRow(getDeliveryOrdersResult.DeliveryOrder))
 		}
-		progres := math.Round(float64(i*doDetailRequest.PerPage)/float64(getDeliveryOrderDetailsCountResult.Total)) * 100
-		err := u.pusherRepository.Pubish(map[string]string{"message": fmt.Sprintf("%f", progres) + "%"})
-		if err != nil {
-			fmt.Println("pusher error = ", err.Error())
-			return helper.WriteLog(err, http.StatusInternalServerError, nil)
-		}
+		progres := math.Round((float64((i*doDetailRequest.PerPage)+len(getDeliveryOrderDetailsResult.DeliveryOrderDetailOpenSearch)) / float64(getDeliveryOrderDetailsCountResult.Total)) * 100)
+		fmt.Println(request.FileName, progres, "%")
 	}
 
 	b, err := helper.GenerateExportBufferFile(data, request.FileType)
@@ -464,7 +467,14 @@ func (u *deliveryOrderConsumerUseCase) GetDetail(request *models.DeliveryOrderDe
 		return helper.WriteLog(err, http.StatusInternalServerError, nil)
 	}
 
-	err = u.pusherRepository.Pubish(map[string]string{"message": "100%"})
+	pusherData := &models.Pusher{
+		Subject: "Export DO Detail",
+		Link:    fmt.Sprintf("%s/%s.%s", constants.DELIVERY_ORDER_DETAIL_EXPORT_PATH, request.FileName, request.FileType),
+		Type:    "export",
+		UserId:  strconv.Itoa(request.UserID),
+	}
+
+	err = u.pusherRepository.Publish(pusherData)
 	if err != nil {
 		fmt.Println("pusher error = ", err.Error())
 		return helper.WriteLog(err, http.StatusInternalServerError, nil)

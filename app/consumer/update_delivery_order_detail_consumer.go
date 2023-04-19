@@ -85,7 +85,7 @@ func (c *UpdateDeliveryOrderDetailConsumerHandler) ProcessMessage() {
 		deliveryOrderLog = deliveryOrderDetailResult.DeliveryOrderLog
 		deliveryOrderLog.Status = constants.LOG_STATUS_MONGO_ERROR
 		deliveryOrderLog.UpdatedAt = &now
-		errorLog := c.DeliveryOrderOpenSearchUseCase.SyncToOpenSearchFromUpdateEvent(&deliveryOrder, c.ctx)
+		errorLog := c.DeliveryOrderOpenSearchUseCase.SyncToOpenSearchFromUpdateEvent(&deliveryOrder, dbTransaction, c.ctx)
 
 		if errorLog.Err != nil {
 			dbTransaction.Rollback()

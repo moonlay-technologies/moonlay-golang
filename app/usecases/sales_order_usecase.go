@@ -1913,6 +1913,7 @@ func (u *salesOrderUseCase) Export(request *models.SalesOrderExportRequest, ctx 
 	}
 	fileName := fmt.Sprintf("SO-LIST-SUMMARY-%s-%d-%s", fileHour, ctx.Value("user").(*models.UserClaims).UserID, rand)
 	request.FileName = fileName
+	request.UserID = ctx.Value("user").(*models.UserClaims).UserID
 	keyKafka := []byte(uuid.New().String())
 	messageKafka, _ := json.Marshal(request)
 
@@ -1966,6 +1967,7 @@ func (u *salesOrderUseCase) ExportDetail(request *models.SalesOrderDetailExportR
 	}
 	fileName := fmt.Sprintf("SO-LIST-DETAIL-%s-%d-%s", fileHour, ctx.Value("user").(*models.UserClaims).UserID, rand)
 	request.FileName = fileName
+	request.UserID = ctx.Value("user").(*models.UserClaims).UserID
 	keyKafka := []byte(uuid.New().String())
 	messageKafka, _ := json.Marshal(request)
 

@@ -71,7 +71,7 @@ type deliveryOrderUseCase struct {
 	deliveryOrderLogRepository              mongoRepositories.DeliveryOrderLogRepositoryInterface
 	salesOrderJourneyRepository             mongoRepositories.SalesOrderJourneysRepositoryInterface
 	salesOrderDetailJourneyRepository       mongoRepositories.SalesOrderDetailJourneysRepositoryInterface
-	deliveryOrderJourneysRepository         mongoRepositories.DeliveryOrderJourneysRepositoryInterface
+	deliveryOrderJourneysRepository         mongoRepositories.DeliveryOrderJourneyRepositoryInterface
 	doUploadHistoriesRepository             mongoRepositories.DoUploadHistoriesRepositoryInterface
 	doUploadErrorLogsRepository             mongoRepositories.DoUploadErrorLogsRepositoryInterface
 	deliveryOrderOpenSearchRepository       openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface
@@ -82,7 +82,7 @@ type deliveryOrderUseCase struct {
 	ctx                                     context.Context
 }
 
-func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, deliveryOrderDetailRepository repositories.DeliveryOrderDetailRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, salesOrderJourneysRepository mongoRepositories.SalesOrderJourneysRepositoryInterface, salesOrderDetailJourneysRepository mongoRepositories.SalesOrderDetailJourneysRepositoryInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, deliveryOrderJourneysRepository mongoRepositories.DeliveryOrderJourneysRepositoryInterface, doUploadHistoriesRepository mongoRepositories.DoUploadHistoriesRepositoryInterface, doUploadErrorLogsRepository mongoRepositories.DoUploadErrorLogsRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderUseCaseInterface {
+func InitDeliveryOrderUseCaseInterface(deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, deliveryOrderDetailRepository repositories.DeliveryOrderDetailRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, salesOrderJourneysRepository mongoRepositories.SalesOrderJourneysRepositoryInterface, salesOrderDetailJourneysRepository mongoRepositories.SalesOrderDetailJourneysRepositoryInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, deliveryOrderJourneysRepository mongoRepositories.DeliveryOrderJourneyRepositoryInterface, doUploadHistoriesRepository mongoRepositories.DoUploadHistoriesRepositoryInterface, doUploadErrorLogsRepository mongoRepositories.DoUploadErrorLogsRepositoryInterface, deliveryOrderOpenSearchRepository openSearchRepositories.DeliveryOrderOpenSearchRepositoryInterface, deliveryOrderDetailOpenSearchRepository openSearchRepositories.DeliveryOrderDetailOpenSearchRepositoryInterface, salesOrderOpenSearchUseCase SalesOrderOpenSearchUseCaseInterface, kafkaClient kafkadbo.KafkaClientInterface, db dbresolver.DB, ctx context.Context) DeliveryOrderUseCaseInterface {
 	return &deliveryOrderUseCase{
 		deliveryOrderRepository:                 deliveryOrderRepository,
 		deliveryOrderDetailRepository:           deliveryOrderDetailRepository,
@@ -130,14 +130,6 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	if getBrandResult.Error != nil {
 		return &models.DeliveryOrderStoreResponse{}, getBrandResult.ErrorLog
 	}
-
-	// getOrderStatusResultChan := make(chan *models.OrderStatusChan)
-	// go u.orderStatusRepository.GetByNameAndType("open", "delivery_order", false, ctx, getOrderStatusResultChan)
-	// getOrderStatusResult := <-getOrderStatusResultChan
-
-	// if getOrderStatusResult.Error != nil {
-	// 	return &models.DeliveryOrderStoreResponse{}, getOrderStatusResult.ErrorLog
-	// }
 
 	getOrderSourceResultChan := make(chan *models.OrderSourceChan)
 	go u.orderSourceRepository.GetBySourceName("manager", false, ctx, getOrderSourceResultChan)
@@ -217,8 +209,6 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 	deliveryOrder.AgentMap(getAgentResult.Agent)
 	deliveryOrder.DoCode = helper.GenerateDOCode(getAgentResult.Agent.ID, getOrderSourceResult.OrderSource.Code)
 	deliveryOrder.DoDate = now.Format(constants.DATE_FORMAT_COMMON)
-	// deliveryOrder.OrderStatus = getOrderStatusResult.OrderStatus
-	// deliveryOrder.OrderStatusID = getOrderStatusResult.OrderStatus.ID
 	deliveryOrder.OrderSource = getOrderSourceResult.OrderSource
 	deliveryOrder.OrderSourceID = getOrderSourceResult.OrderSource.ID
 	deliveryOrder.Store = getStoreResult.Store
@@ -360,7 +350,7 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 
 	for _, otherDO := range otherDeiveryOrders {
 		updateDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-		go u.deliveryOrderRepository.UpdateByID(otherDO.ID, otherDO, sqlTransaction, ctx, updateDeliveryOrderResultChan)
+		go u.deliveryOrderRepository.UpdateByID(otherDO.ID, otherDO, fmt.Sprintf("Auto Update By Insert DO %d", deliveryOrder.ID), true, sqlTransaction, ctx, updateDeliveryOrderResultChan)
 		updateDeliveryOrderResult := <-updateDeliveryOrderResultChan
 
 		if updateDeliveryOrderResult.Error != nil {
@@ -382,25 +372,6 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 
 		if createDeliveryOrderLogResult.Error != nil {
 			return &models.DeliveryOrderStoreResponse{}, createDeliveryOrderLogResult.ErrorLog
-		}
-
-		deliveryOrderJourney := &models.DeliveryOrderJourney{
-			DoId:      deliveryOrder.ID,
-			DoCode:    deliveryOrder.DoCode,
-			DoDate:    deliveryOrder.DoDate,
-			Status:    helper.GetDOJourneyStatus(deliveryOrder.OrderStatusID),
-			Remark:    "Auto Update By Insert",
-			Reason:    "",
-			CreatedAt: &now,
-			UpdatedAt: &now,
-		}
-
-		createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
-		go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, ctx, createDeliveryOrderJourneyChan)
-		createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
-
-		if createDeliveryOrderJourneysResult.Error != nil {
-			return &models.DeliveryOrderStoreResponse{}, createDeliveryOrderJourneysResult.ErrorLog
 		}
 
 		keyKafka := []byte(otherDO.DoCode)
@@ -488,25 +459,6 @@ func (u *deliveryOrderUseCase) Create(request *models.DeliveryOrderStoreRequest,
 
 	if createDeliveryOrderLogResult.Error != nil {
 		return &models.DeliveryOrderStoreResponse{}, createDeliveryOrderLogResult.ErrorLog
-	}
-
-	deliveryOrderJourney := &models.DeliveryOrderJourney{
-		DoId:      deliveryOrder.ID,
-		DoCode:    deliveryOrder.DoCode,
-		DoDate:    deliveryOrder.DoDate,
-		Status:    helper.GetDOJourneyStatus(deliveryOrder.OrderStatusID),
-		Remark:    "",
-		Reason:    "",
-		CreatedAt: &now,
-		UpdatedAt: &now,
-	}
-
-	createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
-	go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, ctx, createDeliveryOrderJourneyChan)
-	createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
-
-	if createDeliveryOrderJourneysResult.Error != nil {
-		return &models.DeliveryOrderStoreResponse{}, createDeliveryOrderJourneysResult.ErrorLog
 	}
 
 	keyKafka := []byte(deliveryOrder.DoCode)
@@ -731,7 +683,7 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 	deliveryOrder.OrderStatusName = getOrderStatusResult.OrderStatus.Name
 
 	updateDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderRepository.UpdateByID(getDeliveryOrderResult.DeliveryOrder.ID, deliveryOrder, sqlTransaction, ctx, updateDeliveryOrderResultChan)
+	go u.deliveryOrderRepository.UpdateByID(getDeliveryOrderResult.DeliveryOrder.ID, deliveryOrder, "", true, sqlTransaction, ctx, updateDeliveryOrderResultChan)
 	updateDeliveryOrderResult := <-updateDeliveryOrderResultChan
 
 	if updateDeliveryOrderResult.Error != nil {
@@ -785,25 +737,6 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 		return &models.DeliveryOrderUpdateByIDRequest{}, errorLogData
 	}
 
-	deliveryOrderJourney := &models.DeliveryOrderJourney{
-		DoId:      deliveryOrder.ID,
-		DoCode:    deliveryOrder.DoCode,
-		DoDate:    deliveryOrder.DoDate,
-		Status:    helper.GetDOJourneyStatus(deliveryOrder.OrderStatusID),
-		Remark:    "",
-		Reason:    "",
-		CreatedAt: &now,
-		UpdatedAt: &now,
-	}
-
-	updateDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
-	go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, ctx, updateDeliveryOrderJourneyChan)
-	updateDeliveryOrderJourneysResult := <-updateDeliveryOrderJourneyChan
-
-	if updateDeliveryOrderJourneysResult.Error != nil {
-		return &models.DeliveryOrderUpdateByIDRequest{}, updateDeliveryOrderJourneysResult.ErrorLog
-	}
-
 	keyKafka := []byte(deliveryOrder.DoCode)
 	messageKafka, _ := json.Marshal(deliveryOrder)
 	err := u.kafkaClient.WriteToTopic(constants.UPDATE_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
@@ -835,30 +768,11 @@ func (u *deliveryOrderUseCase) UpdateByID(ID int, request *models.DeliveryOrderU
 
 				otherDO.DeliveryOrderDetails = otherDoDetails
 				updateOtherDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-				go u.deliveryOrderRepository.UpdateByID(otherDO.ID, otherDO, sqlTransaction, ctx, updateOtherDeliveryOrderResultChan)
+				go u.deliveryOrderRepository.UpdateByID(otherDO.ID, otherDO, fmt.Sprintf("Auto Update By Update DO %d", getDeliveryOrderDetailResult.ID), true, sqlTransaction, ctx, updateOtherDeliveryOrderResultChan)
 				updateOtherDeliveryOrderResult := <-updateOtherDeliveryOrderResultChan
 
 				if updateOtherDeliveryOrderResult.Error != nil {
 					return &models.DeliveryOrderUpdateByIDRequest{}, updateOtherDeliveryOrderResult.ErrorLog
-				}
-
-				otherDeliveryOrderJourney := &models.DeliveryOrderJourney{
-					DoId:      otherDO.ID,
-					DoCode:    otherDO.DoCode,
-					DoDate:    otherDO.DoDate,
-					Status:    helper.GetDOJourneyStatus(otherDO.OrderStatusID),
-					Remark:    "",
-					Reason:    "",
-					CreatedAt: &now,
-					UpdatedAt: &now,
-				}
-
-				updateOtherDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
-				go u.deliveryOrderLogRepository.InsertJourney(otherDeliveryOrderJourney, ctx, updateOtherDeliveryOrderJourneyChan)
-				updateOtherDeliveryOrderJourneysResult := <-updateOtherDeliveryOrderJourneyChan
-
-				if updateOtherDeliveryOrderJourneysResult.Error != nil {
-					return &models.DeliveryOrderUpdateByIDRequest{}, updateOtherDeliveryOrderJourneysResult.ErrorLog
 				}
 
 				keyKafka := []byte(otherDO.DoCode)
@@ -1062,7 +976,7 @@ func (u *deliveryOrderUseCase) UpdateDODetailByID(id int, request *models.Delive
 	deliveryOrder.OrderStatusName = getOrderStatusResult.OrderStatus.Name
 
 	updateDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderRepository.UpdateByID(getDeliveryOrderResult.DeliveryOrder.ID, deliveryOrder, sqlTransaction, ctx, updateDeliveryOrderResultChan)
+	go u.deliveryOrderRepository.UpdateByID(getDeliveryOrderResult.DeliveryOrder.ID, deliveryOrder, "", true, sqlTransaction, ctx, updateDeliveryOrderResultChan)
 	updateDeliveryOrderResult := <-updateDeliveryOrderResultChan
 
 	if updateDeliveryOrderResult.Error != nil {
@@ -1116,25 +1030,6 @@ func (u *deliveryOrderUseCase) UpdateDODetailByID(id int, request *models.Delive
 		return &models.DeliveryOrderDetailUpdateByIDRequest{}, errorLogData
 	}
 
-	deliveryOrderJourney := &models.DeliveryOrderJourney{
-		DoId:      deliveryOrder.ID,
-		DoCode:    deliveryOrder.DoCode,
-		DoDate:    deliveryOrder.DoDate,
-		Status:    helper.GetDOJourneyStatus(deliveryOrder.OrderStatusID),
-		Remark:    "",
-		Reason:    "",
-		CreatedAt: &now,
-		UpdatedAt: &now,
-	}
-
-	updateDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
-	go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, ctx, updateDeliveryOrderJourneyChan)
-	updateDeliveryOrderJourneysResult := <-updateDeliveryOrderJourneyChan
-
-	if updateDeliveryOrderJourneysResult.Error != nil {
-		return &models.DeliveryOrderDetailUpdateByIDRequest{}, updateDeliveryOrderJourneysResult.ErrorLog
-	}
-
 	keyKafka := []byte(deliveryOrder.DoCode)
 	messageKafka, _ := json.Marshal(deliveryOrder)
 	err := u.kafkaClient.WriteToTopic(constants.UPDATE_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
@@ -1166,30 +1061,11 @@ func (u *deliveryOrderUseCase) UpdateDODetailByID(id int, request *models.Delive
 
 				otherDO.DeliveryOrderDetails = otherDoDetails
 				updateOtherDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-				go u.deliveryOrderRepository.UpdateByID(otherDO.ID, otherDO, sqlTransaction, ctx, updateOtherDeliveryOrderResultChan)
+				go u.deliveryOrderRepository.UpdateByID(otherDO.ID, otherDO, fmt.Sprintf("Auto Update By Update DO Detail %d", id), true, sqlTransaction, ctx, updateOtherDeliveryOrderResultChan)
 				updateOtherDeliveryOrderResult := <-updateOtherDeliveryOrderResultChan
 
 				if updateOtherDeliveryOrderResult.Error != nil {
 					return &models.DeliveryOrderDetailUpdateByIDRequest{}, updateOtherDeliveryOrderResult.ErrorLog
-				}
-
-				otherDeliveryOrderJourney := &models.DeliveryOrderJourney{
-					DoId:      otherDO.ID,
-					DoCode:    otherDO.DoCode,
-					DoDate:    otherDO.DoDate,
-					Status:    helper.GetDOJourneyStatus(otherDO.OrderStatusID),
-					Remark:    "",
-					Reason:    "",
-					CreatedAt: &now,
-					UpdatedAt: &now,
-				}
-
-				updateOtherDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
-				go u.deliveryOrderLogRepository.InsertJourney(otherDeliveryOrderJourney, ctx, updateOtherDeliveryOrderJourneyChan)
-				updateDeliveryOrderJourneysResult := <-updateOtherDeliveryOrderJourneyChan
-
-				if updateDeliveryOrderJourneysResult.Error != nil {
-					return &models.DeliveryOrderDetailUpdateByIDRequest{}, updateDeliveryOrderJourneysResult.ErrorLog
 				}
 
 				keyKafka := []byte(otherDO.DoCode)
@@ -1380,7 +1256,7 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 	deliveryOrder.OrderStatusName = getOrderStatusResult.OrderStatus.Name
 
 	updateDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderRepository.UpdateByID(getDeliveryOrderResult.DeliveryOrder.ID, deliveryOrder, sqlTransaction, ctx, updateDeliveryOrderResultChan)
+	go u.deliveryOrderRepository.UpdateByID(getDeliveryOrderResult.DeliveryOrder.ID, deliveryOrder, "", true, sqlTransaction, ctx, updateDeliveryOrderResultChan)
 	updateDeliveryOrderResult := <-updateDeliveryOrderResultChan
 
 	if updateDeliveryOrderResult.Error != nil {
@@ -1484,30 +1360,11 @@ func (u *deliveryOrderUseCase) UpdateDoDetailByDeliveryOrderID(deliveryOrderID i
 
 				otherDO.DeliveryOrderDetails = otherDoDetails
 				updateOtherDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-				go u.deliveryOrderRepository.UpdateByID(otherDO.ID, otherDO, sqlTransaction, ctx, updateOtherDeliveryOrderResultChan)
+				go u.deliveryOrderRepository.UpdateByID(otherDO.ID, otherDO, fmt.Sprintf("Auto Update By Update DO %d", deliveryOrderID), true, sqlTransaction, ctx, updateOtherDeliveryOrderResultChan)
 				updateOtherDeliveryOrderResult := <-updateOtherDeliveryOrderResultChan
 
 				if updateOtherDeliveryOrderResult.Error != nil {
 					return &models.DeliveryOrderDetails{}, updateOtherDeliveryOrderResult.ErrorLog
-				}
-
-				otherDeliveryOrderJourney := &models.DeliveryOrderJourney{
-					DoId:      otherDO.ID,
-					DoCode:    otherDO.DoCode,
-					DoDate:    otherDO.DoDate,
-					Status:    helper.GetDOJourneyStatus(otherDO.OrderStatusID),
-					Remark:    "",
-					Reason:    "",
-					CreatedAt: &now,
-					UpdatedAt: &now,
-				}
-
-				updateOtherDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
-				go u.deliveryOrderLogRepository.InsertJourney(otherDeliveryOrderJourney, ctx, updateOtherDeliveryOrderJourneyChan)
-				updateOtherDeliveryOrderJourneysResult := <-updateOtherDeliveryOrderJourneyChan
-
-				if updateOtherDeliveryOrderJourneysResult.Error != nil {
-					return &models.DeliveryOrderDetails{}, updateOtherDeliveryOrderJourneysResult.ErrorLog
 				}
 
 				keyKafka := []byte(otherDO.DoCode)
@@ -1609,6 +1466,7 @@ func (u *deliveryOrderUseCase) Export(request *models.DeliveryOrderExportRequest
 		return "", errorLogData
 	}
 	request.FileName = fmt.Sprintf("SJ-LIST-SUMMARY-%s-%d-%s", fileHour, ctx.Value("user").(*models.UserClaims).UserID, rand)
+	request.UserID = ctx.Value("user").(*models.UserClaims).UserID
 	keyKafka := []byte(uuid.New().String())
 	messageKafka, _ := json.Marshal(request)
 	err = u.kafkaClient.WriteToTopic(constants.EXPORT_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
@@ -1660,6 +1518,7 @@ func (u *deliveryOrderUseCase) ExportDetail(request *models.DeliveryOrderDetailE
 		return "", errorLogData
 	}
 	request.FileName = fmt.Sprintf("SJ-LIST-DETAIL-%s-%d-%s", fileHour, ctx.Value("user").(*models.UserClaims).UserID, rand)
+	request.UserID = ctx.Value("user").(*models.UserClaims).UserID
 	keyKafka := []byte(uuid.New().String())
 	messageKafka, _ := json.Marshal(request)
 	err = u.kafkaClient.WriteToTopic(constants.EXPORT_DELIVERY_ORDER_DETAIL_TOPIC, keyKafka, messageKafka)
@@ -2241,7 +2100,7 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx, ctx con
 	}
 	getDeliveryOrderByIDResult.DeliveryOrder.DeliveryOrderDetails = doDetails
 	deleteDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderRepository.DeleteByID(getDeliveryOrderByIDResult.DeliveryOrder, ctx, deleteDeliveryOrderResultChan)
+	go u.deliveryOrderRepository.DeleteByID(getDeliveryOrderByIDResult.DeliveryOrder, sqlTransaction, ctx, deleteDeliveryOrderResultChan)
 	deleteDeliveryOrderResult := <-deleteDeliveryOrderResultChan
 
 	if deleteDeliveryOrderResult.ErrorLog != nil {
@@ -2295,24 +2154,6 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx, ctx con
 		}
 	}
 
-	deliveryOrderJourney := &models.DeliveryOrderJourney{
-		DoId:      getDeliveryOrderByIDResult.DeliveryOrder.ID,
-		DoCode:    getDeliveryOrderByIDResult.DeliveryOrder.DoCode,
-		DoDate:    getDeliveryOrderByIDResult.DeliveryOrder.DoDate,
-		Status:    constants.DO_STATUS_CANCEL,
-		Remark:    "",
-		Reason:    "",
-		CreatedAt: &now,
-		UpdatedAt: &now,
-	}
-
-	createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
-	go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, ctx, createDeliveryOrderJourneyChan)
-	createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
-
-	if createDeliveryOrderJourneysResult.Error != nil {
-		return createDeliveryOrderJourneysResult.ErrorLog
-	}
 	keyKafka := []byte(getDeliveryOrderByIDResult.DeliveryOrder.DoCode)
 	messageKafka, _ := json.Marshal(
 		&models.DeliveryOrder{
@@ -2394,25 +2235,6 @@ func (u deliveryOrderUseCase) DeleteDetailByID(id int, sqlTransaction *sql.Tx, c
 
 	if createDeliveryOrderLogResult.Error != nil {
 		return createDeliveryOrderLogResult.ErrorLog
-	}
-
-	deliveryOrderJourney := &models.DeliveryOrderJourney{
-		DoId:      getDeliveryOrderByIDResult.DeliveryOrder.ID,
-		DoCode:    getDeliveryOrderByIDResult.DeliveryOrder.DoCode,
-		DoDate:    getDeliveryOrderByIDResult.DeliveryOrder.DoDate,
-		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
-		Remark:    "",
-		Reason:    "",
-		CreatedAt: &now,
-		UpdatedAt: &now,
-	}
-
-	createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
-	go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, ctx, createDeliveryOrderJourneyChan)
-	createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
-
-	if createDeliveryOrderJourneysResult.Error != nil {
-		return createDeliveryOrderJourneysResult.ErrorLog
 	}
 
 	keyKafka := []byte(getDeliveryOrderDetailByIDResult.DeliveryOrderDetail.DoDetailCode)
@@ -2525,7 +2347,7 @@ func (u deliveryOrderUseCase) DeleteDetailByDoID(id int, sqlTransaction *sql.Tx,
 		DoId:      getDeliveryOrderByIDResult.DeliveryOrder.ID,
 		DoCode:    getDeliveryOrderByIDResult.DeliveryOrder.DoCode,
 		DoDate:    getDeliveryOrderByIDResult.DeliveryOrder.DoDate,
-		Status:    constants.LOG_STATUS_MONGO_DEFAULT,
+		Status:    constants.DO_STATUS_CANCEL,
 		Remark:    "",
 		Reason:    "",
 		CreatedAt: &now,
