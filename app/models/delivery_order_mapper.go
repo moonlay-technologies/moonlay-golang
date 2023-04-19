@@ -494,7 +494,7 @@ func (d *DeliveryOrderCsvResponse) DeliveryOrderMap(r *DeliveryOrder) {
 	d.DoDate = r.DoDate
 	d.SjNo = r.DoRefCode
 	d.DoNo = r.DoCode
-	d.OrderNo = r.SalesOrder.SoCode
+	d.OrderNo = r.SalesOrder.SoRefCode.String
 	d.SoNo = r.SalesOrder.SoCode
 	d.SoSource = r.SalesOrder.OrderSourceName
 	d.AgentID = r.AgentID
