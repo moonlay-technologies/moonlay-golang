@@ -23,7 +23,7 @@ type DeliveryOrderRepositoryInterface interface {
 	Insert(request *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.DeliveryOrderChan)
 	GetByID(id int, countOnly bool, ctx context.Context, result chan *models.DeliveryOrderChan)
 	UpdateByID(id int, deliveryOrder *models.DeliveryOrder, jouneyRemarks string, isInsertToJourney bool, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.DeliveryOrderChan)
-	DeleteByID(request *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.DeliveryOrderChan)
+	DeleteByID(request *models.DeliveryOrder, isWriteJourney bool, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.DeliveryOrderChan)
 	GetByDoRefCode(doRefCode string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderChan)
 }
 
@@ -534,7 +534,7 @@ func (r *deliveryOrder) UpdateByID(id int, request *models.DeliveryOrder, jouney
 	resultChan <- response
 	return
 }
-func (r *deliveryOrder) DeleteByID(request *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.DeliveryOrderChan) {
+func (r *deliveryOrder) DeleteByID(request *models.DeliveryOrder, isWriteJourney bool, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.DeliveryOrderChan) {
 	now := time.Now()
 	request.DeletedAt = &now
 	request.UpdatedAt = &now
@@ -567,16 +567,18 @@ func (r *deliveryOrder) DeleteByID(request *models.DeliveryOrder, sqlTransaction
 		return
 	}
 
-	createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
-	go r.deliveryOrderJourneysRepository.InsertFromDO(request, "", *request.CreatedAt, ctx, createDeliveryOrderJourneyChan)
-	createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
+	if isWriteJourney {
+		createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
+		go r.deliveryOrderJourneysRepository.InsertFromDO(request, "", *request.CreatedAt, ctx, createDeliveryOrderJourneyChan)
+		createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
 
-	if createDeliveryOrderJourneysResult.Error != nil {
-		errorLogData := helper.WriteLog(createDeliveryOrderJourneysResult.Error, http.StatusInternalServerError, nil)
-		response.Error = createDeliveryOrderJourneysResult.Error
-		response.ErrorLog = errorLogData
-		resultChan <- response
-		return
+		if createDeliveryOrderJourneysResult.Error != nil {
+			errorLogData := helper.WriteLog(createDeliveryOrderJourneysResult.Error, http.StatusInternalServerError, nil)
+			response.Error = createDeliveryOrderJourneysResult.Error
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
 	}
 
 	deliveryOrderID, err := result.LastInsertId()

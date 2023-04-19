@@ -2068,7 +2068,7 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx, ctx con
 	isOpen := false
 	doDetails := []*models.DeliveryOrderDetail{}
 	for _, v := range getDeliveryOrderDetailsByIDResult.DeliveryOrderDetails {
-		if v.Qty > 0 {
+		if v.OrderStatusID == 18 {
 			isOpen = true
 		}
 		getSalesOrderDetailByIDResultChan := make(chan *models.SalesOrderDetailChan)
@@ -2107,7 +2107,7 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx, ctx con
 	}
 	getDeliveryOrderByIDResult.DeliveryOrder.DeliveryOrderDetails = doDetails
 	deleteDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderRepository.DeleteByID(getDeliveryOrderByIDResult.DeliveryOrder, sqlTransaction, ctx, deleteDeliveryOrderResultChan)
+	go u.deliveryOrderRepository.DeleteByID(getDeliveryOrderByIDResult.DeliveryOrder, false, sqlTransaction, ctx, deleteDeliveryOrderResultChan)
 	deleteDeliveryOrderResult := <-deleteDeliveryOrderResultChan
 
 	if deleteDeliveryOrderResult.ErrorLog != nil {
@@ -2159,6 +2159,24 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx, ctx con
 		if createDeliveryOrderJourneysResult.Error != nil {
 			return createDeliveryOrderJourneysResult.ErrorLog
 		}
+	}
+
+	deliveryOrderJourney := &models.DeliveryOrderJourney{
+		DoId:      getDeliveryOrderByIDResult.DeliveryOrder.ID,
+		DoCode:    getDeliveryOrderByIDResult.DeliveryOrder.DoCode,
+		DoDate:    getDeliveryOrderByIDResult.DeliveryOrder.DoDate,
+		Status:    constants.DO_STATUS_CANCEL,
+		Remark:    "",
+		Reason:    "",
+		CreatedAt: &now,
+		UpdatedAt: &now}
+
+	createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
+	go u.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, ctx, createDeliveryOrderJourneyChan)
+	createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
+
+	if createDeliveryOrderJourneysResult.Error != nil {
+		return createDeliveryOrderJourneysResult.ErrorLog
 	}
 
 	keyKafka := []byte(getDeliveryOrderByIDResult.DeliveryOrder.DoCode)
