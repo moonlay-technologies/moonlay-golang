@@ -35,6 +35,7 @@ func (deliveryOrder *DeliveryOrder) AgentMap(request *Agent) {
 }
 
 func (deliveryOrderDetailResponse *DeliveryOrderDetailStoreResponse) DeliveryOrderDetailMap(request *DeliveryOrderDetail) {
+	deliveryOrderDetailResponse.ID = request.ID
 	deliveryOrderDetailResponse.DeliveryOrderID = request.DeliveryOrderID
 	deliveryOrderDetailResponse.OrderStatusID = request.OrderStatus.ID
 	deliveryOrderDetailResponse.SoDetailID = request.SoDetailID
@@ -48,6 +49,94 @@ func (deliveryOrderDetailResponse *DeliveryOrderDetailStoreResponse) DeliveryOrd
 	deliveryOrderDetailResponse.Qty = request.Qty
 	deliveryOrderDetailResponse.Note = request.Note.String
 	return
+}
+
+func (d *DeliveryOrderDetail) DoDetailUpdateMap(r *DeliveryOrderDetail) {
+	defaultDo := &DeliveryOrderDetail{}
+	if r.ID != 0 {
+		d.ID = r.ID
+	}
+	if r.DeliveryOrderID != 0 {
+		d.DeliveryOrderID = r.DeliveryOrderID
+	}
+	if r.SoDetailID != 0 {
+		d.SoDetailID = r.SoDetailID
+	}
+	if r.SoDetail != nil {
+		d.SoDetail = r.SoDetail
+	}
+	if r.BrandID != 0 {
+		d.BrandID = r.BrandID
+	}
+	if r.Brand != nil {
+		d.Brand = r.Brand
+	}
+	if r.BrandName != "" {
+		d.BrandName = r.BrandName
+	}
+	if r.ProductID != 0 {
+		d.ProductID = r.ProductID
+	}
+	if r.Product != nil {
+		d.Product = r.Product
+	}
+	if r.ProductSKU != "" {
+		d.ProductSKU = r.ProductSKU
+	}
+	if r.ProductName != "" {
+		d.ProductName = r.ProductName
+	}
+	if r.UomID != 0 {
+		d.UomID = r.UomID
+	}
+	if r.Uom != nil {
+		d.Uom = r.Uom
+	}
+	if r.UomCode != "" {
+		d.UomCode = r.UomCode
+	}
+	if r.UomName != "" {
+		d.UomName = r.UomName
+	}
+	if r.OrderStatusID != 0 {
+		d.OrderStatusID = r.OrderStatusID
+	}
+	if r.OrderStatus != nil {
+		d.OrderStatus = r.OrderStatus
+	}
+	if r.OrderStatusName != "" {
+		d.OrderStatusName = r.OrderStatusName
+	}
+	if r.DoDetailCode != "" {
+		d.DoDetailCode = r.DoDetailCode
+	}
+	d.Qty = r.Qty
+	d.SentQty = r.SentQty
+	d.ResidualQty = r.ResidualQty
+	if r.Price != 0 {
+		d.Price = r.Price
+	}
+	if r.Note != defaultDo.Note {
+		d.Note = r.Note
+	}
+	if r.IsDoneSyncToEs != defaultDo.IsDoneSyncToEs {
+		d.IsDoneSyncToEs = r.IsDoneSyncToEs
+	}
+	if r.StartDateSyncToEs != nil {
+		d.StartDateSyncToEs = r.StartDateSyncToEs
+	}
+	if r.EndDateSyncToEs != nil {
+		d.EndDateSyncToEs = r.EndDateSyncToEs
+	}
+	if r.CreatedAt != nil {
+		d.CreatedAt = r.CreatedAt
+	}
+	if r.UpdatedAt != nil {
+		d.UpdatedAt = r.UpdatedAt
+	}
+	if r.DeletedAt != nil {
+		d.DeletedAt = r.DeletedAt
+	}
 }
 
 func (deliveryOrderResponse *DeliveryOrderStoreResponse) DeliveryOrderMap(deliveryOrder *DeliveryOrder) {
