@@ -23,7 +23,7 @@ type DeliveryOrderRepositoryInterface interface {
 	Insert(request *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.DeliveryOrderChan)
 	GetByID(id int, countOnly bool, ctx context.Context, result chan *models.DeliveryOrderChan)
 	UpdateByID(id int, deliveryOrder *models.DeliveryOrder, jouneyRemarks string, isInsertToJourney bool, sqlTransaction *sql.Tx, ctx context.Context, result chan *models.DeliveryOrderChan)
-	DeleteByID(request *models.DeliveryOrder, ctx context.Context, resultChan chan *models.DeliveryOrderChan)
+	DeleteByID(request *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.DeliveryOrderChan)
 	GetByDoRefCode(doRefCode string, countOnly bool, ctx context.Context, resultChan chan *models.DeliveryOrderChan)
 }
 
@@ -372,8 +372,20 @@ func (r *deliveryOrder) Insert(request *models.DeliveryOrder, sqlTransaction *sq
 		return
 	}
 
+	deliveryOrderID, err := result.LastInsertId()
+	response.ID = deliveryOrderID
+	request.ID = int(deliveryOrderID)
+
+	if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	}
+
 	createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
-	r.deliveryOrderJourneysRepository.InsertFromDO(request, "", *request.CreatedAt, ctx, createDeliveryOrderJourneyChan)
+	go r.deliveryOrderJourneysRepository.InsertFromDO(request, "", *request.CreatedAt, ctx, createDeliveryOrderJourneyChan)
 	createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
 
 	if createDeliveryOrderJourneysResult.Error != nil {
@@ -384,21 +396,9 @@ func (r *deliveryOrder) Insert(request *models.DeliveryOrder, sqlTransaction *sq
 		return
 	}
 
-	deliveryOrderID, err := result.LastInsertId()
-
-	if err != nil {
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-		response.Error = err
-		response.ErrorLog = errorLogData
-		resultChan <- response
-		return
-	}
-
 	deliveryOrderRedisKey := fmt.Sprintf("%s", constants.DELIVERY_ORDER+"*")
 	_, err = r.redisdb.Client().Del(ctx, deliveryOrderRedisKey).Result()
 
-	response.ID = deliveryOrderID
-	request.ID = int(deliveryOrderID)
 	response.DeliveryOrder = request
 	resultChan <- response
 	return
@@ -424,12 +424,12 @@ func (r *deliveryOrder) UpdateByID(id int, request *models.DeliveryOrder, jouney
 	}
 
 	if request.AgentID != 0 {
-		query := fmt.Sprintf("%s=%v", "agent_id", request.StoreID)
+		query := fmt.Sprintf("%s=%v", "agent_id", request.AgentID)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
 	if request.StoreID != 0 {
-		query := fmt.Sprintf("%s=%v", "store_id", request.AgentID)
+		query := fmt.Sprintf("%s=%v", "store_id", request.Store)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 
@@ -501,16 +501,19 @@ func (r *deliveryOrder) UpdateByID(id int, request *models.DeliveryOrder, jouney
 		return
 	}
 
-	createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
-	r.deliveryOrderJourneysRepository.InsertFromDO(request, "", *request.CreatedAt, ctx, createDeliveryOrderJourneyChan)
-	createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
+	if isInsertToJourney {
 
-	if createDeliveryOrderJourneysResult.Error != nil {
-		errorLogData := helper.WriteLog(createDeliveryOrderJourneysResult.Error, http.StatusInternalServerError, nil)
-		response.Error = createDeliveryOrderJourneysResult.Error
-		response.ErrorLog = errorLogData
-		resultChan <- response
-		return
+		createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
+		go r.deliveryOrderJourneysRepository.InsertFromDO(request, "", *request.CreatedAt, ctx, createDeliveryOrderJourneyChan)
+		createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
+
+		if createDeliveryOrderJourneysResult.Error != nil {
+			errorLogData := helper.WriteLog(createDeliveryOrderJourneysResult.Error, http.StatusInternalServerError, nil)
+			response.Error = createDeliveryOrderJourneysResult.Error
+			response.ErrorLog = errorLogData
+			resultChan <- response
+			return
+		}
 	}
 
 	deliveryOrderID, err := result.LastInsertId()
@@ -531,7 +534,7 @@ func (r *deliveryOrder) UpdateByID(id int, request *models.DeliveryOrder, jouney
 	resultChan <- response
 	return
 }
-func (r *deliveryOrder) DeleteByID(request *models.DeliveryOrder, ctx context.Context, resultChan chan *models.DeliveryOrderChan) {
+func (r *deliveryOrder) DeleteByID(request *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context, resultChan chan *models.DeliveryOrderChan) {
 	now := time.Now()
 	request.DeletedAt = &now
 	request.UpdatedAt = &now
@@ -554,7 +557,6 @@ func (r *deliveryOrder) DeleteByID(request *models.DeliveryOrder, ctx context.Co
 	rawSqlQueriesJoin := strings.Join(rawSqlQueries, ",")
 	updateQuery := fmt.Sprintf("UPDATE "+constants.DELIVERY_ORDERS_TABLE+" set %v WHERE id = ?", rawSqlQueriesJoin)
 
-	sqlTransaction, err := r.db.BeginTx(ctx, nil)
 	result, err := sqlTransaction.ExecContext(ctx, updateQuery, request.ID)
 
 	if err != nil {
@@ -566,7 +568,7 @@ func (r *deliveryOrder) DeleteByID(request *models.DeliveryOrder, ctx context.Co
 	}
 
 	createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
-	r.deliveryOrderJourneysRepository.InsertFromDO(request, "", *request.CreatedAt, ctx, createDeliveryOrderJourneyChan)
+	go r.deliveryOrderJourneysRepository.InsertFromDO(request, "", *request.CreatedAt, ctx, createDeliveryOrderJourneyChan)
 	createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
 
 	if createDeliveryOrderJourneysResult.Error != nil {

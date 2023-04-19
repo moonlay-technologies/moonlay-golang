@@ -2100,7 +2100,7 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx, ctx con
 	}
 	getDeliveryOrderByIDResult.DeliveryOrder.DeliveryOrderDetails = doDetails
 	deleteDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-	go u.deliveryOrderRepository.DeleteByID(getDeliveryOrderByIDResult.DeliveryOrder, ctx, deleteDeliveryOrderResultChan)
+	go u.deliveryOrderRepository.DeleteByID(getDeliveryOrderByIDResult.DeliveryOrder, sqlTransaction, ctx, deleteDeliveryOrderResultChan)
 	deleteDeliveryOrderResult := <-deleteDeliveryOrderResultChan
 
 	if deleteDeliveryOrderResult.ErrorLog != nil {

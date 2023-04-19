@@ -58,7 +58,7 @@ func (r *deliveryOrderOpenSearch) Create(request *models.DeliveryOrder, sqlTrans
 	}
 
 	updateDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)
-	r.deliveryOrderRepository.UpdateByID(request.ID, request, "", false, sqlTransaction, ctx, updateDeliveryOrderResultChan)
+	go r.deliveryOrderRepository.UpdateByID(request.ID, request, "", false, sqlTransaction, ctx, updateDeliveryOrderResultChan)
 	updateDeliveryOrderResult := <-updateDeliveryOrderResultChan
 
 	if updateDeliveryOrderResult.Error != nil {
