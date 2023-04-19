@@ -125,7 +125,7 @@ func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(salesOrder
 			return errorLogData
 		}
 
-		salesOrder.SalesOrderDetails[k].FirstCategoryId = getProductResult.Product.CategoryID
+		salesOrder.SalesOrderDetails[k].FirstCategoryId = int(getLastCategoryResult.Category.ParentID.Int64)
 		if getFirstCategoryResult.Category != nil {
 			salesOrder.SalesOrderDetails[k].FirstCategoryName = &getFirstCategoryResult.Category.Name
 		}
@@ -265,7 +265,7 @@ func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(salesOrder
 			return errorLogData
 		}
 
-		salesOrder.SalesOrderDetails[k].FirstCategoryId = getProductResult.Product.CategoryID
+		salesOrder.SalesOrderDetails[k].FirstCategoryId = int(getLastCategoryResult.Category.ParentID.Int64)
 		if getFirstCategoryResult.Category != nil {
 			salesOrder.SalesOrderDetails[k].FirstCategoryName = &getFirstCategoryResult.Category.Name
 		}
