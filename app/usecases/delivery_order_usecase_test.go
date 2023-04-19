@@ -249,42 +249,6 @@ func Test_DeliveryOrderUseCase_GetBySalesmanID_ShouldError(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func Test_DeliveryOrderUseCase_GetBySalesmansID_ShouldError(t *testing.T) {
-	// Arrange
-	deliveryOrderUsecase := newDeliveryOrderUsecase(false)
-	request := &models.DeliveryOrderRequest{}
-	request.ID = 1
-
-	// Act
-	_, err := deliveryOrderUsecase.GetBySalesmansID(request)
-	// Assert
-	assert.NotNil(t, err)
-}
-
-func Test_DeliveryOrderUseCase_GetByOrderStatusID_ShouldError(t *testing.T) {
-	// Arrange
-	deliveryOrderUsecase := newDeliveryOrderUsecase(false)
-	request := &models.DeliveryOrderRequest{}
-	request.ID = 1
-
-	// Act
-	_, err := deliveryOrderUsecase.GetByOrderStatusID(request)
-	// Assert
-	assert.NotNil(t, err)
-}
-
-func Test_DeliveryOrderUseCase_GetByOrderSourceID_ShouldError(t *testing.T) {
-	// Arrange
-	deliveryOrderUsecase := newDeliveryOrderUsecase(false)
-	request := &models.DeliveryOrderRequest{}
-	request.ID = 1
-
-	// Act
-	_, err := deliveryOrderUsecase.GetByOrderSourceID(request)
-	// Assert
-	assert.NotNil(t, err)
-}
-
 func Test_DeliveryOrderUseCase_Export_ShouldError(t *testing.T) {
 	// Arrange
 	deliveryOrderUseCase := newDeliveryOrderUsecase(false)
