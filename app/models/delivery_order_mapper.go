@@ -146,156 +146,156 @@ func (deliveryOrder *DeliveryOrderOpenSearchResponse) DeliveryOrderOpenSearchRes
 	return
 }
 
-func (deliveryOrder *DeliveryOrder) DeliveryOrderUpdateMap(request *DeliveryOrder) {
+func (d *DeliveryOrder) DeliveryOrderUpdateMap(r *DeliveryOrder) {
 	defaultDo := &DeliveryOrder{}
-	if defaultDo.ID != deliveryOrder.ID {
-		deliveryOrder.ID = request.ID
+	if defaultDo.ID != d.ID {
+		d.ID = r.ID
 	}
-	if defaultDo.SalesOrderID != deliveryOrder.SalesOrderID {
-		deliveryOrder.SalesOrderID = request.SalesOrderID
+	if defaultDo.SalesOrderID != r.SalesOrderID {
+		d.SalesOrderID = r.SalesOrderID
 	}
-	if defaultDo.SalesOrder != deliveryOrder.SalesOrder {
-		deliveryOrder.SalesOrder = request.SalesOrder
+	if defaultDo.SalesOrder != r.SalesOrder {
+		d.SalesOrder = r.SalesOrder
 	}
-	if defaultDo.Brand != deliveryOrder.Brand {
-		deliveryOrder.Brand = request.Brand
+	if defaultDo.Brand != r.Brand {
+		d.Brand = r.Brand
 	}
-	if defaultDo.SalesOrderCode != deliveryOrder.SalesOrderCode {
-		deliveryOrder.SalesOrderCode = request.SalesOrderCode
+	if defaultDo.SalesOrderCode != r.SalesOrderCode {
+		d.SalesOrderCode = r.SalesOrderCode
 	}
-	if defaultDo.SalesOrderDate != deliveryOrder.SalesOrderDate {
-		deliveryOrder.SalesOrderDate = request.SalesOrderDate
+	if defaultDo.SalesOrderDate != r.SalesOrderDate {
+		d.SalesOrderDate = r.SalesOrderDate
 	}
-	if defaultDo.Salesman != deliveryOrder.Salesman {
-		deliveryOrder.Salesman = request.Salesman
+	if defaultDo.Salesman != r.Salesman {
+		d.Salesman = r.Salesman
 	}
-	if defaultDo.WarehouseID != deliveryOrder.WarehouseID {
-		deliveryOrder.WarehouseID = request.WarehouseID
+	if defaultDo.WarehouseID != r.WarehouseID {
+		d.WarehouseID = r.WarehouseID
 	}
-	if defaultDo.Warehouse != deliveryOrder.Warehouse {
-		deliveryOrder.Warehouse = request.Warehouse
+	if defaultDo.Warehouse != r.Warehouse {
+		d.Warehouse = r.Warehouse
 	}
-	if defaultDo.WarehouseName != deliveryOrder.WarehouseName {
-		deliveryOrder.WarehouseName = request.WarehouseName
+	if defaultDo.WarehouseName != r.WarehouseName {
+		d.WarehouseName = r.WarehouseName
 	}
-	if defaultDo.WarehouseAddress != deliveryOrder.WarehouseAddress {
-		deliveryOrder.WarehouseAddress = request.WarehouseAddress
+	if defaultDo.WarehouseAddress != r.WarehouseAddress {
+		d.WarehouseAddress = r.WarehouseAddress
 	}
-	if defaultDo.WarehouseCode != deliveryOrder.WarehouseCode {
-		deliveryOrder.WarehouseCode = request.WarehouseCode
+	if defaultDo.WarehouseCode != r.WarehouseCode {
+		d.WarehouseCode = r.WarehouseCode
 	}
-	if defaultDo.WarehouseProvinceID != deliveryOrder.WarehouseProvinceID {
-		deliveryOrder.WarehouseProvinceID = request.WarehouseProvinceID
+	if defaultDo.WarehouseProvinceID != r.WarehouseProvinceID {
+		d.WarehouseProvinceID = r.WarehouseProvinceID
 	}
-	if defaultDo.WarehouseProvinceName != deliveryOrder.WarehouseProvinceName {
-		deliveryOrder.WarehouseProvinceName = request.WarehouseProvinceName
+	if defaultDo.WarehouseProvinceName != r.WarehouseProvinceName {
+		d.WarehouseProvinceName = r.WarehouseProvinceName
 	}
-	if defaultDo.WarehouseCityID != deliveryOrder.WarehouseCityID {
-		deliveryOrder.WarehouseCityID = request.WarehouseCityID
+	if defaultDo.WarehouseCityID != r.WarehouseCityID {
+		d.WarehouseCityID = r.WarehouseCityID
 	}
-	if defaultDo.WarehouseCityName != deliveryOrder.WarehouseCityName {
-		deliveryOrder.WarehouseCityName = request.WarehouseCityName
+	if defaultDo.WarehouseCityName != r.WarehouseCityName {
+		d.WarehouseCityName = r.WarehouseCityName
 	}
-	if defaultDo.WarehouseDistrictID != deliveryOrder.WarehouseDistrictID {
-		deliveryOrder.WarehouseDistrictID = request.WarehouseDistrictID
+	if defaultDo.WarehouseDistrictID != r.WarehouseDistrictID {
+		d.WarehouseDistrictID = r.WarehouseDistrictID
 	}
-	if defaultDo.WarehouseDistrictName != deliveryOrder.WarehouseDistrictName {
-		deliveryOrder.WarehouseDistrictName = request.WarehouseDistrictName
+	if defaultDo.WarehouseDistrictName != r.WarehouseDistrictName {
+		d.WarehouseDistrictName = r.WarehouseDistrictName
 	}
-	if defaultDo.WarehouseVillageID != deliveryOrder.WarehouseVillageID {
-		deliveryOrder.WarehouseVillageID = request.WarehouseVillageID
+	if defaultDo.WarehouseVillageID != r.WarehouseVillageID {
+		d.WarehouseVillageID = r.WarehouseVillageID
 	}
-	if defaultDo.WarehouseVillageName != deliveryOrder.WarehouseVillageName {
-		deliveryOrder.WarehouseVillageName = request.WarehouseVillageName
+	if defaultDo.WarehouseVillageName != r.WarehouseVillageName {
+		d.WarehouseVillageName = r.WarehouseVillageName
 	}
-	if defaultDo.OrderStatusID != deliveryOrder.OrderStatusID {
-		deliveryOrder.OrderStatusID = request.OrderStatusID
+	if defaultDo.OrderStatusID != r.OrderStatusID {
+		d.OrderStatusID = r.OrderStatusID
 	}
-	if defaultDo.OrderStatus != deliveryOrder.OrderStatus {
-		deliveryOrder.OrderStatus = request.OrderStatus
+	if defaultDo.OrderStatus != r.OrderStatus {
+		d.OrderStatus = r.OrderStatus
 	}
-	if defaultDo.OrderStatusName != deliveryOrder.OrderStatusName {
-		deliveryOrder.OrderStatusName = request.OrderStatusName
+	if defaultDo.OrderStatusName != r.OrderStatusName {
+		d.OrderStatusName = r.OrderStatusName
 	}
-	if defaultDo.OrderSourceID != deliveryOrder.OrderSourceID {
-		deliveryOrder.OrderSourceID = request.OrderSourceID
+	if defaultDo.OrderSourceID != r.OrderSourceID {
+		d.OrderSourceID = r.OrderSourceID
 	}
-	if defaultDo.OrderSource != deliveryOrder.OrderSource {
-		deliveryOrder.OrderSource = request.OrderSource
+	if defaultDo.OrderSource != r.OrderSource {
+		d.OrderSource = r.OrderSource
 	}
-	if defaultDo.OrderSourceName != deliveryOrder.OrderSourceName {
-		deliveryOrder.OrderSourceName = request.OrderSourceName
+	if defaultDo.OrderSourceName != r.OrderSourceName {
+		d.OrderSourceName = r.OrderSourceName
 	}
-	if defaultDo.AgentID != deliveryOrder.AgentID {
-		deliveryOrder.AgentID = request.AgentID
+	if defaultDo.AgentID != r.AgentID {
+		d.AgentID = r.AgentID
 	}
-	if defaultDo.AgentName != deliveryOrder.AgentName {
-		deliveryOrder.AgentName = request.AgentName
+	if defaultDo.AgentName != r.AgentName {
+		d.AgentName = r.AgentName
 	}
-	if defaultDo.Agent != deliveryOrder.Agent {
-		deliveryOrder.Agent = request.Agent
+	if defaultDo.Agent != r.Agent {
+		d.Agent = r.Agent
 	}
-	if defaultDo.StoreID != deliveryOrder.StoreID {
-		deliveryOrder.StoreID = request.StoreID
+	if defaultDo.StoreID != r.StoreID {
+		d.StoreID = r.StoreID
 	}
-	if defaultDo.Store != deliveryOrder.Store {
-		deliveryOrder.Store = request.Store
+	if defaultDo.Store != r.Store {
+		d.Store = r.Store
 	}
-	if defaultDo.DoCode != deliveryOrder.DoCode {
-		deliveryOrder.DoCode = request.DoCode
+	if defaultDo.DoCode != r.DoCode {
+		d.DoCode = r.DoCode
 	}
-	if defaultDo.DoDate != deliveryOrder.DoDate {
-		deliveryOrder.DoDate = request.DoDate
+	if defaultDo.DoDate != r.DoDate {
+		d.DoDate = r.DoDate
 	}
-	if defaultDo.DoRefCode != deliveryOrder.DoRefCode {
-		deliveryOrder.DoRefCode = request.DoRefCode
+	if defaultDo.DoRefCode != r.DoRefCode {
+		d.DoRefCode = r.DoRefCode
 	}
-	if defaultDo.DoRefDate != deliveryOrder.DoRefDate {
-		deliveryOrder.DoRefDate = request.DoRefDate
+	if defaultDo.DoRefDate != r.DoRefDate {
+		d.DoRefDate = r.DoRefDate
 	}
-	if defaultDo.DriverName != deliveryOrder.DriverName {
-		deliveryOrder.DriverName = request.DriverName
+	if defaultDo.DriverName != r.DriverName {
+		d.DriverName = r.DriverName
 	}
-	if defaultDo.PlatNumber != deliveryOrder.PlatNumber {
-		deliveryOrder.PlatNumber = request.PlatNumber
+	if defaultDo.PlatNumber != r.PlatNumber {
+		d.PlatNumber = r.PlatNumber
 	}
-	if defaultDo.Note != deliveryOrder.Note {
-		deliveryOrder.Note = request.Note
+	if defaultDo.Note != r.Note {
+		d.Note = r.Note
 	}
-	if defaultDo.IsDoneSyncToEs != deliveryOrder.IsDoneSyncToEs {
-		deliveryOrder.IsDoneSyncToEs = request.IsDoneSyncToEs
+	if defaultDo.IsDoneSyncToEs != r.IsDoneSyncToEs {
+		d.IsDoneSyncToEs = r.IsDoneSyncToEs
 	}
-	if defaultDo.StartDateSyncToEs != deliveryOrder.StartDateSyncToEs {
-		deliveryOrder.StartDateSyncToEs = request.StartDateSyncToEs
+	if defaultDo.StartDateSyncToEs != r.StartDateSyncToEs {
+		d.StartDateSyncToEs = r.StartDateSyncToEs
 	}
-	if defaultDo.EndDateSyncToEs != deliveryOrder.EndDateSyncToEs {
-		deliveryOrder.EndDateSyncToEs = request.EndDateSyncToEs
+	if defaultDo.EndDateSyncToEs != r.EndDateSyncToEs {
+		d.EndDateSyncToEs = r.EndDateSyncToEs
 	}
-	if defaultDo.CreatedBy != deliveryOrder.CreatedBy {
-		deliveryOrder.CreatedBy = request.CreatedBy
+	if defaultDo.CreatedBy != r.CreatedBy {
+		d.CreatedBy = r.CreatedBy
 	}
-	if defaultDo.LatestUpdatedBy != deliveryOrder.LatestUpdatedBy {
-		deliveryOrder.LatestUpdatedBy = request.LatestUpdatedBy
+	if defaultDo.LatestUpdatedBy != r.LatestUpdatedBy {
+		d.LatestUpdatedBy = r.LatestUpdatedBy
 	}
-	if defaultDo.StartCreatedDate != deliveryOrder.StartCreatedDate {
-		deliveryOrder.StartCreatedDate = request.StartCreatedDate
+	if defaultDo.StartCreatedDate != r.StartCreatedDate {
+		d.StartCreatedDate = r.StartCreatedDate
 	}
-	if defaultDo.EndCreatedDate != deliveryOrder.EndCreatedDate {
-		deliveryOrder.EndCreatedDate = request.EndCreatedDate
+	if defaultDo.EndCreatedDate != r.EndCreatedDate {
+		d.EndCreatedDate = r.EndCreatedDate
 	}
-	if defaultDo.CreatedAt != deliveryOrder.CreatedAt {
-		deliveryOrder.CreatedAt = request.CreatedAt
+	if defaultDo.CreatedAt != r.CreatedAt {
+		d.CreatedAt = r.CreatedAt
 	}
-	if defaultDo.UpdatedAt != deliveryOrder.UpdatedAt {
-		deliveryOrder.UpdatedAt = request.UpdatedAt
+	if defaultDo.UpdatedAt != r.UpdatedAt {
+		d.UpdatedAt = r.UpdatedAt
 	}
-	if defaultDo.DeletedAt != deliveryOrder.DeletedAt {
-		deliveryOrder.DeletedAt = request.DeletedAt
+	if defaultDo.DeletedAt != r.DeletedAt {
+		d.DeletedAt = r.DeletedAt
 	}
-	for _, v := range request.DeliveryOrderDetails {
-		for k, y := range deliveryOrder.DeliveryOrderDetails {
+	for _, v := range r.DeliveryOrderDetails {
+		for k, y := range d.DeliveryOrderDetails {
 			if y.ID == v.ID {
-				deliveryOrder.DeliveryOrderDetails[k] = v
+				d.DeliveryOrderDetails[k].DoDetailUpdateMap(v)
 			}
 		}
 	}
