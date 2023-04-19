@@ -429,7 +429,7 @@ func (r *deliveryOrder) UpdateByID(id int, request *models.DeliveryOrder, jouney
 	}
 
 	if request.StoreID != 0 {
-		query := fmt.Sprintf("%s=%v", "store_id", request.Store)
+		query := fmt.Sprintf("%s=%v", "store_id", request.StoreID)
 		rawSqlQueries = append(rawSqlQueries, query)
 	}
 

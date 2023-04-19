@@ -301,7 +301,7 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromDeleteEvent(deliveryO
 			v.IsDoneSyncToEs = "1"
 			v.EndDateSyncToEs = &now
 
-			v.OrderStatusID = 17
+			v.OrderStatusID = 19
 
 			getOrderStatusDetailChan := make(chan *models.OrderStatusChan)
 			go u.orderStatusRepository.GetByID(v.OrderStatusID, false, ctx, getOrderStatusDetailChan)
@@ -325,7 +325,7 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromDeleteEvent(deliveryO
 
 	if isDeleteParent {
 		deliveryOrder.DeletedAt = &now
-		deliveryOrder.OrderStatusID = 17
+		deliveryOrder.OrderStatusID = 19
 
 		getOrderStatusChan := make(chan *models.OrderStatusChan)
 		go u.orderStatusRepository.GetByID(deliveryOrder.OrderStatusID, false, ctx, getOrderStatusChan)
