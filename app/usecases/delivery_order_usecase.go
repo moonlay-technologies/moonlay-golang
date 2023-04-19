@@ -2082,6 +2082,12 @@ func (u deliveryOrderUseCase) DeleteByID(id int, sqlTransaction *sql.Tx, ctx con
 		getSalesOrderDetailsByIDResult.SalesOrderDetail.ResidualQty += v.Qty
 		getSalesOrderDetailsByIDResult.SalesOrderDetail.UpdatedAt = &now
 
+		if getSalesOrderDetailsByIDResult.SalesOrderDetail.SentQty > 0 {
+			getSalesOrderDetailsByIDResult.SalesOrderDetail.OrderStatusID = 13
+		} else {
+			getSalesOrderDetailsByIDResult.SalesOrderDetail.OrderStatusID = 11
+		}
+
 		totalSentQty += getSalesOrderDetailsByIDResult.SalesOrderDetail.SentQty
 		deleteDeliveryOrderDetailResultChan := make(chan *models.DeliveryOrderDetailChan)
 		go u.deliveryOrderDetailRepository.DeleteByID(v, sqlTransaction, ctx, deleteDeliveryOrderDetailResultChan)
