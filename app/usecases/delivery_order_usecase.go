@@ -1466,6 +1466,7 @@ func (u *deliveryOrderUseCase) Export(request *models.DeliveryOrderExportRequest
 		return "", errorLogData
 	}
 	request.FileName = fmt.Sprintf("SJ-LIST-SUMMARY-%s-%d-%s", fileHour, ctx.Value("user").(*models.UserClaims).UserID, rand)
+	request.UserID = ctx.Value("user").(*models.UserClaims).UserID
 	keyKafka := []byte(uuid.New().String())
 	messageKafka, _ := json.Marshal(request)
 	err = u.kafkaClient.WriteToTopic(constants.EXPORT_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
@@ -1517,6 +1518,7 @@ func (u *deliveryOrderUseCase) ExportDetail(request *models.DeliveryOrderDetailE
 		return "", errorLogData
 	}
 	request.FileName = fmt.Sprintf("SJ-LIST-DETAIL-%s-%d-%s", fileHour, ctx.Value("user").(*models.UserClaims).UserID, rand)
+	request.UserID = ctx.Value("user").(*models.UserClaims).UserID
 	keyKafka := []byte(uuid.New().String())
 	messageKafka, _ := json.Marshal(request)
 	err = u.kafkaClient.WriteToTopic(constants.EXPORT_DELIVERY_ORDER_DETAIL_TOPIC, keyKafka, messageKafka)

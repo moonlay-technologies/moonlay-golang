@@ -307,4 +307,5 @@ type SalesOrderDetailExportRequest struct {
 	VillageID         int    `json:"village_id,omitempty"`
 	StartCreatedAt    string `json:"start_created_at,omitempty"`
 	EndCreatedAt      string `json:"end_created_at,omitempty"`
+	UserID            int    `json:"user_id,omitempty"`
 }

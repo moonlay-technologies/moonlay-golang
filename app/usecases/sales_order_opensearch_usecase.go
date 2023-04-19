@@ -13,6 +13,8 @@ import (
 	openSearchRepositories "order-service/app/repositories/open_search"
 	"order-service/global/utils/helper"
 	"order-service/global/utils/model"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -445,7 +447,11 @@ func (u *SalesOrderOpenSearchUseCase) Get(request *models.SalesOrderExportReques
 
 	soRequest := &models.SalesOrderRequest{}
 	soRequest.SalesOrderExportMap(request)
-	soRequest.PerPage = 50
+	perPage, err := strconv.Atoi(os.Getenv("EXPORT_PARTIAL"))
+	if err != nil {
+		perPage = constants.EXPORT_PARTIAL_DEFAULT
+	}
+	soRequest.PerPage = perPage
 	instalmentData := math.Ceil(float64(getSalesOrdersCountResult.Total) / float64(soRequest.PerPage))
 	data := [][]interface{}{constants.SALES_ORDER_EXPORT_HEADER()}
 
@@ -475,11 +481,7 @@ func (u *SalesOrderOpenSearchUseCase) Get(request *models.SalesOrderExportReques
 			data = append(data, v.MapToCsvRow(journeys, getDeliveryOrdersResult.DeliveryOrders))
 		}
 		progres := math.Round(float64(i*soRequest.PerPage)/float64(getSalesOrdersCountResult.Total)) * 100
-		err := u.pusherRepository.Pubish(map[string]string{"message": fmt.Sprintf("%f", progres) + "%"})
-		if err != nil {
-			fmt.Println("pusher error = ", err.Error())
-			return helper.WriteLog(err, http.StatusInternalServerError, nil)
-		}
+		fmt.Println(request.FileName, progres)
 	}
 
 	b, err := helper.GenerateExportBufferFile(data, request.FileType)
@@ -491,7 +493,14 @@ func (u *SalesOrderOpenSearchUseCase) Get(request *models.SalesOrderExportReques
 		return helper.WriteLog(err, http.StatusInternalServerError, nil)
 	}
 
-	err = u.pusherRepository.Pubish(map[string]string{"message": "100%"})
+	pusherData := &models.Pusher{
+		Subject: "Export SO Summary",
+		Link:    fmt.Sprintf("%s/%s.%s", constants.SALES_ORDER_EXPORT_PATH, request.FileName, request.FileType),
+		Type:    "export",
+		UserId:  strconv.Itoa(request.UserID),
+	}
+
+	err = u.pusherRepository.Publish(pusherData)
 	if err != nil {
 		fmt.Println(err.Error())
 		return helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -515,7 +524,11 @@ func (u *SalesOrderOpenSearchUseCase) GetDetails(request *models.SalesOrderDetai
 
 	soDetailRequest := &models.GetSalesOrderDetailRequest{}
 	soDetailRequest.SalesOrderDetailExportMap(request)
-	soDetailRequest.PerPage = 50
+	perPage, err := strconv.Atoi(os.Getenv("EXPORT_PARTIAL"))
+	if err != nil {
+		perPage = constants.EXPORT_PARTIAL_DEFAULT
+	}
+	soDetailRequest.PerPage = perPage
 	instalmentData := math.Ceil(float64(getSalesOrderDetailsCountResult.Total) / float64(soDetailRequest.PerPage))
 
 	data := [][]interface{}{constants.SALES_ORDER_DETAIL_EXPORT_HEADER()}
@@ -551,11 +564,7 @@ func (u *SalesOrderOpenSearchUseCase) GetDetails(request *models.SalesOrderDetai
 			data = append(data, v.MapToCsvRow(journeys, getSalesOrdersResult.SalesOrder, getDeliveryOrdersResult.DeliveryOrders))
 		}
 		progres := math.Round(float64(i*soDetailRequest.PerPage)/float64(getSalesOrderDetailsCountResult.Total)) * 100
-		err := u.pusherRepository.Pubish(map[string]string{"message": fmt.Sprintf("%f", progres) + "%"})
-		if err != nil {
-			fmt.Println(err.Error())
-			return helper.WriteLog(err, http.StatusInternalServerError, nil)
-		}
+		fmt.Println(request.FileName, progres)
 	}
 
 	b, err := helper.GenerateExportBufferFile(data, request.FileType)
@@ -567,7 +576,14 @@ func (u *SalesOrderOpenSearchUseCase) GetDetails(request *models.SalesOrderDetai
 		return helper.WriteLog(err, http.StatusInternalServerError, nil)
 	}
 
-	err = u.pusherRepository.Pubish(map[string]string{"message": "100%"})
+	pusherData := &models.Pusher{
+		Subject: "Export SO Detail",
+		Link:    fmt.Sprintf("%s/%s.%s", constants.SALES_ORDER_DETAIL_EXPORT_PATH, request.FileName, request.FileType),
+		Type:    "export",
+		UserId:  strconv.Itoa(request.UserID),
+	}
+
+	err = u.pusherRepository.Publish(pusherData)
 	if err != nil {
 		fmt.Println("pusher error = ", err.Error())
 		return helper.WriteLog(err, http.StatusInternalServerError, nil)

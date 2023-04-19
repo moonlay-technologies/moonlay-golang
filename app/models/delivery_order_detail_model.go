@@ -358,4 +358,5 @@ type DeliveryOrderDetailExportRequest struct {
 	StartCreatedAt    string `json:"start_created_at,omitempty"`
 	EndCreatedAt      string `json:"end_created_at,omitempty"`
 	UpdatedAt         string `json:"updated_at,omitempty"`
+	UserID            int    `json:"user_id,omitempty"`
 }

@@ -1,15 +1,16 @@
 package repositories
 
 import (
+	"encoding/json"
 	"fmt"
-	"order-service/app/models/constants"
+	"order-service/app/models"
 	"os"
 
 	"github.com/pusher/pusher-http-go/v5"
 )
 
 type PusherRepositoryInterface interface {
-	Pubish(data map[string]string) error
+	Publish(*models.Pusher) error
 }
 
 type pusherRepository struct {
@@ -28,8 +29,12 @@ func InitPusherRepository() PusherRepositoryInterface {
 	}
 }
 
-func (r *pusherRepository) Pubish(data map[string]string) error {
-	err := r.pusherClient.Trigger(constants.S3_EXPORT_CHANNEL, constants.S3_EXPORT_EVENT, data)
+func (r *pusherRepository) Publish(request *models.Pusher) error {
+	request.Channel = os.Getenv("PUSHER_CHANNEL")
+	sJson, _ := json.Marshal(request)
+	var data map[string]interface{}
+	json.Unmarshal(sJson, &data)
+	err := r.pusherClient.Trigger(request.Channel, os.Getenv("PUSHER_EVENT"), data)
 	if err != nil {
 		fmt.Println("pusher error = ", err.Error())
 		return err
