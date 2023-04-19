@@ -335,9 +335,13 @@ func (salesOrder *SalesOrder) StoreChanMap(request *StoreChan) {
 	salesOrder.StoreName = request.Store.Name
 	salesOrder.StoreCode = request.Store.StoreCode
 	salesOrder.StoreEmail = request.Store.Email
+	salesOrder.StoreProvinceID, _ = strconv.Atoi(request.Store.ProvinceID.String)
 	salesOrder.StoreProvinceName = request.Store.ProvinceName
+	salesOrder.StoreCityID, _ = strconv.Atoi(request.Store.CityID.String)
 	salesOrder.StoreCityName = request.Store.CityName
+	salesOrder.StoreDistrictID, _ = strconv.Atoi(request.Store.DistrictID.String)
 	salesOrder.StoreDistrictName = request.Store.DistrictName
+	salesOrder.StoreVillageID, _ = strconv.Atoi(request.Store.VillageID.String)
 	salesOrder.StoreVillageName = request.Store.VillageName
 	salesOrder.StoreAddress = request.Store.Address
 	salesOrder.StorePhone = request.Store.Phone
@@ -745,7 +749,7 @@ func (data *SalesOrder) MapToCsvRow(journey *SalesOrderJourneys, dos []*Delivery
 		data.StoreDistrictName.String,
 		data.Store.CityID.String,
 		data.StoreCityName.String,
-		data.StoreProvinceID,
+		data.Store.ProvinceID.String,
 		data.StoreProvinceName.String,
 		data.BrandID,
 		data.BrandName,
