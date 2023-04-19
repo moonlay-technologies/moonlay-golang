@@ -249,30 +249,6 @@ func Test_SalesOrderUseCase_GetBySalesmanID_ShouldError(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func Test_SalesOrderUseCase_GetByOrderStatusID_ShouldError(t *testing.T) {
-	// Arrange
-	salesOrderUseCase := newSalesOrderUseCase(false)
-	request := &models.SalesOrderRequest{}
-	request.ID = 1
-
-	// Act
-	_, err := salesOrderUseCase.GetByOrderStatusID(request)
-	// Assert
-	assert.NotNil(t, err)
-}
-
-func Test_SalesOrderUseCase_GetByOrderSourceID_ShouldError(t *testing.T) {
-	// Arrange
-	salesOrderUseCase := newSalesOrderUseCase(false)
-	request := &models.SalesOrderRequest{}
-	request.ID = 1
-
-	// Act
-	_, err := salesOrderUseCase.GetByOrderSourceID(request)
-	// Assert
-	assert.NotNil(t, err)
-}
-
 func Test_SalesOrderUseCase_Export_ShouldError(t *testing.T) {
 	// Arrange
 	salesOrderUseCase := newSalesOrderUseCase(false)

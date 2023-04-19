@@ -29,8 +29,6 @@ type SalesOrderUseCaseInterface interface {
 	GetByAgentID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
 	GetByStoreID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
 	GetBySalesmanID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
-	GetByOrderStatusID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
-	GetByOrderSourceID(request *models.SalesOrderRequest) (*models.SalesOrders, *model.ErrorLog)
 	GetSyncToKafkaHistories(request *models.SalesOrderEventLogRequest, ctx context.Context) ([]*models.SalesOrderEventLogResponse, *model.ErrorLog)
 	GetSOJourneys(request *models.SalesOrderJourneyRequest, ctx context.Context) (*models.SalesOrderJourneyResponses, *model.ErrorLog)
 	GetSOJourneyBySOId(soId int, ctx context.Context) (*models.SalesOrderJourneyResponses, *model.ErrorLog)
@@ -658,40 +656,6 @@ func (u *salesOrderUseCase) GetByStoreID(request *models.SalesOrderRequest) (*mo
 func (u *salesOrderUseCase) GetBySalesmanID(request *models.SalesOrderRequest) (*models.SalesOrders, *baseModel.ErrorLog) {
 	getSalesOrdersResultChan := make(chan *models.SalesOrdersChan)
 	go u.salesOrderOpenSearchRepository.GetBySalesmanID(request, getSalesOrdersResultChan)
-	getSalesOrdersResult := <-getSalesOrdersResultChan
-
-	if getSalesOrdersResult.Error != nil {
-		return &models.SalesOrders{}, getSalesOrdersResult.ErrorLog
-	}
-
-	salesOrders := &models.SalesOrders{
-		SalesOrders: getSalesOrdersResult.SalesOrders,
-		Total:       getSalesOrdersResult.Total,
-	}
-
-	return salesOrders, &baseModel.ErrorLog{}
-}
-
-func (u *salesOrderUseCase) GetByOrderStatusID(request *models.SalesOrderRequest) (*models.SalesOrders, *baseModel.ErrorLog) {
-	getSalesOrdersResultChan := make(chan *models.SalesOrdersChan)
-	go u.salesOrderOpenSearchRepository.GetByOrderStatusID(request, getSalesOrdersResultChan)
-	getSalesOrdersResult := <-getSalesOrdersResultChan
-
-	if getSalesOrdersResult.Error != nil {
-		return &models.SalesOrders{}, getSalesOrdersResult.ErrorLog
-	}
-
-	salesOrders := &models.SalesOrders{
-		SalesOrders: getSalesOrdersResult.SalesOrders,
-		Total:       getSalesOrdersResult.Total,
-	}
-
-	return salesOrders, &baseModel.ErrorLog{}
-}
-
-func (u *salesOrderUseCase) GetByOrderSourceID(request *models.SalesOrderRequest) (*models.SalesOrders, *baseModel.ErrorLog) {
-	getSalesOrdersResultChan := make(chan *models.SalesOrdersChan)
-	go u.salesOrderOpenSearchRepository.GetByOrderSourceID(request, getSalesOrdersResultChan)
 	getSalesOrdersResult := <-getSalesOrdersResultChan
 
 	if getSalesOrdersResult.Error != nil {

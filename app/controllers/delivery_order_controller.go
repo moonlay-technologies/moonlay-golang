@@ -33,7 +33,6 @@ type DeliveryOrderControllerInterface interface {
 	GetDetails(ctx *gin.Context)
 	GetDetailsByDoId(ctx *gin.Context)
 	GetDetailById(ctx *gin.Context)
-	GetBySalesmanID(ctx *gin.Context)
 	GetSyncToKafkaHistories(ctx *gin.Context)
 	GetJourneys(ctx *gin.Context)
 	GetDOJourneysByDoID(ctx *gin.Context)
@@ -453,23 +452,6 @@ func (c *deliveryOrderController) GetDetailById(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, model.Response{Data: deliveryOrders, StatusCode: http.StatusOK})
-	return
-}
-
-func (c *deliveryOrderController) GetBySalesmanID(ctx *gin.Context) {
-	deliveryOrderReqeuest, err := c.deliveryOrderValidator.GetDeliveryOrderBySalesmanIDValidator(ctx)
-	if err != nil {
-		return
-	}
-
-	deliveryOrders, errorLog := c.deliveryOrderUseCase.GetBySalesmansID(deliveryOrderReqeuest)
-
-	if errorLog.Err != nil {
-		ctx.JSON(errorLog.StatusCode, helper.GenerateResultByErrorLog(errorLog))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, model.Response{Data: deliveryOrders.DeliveryOrders, Total: deliveryOrders.Total, StatusCode: http.StatusOK})
 	return
 }
 
