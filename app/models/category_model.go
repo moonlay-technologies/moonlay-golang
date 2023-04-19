@@ -14,7 +14,7 @@ type Category struct {
 	StartDate   *time.Time `json:"start_date,omitempty"`
 	EndDate     *time.Time `json:"end_date,omitempty"`
 	Image       string     `json:"image,omitempty"`
-	ParentID    int        `json:"parent_id,omitempty"`
+	ParentID    NullInt64  `json:"parent_id,omitempty"`
 	BrandID     int        `json:"brand_id,omitempty"`
 	Order       int        `json:"order,omitempty"`
 	CreatedAt   *time.Time `json:"created_at,omitempty"`
