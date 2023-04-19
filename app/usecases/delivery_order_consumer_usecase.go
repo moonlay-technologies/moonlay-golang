@@ -382,8 +382,8 @@ func (u *deliveryOrderConsumerUseCase) Get(request *models.DeliveryOrderExportRe
 		for _, v := range getDeliveryOrdersResult.DeliveryOrders {
 			data = append(data, v.MapToCsvRow())
 		}
-		progres := math.Round(float64(i*doRequest.PerPage)/float64(getDeliveryOrdersCountResult.Total)) * 100
-		fmt.Println(request.FileName, progres)
+		progres := math.Round((float64((i*doRequest.PerPage)+len(getDeliveryOrdersResult.DeliveryOrders)) / float64(getDeliveryOrdersCountResult.Total)) * 100)
+		fmt.Println(request.FileName, progres, "%")
 	}
 
 	b, err := helper.GenerateExportBufferFile(data, request.FileType)
@@ -454,8 +454,8 @@ func (u *deliveryOrderConsumerUseCase) GetDetail(request *models.DeliveryOrderDe
 			}
 			data = append(data, v.MapToCsvRow(getDeliveryOrdersResult.DeliveryOrder))
 		}
-		progres := math.Round(float64(i*doDetailRequest.PerPage)/float64(getDeliveryOrderDetailsCountResult.Total)) * 100
-		fmt.Println(request.FileName, progres)
+		progres := math.Round((float64((i*doDetailRequest.PerPage)+len(getDeliveryOrderDetailsResult.DeliveryOrderDetailOpenSearch)) / float64(getDeliveryOrderDetailsCountResult.Total)) * 100)
+		fmt.Println(request.FileName, progres, "%")
 	}
 
 	b, err := helper.GenerateExportBufferFile(data, request.FileType)

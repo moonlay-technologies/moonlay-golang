@@ -480,8 +480,8 @@ func (u *SalesOrderOpenSearchUseCase) Get(request *models.SalesOrderExportReques
 
 			data = append(data, v.MapToCsvRow(journeys, getDeliveryOrdersResult.DeliveryOrders))
 		}
-		progres := math.Round(float64(i*soRequest.PerPage)/float64(getSalesOrdersCountResult.Total)) * 100
-		fmt.Println(request.FileName, progres)
+		progres := math.Round((float64((i*soRequest.PerPage)+len(getSalesOrdersResult.SalesOrders)) / float64(getSalesOrdersCountResult.Total)) * 100)
+		fmt.Println(request.FileName, progres, "%")
 	}
 
 	b, err := helper.GenerateExportBufferFile(data, request.FileType)
@@ -563,8 +563,8 @@ func (u *SalesOrderOpenSearchUseCase) GetDetails(request *models.SalesOrderDetai
 			}
 			data = append(data, v.MapToCsvRow(journeys, getSalesOrdersResult.SalesOrder, getDeliveryOrdersResult.DeliveryOrders))
 		}
-		progres := math.Round(float64(i*soDetailRequest.PerPage)/float64(getSalesOrderDetailsCountResult.Total)) * 100
-		fmt.Println(request.FileName, progres)
+		progres := math.Round((float64((i*soDetailRequest.PerPage)+len(getSalesDetailOrdersResult.SalesOrderDetails)) / float64(getSalesOrderDetailsCountResult.Total)) * 100)
+		fmt.Println(request.FileName, progres, "%")
 	}
 
 	b, err := helper.GenerateExportBufferFile(data, request.FileType)
