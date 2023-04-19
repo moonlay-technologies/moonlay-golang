@@ -173,5 +173,6 @@ func SALES_ORDER_DETAIL_EXPORT_HEADER() []interface{} {
 		"LastUpdate",
 		"UserIDCreated",
 		"UserIDModified",
-		"InternalNotes"}
+		"OrderNotes",
+		"InternalNotes",}
 }

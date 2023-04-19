@@ -372,6 +372,7 @@ func (data *SalesOrderDetailOpenSearch) MapToCsvRow(journey *SalesOrderJourneys,
 		updatedAt,
 		data.CreatedBy,
 		s.LatestUpdatedBy,
+		s.Note.String,
 		s.InternalComment.String,
 	}
 }
