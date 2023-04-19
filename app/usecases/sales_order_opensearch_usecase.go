@@ -102,20 +102,6 @@ func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(salesOrder
 		salesOrder.SalesOrderDetails[k].IsDoneSyncToEs = "1"
 		salesOrder.SalesOrderDetails[k].OrderStatus = getOrderStatusDetailResult.OrderStatus
 
-		getFirstCategoryResultChan := make(chan *models.CategoryChan)
-		go u.categoryRepository.GetByParentID(getProductResult.Product.CategoryID, false, ctx, getFirstCategoryResultChan)
-		getFirstCategoryResult := <-getFirstCategoryResultChan
-
-		if getFirstCategoryResult.Error != nil && getFirstCategoryResult.ErrorLog.StatusCode != http.StatusNotFound {
-			errorLogData := helper.WriteLog(getFirstCategoryResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-
-		salesOrder.SalesOrderDetails[k].FirstCategoryId = getProductResult.Product.CategoryID
-		if getFirstCategoryResult.Category != nil {
-			salesOrder.SalesOrderDetails[k].FirstCategoryName = &getFirstCategoryResult.Category.Name
-		}
-
 		getLastCategoryResultChan := make(chan *models.CategoryChan)
 		go u.categoryRepository.GetByID(getProductResult.Product.CategoryID, false, ctx, getLastCategoryResultChan)
 		getLastCategoryResult := <-getLastCategoryResultChan
@@ -129,6 +115,21 @@ func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(salesOrder
 		if getLastCategoryResult.Category != nil {
 			salesOrder.SalesOrderDetails[k].LastCategoryName = &getLastCategoryResult.Category.Name
 		}
+
+		getFirstCategoryResultChan := make(chan *models.CategoryChan)
+		go u.categoryRepository.GetByID(int(getLastCategoryResult.Category.ParentID.Int64), false, ctx, getFirstCategoryResultChan)
+		getFirstCategoryResult := <-getFirstCategoryResultChan
+
+		if getFirstCategoryResult.Error != nil && getFirstCategoryResult.ErrorLog.StatusCode != http.StatusNotFound {
+			errorLogData := helper.WriteLog(getFirstCategoryResult.Error, http.StatusInternalServerError, nil)
+			return errorLogData
+		}
+
+		salesOrder.SalesOrderDetails[k].FirstCategoryId = int(getLastCategoryResult.Category.ParentID.Int64)
+		if getFirstCategoryResult.Category != nil {
+			salesOrder.SalesOrderDetails[k].FirstCategoryName = &getFirstCategoryResult.Category.Name
+		}
+
 		salesOrder.SalesOrderDetails[k].CreatedBy = salesOrder.CreatedBy
 		salesOrder.SalesOrderDetails[k].LatestUpdatedBy = salesOrder.CreatedBy
 
@@ -241,20 +242,6 @@ func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(salesOrder
 		v.EndDateSyncToEs = &now
 		salesOrder.SalesOrderDetails[k].OrderStatus = getOrderStatusDetailResult.OrderStatus
 
-		getFirstCategoryResultChan := make(chan *models.CategoryChan)
-		go u.categoryRepository.GetByParentID(getProductResult.Product.CategoryID, false, ctx, getFirstCategoryResultChan)
-		getFirstCategoryResult := <-getFirstCategoryResultChan
-
-		if getFirstCategoryResult.Error != nil && getFirstCategoryResult.ErrorLog.StatusCode != http.StatusNotFound {
-			errorLogData := helper.WriteLog(getFirstCategoryResult.Error, http.StatusInternalServerError, nil)
-			return errorLogData
-		}
-
-		salesOrder.SalesOrderDetails[k].FirstCategoryId = getProductResult.Product.CategoryID
-		if getFirstCategoryResult.Category != nil {
-			salesOrder.SalesOrderDetails[k].FirstCategoryName = &getFirstCategoryResult.Category.Name
-		}
-
 		getLastCategoryResultChan := make(chan *models.CategoryChan)
 		go u.categoryRepository.GetByID(getProductResult.Product.CategoryID, false, ctx, getLastCategoryResultChan)
 		getLastCategoryResult := <-getLastCategoryResultChan
@@ -265,8 +252,22 @@ func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromUpdateEvent(salesOrder
 		}
 
 		salesOrder.SalesOrderDetails[k].LastCategoryId = getProductResult.Product.CategoryID
-		if getFirstCategoryResult.Category != nil {
+		if getLastCategoryResult.Category != nil {
 			salesOrder.SalesOrderDetails[k].LastCategoryName = &getLastCategoryResult.Category.Name
+		}
+
+		getFirstCategoryResultChan := make(chan *models.CategoryChan)
+		go u.categoryRepository.GetByID(int(getLastCategoryResult.Category.ParentID.Int64), false, ctx, getFirstCategoryResultChan)
+		getFirstCategoryResult := <-getFirstCategoryResultChan
+
+		if getFirstCategoryResult.Error != nil && getFirstCategoryResult.ErrorLog.StatusCode != http.StatusNotFound {
+			errorLogData := helper.WriteLog(getFirstCategoryResult.Error, http.StatusInternalServerError, nil)
+			return errorLogData
+		}
+
+		salesOrder.SalesOrderDetails[k].FirstCategoryId = int(getLastCategoryResult.Category.ParentID.Int64)
+		if getFirstCategoryResult.Category != nil {
+			salesOrder.SalesOrderDetails[k].FirstCategoryName = &getFirstCategoryResult.Category.Name
 		}
 
 		salesOrder.SalesOrderDetails[k].CreatedBy = salesOrder.CreatedBy

@@ -62,9 +62,9 @@ func (r *category) GetByID(ID int, countOnly bool, ctx context.Context, resultCh
 		if countOnly == false {
 			category = models.Category{}
 			err = r.db.QueryRow(""+
-				"SELECT id, name from categories as c "+
+				"SELECT id, name, parent_id from categories as c "+
 				"WHERE c.deleted_at IS NULL AND c.id = ?", ID).
-				Scan(&category.ID, &category.Name)
+				Scan(&category.ID, &category.Name, &category.ParentID)
 
 			if err != nil {
 				errorLogData := helper.WriteLog(err, 500, "Something went wrong, please try again later")
