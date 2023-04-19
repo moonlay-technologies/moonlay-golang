@@ -44,6 +44,7 @@ func (c *exportSalesOrderConsumerHandler) ProcessMessage() {
 
 	for {
 		m, err := reader.ReadMessage(c.ctx)
+		fmt.Println(m)
 		if err != nil {
 			break
 		}
