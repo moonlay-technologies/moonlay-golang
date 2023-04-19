@@ -2208,6 +2208,12 @@ func (u deliveryOrderUseCase) DeleteDetailByID(id int, sqlTransaction *sql.Tx, c
 	getSalesOrderDetailsByIDResult.SalesOrderDetail.ResidualQty += getDeliveryOrderDetailByIDResult.DeliveryOrderDetail.Qty
 	getSalesOrderDetailsByIDResult.SalesOrderDetail.UpdatedAt = &now
 
+	if getSalesOrderDetailsByIDResult.SalesOrderDetail.SentQty > 0 {
+		getSalesOrderDetailsByIDResult.SalesOrderDetail.OrderStatusID = 13
+	} else {
+		getSalesOrderDetailsByIDResult.SalesOrderDetail.OrderStatusID = 11
+	}
+
 	updateSalesOrderDetailChan := make(chan *models.SalesOrderDetailChan)
 	go u.salesOrderDetailRepository.UpdateByID(getDeliveryOrderDetailByIDResult.DeliveryOrderDetail.SoDetailID, getSalesOrderDetailsByIDResult.SalesOrderDetail, true, "", sqlTransaction, u.ctx, updateSalesOrderDetailChan)
 	updateSalesOrderDetailResult := <-updateSalesOrderDetailChan
@@ -2303,6 +2309,12 @@ func (u deliveryOrderUseCase) DeleteDetailByDoID(id int, sqlTransaction *sql.Tx,
 		getSalesOrderDetailsByIDResult.SalesOrderDetail.SentQty -= v.Qty
 		getSalesOrderDetailsByIDResult.SalesOrderDetail.ResidualQty += v.Qty
 		getSalesOrderDetailsByIDResult.SalesOrderDetail.UpdatedAt = &now
+
+		if getSalesOrderDetailsByIDResult.SalesOrderDetail.SentQty > 0 {
+			getSalesOrderDetailsByIDResult.SalesOrderDetail.OrderStatusID = 13
+		} else {
+			getSalesOrderDetailsByIDResult.SalesOrderDetail.OrderStatusID = 11
+		}
 
 		totalSentQty += getSalesOrderDetailsByIDResult.SalesOrderDetail.SentQty
 
