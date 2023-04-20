@@ -529,6 +529,10 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 			go c.deliveryOrderRepository.GetByDoRefCode(v.NoSuratJalan, true, c.ctx, deliveryOrderResultChan)
 			deliveryOrderResult := <-deliveryOrderResultChan
 
+			a, _ := json.Marshal(deliveryOrderResult.ErrorLog)
+			fmt.Println("error do", string(a))
+			b, _ := json.Marshal(salesOrderResult.ErrorLog)
+			fmt.Println("error so", string(b))
 			if (deliveryOrderResult.Error != nil || salesOrderResult.Error != nil) && (deliveryOrderResult.ErrorLog.StatusCode != http.StatusNotFound || salesOrderResult.ErrorLog.StatusCode != http.StatusNotFound) {
 				if key == "retry" {
 
