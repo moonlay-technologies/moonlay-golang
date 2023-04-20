@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"order-service/app/middlewares"
 	"order-service/app/models"
 	"order-service/app/models/constants"
@@ -197,7 +198,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 			go c.salesOrderRepository.GetBySoRefCode(v["NoOrder"], false, c.ctx, getSalesOrderResultChan)
 			getSalesOrderResult := <-getSalesOrderResultChan
 
-			if getSalesOrderResult.Error != nil || getSalesOrderResult.Total > 0 {
+			if (getSalesOrderResult.Error != nil || getSalesOrderResult.Total > 0) && getSalesOrderResult.ErrorLog.StatusCode != http.StatusNotFound {
 
 				if key == "retry" {
 					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
