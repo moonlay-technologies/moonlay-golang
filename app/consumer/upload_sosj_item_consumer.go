@@ -560,7 +560,7 @@ func (c *uploadSOSJItemConsumerHandler) ProcessMessage() {
 
 				keyKafka := []byte(x.DoCode)
 				messageKafka, _ := json.Marshal(x)
-				err := c.kafkaClient.WriteToTopic(constants.CREATE_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
+				err := c.kafkaClient.WriteToTopic(constants.CREATE_DELIVERY_ORDER_TOPIC_TMP, keyKafka, messageKafka)
 
 				if err != nil {
 					fmt.Println(err.Error())
