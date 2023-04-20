@@ -534,7 +534,7 @@ func (c *uploadSOSJItemConsumerHandler) ProcessMessage() {
 
 			keyKafka := []byte(v.SoCode)
 			messageKafka, _ := json.Marshal(v)
-
+			fmt.Println("data so", messageKafka)
 			err = c.createSalesOrderConsumer.CreateSoConsumer(v, messageKafka, constants.CREATE_SALES_ORDER_TOPIC, 0, 0, string(keyKafka), nil)
 			if err != nil {
 				fmt.Println(err.Error())
@@ -561,7 +561,7 @@ func (c *uploadSOSJItemConsumerHandler) ProcessMessage() {
 
 				keyKafka := []byte(x.DoCode)
 				messageKafka, _ := json.Marshal(x)
-
+				fmt.Println("data do", messageKafka)
 				err := c.kafkaClient.WriteToTopic(constants.CREATE_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
 
 				if err != nil {
