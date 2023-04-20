@@ -562,21 +562,16 @@ func (c *uploadSOSJItemConsumerHandler) ProcessMessage() {
 					fmt.Println("error log do", createDeliveryOrderLogResult.ErrorLog)
 				}
 
-				// keyKafka := []byte(x.DoCode)
-				// messageKafka, _ := json.Marshal(x)
-
-				// err := c.kafkaClient.WriteToTopic(constants.CREATE_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
-
 				deliveryOrderLogResultChan := make(chan *models.DeliveryOrderLogChan)
-
 				dbTransaction, err := c.db.BeginTx(c.ctx, nil)
 
 				if err != nil {
-					errorLogData := helper.WriteLogConsumer(constants.CREATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
+					errorLogData := helper.WriteLogConsumer(constants.UPLOAD_SOSJ_ITEM_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
 					go c.deliveryOrderLogRepository.Insert(deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
 					fmt.Println(errorLogData)
 					continue
 				}
+
 				go c.deliveryOrderLogRepository.GetByCode(x.DoCode, constants.LOG_STATUS_MONGO_DEFAULT, deliveryOrderLog.Action, false, c.ctx, deliveryOrderLogResultChan)
 				deliveryOrderDetailResult := <-deliveryOrderLogResultChan
 				if deliveryOrderDetailResult.Error != nil {
@@ -592,7 +587,7 @@ func (c *uploadSOSJItemConsumerHandler) ProcessMessage() {
 
 				if errorLog.Err != nil {
 					dbTransaction.Rollback()
-					errorLogData := helper.WriteLogConsumer(constants.CREATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, nil)
+					errorLogData := helper.WriteLogConsumer(constants.UPLOAD_SOSJ_ITEM_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, nil)
 					go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
 					fmt.Println(errorLogData)
 					continue
@@ -600,7 +595,7 @@ func (c *uploadSOSJItemConsumerHandler) ProcessMessage() {
 
 				err = dbTransaction.Commit()
 				if err != nil {
-					errorLogData := helper.WriteLogConsumer(constants.CREATE_DELIVERY_ORDER_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
+					errorLogData := helper.WriteLogConsumer(constants.UPLOAD_SOSJ_ITEM_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
 					go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
 					fmt.Println(errorLogData)
 					continue

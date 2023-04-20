@@ -14,6 +14,9 @@ const (
 
 	DELETE_DELIVERY_ORDER_DETAIL_CONSUMER = "delete-delivery-order-detail-consumer"
 
+	UPLOAD_SOSJ_ITEM_CONSUMER = "upload-sosj-item-consumer"
+	UPLOAD_DO_ITEM_CONSUMER   = "upload-do-item-consumer"
+
 	SO_STATUS_APPV   = "APPV"
 	SO_STATUS_REAPPV = "REAPPV"
 	SO_STATUS_RJC    = "RJC"
