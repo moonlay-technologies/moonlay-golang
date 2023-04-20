@@ -791,7 +791,7 @@ func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, isInsertToJo
 		now := time.Now()
 		salesOrderJourneys := &models.SalesOrderJourneys{
 			SoCode:    request.SoCode,
-			SoId:      int(salesOrderID),
+			SoId:      id,
 			SoDate:    request.SoDate,
 			Status:    helper.GetSOJourneyStatus(request.OrderStatusID),
 			Remark:    "",
@@ -803,7 +803,6 @@ func (r *salesOrder) UpdateByID(id int, request *models.SalesOrder, isInsertToJo
 		createSalesOrderJourneysResultChan := make(chan *models.SalesOrderJourneysChan)
 		go r.salesOrderJourneysRepository.Insert(salesOrderJourneys, ctx, createSalesOrderJourneysResultChan)
 		createSalesOrderJourneysResult := <-createSalesOrderJourneysResultChan
-
 		if createSalesOrderJourneysResult.Error != nil {
 			response.Error = createSalesOrderJourneysResult.ErrorLog.Err
 			response.ErrorLog = createSalesOrderJourneysResult.ErrorLog
