@@ -3,6 +3,7 @@ package usecases
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"math"
 	"net/http"
@@ -65,6 +66,8 @@ func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromCreateEvent(deliveryO
 		ID:            deliveryOrder.SalesOrderID,
 		OrderSourceID: deliveryOrder.OrderSourceID,
 	}
+	a, _ := json.Marshal(salesOrderRequest)
+	fmt.Println("so req", string(a))
 
 	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
 	go u.salesOrderOpenSearchRepository.GetByID(salesOrderRequest, getSalesOrderResultChan)
