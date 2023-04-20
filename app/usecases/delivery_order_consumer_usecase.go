@@ -3,7 +3,6 @@ package usecases
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"math"
 	"net/http"
@@ -20,7 +19,7 @@ import (
 )
 
 type DeliveryOrderConsumerUseCaseInterface interface {
-	SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
+	SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, salesOrder *models.SalesOrder, isGetSalesOrder bool, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromUpdateEvent(deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	SyncToOpenSearchFromDeleteEvent(deliveryOrderId *int, deliveryOrderDetailId []*int, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog
 	Get(request *models.DeliveryOrderExportRequest) *model.ErrorLog
@@ -59,27 +58,30 @@ func InitDeliveryOrderConsumerUseCaseInterface(uploadRepository repositories.Upl
 	}
 }
 
-func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
+func (u *deliveryOrderConsumerUseCase) SyncToOpenSearchFromCreateEvent(deliveryOrder *models.DeliveryOrder, salesOrder *models.SalesOrder, isGetSalesOrder bool, sqlTransaction *sql.Tx, ctx context.Context) *model.ErrorLog {
 	now := time.Now()
 
-	salesOrderRequest := &models.SalesOrderRequest{
-		ID:            deliveryOrder.SalesOrderID,
-		OrderSourceID: deliveryOrder.OrderSourceID,
-	}
-	a, _ := json.Marshal(salesOrderRequest)
-	fmt.Println("so req", string(a))
+	if isGetSalesOrder {
+		salesOrderRequest := &models.SalesOrderRequest{
+			ID:            deliveryOrder.SalesOrderID,
+			OrderSourceID: deliveryOrder.OrderSourceID,
+		}
 
-	getSalesOrderResultChan := make(chan *models.SalesOrderChan)
-	go u.salesOrderOpenSearchRepository.GetByID(salesOrderRequest, getSalesOrderResultChan)
-	getSalesOrderResult := <-getSalesOrderResultChan
+		getSalesOrderResultChan := make(chan *models.SalesOrderChan)
+		go u.salesOrderOpenSearchRepository.GetByID(salesOrderRequest, getSalesOrderResultChan)
+		getSalesOrderResult := <-getSalesOrderResultChan
 
-	if getSalesOrderResult.Error != nil {
-		errorLogData := helper.WriteLog(getSalesOrderResult.Error, http.StatusInternalServerError, nil)
-		return errorLogData
+		if getSalesOrderResult.Error != nil {
+			errorLogData := helper.WriteLog(getSalesOrderResult.Error, http.StatusInternalServerError, nil)
+			return errorLogData
+		}
+
+		salesOrder = getSalesOrderResult.SalesOrder
 	}
-	deliveryOrder.SalesOrder.SoCode = getSalesOrderResult.SalesOrder.SoCode
-	deliveryOrder.SalesOrder.SoDate = getSalesOrderResult.SalesOrder.SoDate
-	deliveryOrder.SalesOrder.SoRefDate = getSalesOrderResult.SalesOrder.SoRefDate
+
+	deliveryOrder.SalesOrder.SoCode = salesOrder.SoCode
+	deliveryOrder.SalesOrder.SoDate = salesOrder.SoDate
+	deliveryOrder.SalesOrder.SoRefDate = salesOrder.SoRefDate
 
 	getOrderStatusResultChan := make(chan *models.OrderStatusChan)
 	go u.orderStatusRepository.GetByID(deliveryOrder.OrderStatusID, false, ctx, getOrderStatusResultChan)
