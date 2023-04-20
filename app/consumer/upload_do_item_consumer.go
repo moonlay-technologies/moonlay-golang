@@ -107,9 +107,9 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 		deliveryOrderRefCodes := map[string]*models.DeliveryOrder{}
 
 		// Get Order Status for DO
-		getOrderStatusResultChan := make(chan *models.OrderStatusChan)
-		go c.orderStatusRepository.GetByNameAndType("open", "delivery_order", false, c.ctx, getOrderStatusResultChan)
-		getOrderStatusResult := <-getOrderStatusResultChan
+		getDeliveryOrderStatusResultChan := make(chan *models.OrderStatusChan)
+		go c.orderStatusRepository.GetByNameAndType("open", "delivery_order", false, c.ctx, getDeliveryOrderStatusResultChan)
+		getDeliveryOrderStatusResult := <-getDeliveryOrderStatusResultChan
 
 		// Get Order Source for DO
 		getOrderSourceResultChan := make(chan *models.OrderSourceChan)
@@ -120,9 +120,9 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 
 			var errors []string
 
-			if getOrderStatusResult.Error != nil {
-				fmt.Println(getOrderStatusResult.Error.Error())
-				errors = append(errors, getOrderStatusResult.Error.Error())
+			if getDeliveryOrderStatusResult.Error != nil {
+				fmt.Println(getDeliveryOrderStatusResult.Error.Error())
+				errors = append(errors, getDeliveryOrderStatusResult.Error.Error())
 			}
 
 			if getOrderSourceResult.Error != nil {
@@ -347,8 +347,8 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 					deliveryOrder.AgentMap(getAgentResult.Agent)
 					deliveryOrder.DoCode = helper.GenerateDOCode(getAgentResult.Agent.ID, getOrderSourceResult.OrderSource.Code)
 					deliveryOrder.DoDate = v.TanggalSJ
-					deliveryOrder.OrderStatus = getOrderStatusResult.OrderStatus
-					deliveryOrder.OrderStatusID = getOrderStatusResult.OrderStatus.ID
+					deliveryOrder.OrderStatus = getDeliveryOrderStatusResult.OrderStatus
+					deliveryOrder.OrderStatusID = getDeliveryOrderStatusResult.OrderStatus.ID
 					deliveryOrder.OrderSource = getOrderSourceResult.OrderSource
 					deliveryOrder.OrderSourceID = getOrderSourceResult.OrderSource.ID
 					deliveryOrder.Store = getStoreResult.Store
