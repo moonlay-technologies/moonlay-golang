@@ -15,6 +15,7 @@ import (
 	kafkadbo "order-service/global/utils/kafka"
 	"order-service/global/utils/model"
 	baseModel "order-service/global/utils/model"
+	"strings"
 	"time"
 
 	"github.com/bxcodec/dbresolver"
@@ -942,6 +943,8 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 
 	salesOrderUpdateReq := &models.SalesOrder{
 		OrderStatusID:   getOrderStatusResult.OrderStatus.ID,
+		SoCode:          getSalesOrderByIDResult.SalesOrder.SoCode,
+		SoDate:          strings.ReplaceAll(getSalesOrderByIDResult.SalesOrder.SoDate, "T00:00:00Z", ""),
 		LatestUpdatedBy: ctx.Value("user").(*models.UserClaims).UserID,
 		UpdatedAt:       &now,
 	}
@@ -971,6 +974,15 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 	var salesOrderDetails []*models.SalesOrderDetail
 	for _, v := range request.SalesOrderDetails {
 
+		// Get Sales Order Detail By Id
+		getSalesOrderDetailByIDResultChan := make(chan *models.SalesOrderDetailChan)
+		go u.salesOrderDetailRepository.GetByID(v.ID, false, ctx, getSalesOrderDetailByIDResultChan)
+		getSalesOrderDetailByIDResult := <-getSalesOrderDetailByIDResultChan
+
+		if getSalesOrderDetailByIDResult.Error != nil {
+			return &models.SalesOrderResponse{}, getSalesOrderDetailByIDResult.ErrorLog
+		}
+
 		// Get Order Detail Status By Id
 		getOrderDetailStatusResultChan := make(chan *models.OrderStatusChan)
 		go u.orderStatusRepository.GetByID(v.OrderStatusID, false, ctx, getOrderDetailStatusResultChan)
@@ -982,6 +994,7 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 
 		salesOrderDetail := &models.SalesOrderDetail{
 			OrderStatusID:   getOrderDetailStatusResult.OrderStatus.ID,
+			SoDetailCode:    getSalesOrderDetailByIDResult.SalesOrderDetail.SoDetailCode,
 			LatestUpdatedBy: ctx.Value("user").(*models.UserClaims).UserID,
 			UpdatedAt:       &now,
 		}
@@ -1005,9 +1018,9 @@ func (u *salesOrderUseCase) UpdateById(id int, request *models.SalesOrderUpdateR
 		}
 
 		// Get Sales Order Detail by Id
-		getSalesOrderDetailByIDResultChan := make(chan *models.SalesOrderDetailChan)
+		getSalesOrderDetailByIDResultChan = make(chan *models.SalesOrderDetailChan)
 		go u.salesOrderDetailRepository.GetByID(v.ID, false, ctx, getSalesOrderDetailByIDResultChan)
-		getSalesOrderDetailByIDResult := <-getSalesOrderDetailByIDResultChan
+		getSalesOrderDetailByIDResult = <-getSalesOrderDetailByIDResultChan
 
 		if getSalesOrderDetailByIDResult.Error != nil {
 			return &models.SalesOrderResponse{}, getSalesOrderDetailByIDResult.ErrorLog
@@ -1080,7 +1093,7 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 
 	salesOrder = getSalesOrderByIDResult.SalesOrder
 
-	// Get Sales Order Detail by Id
+	// Get Sales Order Detail by So Id
 	getSalesOrderDetailsBySoIdResultChan := make(chan *models.SalesOrderDetailsChan)
 	go u.salesOrderDetailRepository.GetBySalesOrderID(soId, false, ctx, getSalesOrderDetailsBySoIdResultChan)
 	getSalesOrderDetailsBySoIdResult := <-getSalesOrderDetailsBySoIdResultChan
@@ -1206,6 +1219,8 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 
 		salesOrderUpdateReq := &models.SalesOrder{
 			OrderStatusID:   getOrderStatusResult.OrderStatus.ID,
+			SoCode:          getSalesOrderByIDResult.SalesOrder.SoCode,
+			SoDate:          strings.ReplaceAll(getSalesOrderByIDResult.SalesOrder.SoDate, "T00:00:00Z", ""),
 			LatestUpdatedBy: ctx.Value("user").(*models.UserClaims).UserID,
 			UpdatedAt:       &now,
 		}
@@ -1236,8 +1251,18 @@ func (u *salesOrderUseCase) UpdateSODetailById(soId, soDetailId int, request *mo
 	salesOrder.StoreChanMap(getStoreResult)
 	salesOrder.UserChanMap(getUserResult)
 
+	// Get Sales Order Detail by Id
+	getSalesOrderDetailByIdResultChan := make(chan *models.SalesOrderDetailChan)
+	go u.salesOrderDetailRepository.GetByID(soDetailId, false, ctx, getSalesOrderDetailByIdResultChan)
+	getSalesOrderDetailByIdResult := <-getSalesOrderDetailByIdResultChan
+
+	if getSalesOrderDetailByIdResult.Error != nil {
+		return &models.SalesOrderDetailStoreResponse{}, getSalesOrderDetailsBySoIdResult.ErrorLog
+	}
+
 	salesOrderDetailReq := &models.SalesOrderDetail{
 		OrderStatusID:   getOrderDetailStatusResult.OrderStatus.ID,
+		SoDetailCode:    getSalesOrderDetailByIdResult.SalesOrderDetail.SoDetailCode,
 		LatestUpdatedBy: ctx.Value("user").(*models.UserClaims).UserID,
 		UpdatedAt:       &now,
 	}
@@ -1394,6 +1419,8 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 
 	salesOrderUpdateReq := &models.SalesOrder{
 		OrderStatusID:   getOrderStatusResult.OrderStatus.ID,
+		SoCode:          getSalesOrderByIDResult.SalesOrder.SoCode,
+		SoDate:          strings.ReplaceAll(getSalesOrderByIDResult.SalesOrder.SoDate, "T00:00:00Z", ""),
 		LatestUpdatedBy: ctx.Value("user").(*models.UserClaims).UserID,
 		UpdatedAt:       &now,
 	}
@@ -1423,6 +1450,15 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 	var salesOrderDetails []*models.SalesOrderDetail
 	for _, v := range request.SalesOrderDetails {
 
+		// Get Sales Order Detail By Id
+		getSalesOrderDetailByIDResultChan := make(chan *models.SalesOrderDetailChan)
+		go u.salesOrderDetailRepository.GetByID(v.ID, false, ctx, getSalesOrderDetailByIDResultChan)
+		getSalesOrderDetailByIDResult := <-getSalesOrderDetailByIDResultChan
+
+		if getSalesOrderDetailByIDResult.Error != nil {
+			return &models.SalesOrderResponse{}, getSalesOrderDetailByIDResult.ErrorLog
+		}
+
 		// Get Order Detail Status By Name
 		getOrderDetailStatusResultChan := make(chan *models.OrderStatusChan)
 		go u.orderStatusRepository.GetByID(v.OrderStatusID, false, ctx, getOrderDetailStatusResultChan)
@@ -1434,6 +1470,7 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 
 		salesOrderDetail := &models.SalesOrderDetail{
 			OrderStatusID:   getOrderDetailStatusResult.OrderStatus.ID,
+			SoDetailCode:    getSalesOrderDetailByIDResult.SalesOrderDetail.SoDetailCode,
 			LatestUpdatedBy: ctx.Value("user").(*models.UserClaims).UserID,
 			UpdatedAt:       &now,
 		}
@@ -1457,9 +1494,9 @@ func (u *salesOrderUseCase) UpdateSODetailBySOId(soId int, request *models.Sales
 		}
 
 		// Get Sales Order Detail by Id
-		getSalesOrderDetailByIDResultChan := make(chan *models.SalesOrderDetailChan)
+		getSalesOrderDetailByIDResultChan = make(chan *models.SalesOrderDetailChan)
 		go u.salesOrderDetailRepository.GetByID(v.ID, false, ctx, getSalesOrderDetailByIDResultChan)
-		getSalesOrderDetailByIDResult := <-getSalesOrderDetailByIDResultChan
+		getSalesOrderDetailByIDResult = <-getSalesOrderDetailByIDResultChan
 
 		if getSalesOrderDetailByIDResult.Error != nil {
 			return &models.SalesOrderResponse{}, getSalesOrderDetailByIDResult.ErrorLog

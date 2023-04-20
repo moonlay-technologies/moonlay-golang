@@ -538,7 +538,6 @@ func (r *salesOrderDetail) UpdateByID(id int, request *models.SalesOrderDetail, 
 		createSalesOrderDetailJourneysResultChan := make(chan *models.SalesOrderDetailJourneysChan)
 		go r.salesOrderDetailJourneysRepository.Insert(salesOrderDetailJourneys, ctx, createSalesOrderDetailJourneysResultChan)
 		createSalesOrderDetailJourneysResult := <-createSalesOrderDetailJourneysResultChan
-
 		if createSalesOrderDetailJourneysResult.Error != nil {
 			response.Error = createSalesOrderDetailJourneysResult.ErrorLog.Err
 			response.ErrorLog = createSalesOrderDetailJourneysResult.ErrorLog
