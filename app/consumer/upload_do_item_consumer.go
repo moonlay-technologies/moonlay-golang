@@ -5,10 +5,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"order-service/app/models"
 	"order-service/app/models/constants"
 	"order-service/app/repositories"
 	mongoRepositories "order-service/app/repositories/mongod"
+	openSearchRepositories "order-service/app/repositories/open_search"
+	"order-service/app/usecases"
 	"order-service/global/utils/helper"
 	kafkadbo "order-service/global/utils/kafka"
 	"strconv"
@@ -22,57 +25,61 @@ type UploadDOItemConsumerHandlerInterface interface {
 }
 
 type uploadDOItemConsumerHandler struct {
-	deliveryOrderRepository       repositories.DeliveryOrderRepositoryInterface
-	deliveryOrderDetailRepository repositories.DeliveryOrderDetailRepositoryInterface
-	salesOrderRepository          repositories.SalesOrderRepositoryInterface
-	salesOrderDetailRepository    repositories.SalesOrderDetailRepositoryInterface
-	orderStatusRepository         repositories.OrderStatusRepositoryInterface
-	orderSourceRepository         repositories.OrderSourceRepositoryInterface
-	warehouseRepository           repositories.WarehouseRepositoryInterface
-	brandRepository               repositories.BrandRepositoryInterface
-	uomRepository                 repositories.UomRepositoryInterface
-	agentRepository               repositories.AgentRepositoryInterface
-	storeRepository               repositories.StoreRepositoryInterface
-	productRepository             repositories.ProductRepositoryInterface
-	userRepository                repositories.UserRepositoryInterface
-	salesmanRepository            repositories.SalesmanRepositoryInterface
-	deliveryOrderLogRepository    mongoRepositories.DeliveryOrderLogRepositoryInterface
-	salesOrderLogRepository       mongoRepositories.SalesOrderLogRepositoryInterface
-	salesOrderJourneyRepository   mongoRepositories.SalesOrderJourneysRepositoryInterface
-	doUploadHistoriesRepository   mongoRepositories.DoUploadHistoriesRepositoryInterface
-	doUploadErrorLogsRepository   mongoRepositories.DoUploadErrorLogsRepositoryInterface
-	kafkaClient                   kafkadbo.KafkaClientInterface
-	ctx                           context.Context
-	args                          []interface{}
-	db                            dbresolver.DB
+	deliveryOrderRepository        repositories.DeliveryOrderRepositoryInterface
+	deliveryOrderDetailRepository  repositories.DeliveryOrderDetailRepositoryInterface
+	salesOrderRepository           repositories.SalesOrderRepositoryInterface
+	salesOrderDetailRepository     repositories.SalesOrderDetailRepositoryInterface
+	orderStatusRepository          repositories.OrderStatusRepositoryInterface
+	orderSourceRepository          repositories.OrderSourceRepositoryInterface
+	warehouseRepository            repositories.WarehouseRepositoryInterface
+	brandRepository                repositories.BrandRepositoryInterface
+	uomRepository                  repositories.UomRepositoryInterface
+	agentRepository                repositories.AgentRepositoryInterface
+	storeRepository                repositories.StoreRepositoryInterface
+	productRepository              repositories.ProductRepositoryInterface
+	userRepository                 repositories.UserRepositoryInterface
+	salesmanRepository             repositories.SalesmanRepositoryInterface
+	deliveryOrderLogRepository     mongoRepositories.DeliveryOrderLogRepositoryInterface
+	salesOrderLogRepository        mongoRepositories.SalesOrderLogRepositoryInterface
+	salesOrderJourneyRepository    mongoRepositories.SalesOrderJourneysRepositoryInterface
+	doUploadHistoriesRepository    mongoRepositories.DoUploadHistoriesRepositoryInterface
+	doUploadErrorLogsRepository    mongoRepositories.DoUploadErrorLogsRepositoryInterface
+	deliveryOrderOpenSearchUseCase usecases.DeliveryOrderConsumerUseCaseInterface
+	salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface
+	kafkaClient                    kafkadbo.KafkaClientInterface
+	ctx                            context.Context
+	args                           []interface{}
+	db                             dbresolver.DB
 }
 
 func InitUploadDOItemConsumerHandlerInterface(deliveryOrderRepository repositories.DeliveryOrderRepositoryInterface, deliveryOrderDetailRepository repositories.DeliveryOrderDetailRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, salesOrderDetailRepository repositories.SalesOrderDetailRepositoryInterface, orderStatusRepository repositories.OrderStatusRepositoryInterface, orderSourceRepository repositories.OrderSourceRepositoryInterface, warehouseRepository repositories.WarehouseRepositoryInterface, brandRepository repositories.BrandRepositoryInterface, uomRepository repositories.UomRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, productRepository repositories.ProductRepositoryInterface, userRepository repositories.UserRepositoryInterface, salesmanRepository repositories.SalesmanRepositoryInterface, deliveryOrderLogRepository mongoRepositories.DeliveryOrderLogRepositoryInterface, salesOrderLogRepository mongoRepositories.SalesOrderLogRepositoryInterface, salesOrderJourneyRepository mongoRepositories.SalesOrderJourneysRepositoryInterface, doUploadHistoriesRepository mongoRepositories.DoUploadHistoriesRepositoryInterface,
-	doUploadErrorLogsRepository mongoRepositories.DoUploadErrorLogsRepositoryInterface, kafkaClient kafkadbo.KafkaClientInterface, ctx context.Context, args []interface{}, db dbresolver.DB) UploadDOItemConsumerHandlerInterface {
+	doUploadErrorLogsRepository mongoRepositories.DoUploadErrorLogsRepositoryInterface, deliveryOrderOpenSearchUseCase usecases.DeliveryOrderConsumerUseCaseInterface, salesOrderOpenSearchRepository openSearchRepositories.SalesOrderOpenSearchRepositoryInterface, kafkaClient kafkadbo.KafkaClientInterface, ctx context.Context, args []interface{}, db dbresolver.DB) UploadDOItemConsumerHandlerInterface {
 	return &uploadDOItemConsumerHandler{
-		deliveryOrderRepository:       deliveryOrderRepository,
-		deliveryOrderDetailRepository: deliveryOrderDetailRepository,
-		salesOrderRepository:          salesOrderRepository,
-		salesOrderDetailRepository:    salesOrderDetailRepository,
-		orderStatusRepository:         orderStatusRepository,
-		orderSourceRepository:         orderSourceRepository,
-		warehouseRepository:           warehouseRepository,
-		brandRepository:               brandRepository,
-		uomRepository:                 uomRepository,
-		productRepository:             productRepository,
-		userRepository:                userRepository,
-		salesmanRepository:            salesmanRepository,
-		agentRepository:               agentRepository,
-		storeRepository:               storeRepository,
-		deliveryOrderLogRepository:    deliveryOrderLogRepository,
-		salesOrderLogRepository:       salesOrderLogRepository,
-		salesOrderJourneyRepository:   salesOrderJourneyRepository,
-		doUploadHistoriesRepository:   doUploadHistoriesRepository,
-		doUploadErrorLogsRepository:   doUploadErrorLogsRepository,
-		kafkaClient:                   kafkaClient,
-		ctx:                           ctx,
-		args:                          args,
-		db:                            db,
+		deliveryOrderRepository:        deliveryOrderRepository,
+		deliveryOrderDetailRepository:  deliveryOrderDetailRepository,
+		salesOrderRepository:           salesOrderRepository,
+		salesOrderDetailRepository:     salesOrderDetailRepository,
+		orderStatusRepository:          orderStatusRepository,
+		orderSourceRepository:          orderSourceRepository,
+		warehouseRepository:            warehouseRepository,
+		brandRepository:                brandRepository,
+		uomRepository:                  uomRepository,
+		productRepository:              productRepository,
+		userRepository:                 userRepository,
+		salesmanRepository:             salesmanRepository,
+		agentRepository:                agentRepository,
+		storeRepository:                storeRepository,
+		deliveryOrderLogRepository:     deliveryOrderLogRepository,
+		salesOrderLogRepository:        salesOrderLogRepository,
+		salesOrderJourneyRepository:    salesOrderJourneyRepository,
+		doUploadHistoriesRepository:    doUploadHistoriesRepository,
+		doUploadErrorLogsRepository:    doUploadErrorLogsRepository,
+		deliveryOrderOpenSearchUseCase: deliveryOrderOpenSearchUseCase,
+		salesOrderOpenSearchRepository: salesOrderOpenSearchRepository,
+		kafkaClient:                    kafkaClient,
+		ctx:                            ctx,
+		args:                           args,
+		db:                             db,
 	}
 }
 
@@ -502,24 +509,6 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 				fmt.Println(createDeliveryOrderLogResult.Error.Error())
 			}
 
-			deliveryOrderJourney := &models.DeliveryOrderJourney{
-				DoId:      v.ID,
-				DoCode:    v.DoCode,
-				Status:    constants.DO_STATUS_OPEN,
-				Remark:    "",
-				Reason:    "",
-				CreatedAt: &now,
-				UpdatedAt: &now,
-			}
-
-			createDeliveryOrderJourneyChan := make(chan *models.DeliveryOrderJourneyChan)
-			go c.deliveryOrderLogRepository.InsertJourney(deliveryOrderJourney, c.ctx, createDeliveryOrderJourneyChan)
-			createDeliveryOrderJourneysResult := <-createDeliveryOrderJourneyChan
-
-			if createDeliveryOrderJourneysResult.Error != nil {
-				fmt.Println(createDeliveryOrderLogResult.Error.Error())
-			}
-
 			salesOrderLog := &models.SalesOrderLog{
 				RequestID: requestId,
 				SoCode:    v.SalesOrder.SoCode,
@@ -537,10 +526,67 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 				fmt.Println(createSalesOrderLogResult.Error.Error())
 			}
 
-			keyKafka := []byte(v.DoCode)
-			messageKafka, _ := json.Marshal(v)
+			// keyKafka := []byte(v.DoCode)
+			// messageKafka, _ := json.Marshal(v)
 
-			err = c.kafkaClient.WriteToTopic(constants.CREATE_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
+			// err = c.kafkaClient.WriteToTopic(constants.CREATE_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
+
+			deliveryOrderLogResultChan := make(chan *models.DeliveryOrderLogChan)
+			dbTransaction, err := c.db.BeginTx(c.ctx, nil)
+
+			if err != nil {
+				errorLogData := helper.WriteLogConsumer(constants.UPLOAD_DO_ITEM_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
+				go c.deliveryOrderLogRepository.Insert(deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
+				fmt.Println(errorLogData)
+				continue
+			}
+
+			go c.deliveryOrderLogRepository.GetByCode(v.DoCode, constants.LOG_STATUS_MONGO_DEFAULT, deliveryOrderLog.Action, false, c.ctx, deliveryOrderLogResultChan)
+			deliveryOrderDetailResult := <-deliveryOrderLogResultChan
+			if deliveryOrderDetailResult.Error != nil {
+				go c.deliveryOrderLogRepository.Insert(deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
+				fmt.Println(deliveryOrderDetailResult.Error)
+				continue
+			}
+			deliveryOrderLog = deliveryOrderDetailResult.DeliveryOrderLog
+			deliveryOrderLog.Status = constants.LOG_STATUS_MONGO_ERROR
+			deliveryOrderLog.UpdatedAt = &now
+
+			salesOrderRequest := &models.SalesOrderRequest{
+				ID: v.SalesOrderID,
+			}
+
+			getSalesOrderResultChan := make(chan *models.SalesOrderChan)
+			go c.salesOrderOpenSearchRepository.GetByID(salesOrderRequest, getSalesOrderResultChan)
+			getSalesOrderResult := <-getSalesOrderResultChan
+
+			if getSalesOrderResult.Error != nil {
+				errorLogData := helper.WriteLog(getSalesOrderResult.Error, http.StatusInternalServerError, nil)
+				go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
+				fmt.Println(errorLogData)
+				continue
+			}
+
+			errorLog := c.deliveryOrderOpenSearchUseCase.SyncToOpenSearchFromCreateEvent(v, getSalesOrderResult.SalesOrder, false, dbTransaction, c.ctx)
+
+			if errorLog.Err != nil {
+				dbTransaction.Rollback()
+				errorLogData := helper.WriteLogConsumer(constants.UPLOAD_DO_ITEM_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), errorLog.Err, http.StatusInternalServerError, nil)
+				go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
+				fmt.Println(errorLogData)
+				continue
+			}
+
+			err = dbTransaction.Commit()
+			if err != nil {
+				errorLogData := helper.WriteLogConsumer(constants.UPLOAD_DO_ITEM_CONSUMER, m.Topic, m.Partition, m.Offset, string(m.Key), err, http.StatusInternalServerError, nil)
+				go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
+				fmt.Println(errorLogData)
+				continue
+			}
+
+			deliveryOrderLog.Status = constants.LOG_STATUS_MONGO_SUCCESS
+			go c.deliveryOrderLogRepository.UpdateByID(deliveryOrderLog.ID.Hex(), deliveryOrderLog, c.ctx, deliveryOrderLogResultChan)
 
 			if err != nil {
 				fmt.Println(err)
