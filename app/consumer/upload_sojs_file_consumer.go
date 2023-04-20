@@ -531,8 +531,10 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 
 			a, _ := json.Marshal(deliveryOrderResult.ErrorLog)
 			fmt.Println("error do", string(a))
+			fmt.Println(deliveryOrderResult.ErrorLog.StatusCode)
 			b, _ := json.Marshal(salesOrderResult.ErrorLog)
 			fmt.Println("error so", string(b))
+			fmt.Println(salesOrderResult.ErrorLog.StatusCode)
 			if (deliveryOrderResult.Error != nil || salesOrderResult.Error != nil) && (deliveryOrderResult.ErrorLog.StatusCode != http.StatusNotFound || salesOrderResult.ErrorLog.StatusCode != http.StatusNotFound) {
 				if key == "retry" {
 
