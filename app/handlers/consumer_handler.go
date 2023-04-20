@@ -43,6 +43,11 @@ func MainConsumerHandler(kafkaClient kafkadbo.KafkaClientInterface, mongodbClien
 		deliveryOrderConsumer := consumer.InitCreateDeliveryOrderConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
 		go deliveryOrderConsumer.ProcessMessage()
 		break
+	case constants.CREATE_DELIVERY_ORDER_TOPIC_TMP:
+		wg.Add(1)
+		deliveryOrderConsumer := consumer.InitCreateDeliveryOrderConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
+		go deliveryOrderConsumer.ProcessMessage()
+		break
 	case constants.UPDATE_DELIVERY_ORDER_TOPIC:
 		wg.Add(1)
 		deliveryOrderConsumer := consumer.InitUpdateDeliveryOrderConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
