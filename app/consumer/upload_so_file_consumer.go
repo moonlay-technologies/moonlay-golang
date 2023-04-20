@@ -318,7 +318,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 
 			mustActiveField := []*models.MustActiveRequest{
 				helper.GenerateMustActive("agents", "IDDistributor", intTypeResult["IDDistributor"], "active"),
-				helper.GenerateMustActive("users", "user_id", 0, "ACTIVE"),
+				// helper.GenerateMustActive("users", "user_id", 0, "ACTIVE"),
 				{
 					Table:    "salesmans",
 					ReqField: "IDSalesman",
