@@ -388,14 +388,13 @@ func (r *deliveryOrderDetailOpenSearch) generateDeliveryOrderQueryOpenSearchTerm
 			var endCreatedAt string
 			startTimeadj, err := time.Parse(constants.DATE_FORMAT_EXPORT_CREATED_AT, request.StartCreatedAt+constants.DATE_TIME_ZERO_HOUR_ADDITIONAL)
 			if err == nil {
-				startTimeadj = startTimeadj.Add(time.Hour * -7)
 				startCreatedAt = startTimeadj.Format(time.RFC3339)
 			} else {
 				fmt.Println("error = ", err.Error())
 			}
 			endTimeadj, err := time.Parse(constants.DATE_FORMAT_EXPORT_CREATED_AT, request.EndCreatedAt+constants.DATE_TIME_ZERO_HOUR_ADDITIONAL)
 			if err == nil {
-				endTimeadj = endTimeadj.Add(time.Hour * +16).Add(time.Minute * 59).Add(time.Second * 59)
+				endTimeadj = endTimeadj.Add(time.Hour * +23).Add(time.Minute * 59).Add(time.Second * 59)
 				endCreatedAt = endTimeadj.Format(time.RFC3339)
 			} else {
 				fmt.Println("error = ", err.Error())
