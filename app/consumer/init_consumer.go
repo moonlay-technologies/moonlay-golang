@@ -302,12 +302,20 @@ func InitUploadSOSJItemConsumer(kafkaClient kafkadbo.KafkaClientInterface, mongo
 	warehouseRepository := repositories.InitWarehouseRepository(database, redisdb)
 	deliveryOrderRepository := repositories.InitDeliveryRepository(deliveryOrderJourneyRepository, database, redisdb)
 	deliveryOrderDetailRepository := repositories.InitDeliveryOrderDetailRepository(database, redisdb)
+	categoryRepository := repositories.InitCategoryRepository(database, redisdb)
 	deliveryOrderLogRepository := mongoRepo.InitDeliveryOrderLogRepository(mongodbClient)
 	sosjUploadHistoriesRepository := mongoRepo.InitSOSJUploadHistoriesRepositoryInterface(mongodbClient)
 	sosjUploadErrorLogsRepository := mongoRepo.InitSOSJUploadErrorLogsRepositoryInterface(mongodbClient)
+	salesOrderJourneyRepository := mongoRepo.InitSalesOrderJourneysRepository(mongodbClient)
 	uploadRepository := repositories.InitUploadRepository(database)
 	createSalesOrderConsumer := InitCreateSalesOrderConsumer(kafkaClient, mongodbClient, opensearchClient, database, redisdb, ctx, args)
-	handler := InitUploadSOSJItemConsumerHandlerInterface(orderSourceRepository, orderStatusRepository, productRepository, uomRepository, agentRepository, storeRepository, userRepository, salesmanRepository, brandRepository, salesOrderRepository, salesOrderDetailRepository, salesOrderLogRepository, salesOrderJourneysRepository, salesOrderDetailJourneysRepository, warehouseRepository, deliveryOrderRepository, deliveryOrderDetailRepository, deliveryOrderLogRepository, sosjUploadHistoriesRepository, sosjUploadErrorLogsRepository, uploadRepository, createSalesOrderConsumer, kafkaClient, database, ctx, args)
+	salesOrderOpenSearchRepository := openSearchRepo.InitSalesOrderOpenSearchRepository(opensearchClient)
+	salesOrderDetailOpenSearchRepository := openSearchRepo.InitSalesOrderDetailOpenSearchRepository(opensearchClient)
+	deliveryOrderOpenSearchRepository := openSearchRepo.InitDeliveryOrderOpenSearchRepository(opensearchClient, deliveryOrderRepository)
+	deliveryOrderDetailOpenSearchRepository := openSearchRepo.InitDeliveryOrderDetailOpenSearchRepository(opensearchClient, deliveryOrderDetailRepository)
+	salesOrderOpenSearchUseCase := usecases.InitSalesOrderOpenSearchUseCaseInterface(salesOrderRepository, salesOrderDetailRepository, orderStatusRepository, productRepository, uomRepository, salesOrderOpenSearchRepository, deliveryOrderOpenSearchRepository, salesOrderDetailOpenSearchRepository, categoryRepository, salesOrderJourneyRepository, uploadRepository, ctx)
+	deliveryOrderConsumerUseCase := usecases.InitDeliveryOrderConsumerUseCaseInterface(uploadRepository, orderStatusRepository, brandRepository, agentRepository, storeRepository, productRepository, deliveryOrderOpenSearchRepository, deliveryOrderDetailOpenSearchRepository, salesOrderOpenSearchRepository, salesOrderOpenSearchUseCase, ctx)
+	handler := InitUploadSOSJItemConsumerHandlerInterface(orderSourceRepository, orderStatusRepository, productRepository, uomRepository, agentRepository, storeRepository, userRepository, salesmanRepository, brandRepository, salesOrderRepository, salesOrderDetailRepository, salesOrderLogRepository, salesOrderJourneysRepository, salesOrderDetailJourneysRepository, warehouseRepository, deliveryOrderRepository, deliveryOrderDetailRepository, deliveryOrderLogRepository, sosjUploadHistoriesRepository, sosjUploadErrorLogsRepository, uploadRepository, createSalesOrderConsumer, deliveryOrderConsumerUseCase, kafkaClient, database, ctx, args)
 	return handler
 }
 
