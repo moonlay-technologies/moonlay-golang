@@ -526,11 +526,6 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 				fmt.Println(createSalesOrderLogResult.Error.Error())
 			}
 
-			// keyKafka := []byte(v.DoCode)
-			// messageKafka, _ := json.Marshal(v)
-
-			// err = c.kafkaClient.WriteToTopic(constants.CREATE_DELIVERY_ORDER_TOPIC, keyKafka, messageKafka)
-
 			deliveryOrderLogResultChan := make(chan *models.DeliveryOrderLogChan)
 			dbTransaction, err := c.db.BeginTx(c.ctx, nil)
 
