@@ -31,12 +31,13 @@ type uploadSOFileConsumerHandler struct {
 	soUploadHistoriesRepository mongoRepositories.SoUploadHistoriesRepositoryInterface
 	soUploadErrorLogsRepository mongoRepositories.SoUploadErrorLogsRepositoryInterface
 	salesOrderRepository        repositories.SalesOrderRepositoryInterface
+	storeRepository             repositories.StoreRepositoryInterface
 	ctx                         context.Context
 	args                        []interface{}
 	db                          dbresolver.DB
 }
 
-func InitUploadSOFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, uploadRepository repositories.UploadRepositoryInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, requestValidationRepository repositories.RequestValidationRepositoryInterface, soUploadHistoriesRepository mongoRepositories.SoUploadHistoriesRepositoryInterface, soUploadErrorLogsRepository mongoRepositories.SoUploadErrorLogsRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UploadSOFileConsumerHandlerInterface {
+func InitUploadSOFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, uploadRepository repositories.UploadRepositoryInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, requestValidationRepository repositories.RequestValidationRepositoryInterface, soUploadHistoriesRepository mongoRepositories.SoUploadHistoriesRepositoryInterface, soUploadErrorLogsRepository mongoRepositories.SoUploadErrorLogsRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UploadSOFileConsumerHandlerInterface {
 	return &uploadSOFileConsumerHandler{
 		kafkaClient:                 kafkaClient,
 		uploadRepository:            uploadRepository,
@@ -45,6 +46,7 @@ func InitUploadSOFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientIn
 		soUploadHistoriesRepository: soUploadHistoriesRepository,
 		soUploadErrorLogsRepository: soUploadErrorLogsRepository,
 		salesOrderRepository:        salesOrderRepository,
+		storeRepository:             storeRepository,
 		ctx:                         ctx,
 		args:                        args,
 		db:                          db,
@@ -382,8 +384,26 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				}
 			}
 
+			getStoreResultChan := make(chan *models.StoreChan)
+			go c.storeRepository.GetIdByStoreCode(v["KodeToko"], false, c.ctx, getStoreResultChan)
+			getStoreResult := <-getStoreResultChan
+			if getStoreResult.Error != nil {
+				if key == "retry" {
+					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{getStoreResult.Error.Error()}
+					if getStoreResult.ErrorLog.StatusCode == http.StatusNotFound {
+						errors = []string{fmt.Sprintf("KodeToko = %s Tidak Terdaftar pada Distributor %s. Silahkan gunakan Kode Toko yang lain.", v["KodeToko"], soUploadHistoryJourneysResult.SoUploadHistory.AgentName)}
+					}
+
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
+					continue
+				}
+			}
+
 			storeAddressesResultChan := make(chan *models.RequestIdValidationChan)
-			go c.requestValidationRepository.StoreAddressesValidation(v["KodeToko"], storeAddressesResultChan)
+			go c.requestValidationRepository.StoreAddressesValidation(getStoreResult.Store.ID, storeAddressesResultChan)
 			storeAddressesResult := <-storeAddressesResultChan
 
 			if storeAddressesResult.Total < 1 {
