@@ -279,12 +279,6 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 				}
 			}
 
-			salesOrderRedisKey := fmt.Sprintf("%s:%s", constants.SALES_ORDER_BY_CODE, v["NoOrder"])
-			_, err := c.redisdb.Client().Del(c.ctx, salesOrderRedisKey).Result()
-			if err != nil {
-				fmt.Println(err)
-			}
-
 			getSalesOrderResultChan := make(chan *models.SalesOrderChan)
 			go c.salesOrderRepository.GetByCode(v["NoOrder"], false, c.ctx, getSalesOrderResultChan)
 			getSalesOrderResult := <-getSalesOrderResultChan
@@ -341,12 +335,6 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
 					continue
 				}
-			}
-
-			salesOrderDetailRedisKey := fmt.Sprintf("%s:%d", constants.SALES_ORDER_DETAIL_BY_SOID_SKU, getSalesOrderResult.SalesOrder.ID)
-			_, err = c.redisdb.Client().Del(c.ctx, salesOrderDetailRedisKey).Result()
-			if err != nil {
-				fmt.Println(err)
 			}
 
 			getSODetailBySoIdAndSkuResultChan := make(chan *models.SalesOrderDetailsChan)
@@ -417,12 +405,6 @@ func (c *uploadDOFileConsumerHandler) ProcessMessage() {
 					c.createSjUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, warehouseName, errors, &now, v)
 					continue
 				}
-			}
-
-			deliveryOrderRedisKey := fmt.Sprintf("%s:%s", constants.DELIVERY_ORDER_BY_DO_REF_CODE, v["NoSJ"])
-			_, err = c.redisdb.Client().Del(c.ctx, deliveryOrderRedisKey).Result()
-			if err != nil {
-				fmt.Println(err)
 			}
 
 			getDeliveryOrderResultChan := make(chan *models.DeliveryOrderChan)

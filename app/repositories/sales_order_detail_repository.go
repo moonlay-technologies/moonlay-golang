@@ -148,7 +148,7 @@ func (r *salesOrderDetail) GetBySOIDSkuAndUomCode(salesOrderID int, sku string, 
 			"INNER JOIN sales_orders as so on so.id = sod.sales_order_id "+
 			"INNER JOIN products as p on p.id = sod.product_id "+
 			"INNER JOIN uoms as u on u.id = sod.uom_id "+
-			"WHERE sod.deleted_at IS NULL AND p.sku = ? AND u.code = ? AND so.id = ?", sku, uomCode, salesOrderID).Scan(&total)
+			"WHERE sod.deleted_at IS NULL AND u.code = ? AND so.id = ? AND IF((SELECT COUNT(SKU) FROM products WHERE SKU = ?), p.SKU = ?, p.aliasSku = ?)", uomCode, salesOrderID, sku, sku, sku).Scan(&total)
 
 		if err != nil {
 			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -175,7 +175,7 @@ func (r *salesOrderDetail) GetBySOIDSkuAndUomCode(salesOrderID int, sku string, 
 				"INNER JOIN sales_orders as so on so.id = sod.sales_order_id "+
 				"INNER JOIN products as p on p.id = sod.product_id "+
 				"INNER JOIN uoms as u on u.id = sod.uom_id "+
-				"WHERE sod.deleted_at IS NULL AND p.sku = ? AND u.code = ? AND so.id = ?", sku, uomCode, salesOrderID).
+				"WHERE sod.deleted_at IS NULL AND u.code = ? AND so.id = ? AND IF((SELECT COUNT(SKU) FROM products WHERE SKU = ?), p.SKU = ?, p.aliasSku = ?)", uomCode, salesOrderID, sku, sku, sku).
 				Scan(&salesOrderDetail.ID, &salesOrderDetail.SalesOrderID, &salesOrderDetail.ProductID, &salesOrderDetail.UomID, &salesOrderDetail.OrderStatusID, &salesOrderDetail.Qty, &salesOrderDetail.SentQty, &salesOrderDetail.ResidualQty, &salesOrderDetail.Price, &salesOrderDetail.Note, &salesOrderDetail.SoDetailCode, &salesOrderDetail.CreatedAt, &salesOrderDetail.UpdatedAt)
 
 			if err != nil {
@@ -646,7 +646,7 @@ func (r *salesOrderDetail) GetBySOIDAndSku(salesOrderID int, sku string, countOn
 			"INNER JOIN sales_orders as so on so.id = sod.sales_order_id "+
 			"INNER JOIN products as p on p.id = sod.product_id "+
 			"INNER JOIN uoms as u on u.id = sod.uom_id "+
-			"WHERE sod.deleted_at IS NULL AND p.sku = ? AND so.id = ?", sku, salesOrderID).Scan(&total)
+			"WHERE sod.deleted_at IS NULL AND so.id = ? AND IF((SELECT COUNT(SKU) FROM products WHERE SKU = ?), p.SKU = ?, p.aliasSku = ?)", salesOrderID, sku, sku, sku).Scan(&total)
 
 		if err != nil {
 			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -672,7 +672,7 @@ func (r *salesOrderDetail) GetBySOIDAndSku(salesOrderID int, sku string, countOn
 				"INNER JOIN sales_orders as so on so.id = sod.sales_order_id "+
 				"INNER JOIN products as p on p.id = sod.product_id "+
 				"INNER JOIN uoms as u on u.id = sod.uom_id "+
-				"WHERE sod.deleted_at IS NULL AND p.sku = ? AND so.id = ?", sku, salesOrderID)
+				"WHERE sod.deleted_at IS NULL AND so.id = ? AND IF((SELECT COUNT(SKU) FROM products WHERE SKU = ?), p.SKU = ?, p.aliasSku = ?)", salesOrderID, sku, sku, sku)
 
 			if err != nil {
 				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)

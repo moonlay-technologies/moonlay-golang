@@ -227,10 +227,6 @@ func (c *uploadDOItemConsumerHandler) ProcessMessage() {
 			if getProductDetailResult.Error != nil {
 				fmt.Println(getProductDetailResult.Error.Error())
 				errors = append(errors, getProductDetailResult.Error.Error())
-			} else if v.Unit != getProductDetailResult.Product.UnitMeasurementSmall.String && v.Unit != getProductDetailResult.Product.UnitMeasurementMedium.String && v.Unit != getProductDetailResult.Product.UnitMeasurementBig.String {
-				errorMessage := fmt.Sprintf("Satuan produk untuk SKU %s di data order dan file upload surat jalan tidak sesuai. Mohon sesuaikan kembali", v.KodeProduk)
-				fmt.Println(errorMessage)
-				errors = append(errors, errorMessage)
 			}
 
 			// Get Uom Detail By ID
