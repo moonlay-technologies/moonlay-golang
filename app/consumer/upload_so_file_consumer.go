@@ -200,18 +200,30 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 			go c.salesOrderRepository.GetBySoRefCode(v["NoOrder"], false, c.ctx, getSalesOrderResultChan)
 			getSalesOrderResult := <-getSalesOrderResultChan
 
-			if (getSalesOrderResult.Error != nil || getSalesOrderResult.Total > 0) && getSalesOrderResult.ErrorLog.StatusCode != http.StatusNotFound {
+			if getSalesOrderResult.Error != nil && getSalesOrderResult.ErrorLog.StatusCode != http.StatusNotFound {
 
 				if key == "retry" {
 					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 					break
 				} else {
-					errorMessage := fmt.Sprintf("No Order %s telah digunakan. Silahkan gunakan No Order lain.", v["NoOrder"])
-					if getSalesOrderResult.Error != nil {
-						errorMessage = getSalesOrderResult.Error.Error()
-					}
+
+					errorMessage := getSalesOrderResult.Error.Error()
+
 					fmt.Println(errorMessage)
 					errors := []string{errorMessage}
+
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
+
+					continue
+				}
+			}
+
+			if getSalesOrderResult.Total > 0 {
+				if key == "retry" {
+					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{fmt.Sprintf("No Order %s telah digunakan. Silahkan gunakan No Order lain.", v["NoOrder"])}
 
 					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
 
