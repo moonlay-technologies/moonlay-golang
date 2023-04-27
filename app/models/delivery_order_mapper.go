@@ -457,7 +457,7 @@ func (data *DeliveryOrder) MapToCsvRow() []interface{} {
 		deliveryOrderCsv.SjNo.String,
 		deliveryOrderCsv.DoNo,
 		deliveryOrderCsv.OrderNo,
-		deliveryOrderCsv.SoDate,
+		strings.ReplaceAll(deliveryOrderCsv.SoDate, "T00:00:00Z", ""),
 		deliveryOrderCsv.SoNo,
 		deliveryOrderCsv.SoSource,
 		deliveryOrderCsv.AgentID,
@@ -495,6 +495,7 @@ func (d *DeliveryOrderCsvResponse) DeliveryOrderMap(r *DeliveryOrder) {
 	d.SjNo = r.DoRefCode
 	d.DoNo = r.DoCode
 	d.OrderNo = r.SalesOrder.SoRefCode.String
+	d.SoDate = r.SalesOrder.SoDate
 	d.SoNo = r.SalesOrder.SoCode
 	d.SoSource = r.SalesOrder.OrderSourceName
 	d.AgentID = r.AgentID
