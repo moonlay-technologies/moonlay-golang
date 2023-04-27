@@ -32,12 +32,13 @@ type uploadSOFileConsumerHandler struct {
 	soUploadErrorLogsRepository mongoRepositories.SoUploadErrorLogsRepositoryInterface
 	salesOrderRepository        repositories.SalesOrderRepositoryInterface
 	storeRepository             repositories.StoreRepositoryInterface
+	agentRepository             repositories.AgentRepositoryInterface
 	ctx                         context.Context
 	args                        []interface{}
 	db                          dbresolver.DB
 }
 
-func InitUploadSOFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, uploadRepository repositories.UploadRepositoryInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, requestValidationRepository repositories.RequestValidationRepositoryInterface, soUploadHistoriesRepository mongoRepositories.SoUploadHistoriesRepositoryInterface, soUploadErrorLogsRepository mongoRepositories.SoUploadErrorLogsRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UploadSOFileConsumerHandlerInterface {
+func InitUploadSOFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientInterface, uploadRepository repositories.UploadRepositoryInterface, requestValidationMiddleware middlewares.RequestValidationMiddlewareInterface, requestValidationRepository repositories.RequestValidationRepositoryInterface, soUploadHistoriesRepository mongoRepositories.SoUploadHistoriesRepositoryInterface, soUploadErrorLogsRepository mongoRepositories.SoUploadErrorLogsRepositoryInterface, salesOrderRepository repositories.SalesOrderRepositoryInterface, storeRepository repositories.StoreRepositoryInterface, agentRepository repositories.AgentRepositoryInterface, db dbresolver.DB, ctx context.Context, args []interface{}) UploadSOFileConsumerHandlerInterface {
 	return &uploadSOFileConsumerHandler{
 		kafkaClient:                 kafkaClient,
 		uploadRepository:            uploadRepository,
@@ -47,6 +48,7 @@ func InitUploadSOFileConsumerHandlerInterface(kafkaClient kafkadbo.KafkaClientIn
 		soUploadErrorLogsRepository: soUploadErrorLogsRepository,
 		salesOrderRepository:        salesOrderRepository,
 		storeRepository:             storeRepository,
+		agentRepository:             agentRepository,
 		ctx:                         ctx,
 		args:                        args,
 		db:                          db,
@@ -141,6 +143,36 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 		var uploadSOFields []*models.UploadSOField
 		for i, v := range results {
 
+			var agentName string
+			agentId, err := strconv.Atoi(v["IDDistributor"])
+			if err == nil {
+
+				getAgentResultChan := make(chan *models.AgentChan)
+				go c.agentRepository.GetByID(agentId, false, c.ctx, getAgentResultChan)
+				getAgentResult := <-getAgentResultChan
+
+				if getAgentResult.Error != nil {
+					if key == "retry" {
+						c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+						break
+					} else {
+
+						errorMessage := getAgentResult.Error.Error()
+						if getAgentResult.ErrorLog.StatusCode == http.StatusNotFound {
+							errorMessage = "IDDistributor = %s tidak ditemukan. Silahkan gunakan IDDistributor yang lain."
+						}
+						fmt.Println(errorMessage)
+						errors := []string{errorMessage}
+
+						c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, agentName, message.BulkCode, errors, &now, v)
+
+						continue
+					}
+				}
+
+				agentName = getAgentResult.Agent.Name
+			}
+
 			mandatoryError := c.requestValidationMiddleware.UploadMandatoryValidation([]*models.TemplateRequest{
 				{
 					Field: "IDDistributor",
@@ -190,7 +222,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 					break
 				} else {
 					errors := mandatoryError
-					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, agentName, message.BulkCode, errors, &now, v)
 					continue
 				}
 			}
@@ -212,7 +244,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 					fmt.Println(errorMessage)
 					errors := []string{errorMessage}
 
-					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, agentName, message.BulkCode, errors, &now, v)
 
 					continue
 				}
@@ -225,7 +257,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				} else {
 					errors := []string{fmt.Sprintf("No Order %s telah digunakan. Silahkan gunakan No Order lain.", v["NoOrder"])}
 
-					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, agentName, message.BulkCode, errors, &now, v)
 
 					continue
 				}
@@ -255,7 +287,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 							var errors []string
 							errors = append(errors, fmt.Sprintf("Duplikat row untuk No Order %s", v["NoOrder"]))
 
-							c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
+							c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, agentName, message.BulkCode, errors, &now, v)
 
 							isBreak = false
 							break
@@ -310,7 +342,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				} else {
 					errors := intTypeError
 
-					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, agentName, message.BulkCode, errors, &now, v)
 
 					continue
 				}
@@ -324,7 +356,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				} else {
 					errors := []string{"Quantity harus lebih dari 0"}
 
-					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, agentName, message.BulkCode, errors, &now, v)
 
 					continue
 				}
@@ -369,7 +401,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				} else {
 					errors := mustActiveError
 
-					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, agentName, message.BulkCode, errors, &now, v)
 
 					continue
 				}
@@ -390,7 +422,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 					errors = append(errors, fmt.Sprintf("Kode Merek = %d Tidak Terdaftar pada Distributor %s. Silahkan gunakan Kode Merek yang lain.", intTypeResult["KodeMerk"], soUploadHistoryJourneysResult.SoUploadHistory.AgentName))
 					errors = append(errors, fmt.Sprintf("ID Salesman = %d Tidak Terdaftar pada Distributor %s. Silahkan gunakan ID Salesman yang lain.", intTypeResult["IDSalesman"], soUploadHistoryJourneysResult.SoUploadHistory.AgentName))
 
-					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, agentName, message.BulkCode, errors, &now, v)
 
 					continue
 				}
@@ -409,7 +441,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 						errors = []string{fmt.Sprintf("KodeToko = %s Tidak Terdaftar pada Distributor %s. Silahkan gunakan Kode Toko yang lain.", v["KodeToko"], soUploadHistoryJourneysResult.SoUploadHistory.AgentName)}
 					}
 
-					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, agentName, message.BulkCode, errors, &now, v)
 					continue
 				}
 			}
@@ -425,7 +457,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				} else {
 					errors := []string{fmt.Sprintf("KodeToko = %s Tidak Terdaftar pada Distributor %s. Silahkan gunakan Kode Toko yang lain.", v["KodeToko"], soUploadHistoryJourneysResult.SoUploadHistory.AgentName)}
 
-					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, agentName, message.BulkCode, errors, &now, v)
 					continue
 				}
 			}
@@ -442,7 +474,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				} else {
 					errors := []string{fmt.Sprintf("Alamat Utama pada Kode Toko = %s Tidak Ditemukan. Silahkan gunakan Alamat Toko yang lain.", v["KodeToko"])}
 
-					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, agentName, message.BulkCode, errors, &now, v)
 
 					continue
 				}
@@ -457,7 +489,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				} else {
 					errors := []string{fmt.Sprintf("Format Tanggal Order = %s Salah, silahkan sesuaikan dengan format DD-MMM-YYYY, contoh 15/12/2021", v["TanggalOrder"])}
 
-					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, agentName, message.BulkCode, errors, &now, v)
 
 					continue
 				}
@@ -475,7 +507,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				} else {
 					errors := []string{fmt.Sprintf("Tanggal Order = %s tidak boleh melebihi tanggal upload", v["TanggalOrder"])}
 
-					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, agentName, message.BulkCode, errors, &now, v)
 
 					continue
 				}
@@ -490,7 +522,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				} else {
 					errors := []string{fmt.Sprintf("Format Tanggal Toko Order = %s Salah, silahkan sesuaikan dengan format DD/MM/YYYY, contoh 15/12/2021", v["TanggalTokoOrder"])}
 
-					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, agentName, message.BulkCode, errors, &now, v)
 
 					continue
 				}
@@ -505,7 +537,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				} else {
 					errors := []string{fmt.Sprintf("Tanggal Toko Order = %s tidak boleh melebihi Tanggal Order", v["TanggalOrder"])}
 
-					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, agentName, message.BulkCode, errors, &now, v)
 
 					continue
 				}
