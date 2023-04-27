@@ -235,48 +235,8 @@ func (r *salesOrder) GetBySoRefCode(soRefCode string, countOnly bool, ctx contex
 	salesOrderRedisKey := fmt.Sprintf("%s:%s", constants.SALES_ORDER_BY_CODE, soRefCode)
 	salesOrderOnRedis, err := r.redisdb.Client().Get(ctx, salesOrderRedisKey).Result()
 
-	// if err == redis.Nil {
-	err = r.db.QueryRow("SELECT COUNT(*) as total FROM "+constants.SALES_ORDERS_TABLE+" WHERE deleted_at IS NULL AND so_ref_code = ?", soRefCode).Scan(&total)
-
-	if err != nil {
-		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-		response.Error = err
-		response.ErrorLog = errorLogData
-		resultChan <- response
-		return
-	}
-
-	if total == 0 {
-		err = helper.NewError("sales_order data not found")
-		errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
-		response.Error = err
-		response.ErrorLog = errorLogData
-		resultChan <- response
-		return
-	}
-
-	if countOnly == false {
-		salesOrder = models.SalesOrder{}
-		err = r.db.QueryRow(""+
-			"SELECT so.id, so.agent_id, a.name as agent_name, a.email as agent_email, a.province_id as agent_province_id, ap.name agent_province_name, a.city_id as agent_city_id, ac.name as agent_city_name, a.district_id as agent_district_id, ad.name as agent_district_name, a.village_id as agent_village_id, av.name as agent_village_name, a.address as agent_address, a.phone as agent_phone, a.main_mobile_phone as agent_mobile_phone, so.store_id, s.name as store_name, s.store_code as store_code, s.email as store_email, s.province_id as store_province_id, sp.name as store_province_name, s.city_id, sc.name as store_city_name, s.district_id, sd.name as store_district_name, s.village_id as store_village_id, sv.name as store_village_name, s.address as store_address, s.phone as store_phone, s.main_mobile_phone as store_mobile_phone, so.brand_id, b.name as brand_name, so.user_id, u.email as user_email, u.first_name as user_first_name, u.last_name as user_last_name, u.role_id as user_role_id, so.order_source_id, os.source_name as order_source_name, so.order_status_id, ost.name as order_status_name, IFNULL(salesmans.id,0) as salesman_id, salesmans.name as salesman_name, so.so_code, so.so_date, so_ref_code, so_ref_date, so.g_long, so.g_lat, so.note, so.internal_comment, so.total_amount, so.total_tonase, so.created_at, so.updated_at "+
-			"FROM "+constants.SALES_ORDERS_TABLE+" as so "+
-			"INNER JOIN agents as a ON a.id = so.agent_id "+
-			"INNER JOIN stores as s ON s.id = so.store_id "+
-			"INNER JOIN order_sources as os ON os.id = so.order_source_id "+
-			"INNER JOIN order_statuses as ost ON ost.id = so.order_status_id "+
-			"INNER JOIN brands as b ON b.id = so.brand_id "+
-			"INNER JOIN users as u ON u.id = so.user_id "+
-			"INNER JOIN provinces as ap ON ap.id = a.province_id "+
-			"INNER JOIN cities as ac ON ac.id = a.city_id "+
-			"INNER JOIN districts as ad ON ad.id = a.district_id "+
-			"INNER JOIN villages as av ON av.id = a.village_id "+
-			"INNER JOIN provinces as sp ON sp.id = s.province_id "+
-			"INNER JOIN cities as sc ON sc.id = s.city_id "+
-			"INNER JOIN districts as sd ON sd.id = s.district_id "+
-			"INNER JOIN villages as sv ON sv.id = s.village_id "+
-			"LEFT JOIN salesmans on IF(so.salesman_id IS NULL, salesmans.email = u.email, salesmans.id = so.salesman_id)"+
-			"WHERE so.deleted_at IS NULL AND so.so_ref_code = ?", soRefCode).
-			Scan(&salesOrder.ID, &salesOrder.AgentID, &salesOrder.AgentName, &salesOrder.AgentEmail, &salesOrder.AgentProvinceID, &salesOrder.AgentProvinceName, &salesOrder.AgentCityID, &salesOrder.AgentCityName, &salesOrder.AgentDistrictID, &salesOrder.AgentDistrictName, &salesOrder.AgentVillageID, &salesOrder.AgentVillageName, &salesOrder.AgentAddress, &salesOrder.AgentPhone, &salesOrder.AgentMainMobilePhone, &salesOrder.StoreID, &salesOrder.StoreName, &salesOrder.StoreCode, &salesOrder.StoreEmail, &salesOrder.StoreProvinceID, &salesOrder.StoreProvinceName, &salesOrder.StoreCityID, &salesOrder.StoreCityName, &salesOrder.StoreDistrictID, &salesOrder.StoreDistrictName, &salesOrder.StoreVillageID, &salesOrder.StoreVillageName, &salesOrder.StoreAddress, &salesOrder.StorePhone, &salesOrder.StoreMainMobilePhone, &salesOrder.BrandID, &salesOrder.BrandName, &salesOrder.UserID, &salesOrder.UserEmail, &salesOrder.UserFirstName, &salesOrder.UserLastName, &salesOrder.UserRoleID, &salesOrder.OrderSourceID, &salesOrder.OrderSourceName, &salesOrder.OrderStatusID, &salesOrder.OrderStatusName, &salesOrder.SalesmanID, &salesOrder.SalesmanName, &salesOrder.SoCode, &salesOrder.SoDate, &salesOrder.SoRefCode, &salesOrder.SoRefDate, &salesOrder.GLong, &salesOrder.GLat, &salesOrder.Note, &salesOrder.InternalComment, &salesOrder.TotalAmount, &salesOrder.TotalTonase, &salesOrder.CreatedAt, &salesOrder.UpdatedAt)
+	if err == redis.Nil {
+		err = r.db.QueryRow("SELECT COUNT(*) as total FROM "+constants.SALES_ORDERS_TABLE+" WHERE deleted_at IS NULL AND so_ref_code = ?", soRefCode).Scan(&total)
 
 		if err != nil {
 			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
@@ -286,36 +246,76 @@ func (r *salesOrder) GetBySoRefCode(soRefCode string, countOnly bool, ctx contex
 			return
 		}
 
-		salesOrderJson, _ := json.Marshal(salesOrder)
-		setSalesOrderOnRedis := r.redisdb.Client().Set(ctx, salesOrderRedisKey, salesOrderJson, 1*time.Hour)
-
-		if setSalesOrderOnRedis.Err() != nil {
-			errorLogData := helper.WriteLog(setSalesOrderOnRedis.Err(), http.StatusInternalServerError, nil)
-			response.Error = setSalesOrderOnRedis.Err()
+		if total == 0 {
+			err = helper.NewError("sales_order data not found")
+			errorLogData := helper.WriteLog(err, http.StatusNotFound, nil)
+			response.Error = err
 			response.ErrorLog = errorLogData
 			resultChan <- response
 			return
 		}
 
-	}
-	response.Total = total
-	response.SalesOrder = &salesOrder
-	resultChan <- response
-	return
+		if countOnly == false {
+			salesOrder = models.SalesOrder{}
+			err = r.db.QueryRow(""+
+				"SELECT so.id, so.agent_id, a.name as agent_name, a.email as agent_email, a.province_id as agent_province_id, ap.name agent_province_name, a.city_id as agent_city_id, ac.name as agent_city_name, a.district_id as agent_district_id, ad.name as agent_district_name, a.village_id as agent_village_id, av.name as agent_village_name, a.address as agent_address, a.phone as agent_phone, a.main_mobile_phone as agent_mobile_phone, so.store_id, s.name as store_name, s.store_code as store_code, s.email as store_email, s.province_id as store_province_id, sp.name as store_province_name, s.city_id, sc.name as store_city_name, s.district_id, sd.name as store_district_name, s.village_id as store_village_id, sv.name as store_village_name, s.address as store_address, s.phone as store_phone, s.main_mobile_phone as store_mobile_phone, so.brand_id, b.name as brand_name, so.user_id, u.email as user_email, u.first_name as user_first_name, u.last_name as user_last_name, u.role_id as user_role_id, so.order_source_id, os.source_name as order_source_name, so.order_status_id, ost.name as order_status_name, IFNULL(salesmans.id,0) as salesman_id, salesmans.name as salesman_name, so.so_code, so.so_date, so_ref_code, so_ref_date, so.g_long, so.g_lat, so.note, so.internal_comment, so.total_amount, so.total_tonase, so.created_at, so.updated_at "+
+				"FROM "+constants.SALES_ORDERS_TABLE+" as so "+
+				"INNER JOIN agents as a ON a.id = so.agent_id "+
+				"INNER JOIN stores as s ON s.id = so.store_id "+
+				"INNER JOIN order_sources as os ON os.id = so.order_source_id "+
+				"INNER JOIN order_statuses as ost ON ost.id = so.order_status_id "+
+				"INNER JOIN brands as b ON b.id = so.brand_id "+
+				"INNER JOIN users as u ON u.id = so.user_id "+
+				"INNER JOIN provinces as ap ON ap.id = a.province_id "+
+				"INNER JOIN cities as ac ON ac.id = a.city_id "+
+				"INNER JOIN districts as ad ON ad.id = a.district_id "+
+				"INNER JOIN villages as av ON av.id = a.village_id "+
+				"INNER JOIN provinces as sp ON sp.id = s.province_id "+
+				"INNER JOIN cities as sc ON sc.id = s.city_id "+
+				"INNER JOIN districts as sd ON sd.id = s.district_id "+
+				"INNER JOIN villages as sv ON sv.id = s.village_id "+
+				"LEFT JOIN salesmans on IF(so.salesman_id IS NULL, salesmans.email = u.email, salesmans.id = so.salesman_id)"+
+				"WHERE so.deleted_at IS NULL AND so.so_ref_code = ?", soRefCode).
+				Scan(&salesOrder.ID, &salesOrder.AgentID, &salesOrder.AgentName, &salesOrder.AgentEmail, &salesOrder.AgentProvinceID, &salesOrder.AgentProvinceName, &salesOrder.AgentCityID, &salesOrder.AgentCityName, &salesOrder.AgentDistrictID, &salesOrder.AgentDistrictName, &salesOrder.AgentVillageID, &salesOrder.AgentVillageName, &salesOrder.AgentAddress, &salesOrder.AgentPhone, &salesOrder.AgentMainMobilePhone, &salesOrder.StoreID, &salesOrder.StoreName, &salesOrder.StoreCode, &salesOrder.StoreEmail, &salesOrder.StoreProvinceID, &salesOrder.StoreProvinceName, &salesOrder.StoreCityID, &salesOrder.StoreCityName, &salesOrder.StoreDistrictID, &salesOrder.StoreDistrictName, &salesOrder.StoreVillageID, &salesOrder.StoreVillageName, &salesOrder.StoreAddress, &salesOrder.StorePhone, &salesOrder.StoreMainMobilePhone, &salesOrder.BrandID, &salesOrder.BrandName, &salesOrder.UserID, &salesOrder.UserEmail, &salesOrder.UserFirstName, &salesOrder.UserLastName, &salesOrder.UserRoleID, &salesOrder.OrderSourceID, &salesOrder.OrderSourceName, &salesOrder.OrderStatusID, &salesOrder.OrderStatusName, &salesOrder.SalesmanID, &salesOrder.SalesmanName, &salesOrder.SoCode, &salesOrder.SoDate, &salesOrder.SoRefCode, &salesOrder.SoRefDate, &salesOrder.GLong, &salesOrder.GLat, &salesOrder.Note, &salesOrder.InternalComment, &salesOrder.TotalAmount, &salesOrder.TotalTonase, &salesOrder.CreatedAt, &salesOrder.UpdatedAt)
 
-	// } else if err != nil {
-	// 	errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
-	// 	response.Error = err
-	// 	response.ErrorLog = errorLogData
-	// 	resultChan <- response
-	// 	return
-	// } else {
-	_ = json.Unmarshal([]byte(salesOrderOnRedis), &salesOrder)
-	response.SalesOrder = &salesOrder
-	response.Total = total
-	resultChan <- response
-	return
-	// }
+			if err != nil {
+				errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+				response.Error = err
+				response.ErrorLog = errorLogData
+				resultChan <- response
+				return
+			}
+
+			salesOrderJson, _ := json.Marshal(salesOrder)
+			setSalesOrderOnRedis := r.redisdb.Client().Set(ctx, salesOrderRedisKey, salesOrderJson, 1*time.Hour)
+
+			if setSalesOrderOnRedis.Err() != nil {
+				errorLogData := helper.WriteLog(setSalesOrderOnRedis.Err(), http.StatusInternalServerError, nil)
+				response.Error = setSalesOrderOnRedis.Err()
+				response.ErrorLog = errorLogData
+				resultChan <- response
+				return
+			}
+
+		}
+		response.Total = total
+		response.SalesOrder = &salesOrder
+		resultChan <- response
+		return
+
+	} else if err != nil {
+		errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
+		response.Error = err
+		response.ErrorLog = errorLogData
+		resultChan <- response
+		return
+	} else {
+		_ = json.Unmarshal([]byte(salesOrderOnRedis), &salesOrder)
+		response.SalesOrder = &salesOrder
+		response.Total = total
+		resultChan <- response
+		return
+	}
 }
 
 func (r *salesOrder) GetByAgentRefCode(soRefCode string, agentID int, countOnly bool, ctx context.Context, resultChan chan *models.SalesOrderChan) {
