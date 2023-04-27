@@ -385,7 +385,6 @@ func (c *uploadSOSJFileConsumerHandler) ProcessMessage() {
 					c.updateSosjUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
 					break
 				} else {
-					fmt.Println("Masuk pake alias")
 					errors := []string{fmt.Sprintf("KodeToko = %s Tidak Terdaftar pada Distributor %s. Silahkan gunakan Kode Toko yang lain.", rowData.StoreCode, rowData.AgentName.String)}
 
 					c.createSosjUploadErrorLog(i+3, rowData.AgentId, string(sosjUploadHistoryId), message.RequestId, rowData.AgentName.String, message.BulkCode, errors, &now, *rowData)

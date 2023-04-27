@@ -337,7 +337,7 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 				{
 					Table:         "products",
 					ReqField:      "KodeProduk",
-					Clause:        fmt.Sprintf("sku = '%s' AND isActive = %d", v["KodeProduk"], 1),
+					Clause:        fmt.Sprintf("IF((SELECT COUNT(SKU) FROM products WHERE SKU = '%s'), products.SKU = '%s', products.aliasSku = '%s') AND isActive = %d", v["KodeProduk"], v["KodeProduk"], v["KodeProduk"], 1),
 					Id:            v["KodeProduk"],
 					CustomMessage: fmt.Sprintf("Kode SKU = %s dengan Merek %s sudah Tidak Aktif. Silahkan gunakan Kode SKU yang lain.", v["KodeProduk"], v["NamaMerk"]),
 				},
@@ -396,6 +396,22 @@ func (c *uploadSOFileConsumerHandler) ProcessMessage() {
 					if getStoreResult.ErrorLog.StatusCode == http.StatusNotFound {
 						errors = []string{fmt.Sprintf("KodeToko = %s Tidak Terdaftar pada Distributor %s. Silahkan gunakan Kode Toko yang lain.", v["KodeToko"], soUploadHistoryJourneysResult.SoUploadHistory.AgentName)}
 					}
+
+					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
+					continue
+				}
+			}
+
+			storeIdValidationResultChan := make(chan *models.RequestIdValidationChan)
+			go c.requestValidationRepository.StoreIdValidation(getStoreResult.Store.ID, intTypeResult["IDDistributor"], storeIdValidationResultChan)
+			storeIdValidationResult := <-storeIdValidationResultChan
+
+			if storeIdValidationResult.Total < 1 {
+				if key == "retry" {
+					c.updateSoUploadHistories(message, constants.UPLOAD_STATUS_HISTORY_FAILED)
+					break
+				} else {
+					errors := []string{fmt.Sprintf("KodeToko = %s Tidak Terdaftar pada Distributor %s. Silahkan gunakan Kode Toko yang lain.", v["KodeToko"], soUploadHistoryJourneysResult.SoUploadHistory.AgentName)}
 
 					c.createSoUploadErrorLog(i+2, v["IDDistributor"], message.ID.Hex(), message.RequestId, message.AgentName, message.BulkCode, errors, &now, v)
 					continue
