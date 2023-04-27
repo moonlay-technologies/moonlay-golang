@@ -310,6 +310,7 @@ func (r *salesOrder) GetBySoRefCode(soRefCode string, countOnly bool, ctx contex
 		resultChan <- response
 		return
 	} else {
+		total = 1
 		_ = json.Unmarshal([]byte(salesOrderOnRedis), &salesOrder)
 		response.SalesOrder = &salesOrder
 		response.Total = total
