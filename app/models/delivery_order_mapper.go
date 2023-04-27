@@ -457,7 +457,7 @@ func (data *DeliveryOrder) MapToCsvRow() []interface{} {
 		deliveryOrderCsv.SjNo.String,
 		deliveryOrderCsv.DoNo,
 		deliveryOrderCsv.OrderNo,
-		deliveryOrderCsv.SoDate,
+		strings.ReplaceAll(deliveryOrderCsv.SoDate, "T00:00:00Z", ""),
 		deliveryOrderCsv.SoNo,
 		deliveryOrderCsv.SoSource,
 		deliveryOrderCsv.AgentID,
