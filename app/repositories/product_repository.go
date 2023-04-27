@@ -117,7 +117,7 @@ func (r *product) GetBySKU(SKU string, countOnly bool, ctx context.Context, resu
 	productOnRedis, err := r.redisdb.Client().Get(ctx, productRedisKey).Result()
 
 	if err == redis.Nil {
-		err = r.db.QueryRow("SELECT COUNT(*) as total FROM products WHERE deleted_at IS NULL AND SKU = ?", SKU).Scan(&total)
+		err = r.db.QueryRow("SELECT COUNT(*) as total FROM products WHERE deleted_at IS NULL AND IF((SELECT COUNT(SKU) FROM products WHERE SKU = ?), SKU = ?, aliasSku = ?)", SKU, SKU, SKU).Scan(&total)
 
 		if err != nil {
 			errorLogData := helper.WriteLog(err, http.StatusInternalServerError, nil)
