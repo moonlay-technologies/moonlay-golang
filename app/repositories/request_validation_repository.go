@@ -18,7 +18,7 @@ type RequestValidationRepositoryInterface interface {
 	SalesmanIdValidation(salesmanId, agentId int, resultChan chan *models.RequestIdValidationChan)
 	BrandIdValidation(brandId, agentId int, resultChan chan *models.RequestIdValidationChan)
 	BrandSalesmanValidation(brandId, salesmanId, agentId int, resultChan chan *models.RequestIdValidationChan)
-	StoreAddressesValidation(storeCode string, resultChan chan *models.RequestIdValidationChan)
+	StoreAddressesValidation(storeId int, resultChan chan *models.RequestIdValidationChan)
 }
 
 type requestValidationRepository struct {
@@ -211,11 +211,11 @@ func (r *requestValidationRepository) BrandSalesmanValidation(brandId, salesmanI
 	}
 }
 
-func (r *requestValidationRepository) StoreAddressesValidation(storeCode string, resultChan chan *models.RequestIdValidationChan) {
+func (r *requestValidationRepository) StoreAddressesValidation(storeId int, resultChan chan *models.RequestIdValidationChan) {
 	response := &models.RequestIdValidationChan{}
 	var total int64
 
-	query := fmt.Sprintf("SELECT COUNT(*) AS total FROM store_addresses JOIN stores ON store_addresses.store_id = stores.id WHERE stores.store_code = '%s'", storeCode)
+	query := fmt.Sprintf("SELECT COUNT(*) AS total FROM store_addresses JOIN stores ON store_addresses.store_id = stores.id WHERE stores.id = %d", storeId)
 	err := r.db.QueryRow(query).Scan(&total)
 
 	if err != nil {
