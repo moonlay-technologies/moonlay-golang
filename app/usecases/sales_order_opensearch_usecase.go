@@ -176,6 +176,7 @@ func (u *SalesOrderOpenSearchUseCase) SyncToOpenSearchFromCreateEvent(salesOrder
 	}
 
 	salesOrderUpdateData := &models.SalesOrder{
+		LatestUpdatedBy: salesOrder.CreatedBy,
 		UpdatedAt:       &now,
 		IsDoneSyncToEs:  "1",
 		EndCreatedDate:  &now,
