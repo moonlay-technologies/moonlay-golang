@@ -399,6 +399,17 @@ func (d *DeliveryOrderDetailOpenSearch) MapToCsvRow(dd *DeliveryOrder) []interfa
 		store.CityName = d.Store.CityName
 		store.ProvinceID = d.Store.ProvinceID
 		store.ProvinceName = d.Store.ProvinceName
+	} else if dd.Store != nil {
+		store.StoreCategory = dd.Store.StoreCategory
+		store.StoreCode = dd.Store.StoreCode
+		store.AliasCode = dd.Store.AliasCode
+		store.Name = dd.Store.Name
+		store.DistrictID = dd.Store.DistrictID
+		store.DistrictName = dd.Store.DistrictName
+		store.CityID = dd.Store.CityID
+		store.CityName = dd.Store.CityName
+		store.ProvinceID = dd.Store.ProvinceID
+		store.ProvinceName = dd.Store.ProvinceName
 	} else {
 		store.StoreCategory = NullString{NullString: sql.NullString{String: "", Valid: true}}
 		store.StoreCode = NullString{NullString: sql.NullString{String: "", Valid: true}}
