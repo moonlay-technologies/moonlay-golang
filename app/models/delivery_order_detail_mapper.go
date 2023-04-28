@@ -463,7 +463,7 @@ func (d *DeliveryOrderDetailOpenSearch) MapToCsvRow(dd *DeliveryOrder) []interfa
 		d.SoDetail.LastCategoryId,
 		// "*d.SoDetail.LastCategoryName",
 		nil,
-		d.SoDetail.ProductSKU,
+		d.SoDetail.Product.Sku,
 		d.Product.ProductName.String,
 		d.Uom.Code.String,
 		d.SoDetail.Price,
